@@ -2,96 +2,156 @@
   {
     "code": "F70",
     "name": "Leichte Intelligenzminderung",
-    "kategorie": "F7",
+    "kategorie": "F70",
     "seltenheit_score": 4,
-    "praevalenz_allgemein_prozent": 2,
+    "praevalenz_allgemein_prozent": 2.0,
     "praevalenz_modifikatoren": {
-      "männlich": 1.3,
-      "weiblich": 0.8,
-      "alter_18_30": 1.5,
-      "alter_31_50": 1,
-      "alter_51_plus": 0.8
+      "weiblich": 0.9,
+      "maennlich": 1.2,
+      "alter_peak": "Diagnose Kindheit/Schulalter"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "IQ zwischen 50 und 69 (MA 9-12 Jahre)",
-        "Beeinträchtigungen im adaptiven Verhalten",
-        "Beginn in der Entwicklungsperiode"
+        "IQ-Wert im Bereich von 50-69 (im Erwachsenenalter entspricht dies einem Intelligenzalter von 9 bis unter 12 Jahren)",
+        "Beeinträchtigung der Lernfähigkeiten, die sich während der Entwicklungsperiode manifestieren",
+        "Beeinträchtigung der kognitiven, sprachlichen, motorischen und sozialen Fähigkeiten",
+        "Beginn während der Entwicklungsperiode (vor dem 18. Lebensjahr)"
       ],
       "optionale_symptome": [
-        "Oft beschulbar mit Förderbedarf",
-        "Kann weitgehend selbstständig leben",
-        "Häufig komorbide psychische Störungen"
+        "Lernschwierigkeiten in der Schule",
+        "Viele Erwachsene können arbeiten, soziale Beziehungen aufrechterhalten und zur Gesellschaft beitragen",
+        "Häufig komorbide Verhaltensauffälligkeiten",
+        "Syndrompräzisierungen: mit/ohne Verhaltensauffälligkeiten (.0-.9)"
       ]
     },
-    "differentialdiagnose": "Lernbehinderung ohne Intelligenzminderung, mittelgradige Intelligenzminderung (F71), erworbene Demenz (F00).",
-    "komorbiditaeten": [
-      "F90",
-      "F84",
-      "F32"
-    ]
+    "differentialdiagnose": ["F71 Mittelgradige Intelligenzminderung", "F80/F81 Umschriebene Entwicklungsstörungen", "F84 Tiefgreifende Entwicklungsstörungen", "Grenzwertintelligenz"],
+    "komorbiditaeten": ["F84.0 Frühkindlicher Autismus", "F90 ADHS", "F91 Störung des Sozialverhaltens", "F32 Depression", "Epilepsie"]
   },
   {
     "code": "F71",
     "name": "Mittelgradige Intelligenzminderung",
-    "kategorie": "F7",
+    "kategorie": "F70",
     "seltenheit_score": 6,
     "praevalenz_allgemein_prozent": 0.4,
     "praevalenz_modifikatoren": {
-      "männlich": 1.2,
       "weiblich": 0.9,
-      "alter_18_30": 1.3,
-      "alter_31_50": 1,
-      "alter_51_plus": 0.8
+      "maennlich": 1.1,
+      "alter_peak": "Diagnose Kindheit"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "IQ zwischen 35 und 49 (MA 6-9 Jahre)",
-        "Deutliche Beeinträchtigungen in Sprache und sozialer Entwicklung",
-        "Unterstützungsbedarf im täglichen Leben"
+        "IQ-Wert im Bereich von 35-49 (im Erwachsenenalter: Intelligenzalter von 6 bis unter 9 Jahren)",
+        "Deutliche Entwicklungsverzögerungen in der Kindheit in kognitiven, sprachlichen und motorischen Bereichen",
+        "Beginn während der Entwicklungsperiode"
       ],
       "optionale_symptome": [
-        "Einfache praktische Arbeiten möglich",
-        "Betreutes Wohnen erforderlich",
-        "Häufig genetische Ursachen"
+        "Die meisten können ein gewisses Maß an Selbstständigkeit in der Selbstversorgung erreichen",
+        "Erwerb angemessener kommunikativer und schulischer Fähigkeiten möglich",
+        "Erwachsene brauchen unterschiedliche Grade an Unterstützung im Alltag und bei der Arbeit"
       ]
     },
-    "differentialdiagnose": "Leichte (F70) und schwere (F72) Intelligenzminderung, Autismus-Spektrum (F84) mit kognitivem Profil.",
-    "komorbiditaeten": [
-      "F84",
-      "F90",
-      "F91"
-    ]
+    "differentialdiagnose": ["F70 Leichte Intelligenzminderung", "F72 Schwere Intelligenzminderung", "F84 Tiefgreifende Entwicklungsstörungen"],
+    "komorbiditaeten": ["F84.0 Frühkindlicher Autismus", "F90 ADHS", "Epilepsie", "genetische Syndrome"]
   },
   {
     "code": "F72",
     "name": "Schwere Intelligenzminderung",
-    "kategorie": "F7",
+    "kategorie": "F70",
     "seltenheit_score": 7,
     "praevalenz_allgemein_prozent": 0.1,
     "praevalenz_modifikatoren": {
-      "männlich": 1.2,
       "weiblich": 0.9,
-      "alter_18_30": 1.2,
-      "alter_31_50": 1,
-      "alter_51_plus": 0.8
+      "maennlich": 1.1,
+      "alter_peak": "Diagnose Säugling/Kleinkind"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "IQ zwischen 20 und 34 (MA 3-6 Jahre)",
-        "Ausgeprägte Einschränkungen in Motorik und Kommunikation",
-        "Umfassender Unterstützungsbedarf"
+        "IQ-Wert im Bereich von 20-34 (im Erwachsenenalter: Intelligenzalter von 3 bis unter 6 Jahren)",
+        "Schwere Beeinträchtigungen der kognitiven, sprachlichen, motorischen und sozialen Fähigkeiten",
+        "Kontinuierlicher Unterstützungsbedarf im Alltag",
+        "Beginn während der Entwicklungsperiode"
       ],
       "optionale_symptome": [
-        "Einfachste Selbstversorgung möglich",
-        "Häufig neurologische Komorbiditäten",
-        "Chromosomale/genetische Ursachen häufig"
+        "Sehr begrenzte Selbstversorgungsfähigkeiten",
+        "Häufig zusätzliche körperliche Behinderungen",
+        "Kommunikation stark eingeschränkt"
       ]
     },
-    "differentialdiagnose": "Mittelgradige (F71) und tiefe (F73) Intelligenzminderung, Autismus-Spektrum.",
-    "komorbiditaeten": [
-      "F84",
-      "G40"
-    ]
+    "differentialdiagnose": ["F71 Mittelgradige Intelligenzminderung", "F73 Schwerste Intelligenzminderung", "F84 Tiefgreifende Entwicklungsstörungen"],
+    "komorbiditaeten": ["F84.0 Frühkindlicher Autismus", "Epilepsie", "körperliche Behinderungen", "genetische Syndrome (z.B. Down-Syndrom)"]
+  },
+  {
+    "code": "F73",
+    "name": "Schwerste Intelligenzminderung",
+    "kategorie": "F70",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.9,
+      "maennlich": 1.1,
+      "alter_peak": "Diagnose Säugling"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "IQ unter 20 (im Erwachsenenalter: Intelligenzalter unter 3 Jahre)",
+        "Schwere Einschränkungen in Selbstversorgung, Kontinenz, Kommunikation und Mobilität",
+        "Vollständige Abhängigkeit von Unterstützung",
+        "Beginn während der Entwicklungsperiode"
+      ],
+      "optionale_symptome": [
+        "Häufig schwere sensorische und körperliche Behinderungen",
+        "Komplexe Pflegebedürftigkeit",
+        "Verständigung meist über nonverbale Signale"
+      ]
+    },
+    "differentialdiagnose": ["F72 Schwere Intelligenzminderung", "F84 Tiefgreifende Entwicklungsstörungen mit schwerer Behinderung"],
+    "komorbiditaeten": ["F84.0 Frühkindlicher Autismus", "Epilepsie", "schwere körperliche Behinderungen", "genetische Syndrome"]
+  },
+  {
+    "code": "F78",
+    "name": "Sonstige Intelligenzminderung",
+    "kategorie": "F70",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.1,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.0,
+      "maennlich": 1.0,
+      "alter_peak": "variabel"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Intelligenzminderung vorhanden, aber Grad lässt sich durch assoziierte sensorische oder körperliche Beeinträchtigungen nicht genau bestimmt werden"
+      ],
+      "optionale_symptome": [
+        "Behinderungen der Sinnesorgane oder Kommunikation erschweren Intelligenzdiagnostik",
+        "Blinde, taubblinde oder schwer körperbehinderte Personen"
+      ]
+    },
+    "differentialdiagnose": ["F70-F73 Intelligenzminderungsgrade", "F84 Tiefgreifende Entwicklungsstörungen"],
+    "komorbiditaeten": ["F84.0 Frühkindlicher Autismus", "Epilepsie", "sensorische Behinderungen"]
+  },
+  {
+    "code": "F79",
+    "name": "Nicht näher bezeichnete Intelligenzminderung",
+    "kategorie": "F70",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.2,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.0,
+      "maennlich": 1.0,
+      "alter_peak": "variabel"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Hinweise auf Intelligenzminderung vorhanden, aber zu wenig Informationen für eine spezifischere Klassifikation",
+        "Beeinträchtigung der kognitiven, sprachlichen, motorischen und sozialen Fähigkeiten",
+        "Beginn während der Entwicklungsperiode"
+      ],
+      "optionale_symptome": [
+        "Wird als letzte Möglichkeit verwendet, wenn spezifischere Kategorie nicht sicher bestimmbar"
+      ]
+    },
+    "differentialdiagnose": ["F70-F73 spezifische Intelligenzminderungsgrade", "F84 Tiefgreifende Entwicklungsstörungen"],
+    "komorbiditaeten": ["F84 Tiefgreifende Entwicklungsstörungen", "F90 ADHS", "Epilepsie"]
   }
 ]
