@@ -2,288 +2,475 @@
   {
     "code": "F60.0",
     "name": "Paranoide Persönlichkeitsstörung",
-    "kategorie": "F6",
-    "seltenheit_score": 5,
+    "kategorie": "F60",
+    "seltenheit_score": 6,
     "praevalenz_allgemein_prozent": 1.5,
     "praevalenz_modifikatoren": {
-      "männlich": 1.4,
-      "weiblich": 0.7,
-      "alter_18_30": 1,
-      "alter_31_50": 1.2,
-      "alter_51_plus": 1
+      "weiblich": 0.8,
+      "maennlich": 1.3,
+      "alter_peak": "Beginn Adoleszenz, chronisch"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Übermäßige Empfindlichkeit gegenüber Zurückweisung und Niedertracht",
-        "Neigung zu Groll, Unfähigkeit zu verzeihen",
-        "Misstrauen gegenüber anderen (böse Absichten werden vermutet)"
+        "Allgemeine Kriterien für Persönlichkeitsstörung (F60) erfüllt: tiefgreifende, stabile Abweichung von kulturellen Normen in mind. 2 Bereichen (Kognition, Affektivität, Impulskontrolle, Beziehungsgestaltung); Beginn in Kindheit/Adoleszenz, persistiert bis ins Erwachsenenalter; verursacht Leid oder soziale Beeinträchtigung",
+        "Mindestens 3 der folgenden Merkmale vorhanden: (1) übermäßige Empfindlichkeit gegenüber Misserfolgen; (2) Tendenz, Beleidigungen nicht zu vergeben; (3) Misstrauen und Neigung, neutrale/freundliche Handlungen anderer als feindlich oder verächtlich misszudeuten; (4) kämpferisches und zähes Bestehen auf eigenen Rechten; (5) ungerechtfertigte Eifersucht auf Partner; (6) selbstbezügliche Einstellung mit übermäßiger Selbstüberschätzung; (7) Beschäftigung mit unsubstantiierten konspiratorischen Erklärungen"
       ],
       "optionale_symptome": [
-        "Streitsucht und hartnäckiges Beharren auf eigenen Rechten",
-        "Übertriebenes Selbstbewusstsein kombiniert mit Empfindlichkeit",
-        "Eifersüchtige Ideen (Partner-Untreue vermutet)"
+        "Expansive, fanatische, querulatorische oder sensitiv-paranoide Züge",
+        "Geringe Selbstoffenbarung aus Angst vor Ausbeutung",
+        "Kombination mit anderen Persönlichkeitszügen"
       ]
     },
-    "differentialdiagnose": "Wahnhafte Störung (F22.0, echter Wahn), Schizophrenie (F20, Halluzinationen), schizotype Störung (F21).",
-    "komorbiditaeten": [
-      "F32",
-      "F60.1"
-    ]
+    "differentialdiagnose": ["F22.0 Wahnhafte Störung (Paranoia)", "F20.0 Paranoide Schizophrenie", "F21 Schizotype Störung"],
+    "komorbiditaeten": ["F32 Depression", "F41 Angststörungen", "F20 Schizophrenie-Spektrum"]
   },
   {
     "code": "F60.1",
     "name": "Schizoide Persönlichkeitsstörung",
-    "kategorie": "F6",
-    "seltenheit_score": 6,
-    "praevalenz_allgemein_prozent": 1,
+    "kategorie": "F60",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 1.0,
     "praevalenz_modifikatoren": {
-      "männlich": 1.4,
-      "weiblich": 0.7,
-      "alter_18_30": 1,
-      "alter_31_50": 1,
-      "alter_51_plus": 1
+      "weiblich": 0.6,
+      "maennlich": 1.4,
+      "alter_peak": "Beginn Adoleszenz, chronisch"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Emotionale Kälte, Distanziertheit oder flacher Affekt",
-        "Wenig Freude an Aktivitäten oder sozialen Kontakten",
-        "Bevorzugte Einsamkeit und solitäre Tätigkeiten"
+        "Allgemeine Kriterien für Persönlichkeitsstörung (F60) erfüllt",
+        "Mindestens 4 der folgenden Merkmale: (1) kaum Aktivitäten bereiten Vergnügen; (2) emotionale Kälte, Distanziertheit oder flacher Affekt; (3) begrenzte Fähigkeit, Wärme oder Ärger auszudrücken; (4) Gleichgültigkeit gegenüber Lob oder Kritik; (5) geringes Interesse an sexuellen Erfahrungen; (6) konsistente Wahl von Einzelgängeraktivitäten; (7) übermäßige Beschäftigung mit Fantasie und Introspektion; (8) kein Wunsch nach engen Freundschaften; (9) ausgeprägte Unempfindlichkeit für soziale Normen und Konventionen"
       ],
       "optionale_symptome": [
-        "Gleichgültigkeit gegenüber Lob oder Kritik",
-        "Fehlendes Interesse an sexuellen Beziehungen",
-        "Keine engen Freundschaften oder Vertrauenspersonen"
+        "Rückzug von affektiven, sozialen und anderen Kontakten",
+        "Präferenz für Fantasie und introspektive Aktivitäten",
+        "Häufig im Schizophrenie-Spektrum-Bereich"
       ]
     },
-    "differentialdiagnose": "Schizotype Störung (F21, magisches Denken), Asperger-Syndrom (F84.5, Kommunikationsdefizite), ängstliche PS (F60.6, möchte Kontakte, traut sich nicht).",
-    "komorbiditaeten": [
-      "F21",
-      "F34.1"
-    ]
+    "differentialdiagnose": ["F21 Schizotype Störung", "F84.5 Asperger-Syndrom", "F22.0 Wahnhafte Störung", "F20 Schizophrenie"],
+    "komorbiditaeten": ["F20 Schizophrenie (Risikofaktor)", "F21 Schizotype Störung"]
   },
   {
     "code": "F60.2",
-    "name": "Dissoziale (Antisoziale) Persönlichkeitsstörung",
-    "kategorie": "F6",
+    "name": "Dissoziale Persönlichkeitsstörung",
+    "kategorie": "F60",
     "seltenheit_score": 6,
-    "praevalenz_allgemein_prozent": 2,
+    "praevalenz_allgemein_prozent": 3.0,
     "praevalenz_modifikatoren": {
-      "männlich": 2.5,
-      "weiblich": 0.3,
-      "alter_18_30": 2,
-      "alter_31_50": 1.5,
-      "alter_51_plus": 0.5
+      "weiblich": 0.5,
+      "maennlich": 2.0,
+      "alter_peak": "15-35"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Rücksichtsloses Missachten sozialer Normen und Rechte anderer",
-        "Keine Schuldgefühle oder Empathie",
-        "Niedriges Frustrationstoleranz, Impulsivität, Aggressivität"
+        "Allgemeine Kriterien für Persönlichkeitsstörung (F60) erfüllt",
+        "Mindestens 3 der folgenden Merkmale: (1) herzlose Gleichgültigkeit gegenüber den Gefühlen anderer; (2) grobe und anhaltende Unverantwortlichkeit und Missachtung sozialer Normen, Regeln und Verpflichtungen; (3) Unfähigkeit, dauerhafte Beziehungen aufrechtzuerhalten; (4) sehr geringe Frustrationstoleranz und niedrige Hemmschwelle für aggressives Verhalten; (5) Unfähigkeit, Schuldgefühle zu erleben oder aus negativen Erfahrungen zu lernen; (6) ausgeprägte Neigung, andere zu beschuldigen oder plausible Rationalisierungen für das Verhalten anzubieten"
       ],
       "optionale_symptome": [
-        "Lügen, Manipulation, Betrug",
-        "Risikoverhalten ohne Konsequenzplanung",
-        "Störung des Sozialverhaltens in der Kindheit (Voraussetzung)"
+        "Anhaltende Reizbarkeit",
+        "Störung des Sozialverhaltens in Kindheit und Adoleszenz",
+        "Amoral, antisozial, asozial, psychopathische, soziopathische Züge"
       ]
     },
-    "differentialdiagnose": "Borderline-PS (F60.3, Impulsivität + emotionale Dysregulation), Narzissmus (kein kriminelles Verhalten), Manie (F30, episodisch).",
-    "komorbiditaeten": [
-      "F10.2",
-      "F11",
-      "F43.1"
-    ]
+    "differentialdiagnose": ["F91 Störung des Sozialverhaltens", "F60.31 Borderline-PS", "F63 Impulskontrollstörungen", "F71-F79 Intelligenzminderung"],
+    "komorbiditaeten": ["F10 Alkohol-/Substanzabhängigkeit", "F63.0 Pathologisches Spielen", "F32 Depression"]
   },
   {
-    "code": "F60.3",
-    "name": "Emotional instabile Persönlichkeitsstörung (Borderline)",
-    "kategorie": "F6",
-    "seltenheit_score": 5,
-    "praevalenz_allgemein_prozent": 2.5,
+    "code": "F60.30",
+    "name": "Emotional instabile Persönlichkeitsstörung – Impulsiver Typ",
+    "kategorie": "F60",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 1.5,
     "praevalenz_modifikatoren": {
-      "männlich": 0.5,
-      "weiblich": 1.7,
-      "alter_18_30": 2.5,
-      "alter_31_50": 1.5,
-      "alter_51_plus": 0.5
+      "weiblich": 1.2,
+      "maennlich": 1.0,
+      "alter_peak": "15-40"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Intensive und instabile Beziehungen (Idealisierung/Entwertung)",
-        "Impulsivität in selbstschädigenden Bereichen",
-        "Affektive Instabilität mit intensiver Dysphorie, Angst oder Reizbarkeit"
+        "Allgemeine Kriterien für Persönlichkeitsstörung (F60) erfüllt",
+        "Mindestens 3 der folgenden Merkmale, davon eines zwingend (2): (1) ausgeprägte Tendenz zu unerwartetem und impulsivem Handeln ohne Berücksichtigung der Konsequenzen; (2) ausgeprägte Tendenz zu Streitsucht und Konflikten mit anderen, besonders wenn impulsive Handlungen unterbrochen werden; (3) Neigung zu Ausbrüchen von Zorn oder Gewalt mit Unfähigkeit, die Verhaltensexplosionen zu kontrollieren; (4) Schwierigkeiten, einen Kurs fortzuführen, der keinen unmittelbaren Lohn bietet; (5) unstimmige und launische Stimmung"
       ],
       "optionale_symptome": [
-        "Chronische Leere und Identitätsstörung",
-        "Selbstverletzung oder suizidales Verhalten",
-        "Dissoziative Symptome unter Stress",
-        "Paranoide Ideen unter Belastung"
+        "Aggressive und explosive Persönlichkeitszüge",
+        "Impulsives Handeln in verschiedenen Lebensbereichen",
+        "Häufig Vorläufer oder Komorbidität des Borderline-Typs"
       ]
     },
-    "differentialdiagnose": "Bipolare Störung (F31, episodisch, keine Identitätsstörung), PTBS (F43.1, Trauma-Fokus), Histrionische PS (F60.4).",
-    "komorbiditaeten": [
-      "F43.1",
-      "F32",
-      "F10",
-      "F44"
-    ]
+    "differentialdiagnose": ["F60.31 Borderline-Typ", "F60.2 Dissoziale PS", "F31 Bipolare Störung", "F63 Impulskontrollstörungen"],
+    "komorbiditaeten": ["F10 Alkohol-/Substanzmissbrauch", "F32 Depression", "F60.31 Borderline-Typ"]
+  },
+  {
+    "code": "F60.31",
+    "name": "Emotional instabile Persönlichkeitsstörung – Borderline-Typ",
+    "kategorie": "F60",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 2.0,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.8,
+      "maennlich": 0.7,
+      "alter_peak": "15-40"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Kriterien für Persönlichkeitsstörung (F60) erfüllt",
+        "Mindestens 3 Symptome des impulsiven Typs (F60.30, Kriterium B), plus mindestens 2 der folgenden: (1) Störungen und Unsicherheit über Selbstbild, Ziele und innere Präferenzen (einschl. sexueller); (2) Neigung, sich auf intensive, aber instabile Beziehungen einzulassen, oft mit der Folge emotionaler Krisen; (3) übermäßige Bemühungen, das Verlassenwerden zu vermeiden; (4) wiederholte Drohungen oder Handlungen, sich selbst zu schaden; (5) chronische Gefühle von Leere"
+      ],
+      "optionale_symptome": [
+        "Schwarz-Weiß-Denken (Idealisierung und Entwertung)",
+        "Identitätsdiffusion",
+        "Kurze dissoziative Episoden oder paranoide Reaktionen unter Stress",
+        "Selbstverletzungen oder Suizidversuche als Regulationsversuch",
+        "Intensive Ärger-Episoden"
+      ]
+    },
+    "differentialdiagnose": ["F60.30 Impulsiver Typ", "F31 Bipolare Störung", "F32 Depression", "F43.1 PTBS", "F44 Dissoziative Störungen"],
+    "komorbiditaeten": ["F32 Depression", "F43.1 PTBS", "F50.2 Bulimia nervosa", "F10 Substanzmissbrauch", "F41 Angststörungen"]
   },
   {
     "code": "F60.4",
     "name": "Histrionische Persönlichkeitsstörung",
-    "kategorie": "F6",
-    "seltenheit_score": 5,
+    "kategorie": "F60",
+    "seltenheit_score": 6,
     "praevalenz_allgemein_prozent": 1.5,
     "praevalenz_modifikatoren": {
-      "männlich": 0.5,
-      "weiblich": 1.7,
-      "alter_18_30": 1.5,
-      "alter_31_50": 1.2,
-      "alter_51_plus": 0.8
+      "weiblich": 1.5,
+      "maennlich": 0.7,
+      "alter_peak": "Beginn Adoleszenz, chronisch"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Übertriebener Ausdruck von Emotionen (theatralisch, dramatisch)",
-        "Ständiges Streben nach Aufmerksamkeit",
-        "Übermäßige Sorge um äußeres Erscheinungsbild"
+        "Allgemeine Kriterien für Persönlichkeitsstörung (F60) erfüllt",
+        "Mindestens 4 der folgenden Merkmale: (1) Selbstdramatisierung, Theatralik oder übertriebener Gefühlsausdruck; (2) Suggestibilität (leicht von anderen oder Umständen beeinflussbar); (3) oberflächliche und labile Affektivität; (4) ständiges Suchen nach Aufregung und Aktivitäten, in denen man im Mittelpunkt steht; (5) unangemessene verführerische Erscheinung oder Verhalten; (6) übermäßige Beschäftigung mit körperlicher Erscheinung"
       ],
       "optionale_symptome": [
-        "Beeinflussbarkeit durch andere",
-        "Suggestibilität, leichte Ablenkbarkeit",
-        "Unangemessene sexuelle Verführungssignale"
+        "Egozentrismus und Selbstbezogenheit",
+        "Dauerndes Begehren nach Wertschätzung",
+        "Fehlende Rücksicht auf andere",
+        "Gefühle werden leicht verletzt",
+        "Hysterische oder psychoinfantile Züge"
       ]
     },
-    "differentialdiagnose": "Borderline-PS (F60.3, Instabilität prominenter), narzistische PS, Manie (F30, episodisch).",
-    "komorbiditaeten": [
-      "F32",
-      "F45",
-      "F60.3"
-    ]
+    "differentialdiagnose": ["F60.31 Borderline-PS", "F60.8 Narzistische PS", "F32 Depression"],
+    "komorbiditaeten": ["F32 Depression", "F41 Angststörungen", "F45 Somatoforme Störungen"]
   },
   {
     "code": "F60.5",
-    "name": "Anankastische (Zwanghafte) Persönlichkeitsstörung",
-    "kategorie": "F6",
+    "name": "Anankastische (zwanghafte) Persönlichkeitsstörung",
+    "kategorie": "F60",
     "seltenheit_score": 5,
-    "praevalenz_allgemein_prozent": 2,
+    "praevalenz_allgemein_prozent": 2.5,
     "praevalenz_modifikatoren": {
-      "männlich": 1.3,
       "weiblich": 0.8,
-      "alter_18_30": 1,
-      "alter_31_50": 1.5,
-      "alter_51_plus": 1
+      "maennlich": 1.3,
+      "alter_peak": "Beginn Adoleszenz, chronisch"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Exzessiver Perfektionismus, der die Aufgabenerledigung behindert",
-        "Übermäßige Ordnungsliebe und Regelorientierung",
-        "Inflexibilität und Starrheit"
+        "Allgemeine Kriterien für Persönlichkeitsstörung (F60) erfüllt",
+        "Mindestens 4 der folgenden Merkmale: (1) übermäßiges Zweifeln und Vorsicht; (2) Beschäftigung mit Details, Regeln, Listen, Reihenfolge, Organisation oder Zeitplänen; (3) Perfektionismus, der die Aufgabenbewältigung beeinträchtigt; (4) übermäßige Gewissenhaftigkeit und Skrupel; (5) zu große Sorge um Leistung auf Kosten von Vergnügen und Beziehungen; (6) Pedanterie und übermäßiges Haftenbleiben an sozialen Konventionen; (7) Starrheit und Sturheit; (8) unvernünftiges Bestehen, dass andere sich genau seinem Weg unterwerfen"
       ],
       "optionale_symptome": [
-        "Übermäßige Gewissenhaftigkeit bis zur Rigidität",
-        "Schwierigkeiten, Aufgaben zu delegieren",
-        "Geiz und Sparsamkeit"
+        "Kompulsive, obsessive, obsessiv-kompulsive Persönlichkeitszüge",
+        "Aufdringliche Gedanken oder Impulse, die nicht das Ausmaß einer Zwangsstörung erreichen",
+        "Tendenz zu Geldhamsterei und Geiz"
       ]
     },
-    "differentialdiagnose": "Zwangsstörung (F42, Ego-dystone Zwänge), Autismus-Spektrum (F84), schizotype Störung.",
-    "komorbiditaeten": [
-      "F42",
-      "F32"
-    ]
+    "differentialdiagnose": ["F42 Zwangsstörung (OCD)", "F60.0 Paranoide PS", "F32 Depression"],
+    "komorbiditaeten": ["F42 Zwangsstörung", "F32 Depression", "F41.1 GAD"]
   },
   {
     "code": "F60.6",
-    "name": "Ängstliche (Vermeidende) Persönlichkeitsstörung",
-    "kategorie": "F6",
-    "seltenheit_score": 4,
+    "name": "Ängstliche (vermeidende) Persönlichkeitsstörung",
+    "kategorie": "F60",
+    "seltenheit_score": 5,
     "praevalenz_allgemein_prozent": 2.5,
     "praevalenz_modifikatoren": {
-      "männlich": 0.8,
-      "weiblich": 1.3,
-      "alter_18_30": 1.3,
-      "alter_31_50": 1.2,
-      "alter_51_plus": 0.8
+      "weiblich": 1.1,
+      "maennlich": 0.9,
+      "alter_peak": "Beginn Adoleszenz, chronisch"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Anhaltende Gefühle von Anspannung und Besorgtheit",
-        "Überzeugung, sozial ungeschickt und unattraktiv zu sein",
-        "Übermäßige Sorge vor Kritik, Missbilligung oder Ablehnung"
+        "Allgemeine Kriterien für Persönlichkeitsstörung (F60) erfüllt",
+        "Mindestens 4 der folgenden Merkmale: (1) anhaltende und umfassende Gefühle von Anspannung und Befürchtung; (2) Überzeugung, sozial ungeschickt, persönlich unattraktiv oder anderen gegenüber minderwertig zu sein; (3) übermäßige Beschäftigung damit, in sozialen Situationen kritisiert oder abgelehnt zu werden; (4) Unwilligkeit, sich mit Menschen einzulassen, wenn nicht sicher, gemocht zu werden; (5) Einschränkungen des Lebensstils aus dem Bedürfnis nach körperlicher Sicherheit heraus; (6) Vermeidung sozialer oder beruflicher Aktivitäten mit bedeutsamen zwischenmenschlichen Kontakten"
       ],
       "optionale_symptome": [
-        "Vermeidung sozialer und beruflicher Aktivitäten",
-        "Eingeschränkte Lebensweise aufgrund von Sicherheitsbedürfnis",
-        "Wunsch nach Zuneigung, aber Angst davor"
+        "Ständiges Sehnen nach Zuneigung und Akzeptanz",
+        "Hypersensibilität gegenüber Ablehnung und Kritik",
+        "Eingeschränkte persönliche Bindungen",
+        "Vermeidung von Aktivitäten durch habituelle Übertreibung der Risiken"
       ]
     },
-    "differentialdiagnose": "Soziale Phobie (F40.1, situationsgebunden, keine PS-Kriterien), schizoide PS (F60.1, kein Wunsch nach Nähe), abhängige PS (F60.7).",
-    "komorbiditaeten": [
-      "F40.1",
-      "F32",
-      "F41.1"
-    ]
+    "differentialdiagnose": ["F40.1 Soziale Phobie", "F60.7 Abhängige PS", "F60.1 Schizoide PS", "F41.1 GAD"],
+    "komorbiditaeten": ["F40.1 Soziale Phobie", "F32 Depression", "F41.1 GAD", "F60.7 Abhängige PS"]
   },
   {
     "code": "F60.7",
     "name": "Abhängige Persönlichkeitsstörung",
-    "kategorie": "F6",
-    "seltenheit_score": 5,
+    "kategorie": "F60",
+    "seltenheit_score": 6,
     "praevalenz_allgemein_prozent": 1.5,
     "praevalenz_modifikatoren": {
-      "männlich": 0.6,
-      "weiblich": 1.6,
-      "alter_18_30": 1.2,
-      "alter_31_50": 1.3,
-      "alter_51_plus": 0.9
+      "weiblich": 1.4,
+      "maennlich": 0.8,
+      "alter_peak": "Beginn Adoleszenz, chronisch"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Tiefe Angst vor Verlassenwerden",
-        "Unfähigkeit, wichtige Entscheidungen ohne Ratsuche zu treffen",
-        "Unterordnung eigener Bedürfnisse unter die der Bezugsperson"
+        "Allgemeine Kriterien für Persönlichkeitsstörung (F60) erfüllt",
+        "Mindestens 4 der folgenden Merkmale: (1) Ermutigung oder Erlaubnis, dass andere die meisten wichtigen Lebensentscheidungen treffen; (2) Unterordnung eigener Bedürfnisse unter die derjenigen, von denen man abhängig ist; (3) Unwilligkeit, vernünftige Forderungen an Bezugspersonen zu stellen; (4) Unbehagen oder Hilflosigkeit allein, aus übertriebener Angst, für sich nicht sorgen zu können; (5) anhaltende Beschäftigung mit der Angst, verlassen zu werden; (6) begrenzte Fähigkeit, alltägliche Entscheidungen ohne übermäßigen Rat zu treffen"
       ],
       "optionale_symptome": [
-        "Schwierigkeiten, Projekte allein zu beginnen",
-        "Toleration von Misshandlung um Beziehung aufrechtzuerhalten",
-        "Unmittelbare neue Beziehungssuche nach Trennung"
+        "Asthene, inadäquate, passive oder selbstschädigende Züge",
+        "Passive Compliance mit Wünschen anderer",
+        "Angst vor Verlassenwerden als dominantes Motiv"
       ]
     },
-    "differentialdiagnose": "Ängstliche PS (F60.6, soziale Angst im Vordergrund), Borderline-PS (F60.3, Intensität), depressive Störung.",
-    "komorbiditaeten": [
-      "F32",
-      "F40.1",
-      "F60.4"
-    ]
+    "differentialdiagnose": ["F60.6 Ängstliche PS", "F60.31 Borderline-PS", "F32 Depression", "F41.1 GAD"],
+    "komorbiditaeten": ["F32 Depression", "F41 Angststörungen", "F60.6 Ängstliche PS", "F45 Somatoforme Störungen"]
+  },
+  {
+    "code": "F60.8",
+    "name": "Sonstige spezifische Persönlichkeitsstörungen (inkl. Narzisstische PS)",
+    "kategorie": "F60",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 1.5,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.8,
+      "maennlich": 1.3,
+      "alter_peak": "Beginn Adoleszenz, chronisch"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Kriterien für Persönlichkeitsstörung (F60) erfüllt",
+        "Kein anderer F60 Code ist zutreffend, aber eine klinisch bedeutsame Persönlichkeitsstörung liegt vor"
+      ],
+      "optionale_symptome": [
+        "Narzisstische PS: Grandiosität, Empathiemangel, Bedürfnis nach Bewunderung, Ausnutzen anderer",
+        "Exzentrische PS: bizarre Gedanken, magisches Denken, seltenes Verhalten",
+        "Passive-aggressive PS: indirekte Aggression, Sturheit, Widerwillen",
+        "Unreife PS: emotionale Unreife, übermäßige Abhängigkeit",
+        "Psychoneurotische PS: Mischbilder mehrerer PS-Züge"
+      ]
+    },
+    "differentialdiagnose": ["andere F60 Persönlichkeitsstörungen", "F21 Schizotype Störung", "F31 Bipolare Störung (Narzisstisch)"],
+    "komorbiditaeten": ["F32 Depression", "F41 Angststörungen", "andere F60 PS"]
+  },
+  {
+    "code": "F61",
+    "name": "Kombinierte und andere Persönlichkeitsstörungen",
+    "kategorie": "F61",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 2.0,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.0,
+      "maennlich": 1.0,
+      "alter_peak": "Beginn Adoleszenz, chronisch"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Kriterien für Persönlichkeitsstörung (F60) erfüllt",
+        "Merkmale mehrerer F60-Störungen vorhanden, aber keine dominiert als spezifisches Muster"
+      ],
+      "optionale_symptome": [
+        "F61.1 Gemischte Persönlichkeitsstörungen (Merkmale mehrerer F60)",
+        "Troublesome Persönlichkeitsveränderungen sekundär zu affektiven oder Angststörungen",
+        "Nicht klassifizierbar unter F60 oder F62"
+      ]
+    },
+    "differentialdiagnose": ["spezifische F60 Persönlichkeitsstörungen", "F62 Andauernde Persönlichkeitsänderung"],
+    "komorbiditaeten": ["F32 Depression", "F41 Angststörungen"]
+  },
+  {
+    "code": "F62.0",
+    "name": "Andauernde Persönlichkeitsänderung nach Extrembelastung",
+    "kategorie": "F62",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.5,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.2,
+      "maennlich": 1.0,
+      "alter_peak": "nach Trauma, jedes Alter"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Nachweis einer eindeutigen und beständigen Veränderung des Wahrnehmungs-, Beziehungs- und Denkmusters nach Exposition gegenüber extremem Stress (z.B. KZ-Erfahrungen, Folter, Katastrophen, lebensbedrohliche Situationen)",
+        "Mindestens 2 der folgenden Merkmale: (1) permanente feindliche oder misstrauische Einstellung gegenüber der Welt; (2) sozialer Rückzug (vermeidet Kontakte außer engen Angehörigen); (3) konstantem Gefühl von Leere oder Hoffnungslosigkeit; (4) andauerndes Gefühl 'auf der Hut zu sein', innere Gespanntheit; (5) permanentes Entfremdungsgefühl",
+        "Veränderung verursacht deutliche Beeinträchtigung der persönlichen Funktionsfähigkeit",
+        "Keine frühere Persönlichkeitsstörung oder Persönlichkeitsveränderung in Kindheit/Adoleszenz",
+        "Persönlichkeitsveränderung seit mindestens 2 Jahren vorhanden"
+      ],
+      "optionale_symptome": [
+        "PTBS (F43.1) kann dieser Störung vorausgehen",
+        "Tendenz zu übermäßigem Alkohol- oder Drogenkonsum",
+        "Assoziation mit emotionaler Taubheit",
+        "Übergang von PTBS zur andauernden PS-Änderung bei Chronifizierung"
+      ]
+    },
+    "differentialdiagnose": ["F43.1 PTBS", "F60 Spezifische PS", "F32 Depression", "F62.1 PS-Änderung nach psych. Erkrankung"],
+    "komorbiditaeten": ["F43.1 PTBS", "F32 Depression", "F10 Alkohol-/Substanzmissbrauch", "F41 Angststörungen"]
+  },
+  {
+    "code": "F62.1",
+    "name": "Andauernde Persönlichkeitsänderung nach psychischer Krankheit",
+    "kategorie": "F62",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.3,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.0,
+      "maennlich": 1.0,
+      "alter_peak": "nach schwerer psych. Erkrankung"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Nachweis einer eindeutigen, andauernden Veränderung des Persönlichkeitsmusters nach Erleiden einer schweren psychischen Erkrankung",
+        "Mindestens 2 der folgenden Merkmale: (1) übermäßige Abhängigkeit von anderen und fordernde Einstellung; (2) sozialer Rückzug oder Isolation durch Überzeugung, 'verändert' oder 'stigmatisiert' zu sein; (3) Passivität, verminderte Interessen und Engagement; (4) anhaltende Beschwerden über Kranksein, hypochondrische Klagen; (5) dysphorische oder labile Stimmung ohne aktuelle psychische Störung; (6) langanhaltende Probleme in sozialer und beruflicher Funktion",
+        "Nicht erklärbar durch frühere PS oder Residualsymptome",
+        "Mindestens 2 Jahre vorhanden"
+      ],
+      "optionale_symptome": [
+        "Häufig nach schwerer Depression, Schizophrenie oder anderen psychischen Erkrankungen",
+        "Überzeugung, durch die Erkrankung 'gezeichnet' oder verändert zu sein",
+        "Soziale Isolation aus Scham oder Stigmatisierungsangst"
+      ]
+    },
+    "differentialdiagnose": ["F43.1 PTBS", "F60 Spezifische PS", "F32 Depression", "F20 Schizophrenie-Residuum"],
+    "komorbiditaeten": ["F32 Depression", "F41 Angststörungen", "F20 Schizophrenie"]
   },
   {
     "code": "F63.0",
-    "name": "Pathologisches Spielen",
-    "kategorie": "F6",
+    "name": "Pathologisches Glücksspielen (Spielsucht)",
+    "kategorie": "F63",
     "seltenheit_score": 6,
-    "praevalenz_allgemein_prozent": 1,
+    "praevalenz_allgemein_prozent": 1.0,
     "praevalenz_modifikatoren": {
-      "männlich": 1.8,
-      "weiblich": 0.4,
-      "alter_18_30": 1.5,
-      "alter_31_50": 1.5,
-      "alter_51_plus": 0.8
+      "weiblich": 0.5,
+      "maennlich": 1.7,
+      "alter_peak": "20-50"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Häufige Episoden des Glücksspiels, die das Leben dominieren",
-        "Fortgesetztes Spielen trotz persönlicher und sozialer Schäden",
-        "Kontrollverlust und Toleranzentwicklung"
+        "Wiederholtes Glücksspielen, das trotz sozialer Folgeerscheinungen (wie Verarmung, Beeinträchtigung der Familienverhältnisse oder persönlichen Verhältnisses) persistiert",
+        "Anhaltende und wiederkehrende unangepasste Glücksspielhandlungen"
       ],
       "optionale_symptome": [
-        "Schulden und finanzieller Ruin",
-        "Lügen gegenüber Familie",
-        "Spielen um Verluste auszugleichen (Chasing)"
+        "Gedankliche Eingenommenheit durch Glücksspiel",
+        "Notwendigkeit, mit immer höheren Einsätzen zu spielen",
+        "Misslingen von Kontrollversuchen",
+        "Spielen zur Bewältigung von Dysphorie",
+        "'Chasing' – Versuche, Verluste wettzumachen",
+        "Lügen um das Spielverhalten zu verbergen"
       ]
     },
-    "differentialdiagnose": "Manische Episode (F30, episodisch, anderes Verhalten), antisoziale PS (F60.2, kein Glücksspiel im Fokus).",
-    "komorbiditaeten": [
-      "F32",
-      "F10",
-      "F41"
-    ]
+    "differentialdiagnose": ["F10 Alkohol-/Substanzstörungen", "F60.2 Dissoziale PS", "Manische Episode (F30/F31)"],
+    "komorbiditaeten": ["F32 Depression", "F10 Alkohol-/Substanzmissbrauch", "F60.2 Dissoziale PS", "F41 Angststörungen"]
+  },
+  {
+    "code": "F63.1",
+    "name": "Pathologische Brandstiftung (Pyromanie)",
+    "kategorie": "F63",
+    "seltenheit_score": 9,
+    "praevalenz_allgemein_prozent": 0.1,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.3,
+      "maennlich": 1.8,
+      "alter_peak": "Jugend-40"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Mehrfache Brandstiftungen oder Brandstiftungsversuche ohne offensichtliches Motiv",
+        "Anhaltende Beschäftigung mit Feuer und feuerassoziiertem Material",
+        "Ansteigendes inneres Spannungsgefühl vor dem Akt",
+        "Intensive Erregung oder Befriedigung unmittelbar nach der Brandstiftung oder beim Beobachten der Folgen",
+        "Zwei oder mehr Akte der Brandstiftung"
+      ],
+      "optionale_symptome": [
+        "Erleichterung beim Anblick von Feuer",
+        "Faszinierendes Interesse an Feuerwehr, Brandschutz",
+        "Nicht durch dissoziale PS, Intoxikation, organische PS oder Schizophrenie motiviert"
+      ]
+    },
+    "differentialdiagnose": ["F60.2 Dissoziale PS", "F91 Störung des Sozialverhaltens", "F20 Schizophrenie", "organische psychische Störungen"],
+    "komorbiditaeten": ["F10 Substanzmissbrauch", "F60.2 Dissoziale PS", "F32 Depression"]
+  },
+  {
+    "code": "F63.2",
+    "name": "Pathologisches Stehlen (Kleptomanie)",
+    "kategorie": "F63",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.3,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.5,
+      "maennlich": 0.7,
+      "alter_peak": "15-45"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Wiederholtes Versagen, Impulse zum Stehlen von Gegenständen zu widerstehen, die weder für den persönlichen Gebrauch noch wegen ihres Wertes benötigt werden",
+        "Ansteigendes Gefühl von Spannung vor dem Stehlen",
+        "Gefühl von Befriedigung, Lust oder Erleichterung beim Begehen des Diebstahls",
+        "Stehlen nicht durch Rache, Wut oder Reaktion auf Wahn/Halluzinationen motiviert"
+      ],
+      "optionale_symptome": [
+        "Gestohlene Gegenstände werden weggegeben, heimlich zurückgelegt oder weggeworfen",
+        "Schuldgefühle und depressive Symptome nach dem Stehlen",
+        "Nicht durch Mangel erklärt"
+      ]
+    },
+    "differentialdiagnose": ["F60.2 Dissoziale PS", "F32 Depression mit Impulshandlungen", "Manie (F30/F31)", "Simulation"],
+    "komorbiditaeten": ["F32 Depression", "F41 Angststörungen", "F50 Essstörungen"]
+  },
+  {
+    "code": "F64.0",
+    "name": "Transsexualismus",
+    "kategorie": "F64",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.5,
+      "maennlich": 1.0,
+      "alter_peak": "15-35"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Wunsch, als Angehöriger des anderen Geschlechts zu leben und anerkannt zu werden, gewöhnlich verbunden mit dem Wunsch, Körper durch Operation und hormonelle Behandlung dem bevorzugten Geschlecht anzunähern",
+        "Transsexuelle Identität seit mindestens 2 Jahren beständig vorhanden",
+        "Störung ist kein Symptom einer anderen psychischen Erkrankung (z.B. Schizophrenie) und nicht mit Chromosomenabnormität assoziiert"
+      ],
+      "optionale_symptome": [
+        "Intensiver Leidensdruck durch das biologische Geschlecht",
+        "Wunsch nach gegengeschlechtlichen Hormonen und chirurgischer Anpassung",
+        "Leben in der Rolle des anderen Geschlechts"
+      ]
+    },
+    "differentialdiagnose": ["F64.1 Transvestitismus unter Beibehaltung beider Geschlechtsrollen", "F65.1 Fetischistischer Transvestitismus", "F20 Schizophrenie"],
+    "komorbiditaeten": ["F32 Depression", "F41 Angststörungen"]
+  },
+  {
+    "code": "F68.1",
+    "name": "Artifizielle Störung (Münchhausen-Syndrom, Pathomimie)",
+    "kategorie": "F68",
+    "seltenheit_score": 9,
+    "praevalenz_allgemein_prozent": 0.1,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.2,
+      "maennlich": 1.0,
+      "alter_peak": "20-45"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Anhaltende Muster der absichtlichen Produktion oder Vortäuschung von Symptomen und/oder Selbstverletzungen zur Produktion von Symptomen",
+        "Kein Nachweis eines externen Motivs (wie finanzielle Entschädigung, Flucht aus Gefahr, mehr medizinische Fürsorge); wenn externer Grund nachweisbar → Simulation (Z76.5)",
+        "Kein bestätigter körperlicher oder psychischer Befund, der die Symptome erklärt"
+      ],
+      "optionale_symptome": [
+        "Hospital Hopper Syndrom (wandernder Patient)",
+        "Münchhausen-Syndrom (dramatische Krankheitsgeschichten)",
+        "Häufig ausgeprägte Persönlichkeitsstörungen und Beziehungsstörungen",
+        "Selbstverletzungen zur Symptomproduktion"
+      ]
+    },
+    "differentialdiagnose": ["Z76.5 Simulation (Malingering)", "F45 Somatoforme Störungen", "F60 Persönlichkeitsstörungen", "körperliche Erkrankungen"],
+    "komorbiditaeten": ["F60 Persönlichkeitsstörungen", "F32 Depression", "F41 Angststörungen"]
   }
 ]
