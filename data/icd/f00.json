@@ -1,3 +1,4 @@
+```json
 [
   {
     "code": "F00",
@@ -5,22 +6,166 @@
     "kategorie": "F0",
     "seltenheit_score": 4,
     "praevalenz_allgemein_prozent": 1.5,
-    "praevalenz_modifikatoren": { "männlich": 0.7, "weiblich": 1.3, "alter_18_30": 0.0, "alter_31_50": 0.01, "alter_51_plus": 8.0 },
+    "praevalenz_modifikatoren": {
+      "männlich": 0.7,
+      "weiblich": 1.3,
+      "alter_18_30": 0.0,
+      "alter_31_50": 0.01,
+      "alter_51_plus": 8.0
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Abnahme des Gedächtnisses, insbesondere für neue Informationen",
-        "Abnahme anderer kognitiver Fähigkeiten (Urteilskraft, Denkvermögen)",
-        "Fehlen einer Bewusstseinstrübung"
+        "Fortschreitende Verschlechterung des Gedächtnisses",
+        "Beeinträchtigung anderer kognitiver Funktionen wie Denken, Orientierung, Auffassung, Sprache oder Urteilsvermögen",
+        "Klares Bewusstsein ohne ausgeprägte Bewusstseinstrübung",
+        "Alltagsfunktionen zunehmend eingeschränkt"
       ],
       "optionale_symptome": [
-        "Aphasie (Sprachstörungen)",
-        "Apraxie (Störung von Handlungsabläufen)",
-        "Agnosie (Störung des Erkennens)",
-        "Affektveränderungen (Apathie, Reizbarkeit)"
+        "Affektveränderungen",
+        "Reizbarkeit",
+        "Apathie",
+        "Sozialer Rückzug",
+        "Verhaltensauffälligkeiten"
       ]
     },
-    "differentialdiagnose": "Vaskuläre Demenz (schrittweiser Verlauf, Herdsymptomatik), Delir (akuter Beginn, Bewusstseinstrübung), depressive Pseudodemenz (ausgeprägte Klagsamkeit, Antriebsminderung).",
-    "komorbiditaeten": ["F32 (Depressive Episode)", "F05 (Delir)"]
+    "differentialdiagnose": "Vaskuläre Demenz (F01), Delir (F05), depressive Pseudodemenz, frontotemporale Demenz.",
+    "komorbiditaeten": [
+      "F32 (Depressive Episode)",
+      "F05 (Delir)",
+      "G30 (Alzheimer-Krankheit)"
+    ]
+  },
+  {
+    "code": "F00.0",
+    "name": "Demenz bei Alzheimer-Krankheit mit frühem Beginn",
+    "kategorie": "F0",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.2,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.9,
+      "weiblich": 1.1,
+      "alter_18_30": 0.0,
+      "alter_31_50": 0.2,
+      "alter_51_plus": 1.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Beginn meist vor dem 65. Lebensjahr",
+        "Rasche Verschlechterung der kognitiven Fähigkeiten",
+        "Gedächtnisstörung",
+        "Beeinträchtigung von Sprache, Planung und Orientierung"
+      ],
+      "optionale_symptome": [
+        "Aphasie",
+        "Apraxie",
+        "Agnosie",
+        "Verhaltensänderungen"
+      ]
+    },
+    "differentialdiagnose": "Frontotemporale Demenz, vaskuläre Demenz, depressive Störung.",
+    "komorbiditaeten": [
+      "F32",
+      "F02",
+      "G30.0"
+    ]
+  },
+  {
+    "code": "F00.1",
+    "name": "Demenz bei Alzheimer-Krankheit mit spätem Beginn",
+    "kategorie": "F0",
+    "seltenheit_score": 3,
+    "praevalenz_allgemein_prozent": 1.2,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.6,
+      "weiblich": 1.4,
+      "alter_18_30": 0.0,
+      "alter_31_50": 0.01,
+      "alter_51_plus": 10.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Beginn nach dem 65. Lebensjahr",
+        "Schleichender Beginn",
+        "Fortschreitender Gedächtnisverlust",
+        "Beeinträchtigung kognitiver Leistungen"
+      ],
+      "optionale_symptome": [
+        "Persönlichkeitsveränderung",
+        "Affektlabilität",
+        "Desorientierung",
+        "Wahnideen"
+      ]
+    },
+    "differentialdiagnose": "Normale Altersvergesslichkeit, vaskuläre Demenz, Delir.",
+    "komorbiditaeten": [
+      "F32",
+      "F05",
+      "G30.1"
+    ]
+  },
+  {
+    "code": "F00.2",
+    "name": "Demenz bei Alzheimer-Krankheit, atypische oder gemischte Form",
+    "kategorie": "F0",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.3,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.0,
+      "alter_31_50": 0.05,
+      "alter_51_plus": 2.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Demenzsyndrom mit atypischen Merkmalen",
+        "Kombination degenerativer und vaskulärer Merkmale möglich",
+        "Kognitive Defizite",
+        "Fortschreitender Verlauf"
+      ],
+      "optionale_symptome": [
+        "Fokale neurologische Symptome",
+        "Frühe Verhaltensauffälligkeiten",
+        "Psychotische Symptome"
+      ]
+    },
+    "differentialdiagnose": "Lewy-Body-Demenz, vaskuläre Demenz, frontotemporale Demenz.",
+    "komorbiditaeten": [
+      "F01",
+      "F02",
+      "G30.8"
+    ]
+  },
+  {
+    "code": "F00.8",
+    "name": "Demenz bei Alzheimer-Krankheit, nicht näher bezeichnet",
+    "kategorie": "F0",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.4,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.8,
+      "weiblich": 1.2,
+      "alter_18_30": 0.0,
+      "alter_31_50": 0.01,
+      "alter_51_plus": 4.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Demenzsyndrom mit Alzheimer-typischen Merkmalen",
+        "Gedächtnisstörung",
+        "Beeinträchtigung höherer kortikaler Funktionen"
+      ],
+      "optionale_symptome": [
+        "Desorientierung",
+        "Sozialer Rückzug",
+        "Apathie"
+      ]
+    },
+    "differentialdiagnose": "Andere organische Demenzen, depressive Pseudodemenz.",
+    "komorbiditaeten": [
+      "F32",
+      "F05"
+    ]
   },
   {
     "code": "F01",
@@ -28,60 +173,1159 @@
     "kategorie": "F0",
     "seltenheit_score": 5,
     "praevalenz_allgemein_prozent": 0.5,
-    "praevalenz_modifikatoren": { "männlich": 1.2, "weiblich": 0.8, "alter_18_30": 0.0, "alter_31_50": 0.02, "alter_51_plus": 6.0 },
+    "praevalenz_modifikatoren": {
+      "männlich": 1.2,
+      "weiblich": 0.8,
+      "alter_18_30": 0.0,
+      "alter_31_50": 0.02,
+      "alter_51_plus": 6.0
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Abnahme von Gedächtnis und intellektuellen Fähigkeiten",
-        "Ungleiche Verteilung der kognitiven Ausfälle (fleckförmig)",
-        "Neurologische Herdsymptome (Spastik, Reflexasymmetrien)"
+        "Gedächtnis- und Denkstörungen",
+        "Hinweise auf zerebrovaskuläre Erkrankung",
+        "Ungleichmäßige Verteilung kognitiver Defizite",
+        "Oft stufenweiser Verlauf"
       ],
       "optionale_symptome": [
-        "Plötzlicher Beginn und stufenhafter Verlauf",
+        "Neurologische Herdsymptome",
         "Affektinkontinenz",
-        "Kardiovaskuläre Risikofaktoren"
+        "Gangstörungen"
       ]
     },
-    "differentialdiagnose": "Alzheimer-Demenz (schleichender Beginn), Delir, strukturelle Hirnläsionen (Tumor).",
-    "komorbiditaeten": ["I10 (Essentielle Hypertonie)", "F32 (Depressive Episode)"]
+    "differentialdiagnose": "Alzheimer-Demenz, Delir, Hirntumor.",
+    "komorbiditaeten": [
+      "I10 (Hypertonie)",
+      "I63 (Hirninfarkt)",
+      "F32"
+    ]
+  },
+  {
+    "code": "F01.0",
+    "name": "Vaskuläre Demenz mit akutem Beginn",
+    "kategorie": "F0",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.1,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.3,
+      "weiblich": 0.7,
+      "alter_18_30": 0.0,
+      "alter_31_50": 0.01,
+      "alter_51_plus": 1.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Plötzlicher Beginn",
+        "Zeitlicher Zusammenhang mit Schlaganfall",
+        "Kognitive Verschlechterung"
+      ],
+      "optionale_symptome": [
+        "Neurologische Ausfälle",
+        "Emotionale Instabilität"
+      ]
+    },
+    "differentialdiagnose": "Delir, Alzheimer-Demenz.",
+    "komorbiditaeten": [
+      "I63",
+      "I69"
+    ]
+  },
+  {
+    "code": "F01.1",
+    "name": "Multiinfarkt-Demenz",
+    "kategorie": "F0",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.2,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.3,
+      "weiblich": 0.7,
+      "alter_18_30": 0.0,
+      "alter_31_50": 0.02,
+      "alter_51_plus": 2.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Mehrere zerebrale Infarkte",
+        "Schrittweise Verschlechterung",
+        "Kognitive Defizite"
+      ],
+      "optionale_symptome": [
+        "Neurologische Herdzeichen",
+        "Emotionale Labilität"
+      ]
+    },
+    "differentialdiagnose": "Alzheimer-Demenz, subkortikale vaskuläre Demenz.",
+    "komorbiditaeten": [
+      "I63",
+      "I67"
+    ]
+  },
+  {
+    "code": "F01.2",
+    "name": "Subkortikale vaskuläre Demenz",
+    "kategorie": "F0",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.1,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.2,
+      "weiblich": 0.8,
+      "alter_18_30": 0.0,
+      "alter_31_50": 0.01,
+      "alter_51_plus": 1.8
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Verlangsamung des Denkens",
+        "Exekutive Dysfunktion",
+        "Subkortikale vaskuläre Läsionen"
+      ],
+      "optionale_symptome": [
+        "Gangstörungen",
+        "Affektive Symptome",
+        "Harninkontinenz"
+      ]
+    },
+    "differentialdiagnose": "Parkinson-Demenz, Alzheimer-Demenz.",
+    "komorbiditaeten": [
+      "I67.3",
+      "F32"
+    ]
+  },
+  {
+    "code": "F01.3",
+    "name": "Gemischte kortikale und subkortikale vaskuläre Demenz",
+    "kategorie": "F0",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.1,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.1,
+      "weiblich": 0.9,
+      "alter_18_30": 0.0,
+      "alter_31_50": 0.01,
+      "alter_51_plus": 1.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Kortikale und subkortikale Defizite",
+        "Vaskuläre Hirnläsionen",
+        "Demenzsyndrom"
+      ],
+      "optionale_symptome": [
+        "Gangstörung",
+        "Aphasie",
+        "Emotionale Labilität"
+      ]
+    },
+    "differentialdiagnose": "Gemischte Alzheimer-/vaskuläre Demenz.",
+    "komorbiditaeten": [
+      "I63",
+      "F32"
+    ]
+  },
+  {
+    "code": "F01.8",
+    "name": "Sonstige vaskuläre Demenz",
+    "kategorie": "F0",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.1,
+      "weiblich": 0.9,
+      "alter_18_30": 0.0,
+      "alter_31_50": 0.01,
+      "alter_51_plus": 1.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Vaskulär bedingtes Demenzsyndrom",
+        "Nicht anderweitig klassifizierbar"
+      ],
+      "optionale_symptome": [
+        "Neurologische Symptome",
+        "Kognitive Defizite"
+      ]
+    },
+    "differentialdiagnose": "Andere organische Demenzen.",
+    "komorbiditaeten": [
+      "I67"
+    ]
+  },
+  {
+    "code": "F01.9",
+    "name": "Vaskuläre Demenz, nicht näher bezeichnet",
+    "kategorie": "F0",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.1,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.2,
+      "weiblich": 0.8,
+      "alter_18_30": 0.0,
+      "alter_31_50": 0.01,
+      "alter_51_plus": 1.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Demenzsyndrom vaskulärer Ursache",
+        "Kognitive Verschlechterung"
+      ],
+      "optionale_symptome": [
+        "Neurologische Herdzeichen",
+        "Affektive Symptome"
+      ]
+    },
+    "differentialdiagnose": "Alzheimer-Demenz, Delir.",
+    "komorbiditaeten": [
+      "I10",
+      "F32"
+    ]
+  },
+  {
+    "code": "F02",
+    "name": "Demenz bei anderenorts klassifizierten Krankheiten",
+    "kategorie": "F0",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.3,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.01,
+      "alter_31_50": 0.1,
+      "alter_51_plus": 2.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Demenzsyndrom",
+        "Nachweis einer anderen Grunderkrankung als Ursache"
+      ],
+      "optionale_symptome": [
+        "Neurologische Symptome",
+        "Verhaltensauffälligkeiten"
+      ]
+    },
+    "differentialdiagnose": "Alzheimer-Demenz, vaskuläre Demenz.",
+    "komorbiditaeten": [
+      "G20",
+      "G10",
+      "B20"
+    ]
+  },
+  {
+    "code": "F02.0",
+    "name": "Demenz bei Pick-Krankheit",
+    "kategorie": "F0",
+    "seltenheit_score": 9,
+    "praevalenz_allgemein_prozent": 0.03,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.1,
+      "weiblich": 0.9,
+      "alter_18_30": 0.0,
+      "alter_31_50": 0.1,
+      "alter_51_plus": 0.3
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Frühe Persönlichkeitsveränderung",
+        "Enthemmung oder Apathie",
+        "Frontotemporale kognitive Defizite"
+      ],
+      "optionale_symptome": [
+        "Sprachstörungen",
+        "Sozial unangemessenes Verhalten"
+      ]
+    },
+    "differentialdiagnose": "Alzheimer-Demenz, bipolare Störung.",
+    "komorbiditaeten": [
+      "G31.0"
+    ]
+  },
+  {
+    "code": "F02.1",
+    "name": "Demenz bei Creutzfeldt-Jakob-Krankheit",
+    "kategorie": "F0",
+    "seltenheit_score": 10,
+    "praevalenz_allgemein_prozent": 0.001,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.0,
+      "alter_31_50": 0.01,
+      "alter_51_plus": 0.05
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Rasch progrediente Demenz",
+        "Neurologische Auffälligkeiten",
+        "Myoklonien oder Ataxie"
+      ],
+      "optionale_symptome": [
+        "Visuelle Symptome",
+        "Akinetischer Mutismus"
+      ]
+    },
+    "differentialdiagnose": "Enzephalitis, Alzheimer-Demenz.",
+    "komorbiditaeten": [
+      "A81.0"
+    ]
+  },
+  {
+    "code": "F02.2",
+    "name": "Demenz bei Huntington-Krankheit",
+    "kategorie": "F0",
+    "seltenheit_score": 9,
+    "praevalenz_allgemein_prozent": 0.01,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.0,
+      "alter_31_50": 0.05,
+      "alter_51_plus": 0.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Demenzsyndrom",
+        "Choreatische Bewegungsstörungen",
+        "Familiäre Belastung"
+      ],
+      "optionale_symptome": [
+        "Depression",
+        "Impulsivität"
+      ]
+    },
+    "differentialdiagnose": "Morbus Parkinson, Schizophrenie.",
+    "komorbiditaeten": [
+      "G10",
+      "F32"
+    ]
+  },
+  {
+    "code": "F02.3",
+    "name": "Demenz bei Parkinson-Krankheit",
+    "kategorie": "F0",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.2,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.2,
+      "weiblich": 0.8,
+      "alter_18_30": 0.0,
+      "alter_31_50": 0.01,
+      "alter_51_plus": 1.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Parkinson-Symptomatik",
+        "Demenzentwicklung",
+        "Verlangsamung des Denkens"
+      ],
+      "optionale_symptome": [
+        "Halluzinationen",
+        "Affektive Symptome"
+      ]
+    },
+    "differentialdiagnose": "Lewy-Body-Demenz, Alzheimer-Demenz.",
+    "komorbiditaeten": [
+      "G20",
+      "F32"
+    ]
+  },
+  {
+    "code": "F02.4",
+    "name": "Demenz bei HIV-Krankheit",
+    "kategorie": "F0",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.3,
+      "weiblich": 0.7,
+      "alter_18_30": 0.3,
+      "alter_31_50": 0.5,
+      "alter_51_plus": 0.2
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Kognitive Verlangsamung",
+        "Gedächtnisstörung",
+        "Nachweis einer HIV-Erkrankung"
+      ],
+      "optionale_symptome": [
+        "Motorische Auffälligkeiten",
+        "Apathie"
+      ]
+    },
+    "differentialdiagnose": "Depression bei HIV, Delir.",
+    "komorbiditaeten": [
+      "B20",
+      "F32"
+    ]
+  },
+  {
+    "code": "F02.8",
+    "name": "Demenz bei sonstigen anderenorts klassifizierten Krankheiten",
+    "kategorie": "F0",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.01,
+      "alter_31_50": 0.05,
+      "alter_51_plus": 0.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Demenzsyndrom",
+        "Nachweis einer anderen zugrunde liegenden Erkrankung"
+      ],
+      "optionale_symptome": [
+        "Neurologische Auffälligkeiten",
+        "Verhaltensänderungen"
+      ]
+    },
+    "differentialdiagnose": "Andere organische Demenzen.",
+    "komorbiditaeten": [
+      "Neurologische Erkrankungen"
+    ]
+  },
+  {
+    "code": "F03",
+    "name": "Nicht näher bezeichnete Demenz",
+    "kategorie": "F0",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.5,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.9,
+      "weiblich": 1.1,
+      "alter_18_30": 0.0,
+      "alter_31_50": 0.01,
+      "alter_51_plus": 4.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Demenzsyndrom",
+        "Gedächtnisstörung",
+        "Beeinträchtigung höherer kortikaler Funktionen"
+      ],
+      "optionale_symptome": [
+        "Desorientierung",
+        "Verhaltensauffälligkeiten"
+      ]
+    },
+    "differentialdiagnose": "Alzheimer-Demenz, Delir, Depression.",
+    "komorbiditaeten": [
+      "F32",
+      "F05"
+    ]
   },
   {
     "code": "F04",
-    "name": "Organisches amnestisches Syndrom",
+    "name": "Organisches amnestisches Syndrom, nicht durch Alkohol oder andere psychotrope Substanzen bedingt",
     "kategorie": "F0",
     "seltenheit_score": 8,
     "praevalenz_allgemein_prozent": 0.1,
-    "praevalenz_modifikatoren": { "männlich": 1.1, "weiblich": 0.9, "alter_18_30": 0.5, "alter_31_50": 1.0, "alter_51_plus": 1.5 },
+    "praevalenz_modifikatoren": {
+      "männlich": 1.1,
+      "weiblich": 0.9,
+      "alter_18_30": 0.5,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 1.5
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Beeinträchtigung des Kurzzeitgedächtnisses (Neugedächtnis)",
-        "Anterograde und retrograde Amnesie",
-        "Fehlen von Störungen des Immediatgedächtnisses oder Bewusstseins"
+        "Beeinträchtigung des Kurzzeitgedächtnisses",
+        "Anterograde Amnesie",
+        "Retrograde Amnesie",
+        "Keine ausgeprägte Bewusstseinsstörung"
       ],
-      "optionale_symptome": ["Konfabulationen", "Mangelnde Krankheitseinsicht", "Apathie oder emotionale Verflachung"]
+      "optionale_symptome": [
+        "Konfabulationen",
+        "Apathie",
+        "Eingeschränkte Krankheitseinsicht"
+      ]
     },
-    "differentialdiagnose": "Korsakow-Syndrom durch Alkohol (F10.6), Demenz (globale Einbußen), Dissoziative Amnesie (psychogen, F44.0).",
-    "komorbiditaeten": ["F07 (Organische Persönlichkeitsstörungen)"]
+    "differentialdiagnose": "Korsakow-Syndrom, Demenz, dissoziative Amnesie.",
+    "komorbiditaeten": [
+      "F07",
+      "Neurologische Erkrankungen"
+    ]
+  },
+  {
+    "code": "F05",
+    "name": "Delir, nicht durch Alkohol oder andere psychotrope Substanzen bedingt",
+    "kategorie": "F0",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 1.0,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.1,
+      "alter_31_50": 0.5,
+      "alter_51_plus": 8.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Bewusstseinstrübung",
+        "Aufmerksamkeitsstörung",
+        "Akuter Beginn und fluktuierender Verlauf",
+        "Kognitive Störungen"
+      ],
+      "optionale_symptome": [
+        "Halluzinationen",
+        "Psychomotorische Unruhe",
+        "Schlaf-Wach-Störung",
+        "Affektive Symptome"
+      ]
+    },
+    "differentialdiagnose": "Demenz, Psychose, Intoxikation.",
+    "komorbiditaeten": [
+      "F00-F03",
+      "Infektionen",
+      "Metabolische Störungen"
+    ]
+  },
+  {
+    "code": "F05.0",
+    "name": "Delir ohne Demenz",
+    "kategorie": "F0",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.5,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.1,
+      "alter_31_50": 0.3,
+      "alter_51_plus": 5.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Akutes Delir",
+        "Keine vorbestehende Demenz"
+      ],
+      "optionale_symptome": [
+        "Halluzinationen",
+        "Unruhe"
+      ]
+    },
+    "differentialdiagnose": "Akute Psychose, Demenz.",
+    "komorbiditaeten": [
+      "Infektionen",
+      "Metabolische Entgleisungen"
+    ]
+  },
+  {
+    "code": "F05.1",
+    "name": "Delir bei Demenz",
+    "kategorie": "F0",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.4,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.0,
+      "alter_31_50": 0.1,
+      "alter_51_plus": 6.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Delir",
+        "Vorliegende Demenz",
+        "Verschlechterung der Aufmerksamkeit"
+      ],
+      "optionale_symptome": [
+        "Halluzinationen",
+        "Agitation"
+      ]
+    },
+    "differentialdiagnose": "Reine Demenzprogression, Psychose.",
+    "komorbiditaeten": [
+      "F00-F03"
+    ]
+  },
+  {
+    "code": "F05.8",
+    "name": "Sonstiges Delir",
+    "kategorie": "F0",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.05,
+      "alter_31_50": 0.1,
+      "alter_51_plus": 0.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Delirante Symptomatik",
+        "Nicht anderweitig klassifizierbar"
+      ],
+      "optionale_symptome": [
+        "Kognitive Störungen",
+        "Psychomotorische Auffälligkeiten"
+      ]
+    },
+    "differentialdiagnose": "Psychose, Demenz.",
+    "komorbiditaeten": [
+      "Organische Erkrankungen"
+    ]
+  },
+  {
+    "code": "F05.9",
+    "name": "Nicht näher bezeichnetes Delir",
+    "kategorie": "F0",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.1,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.05,
+      "alter_31_50": 0.1,
+      "alter_51_plus": 1.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Akute Bewusstseins- und Aufmerksamkeitsstörung",
+        "Delirante Symptomatik"
+      ],
+      "optionale_symptome": [
+        "Halluzinationen",
+        "Desorientierung"
+      ]
+    },
+    "differentialdiagnose": "Demenz, akute Psychose.",
+    "komorbiditaeten": [
+      "F00-F03",
+      "Internistische Erkrankungen"
+    ]
+  },
+  {
+    "code": "F06",
+    "name": "Sonstige psychische Störungen aufgrund einer Schädigung oder Funktionsstörung des Gehirns oder einer körperlichen Krankheit",
+    "kategorie": "F0",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 1.2,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.5,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 2.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Nachweis einer zerebralen oder körperlichen Ursache",
+        "Zeitlicher Zusammenhang zwischen Erkrankung und psychischer Symptomatik",
+        "Psychische Symptome nicht besser durch primäre psychische Störung erklärbar"
+      ],
+      "optionale_symptome": [
+        "Kognitive Defizite",
+        "Affektive Symptome",
+        "Neurologische Auffälligkeiten"
+      ]
+    },
+    "differentialdiagnose": "Primäre psychische Erkrankungen, Delir, Demenz.",
+    "komorbiditaeten": [
+      "Neurologische Erkrankungen",
+      "Endokrine Erkrankungen",
+      "F32"
+    ]
+  },
+  {
+    "code": "F06.0",
+    "name": "Organische Halluzinose",
+    "kategorie": "F0",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.1,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.1,
+      "weiblich": 0.9,
+      "alter_18_30": 0.1,
+      "alter_31_50": 0.5,
+      "alter_51_plus": 1.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Anhaltende oder wiederkehrende Halluzinationen",
+        "Klares Bewusstsein",
+        "Nachweis organischer Ursache"
+      ],
+      "optionale_symptome": [
+        "Wahnhafte Verarbeitung",
+        "Angst",
+        "Affektive Symptome"
+      ]
+    },
+    "differentialdiagnose": "Schizophrenie, Delir, substanzinduzierte Psychose.",
+    "komorbiditaeten": [
+      "Epilepsie",
+      "F32",
+      "Neurologische Erkrankungen"
+    ]
+  },
+  {
+    "code": "F06.1",
+    "name": "Organische katatone Störung",
+    "kategorie": "F0",
+    "seltenheit_score": 9,
+    "praevalenz_allgemein_prozent": 0.03,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.2,
+      "alter_31_50": 0.3,
+      "alter_51_plus": 0.2
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Katatoner Stupor oder Erregung",
+        "Mutismus oder Negativismus",
+        "Nachweis organischer Ursache"
+      ],
+      "optionale_symptome": [
+        "Haltungsstereotypien",
+        "Echolalie",
+        "Katalepsie"
+      ]
+    },
+    "differentialdiagnose": "Katatone Schizophrenie, schwere Depression.",
+    "komorbiditaeten": [
+      "Enzephalitis",
+      "Epilepsie"
+    ]
+  },
+  {
+    "code": "F06.2",
+    "name": "Organische wahnhafte [schizophreniforme] Störung",
+    "kategorie": "F0",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.15,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.1,
+      "weiblich": 0.9,
+      "alter_18_30": 0.2,
+      "alter_31_50": 0.5,
+      "alter_51_plus": 1.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Wahnideen oder schizophreniforme Symptome",
+        "Nachweis einer organischen Ursache",
+        "Klares Bewusstsein"
+      ],
+      "optionale_symptome": [
+        "Halluzinationen",
+        "Affektive Symptome",
+        "Desorganisation"
+      ]
+    },
+    "differentialdiagnose": "Schizophrenie, Delir, substanzinduzierte Psychose.",
+    "komorbiditaeten": [
+      "Epilepsie",
+      "Hirntumoren"
+    ]
   },
   {
     "code": "F06.3",
-    "name": "Organische affektive Störungen",
+    "name": "Organische affektive Störung",
     "kategorie": "F0",
     "seltenheit_score": 4,
     "praevalenz_allgemein_prozent": 1.0,
-    "praevalenz_modifikatoren": { "männlich": 0.8, "weiblich": 1.2, "alter_18_30": 0.5, "alter_31_50": 1.0, "alter_51_plus": 2.5 },
+    "praevalenz_modifikatoren": {
+      "männlich": 0.8,
+      "weiblich": 1.2,
+      "alter_18_30": 0.5,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 2.5
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Vorliegen einer depressiven, manischen oder bipolaren Symptomatik",
-        "Nachweis einer zerebralen Krankheit oder Systemerkrankung als direkte Ursache"
+        "Depressive, manische oder bipolare Symptomatik",
+        "Nachweis einer organischen Ursache"
       ],
       "optionale_symptome": [
-        "Leichte kognitive Einbußen",
-        "Neurologische Auffälligkeiten",
-        "Atypisches klinisches Bild"
+        "Kognitive Einbußen",
+        "Neurologische Symptome",
+        "Affektlabilität"
       ]
     },
-    "differentialdiagnose": "Primäre affektive Störungen (F30-F39, keine körperliche Ursache), Anpassungsstörung (F43.2).",
-    "komorbiditaeten": ["Chronische Schmerzstörungen", "Endokrine/neurologische Grunderkrankungen"]
+    "differentialdiagnose": "Primäre affektive Störungen, Anpassungsstörung.",
+    "komorbiditaeten": [
+      "Endokrine Erkrankungen",
+      "Neurologische Erkrankungen"
+    ]
+  },
+  {
+    "code": "F06.30",
+    "name": "Organische manische Störung",
+    "kategorie": "F0",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.1,
+      "weiblich": 0.9,
+      "alter_18_30": 0.2,
+      "alter_31_50": 0.3,
+      "alter_51_plus": 0.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Gehobene oder gereizte Stimmung",
+        "Gesteigerter Antrieb",
+        "Organische Ursache"
+      ],
+      "optionale_symptome": [
+        "Größenideen",
+        "Rededrang",
+        "Schlafmangel"
+      ]
+    },
+    "differentialdiagnose": "Bipolare Störung, substanzinduzierte Manie.",
+    "komorbiditaeten": [
+      "Neurologische Erkrankungen"
+    ]
+  },
+  {
+    "code": "F06.31",
+    "name": "Organische bipolare Störung",
+    "kategorie": "F0",
+    "seltenheit_score": 9,
+    "praevalenz_allgemein_prozent": 0.03,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.1,
+      "alter_31_50": 0.2,
+      "alter_51_plus": 0.4
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Wechsel zwischen depressiven und manischen Episoden",
+        "Nachweis organischer Ursache"
+      ],
+      "optionale_symptome": [
+        "Affektive Instabilität",
+        "Kognitive Defizite"
+      ]
+    },
+    "differentialdiagnose": "Bipolare affektive Störung.",
+    "komorbiditaeten": [
+      "Neurologische Erkrankungen"
+    ]
+  },
+  {
+    "code": "F06.32",
+    "name": "Organische depressive Störung",
+    "kategorie": "F0",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.8,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.7,
+      "weiblich": 1.3,
+      "alter_18_30": 0.3,
+      "alter_31_50": 0.8,
+      "alter_51_plus": 2.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Depressive Stimmung",
+        "Antriebsminderung",
+        "Nachweis organischer Ursache"
+      ],
+      "optionale_symptome": [
+        "Schlafstörungen",
+        "Kognitive Verlangsamung",
+        "Suizidgedanken"
+      ]
+    },
+    "differentialdiagnose": "Primäre Depression, Anpassungsstörung.",
+    "komorbiditaeten": [
+      "Schlaganfall",
+      "Parkinson-Erkrankung"
+    ]
+  },
+  {
+    "code": "F06.33",
+    "name": "Organische gemischte affektive Störung",
+    "kategorie": "F0",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.04,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.1,
+      "alter_31_50": 0.2,
+      "alter_51_plus": 0.4
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Gleichzeitige depressive und manische Symptome",
+        "Nachweis organischer Ursache"
+      ],
+      "optionale_symptome": [
+        "Affektive Instabilität",
+        "Reizbarkeit"
+      ]
+    },
+    "differentialdiagnose": "Gemischte affektive Episode.",
+    "komorbiditaeten": [
+      "Neurologische Erkrankungen"
+    ]
+  },
+  {
+    "code": "F06.4",
+    "name": "Organische Angststörung",
+    "kategorie": "F0",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.7,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.8,
+      "weiblich": 1.2,
+      "alter_18_30": 0.5,
+      "alter_31_50": 0.8,
+      "alter_51_plus": 1.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Ausgeprägte Angst oder Panik",
+        "Nachweis organischer Ursache"
+      ],
+      "optionale_symptome": [
+        "Vegetative Symptome",
+        "Unruhe"
+      ]
+    },
+    "differentialdiagnose": "Generalisierte Angststörung, Panikstörung.",
+    "komorbiditaeten": [
+      "Endokrine Erkrankungen",
+      "Neurologische Erkrankungen"
+    ]
+  },
+  {
+    "code": "F06.5",
+    "name": "Organische dissoziative Störung",
+    "kategorie": "F0",
+    "seltenheit_score": 9,
+    "praevalenz_allgemein_prozent": 0.02,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.1,
+      "alter_31_50": 0.2,
+      "alter_51_plus": 0.2
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Dissoziative Symptome",
+        "Nachweis organischer Ursache"
+      ],
+      "optionale_symptome": [
+        "Amnesie",
+        "Depersonalisation"
+      ]
+    },
+    "differentialdiagnose": "Dissoziative Störungen psychogener Ursache.",
+    "komorbiditaeten": [
+      "Neurologische Erkrankungen"
+    ]
+  },
+  {
+    "code": "F06.6",
+    "name": "Organische emotional labile [asthenische] Störung",
+    "kategorie": "F0",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.4,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.3,
+      "alter_31_50": 0.5,
+      "alter_51_plus": 0.8
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Emotionale Labilität",
+        "Ermüdbarkeit",
+        "Reizbarkeit"
+      ],
+      "optionale_symptome": [
+        "Konzentrationsstörungen",
+        "Kopfschmerzen"
+      ]
+    },
+    "differentialdiagnose": "Neurasthenie, depressive Störung.",
+    "komorbiditaeten": [
+      "Schädel-Hirn-Trauma",
+      "Infektionen"
+    ]
+  },
+  {
+    "code": "F06.7",
+    "name": "Leichte kognitive Störung",
+    "kategorie": "F0",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 3.0,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.5,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 8.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Subjektive und objektive kognitive Defizite",
+        "Keine Demenz",
+        "Beeinträchtigung von Gedächtnis oder Konzentration"
+      ],
+      "optionale_symptome": [
+        "Mentale Ermüdbarkeit",
+        "Lernschwierigkeiten"
+      ]
+    },
+    "differentialdiagnose": "Demenz, Depression.",
+    "komorbiditaeten": [
+      "F32",
+      "Neurologische Erkrankungen"
+    ]
+  },
+  {
+    "code": "F06.70",
+    "name": "Leichte kognitive Störung ohne körperliche Begleiterkrankung",
+    "kategorie": "F0",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 1.0,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.3,
+      "alter_31_50": 0.5,
+      "alter_51_plus": 2.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Leichte kognitive Defizite",
+        "Keine nachweisbare körperliche Erkrankung"
+      ],
+      "optionale_symptome": [
+        "Konzentrationsprobleme",
+        "Gedächtnisstörungen"
+      ]
+    },
+    "differentialdiagnose": "Depression, Demenz.",
+    "komorbiditaeten": [
+      "F32"
+    ]
+  },
+  {
+    "code": "F06.71",
+    "name": "Leichte kognitive Störung mit körperlicher Begleiterkrankung",
+    "kategorie": "F0",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 1.5,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.4,
+      "alter_31_50": 0.8,
+      "alter_51_plus": 4.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Leichte kognitive Defizite",
+        "Vorliegen einer körperlichen Erkrankung"
+      ],
+      "optionale_symptome": [
+        "Gedächtnisprobleme",
+        "Mentale Ermüdbarkeit"
+      ]
+    },
+    "differentialdiagnose": "Demenz, Delir.",
+    "komorbiditaeten": [
+      "Internistische Erkrankungen"
+    ]
+  },
+  {
+    "code": "F06.8",
+    "name": "Sonstige näher bezeichnete psychische Störungen aufgrund einer Hirnschädigung oder körperlichen Krankheit",
+    "kategorie": "F0",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.1,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.2,
+      "alter_31_50": 0.3,
+      "alter_51_plus": 0.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische Symptome organischer Ursache",
+        "Nicht anderweitig klassifizierbar"
+      ],
+      "optionale_symptome": [
+        "Kognitive Defizite",
+        "Affektive Symptome"
+      ]
+    },
+    "differentialdiagnose": "Primäre psychische Erkrankungen.",
+    "komorbiditaeten": [
+      "Neurologische Erkrankungen"
+    ]
+  },
+  {
+    "code": "F06.9",
+    "name": "Nicht näher bezeichnete psychische Störung aufgrund einer Hirnschädigung oder körperlichen Krankheit",
+    "kategorie": "F0",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.2,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.2,
+      "alter_31_50": 0.4,
+      "alter_51_plus": 0.8
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische Symptome organischer Ursache"
+      ],
+      "optionale_symptome": [
+        "Kognitive Auffälligkeiten",
+        "Affektive Symptome"
+      ]
+    },
+    "differentialdiagnose": "Primäre psychische Erkrankungen.",
+    "komorbiditaeten": [
+      "Internistische Erkrankungen"
+    ]
+  },
+  {
+    "code": "F07",
+    "name": "Persönlichkeits- und Verhaltensstörungen aufgrund einer Krankheit, Schädigung oder Funktionsstörung des Gehirns",
+    "kategorie": "F0",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.4,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.4,
+      "weiblich": 0.6,
+      "alter_18_30": 1.0,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.8
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Anhaltende Persönlichkeits- oder Verhaltensänderung",
+        "Nachweis einer Hirnschädigung oder Erkrankung"
+      ],
+      "optionale_symptome": [
+        "Affektlabilität",
+        "Impulsivität",
+        "Soziale Enthemmung"
+      ]
+    },
+    "differentialdiagnose": "Persönlichkeitsstörungen, Schizophrenie.",
+    "komorbiditaeten": [
+      "F06.3",
+      "Neurologische Erkrankungen"
+    ]
   },
   {
     "code": "F07.0",
@@ -89,20 +1333,179 @@
     "kategorie": "F0",
     "seltenheit_score": 7,
     "praevalenz_allgemein_prozent": 0.2,
-    "praevalenz_modifikatoren": { "männlich": 1.6, "weiblich": 0.4, "alter_18_30": 1.5, "alter_31_50": 1.0, "alter_51_plus": 0.8 },
+    "praevalenz_modifikatoren": {
+      "männlich": 1.6,
+      "weiblich": 0.4,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.8
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Anamnese einer Hirnschädigung (SHT, Enzephalitis)",
-        "Deutliche Veränderung der prämorbiden Persönlichkeit",
-        "Affektlabilität, Enthemmung oder fehlende Zielgerichtetheit"
+        "Veränderung der prämorbiden Persönlichkeit",
+        "Affektive Instabilität oder Enthemmung",
+        "Nachweis einer Hirnschädigung"
       ],
       "optionale_symptome": [
-        "Kognitive Störungen (eingeschränkte Planung)",
-        "Veränderung des Sexualverhaltens",
-        "Paranoide Ideen"
+        "Paranoide Ideen",
+        "Impulsivität",
+        "Apathie"
       ]
     },
-    "differentialdiagnose": "Spezifische Persönlichkeitsstörungen (F60, Beginn in Kindheit), Schizophrenie (F20), Demenz (F00-F03).",
-    "komorbiditaeten": ["F10.2 (Alkoholabhängigkeit)", "F06.3 (Organische affektive Störung)"]
+    "differentialdiagnose": "Dissoziale Persönlichkeitsstörung, Schizophrenie.",
+    "komorbiditaeten": [
+      "F10.2",
+      "F06.3"
+    ]
+  },
+  {
+    "code": "F07.1",
+    "name": "Postenzephalitisches Syndrom",
+    "kategorie": "F0",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.5,
+      "alter_31_50": 0.3,
+      "alter_51_plus": 0.2
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Persönlichkeits- oder Verhaltensänderungen nach Enzephalitis"
+      ],
+      "optionale_symptome": [
+        "Kognitive Defizite",
+        "Affektive Instabilität",
+        "Impulsivität"
+      ]
+    },
+    "differentialdiagnose": "Posttraumatische Störung, organische Persönlichkeitsstörung.",
+    "komorbiditaeten": [
+      "Neurologische Folgeschäden"
+    ]
+  },
+  {
+    "code": "F07.2",
+    "name": "Postkommotionelles Syndrom",
+    "kategorie": "F0",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.6,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.3,
+      "weiblich": 0.7,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Kopfschmerzen nach Schädel-Hirn-Trauma",
+        "Schwindel oder Müdigkeit",
+        "Konzentrations- oder Gedächtnisstörungen"
+      ],
+      "optionale_symptome": [
+        "Reizbarkeit",
+        "Schlafstörungen",
+        "Affektive Symptome"
+      ]
+    },
+    "differentialdiagnose": "PTBS, Depression, Somatisierungsstörung.",
+    "komorbiditaeten": [
+      "F32",
+      "F41"
+    ]
+  },
+  {
+    "code": "F07.8",
+    "name": "Sonstige organische Persönlichkeits- und Verhaltensstörungen",
+    "kategorie": "F0",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.1,
+      "weiblich": 0.9,
+      "alter_18_30": 0.5,
+      "alter_31_50": 0.4,
+      "alter_51_plus": 0.3
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Verhaltensänderungen organischer Ursache"
+      ],
+      "optionale_symptome": [
+        "Impulsivität",
+        "Affektive Veränderungen"
+      ]
+    },
+    "differentialdiagnose": "Persönlichkeitsstörungen.",
+    "komorbiditaeten": [
+      "Neurologische Erkrankungen"
+    ]
+  },
+  {
+    "code": "F07.9",
+    "name": "Nicht näher bezeichnete organische Persönlichkeits- und Verhaltensstörung",
+    "kategorie": "F0",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.08,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.2,
+      "weiblich": 0.8,
+      "alter_18_30": 0.5,
+      "alter_31_50": 0.5,
+      "alter_51_plus": 0.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Organisch bedingte Persönlichkeits- oder Verhaltensänderung"
+      ],
+      "optionale_symptome": [
+        "Affektive Instabilität",
+        "Soziale Auffälligkeiten"
+      ]
+    },
+    "differentialdiagnose": "Persönlichkeitsstörungen.",
+    "komorbiditaeten": [
+      "Neurologische Erkrankungen"
+    ]
+  },
+  {
+    "code": "F09",
+    "name": "Nicht näher bezeichnete organische oder symptomatische psychische Störung",
+    "kategorie": "F0",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.2,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 0.2,
+      "alter_31_50": 0.4,
+      "alter_51_plus": 1.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische Symptomatik mit vermuteter oder nachgewiesener organischer Ursache",
+        "Symptome lassen sich keiner spezifischeren organischen Störung aus F00-F07 eindeutig zuordnen",
+        "Hinweise auf Hirnerkrankung, Hirnschädigung, Hirnfunktionsstörung oder körperliche Grunderkrankung"
+      ],
+      "optionale_symptome": [
+        "Kognitive Einschränkungen",
+        "Affektive Veränderungen",
+        "Verhaltensänderungen",
+        "Wahrnehmungsstörungen",
+        "Persönlichkeitsveränderungen",
+        "Neurologische Begleitsymptome"
+      ]
+    },
+    "differentialdiagnose": "Demenz (F00-F03), organisches amnestisches Syndrom (F04), Delir (F05), sonstige organische psychische Störungen (F06), organische Persönlichkeits- und Verhaltensstörungen (F07), primäre psychische Störungen ohne organischen Nachweis.",
+    "komorbiditaeten": [
+      "Neurologische Erkrankungen",
+      "Internistische Erkrankungen",
+      "Endokrine Erkrankungen",
+      "F32 (Depressive Episode)",
+      "F41 (Angststörungen)"
+    ]
   }
 ]

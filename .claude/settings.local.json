@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git config *)",
+      "Bash(gh repo *)",
+      "PowerShell(gh repo *)",
+      "PowerShell(winget install *)",
+      "PowerShell(gh *)",
+      "PowerShell(gh auth *)",
+      "PowerShell(Get-Command *)",
+      "PowerShell(& \"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" auth status 2>&1)",
+      "Bash(git credential *)",
+      "PowerShell(npx vercel --version 2>&1 | Select-Object -First 2)",
+      "mcp__claude_ai_Vercel__deploy_to_vercel",
+      "mcp__plugin_vercel_vercel__deploy_to_vercel",
+      "mcp__plugin_vercel_vercel__list_teams",
+      "mcp__plugin_vercel_vercel__list_projects",
+      "Bash(git commit -m 'chore: add Vercel project link and package.json *)",
+      "Bash(git commit -m 'chore: add .vercel to gitignore *)",
+      "Bash(git push *)",
+      "Bash(git commit -m 'fix: remove catch-all rewrite that blocked JSON data fetches *)",
+      "PowerShell(Select-String -Path \"C:\\\\Users\\\\marce\\\\OneDrive - Easycatchup\\\\Dokumente\\\\Work-MARCSCHW\\\\2026-05-Psychodex\\\\src\\\\vendor\\\\dexie.js\" -Pattern \"typeof define|module\\\\.exports|window\\\\.Dexie\" | Select-Object -First 3 | ForEach-Object { $_.Line.Substring\\(0, [Math]::Min\\(120, $_.Line.Length\\)\\) })",
+      "PowerShell(Select-String -Path \"C:\\\\Users\\\\marce\\\\OneDrive - Easycatchup\\\\Dokumente\\\\Work-MARCSCHW\\\\2026-05-Psychodex\\\\src\\\\vendor\\\\dexie.js\" -Pattern \"global\\\\.\" | Select-Object -First 2 | ForEach-Object { $_.Line.Substring\\(0, [Math]::Min\\(150, $_.Line.Length\\)\\) })",
+      "Bash(git commit -m 'fix: bundle Dexie locally, non-blocking fonts, loading timeout fallback *)"
+    ]
+  }
+}

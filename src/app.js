@@ -557,7 +557,7 @@ function renderPsychoDex() {
     const pct       = catTotal ? Math.round((catCaught / catTotal) * 100) : 0;
     return `
       <div class="category-card" data-cat="${cat.code}" style="--cat-color:${cat.color}">
-        <div class="cat-bg" style="background-image:url('assets/images/categories/${cat.code.toLowerCase()}.jpg')"></div>
+        <div class="cat-bg" style="background-image:url('assets/images/categories/${cat.code.toLowerCase()}.png')"></div>
         <div class="cat-overlay"></div>
         <div class="cat-content">
           <div class="cat-emoji">${cat.emoji}</div>
