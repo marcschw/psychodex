@@ -8,27 +8,31 @@
     "praevalenz_modifikatoren": {
       "männlich": 1.2,
       "weiblich": 0.9,
-      "alter_18_30": 2,
+      "alter_18_30": 2.0,
       "alter_31_50": 1.5,
       "alter_51_plus": 0.5
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Prominente Wahnphänomene (Verfolgungswahn, Beziehungswahn)",
-        "Halluzinationen (meist auditorisch, kommentierende oder dialogisierende Stimmen)",
-        "Symptome seit mindestens 1 Monat"
+        "Allgemeine Schizophrenie-Kriterien (G1+G2) erfüllt: mind. 1 Monat",
+        "Wahnphänomene oder Halluzinationen dominieren das klinische Bild (z.B. Verfolgungswahn, Beziehungswahn, Eifersuchtswahn, Beeinflussungswahn; drohende/befehlende Stimmen; leibliche Halluzinationen)",
+        "Affektverflachung, katatone Symptome und formale Denkstörungen dürfen das Bild nicht dominieren"
       ],
       "optionale_symptome": [
-        "Ich-Störungen (Gedankeneingebung, -entzug, -ausbreitung)",
-        "Formale Denkstörungen",
-        "Negativsymptome (Affektverflachung, Alogie)"
+        "Anhaltende, stabile paranoide Wahnüberzeugungen (Verfolgungswahn, Beziehungswahn, Grandiosität, Eifersucht)",
+        "Akustische Halluzinationen: kommentierendes oder dialogisierendes Stimmenhören (Dritte-Person-Stimmen)",
+        "Befehlende oder bedrohende Stimmen",
+        "Ich-Störungen: Gedankenlautwerden, Gedankeneingebung, Gedankenentzug, Gedankenausbreitung",
+        "Wahnwahrnehmung (neutrale Wahrnehmung erhält sofortige Wahnbedeutung)",
+        "Beeinflussungswahn (Gefühl des Gemachten bezüglich Gedanken, Handlungen, Empfindungen)",
+        "Relativ erhaltene Persönlichkeit und Affekt im Vergleich zu anderen Subtypen"
       ]
     },
-    "differentialdiagnose": "Schizoaffektive Störung (F25, prominente affektive Symptome), wahnhafte Störung (F22, kein Ich-Störung), drogeninduzierte Psychose (F1x.5).",
+    "differentialdiagnose": "Schizoaffektive Störung (F25, prominente affektive Symptome gleichzeitig), wahnhafte Störung (F22.0, keine Ich-Störungen, kein bizarrer Wahn), substanzinduzierte Psychose (F1x.5), organische Psychose (F06.2).",
     "komorbiditaeten": [
       "F32",
-      "F10",
-      "F17"
+      "F10.2",
+      "F17.2"
     ]
   },
   {
@@ -40,26 +44,169 @@
     "praevalenz_modifikatoren": {
       "männlich": 1.3,
       "weiblich": 0.8,
-      "alter_18_30": 3,
+      "alter_18_30": 3.0,
       "alter_31_50": 0.8,
       "alter_51_plus": 0.2
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Inadäquater oder flacher Affekt (unsinniges Lachen, Grimassieren)",
-        "Desorganisiertes Denken und Sprechen",
-        "Beginn meist im Jugendalter"
+        "Allgemeine Schizophrenie-Kriterien (G1+G2) erfüllt",
+        "Eindeutige und anhaltende Affektverflachung oder seichter Affekt ODER eindeutige und anhaltende Inadäquatheit oder Unangemessenheit des Affekts",
+        "Zielloses, unzusammenhängendes Verhalten ODER eindeutige formale Denkstörungen (zerrissenes, weitschweifiges oder inkohärentes Denken / Sprechen)",
+        "Halluzinationen und Wahn dürfen das klinische Bild nicht dominieren (können in leichtem Ausmaß vorhanden sein)"
       ],
       "optionale_symptome": [
-        "Ziellosigkeit und Antriebsminderung",
-        "Fragmentarische Wahnideen und Halluzinationen",
-        "Manieriertes, bizarres Verhalten"
+        "Seichter, inadäquater Affekt (unsinniges Lachen, Grimassieren, Albernheit)",
+        "Desorganisiertes, inkohärentes Denken und Sprechen",
+        "Fragmentarische, flüchtige Wahnideen und Halluzinationen",
+        "Manieriertes, bizarres Verhalten",
+        "Zielloser, impulsiver Antrieb",
+        "Beginn häufig im Jugendalter (15–25 Jahre)",
+        "Rasche Entwicklung ausgeprägter Negativsymptome – schlechteste Prognose aller Subtypen"
       ]
     },
-    "differentialdiagnose": "Paranoide Schizophrenie (F20.0, Wahn prominenter), Schizophrenia simplex (F20.6, ohne Wahn), manische Episode (F30).",
+    "differentialdiagnose": "Paranoide Schizophrenie (F20.0, Wahn prominenter), Schizophrenia simplex (F20.6, ohne Wahn/Halluzinationen), manische Episode (F30), Persönlichkeitsstörungen.",
     "komorbiditaeten": [
       "F17.2",
       "F10.2"
+    ]
+  },
+  {
+    "code": "F20.2",
+    "name": "Katatone Schizophrenie",
+    "kategorie": "F2",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.1,
+      "weiblich": 1.0,
+      "alter_18_30": 2.5,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.3
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Schizophrenie-Kriterien (G1+G2) erfüllt",
+        "Mind. eines der folgenden katatonen Symptome dominiert das klinische Bild für mind. 2 Wochen: Stupor, Erregung, Haltungsstereotypien, Negativismus, Rigidität, Wachsartige Biegsamkeit (Flexibilitas cerea), Befehlsautomatismus"
+      ],
+      "optionale_symptome": [
+        "Katatoner Stupor: Reglosigkeit, Stummheit, fehlende Reaktion auf Außenreize",
+        "Katatone Erregung: zwecklose, nicht beeinflussbare motorische Aktivität",
+        "Haltungsstereotypien: willentliches Einnehmen und Beibehalten bizarrer Körperhaltungen (Posturing)",
+        "Negativismus: scheinbar motivloser Widerstand gegen Anweisungen (auch Gegenhalten)",
+        "Rigidität: starrer Muskeltonus gegen Bewegungsversuche",
+        "Flexibilitas cerea ('Wächserne Biegsamkeit'): Gliedmaßen bleiben in extern aufgezwungener Position",
+        "Befehlsautomatismus: automatische Ausführung von Anweisungen",
+        "Verbigeration: sinnlose Wortwiederholungen",
+        "Gelegentlich oniroider (traumhafter) Zustand mit lebhaften szenischen Halluzinationen",
+        "Lebensgefährlich bei Nahrungsverweigerung oder vegetativer Instabilität"
+      ]
+    },
+    "differentialdiagnose": "Katatonie anderer Ursache (depressive Katatonie, organische Katatonie F06.1, NMS durch Neuroleptika), malignes neuroleptisches Syndrom, Enzephalitis.",
+    "komorbiditaeten": [
+      "F20.0",
+      "F32"
+    ]
+  },
+  {
+    "code": "F20.3",
+    "name": "Undifferenzierte Schizophrenie",
+    "kategorie": "F2",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.15,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.1,
+      "weiblich": 1.0,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 0.8
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Schizophrenie-Kriterien (G1+G2) erfüllt",
+        "Entweder: Symptome unzureichend für eine der Subtypen F20.0–F20.2 ODER gleichzeitige Symptome mehrerer Subtypen ohne klare Dominanz eines Musters"
+      ],
+      "optionale_symptome": [
+        "Positive Symptome (Wahn, Halluzinationen) und negative Symptome (Affektverflachung, Alogie) vorhanden",
+        "Kein klar dominierendes paranoides, hebephrenes oder katatones Muster",
+        "Häufig als Übergangsdiagnose bei Erstmanifestation oder veränderlichem Verlauf"
+      ]
+    },
+    "differentialdiagnose": "Paranoide Schizophrenie (F20.0), hebephrene Schizophrenie (F20.1), schizoaffektive Störung (F25), substanzinduzierte Psychose.",
+    "komorbiditaeten": [
+      "F32",
+      "F10.2"
+    ]
+  },
+  {
+    "code": "F20.4",
+    "name": "Postschizophrene Depression",
+    "kategorie": "F2",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.1,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.1,
+      "weiblich": 1.0,
+      "alter_18_30": 1.0,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 0.8
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Schizophrenie-Kriterien (F20.0–F20.3) waren innerhalb der letzten 12 Monate erfüllt, sind es aktuell aber nicht mehr vollständig",
+        "Mind. eines der Schizophrenie-Symptome aus G1 ist noch vorhanden (aber nicht mehr dominierend)",
+        "Depressive Symptome sind ausreichend ausgeprägt für eine leichte depressive Episode (F32.0): mind. 2 Wochen"
+      ],
+      "optionale_symptome": [
+        "Niedergeschlagenheit, Hoffnungslosigkeit",
+        "Interessenverlust, Anhedonie",
+        "Anhaltende Negativsymptome der Schizophrenie (Apathie, Alogie, Affektverflachung)",
+        "Geringe Positivsymptome (nicht mehr im Vordergrund)",
+        "Erhöhtes Suizidrisiko",
+        "Schlafstörungen, Antriebsmangel"
+      ]
+    },
+    "differentialdiagnose": "Schizophrenes Residuum (F20.5, keine Depression), depressive Episode (F32, keine Schizophreniesymptome mehr), schizoaffektiver depressiver Typ (F25.1, beide gleichzeitig ausgeprägt).",
+    "komorbiditaeten": [
+      "F32",
+      "F20.5"
+    ]
+  },
+  {
+    "code": "F20.5",
+    "name": "Schizophrenes Residuum",
+    "kategorie": "F2",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.15,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.2,
+      "weiblich": 0.9,
+      "alter_18_30": 0.5,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 2.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Schizophrenie-Kriterien (G1) waren in der Vergangenheit erfüllt, sind aber aktuell nicht mehr vollständig erfüllt",
+        "Anhaltende Negativsymptome (mind. eines): psychomotorische Verlangsamung, Unteraktivität, Affektverflachung, Passivität, Antriebsmangel, Sprachverarmung, schlechte nonverbale Kommunikation, schlechte Selbstfürsorge",
+        "Keine floride Psychose (Positivsymptome fehlen oder sind auf Andeutungen reduziert)"
+      ],
+      "optionale_symptome": [
+        "Psychomotorische Verlangsamung, Unteraktivität",
+        "Affektverflachung",
+        "Passivität und Antriebsarmut",
+        "Sprachverarmung (Alogie)",
+        "Schlechte nonverbale Kommunikation (Blickkontakt, Mimik, Gestik)",
+        "Verminderte soziale Kompetenz und Selbstfürsorge",
+        "Gelegentliche Restphänomene: Andeutungen von Wahn oder Halluzinationen",
+        "Chronische Untermedikation oder Non-Compliance als Risikofaktor"
+      ]
+    },
+    "differentialdiagnose": "Postschizophrene Depression (F20.4, depressive Symptome vorhanden), Schizophrenia simplex (F20.6, kein vorausgegangenes psychotisches Stadium), depressive Störung.",
+    "komorbiditaeten": [
+      "F20.4",
+      "F32",
+      "F17.2"
     ]
   },
   {
@@ -71,25 +218,62 @@
     "praevalenz_modifikatoren": {
       "männlich": 1.1,
       "weiblich": 0.9,
-      "alter_18_30": 2,
+      "alter_18_30": 2.0,
       "alter_31_50": 0.8,
       "alter_51_plus": 0.3
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Schleichende Entwicklung von Negativsymptomen ohne vorangegangene psychotische Phase",
-        "Sozialer Rückzug und Leistungsknick über mindestens 1 Jahr",
-        "Keine oder nur rudimentäre Positivsymptome"
+        "Langsame, progressive Entwicklung aller drei folgenden Merkmale über mind. 1 Jahr:",
+        "1. Bedeutsame Verhaltensveränderung: Antriebsverlust, Interessensverlust, Ziellosigkeit, Selbstbezogenheit, sozialer Rückzug",
+        "2. Allmähliches Auftreten von Negativsymptomen: ausgeprägte Apathie, Sprachverarmung, Unteraktivität, Affektverflachung, Passivität, schlechte nonverbale Kommunikation",
+        "3. Deutlicher Leistungsabfall (sozial, schulisch, beruflich)",
+        "Niemals Symptome aus G1 für F20.0–F20.3, keine Halluzinationen, kein ausgestalteter Wahn (kein psychotisches Stadium)"
       ],
       "optionale_symptome": [
-        "Inadäquater Affekt",
-        "Verarmung des Denkens",
-        "Auffälligkeiten im Sozialverhalten"
+        "Schleichender Beginn, oft im Jugendalter kaum bemerkbar",
+        "Zunehmend befremdliches oder exzentrisches Verhalten",
+        "Sozialer Rückzug ohne erkennbare äußere Ursache",
+        "Nachlassende Schulleistungen oder berufliche Leistungen",
+        "Oberflächlicher oder inadäquater Affekt",
+        "Inhaltliche Gedankenverarmung",
+        "Kontroverse Diagnose – oft retrospektiv gestellt"
       ]
     },
-    "differentialdiagnose": "Schizotype Störung (F21, weniger schwer), Depressive Störung mit psychomotorischer Hemmung, Persönlichkeitsstörung (F60.1).",
+    "differentialdiagnose": "Schizotype Störung (F21, weniger schwer, keine ausgeprägten Negativsymptome), schizoide Persönlichkeitsstörung (F60.1), depressive Störung, schizophrenes Residuum (F20.5, vorausgehende psychotische Phase).",
     "komorbiditaeten": [
-      "F34.1"
+      "F34.1",
+      "F60.1"
+    ]
+  },
+  {
+    "code": "F20.8",
+    "name": "Sonstige Schizophrenie",
+    "kategorie": "F2",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.1,
+      "weiblich": 1.0,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Schizophrenie-Kriterien (G1+G2) erfüllt",
+        "Nicht zuordenbar zu F20.0–F20.6"
+      ],
+      "optionale_symptome": [
+        "Zönästhetische Schizophrenie: bizarre leibliche Empfindungen im Vordergrund",
+        "Schizophreniforme Störung NOS",
+        "Atypische Verlaufsformen"
+      ]
+    },
+    "differentialdiagnose": "Andere Schizophrenie-Subtypen, schizoaffektive Störung (F25).",
+    "komorbiditaeten": [
+      "F20.0",
+      "F25"
     ]
   },
   {
@@ -107,17 +291,24 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Sonderliches oder exzentrisches Verhalten",
-        "Magisches Denken, seltsame Überzeugungen",
-        "Misstrauische Ideen ohne echten Verfolgungswahn"
+        "Kontinuierlich oder wiederholt über mind. 2 Jahre: mind. 4 der folgenden Merkmale:",
+        "1. Inadäquater oder konstriktierter Affekt (kalt, distanziert wirkend)",
+        "2. Sonderbares, exzentrisches oder eigenartiges Verhalten oder Erscheinungsbild",
+        "3. Schlechter Rapport mit anderen, Tendenz zu sozialem Rückzug",
+        "4. Seltsame Überzeugungen oder magisches Denken (beeinflusst Verhalten, subkulturell unangemessen)",
+        "5. Misstrauen oder paranoide Ideen",
+        "Niemals Erfüllung der Kriterien für Schizophrenie (F20.-)"
       ],
       "optionale_symptome": [
-        "Depersonalisation oder Derealisation",
-        "Unangemessener Affekt",
-        "Soziale Anhedonie und sozialer Rückzug"
+        "Zwangsartige Grübeleien ohne inneren Widerstand (dysmorphophobische, sexuelle oder aggressive Inhalte)",
+        "Ungewöhnliche Wahrnehmungserlebnisse (somatosensorische Illusionen, Depersonalisation, Derealisation)",
+        "Vages, umständliches, überelaboriertes oder stereotypes Denken",
+        "Gelegentliche transiente quasi-psychotische Episoden mit intensiven Illusionen oder Halluzinationen (ohne äußere Provokation)",
+        "Exzentrische, magische Vorstellungen (Hellseherei, Telepathie)",
+        "Gehört zum schizophrenen Spektrum – erhöhtes Schizophrenie-Risiko bei Verwandten"
       ]
     },
-    "differentialdiagnose": "Schizoide PS (F60.1, kein Denk-/Wahrnehmungsstörungen), paranoide PS (F60.0), Schizophrenie (F20, vollständige Symptome).",
+    "differentialdiagnose": "Schizoide Persönlichkeitsstörung (F60.1, keine Denk-/Wahrnehmungsstörungen), paranoide Persönlichkeitsstörung (F60.0), Schizophrenie (F20, vollständige G1-Kriterien), Borderline-Persönlichkeitsstörung (F60.31).",
     "komorbiditaeten": [
       "F60.1",
       "F34.1"
@@ -130,28 +321,236 @@
     "seltenheit_score": 6,
     "praevalenz_allgemein_prozent": 0.3,
     "praevalenz_modifikatoren": {
-      "männlich": 1,
+      "männlich": 1.0,
       "weiblich": 1.1,
       "alter_18_30": 0.3,
-      "alter_31_50": 1,
-      "alter_51_plus": 2
+      "alter_31_50": 1.0,
+      "alter_51_plus": 2.0
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Anhaltender Wahn (Verfolgung, Eifersucht, Größe, Körper) über mindestens 3 Monate",
-        "Keine Halluzinationen",
-        "Gut erhaltene Persönlichkeit außerhalb der Wahnthematik"
+        "Wahn oder Wahnsystem (nicht bizarre Wahnideen): mind. 3 Monate anhaltend",
+        "Häufige Inhalte: Verfolgungswahn, Grandiosität, hypochondrischer Wahn, Eifersuchtswahn, Erotomanie",
+        "Allgemeine Schizophrenie-Kriterien (F20.0–F20.3) nicht erfüllt",
+        "Keine anhaltenden Halluzinationen (gelegentliche, kurze auditorische Halluzinationen möglich, aber nicht typisch schizophren)"
       ],
       "optionale_symptome": [
-        "Querulatorisches Verhalten",
-        "Eifersuchts- oder Liebeswahn",
-        "Hypochondrischer Wahn"
+        "Verfolgungswahn: Überzeugung, verfolgt, beobachtet oder bespitzelt zu werden",
+        "Grandioser Wahn: außergewöhnliche Fähigkeiten, Identität, Sendungsbewusstsein",
+        "Hypochondrischer Wahn: Überzeugung körperlicher Erkrankung (Dermatozoenwahn: Parasiten unter der Haut)",
+        "Eifersuchts-(Othello-)Wahn: unbegründete Untreueüberzeugung",
+        "Erotomaner Wahn (Clérambault): Überzeugung, von einer anderen Person geliebt zu werden",
+        "Querulatorischer Wahn: anhaltende Rechthaberei, Klagen, Beschwerden",
+        "Gut erhaltene Persönlichkeit und Handlungsfähigkeit außerhalb der Wahnthematik",
+        "Depressive Stimmung kann intermittierend auftreten (ohne Dominanz)"
       ]
     },
-    "differentialdiagnose": "Paranoide Schizophrenie (F20.0, Halluzinationen, Ich-Störungen), paranoide PS (F60.0, kein ausgestalteter Wahn), organische Ursachen.",
+    "differentialdiagnose": "Paranoide Schizophrenie (F20.0, Halluzinationen + Ich-Störungen vorhanden), paranoide Persönlichkeitsstörung (F60.0, kein ausgestalteter Wahn), organische Psychose (F06.2), substanzinduzierte Psychose.",
     "komorbiditaeten": [
       "F32",
       "F60.0"
+    ]
+  },
+  {
+    "code": "F22.8",
+    "name": "Sonstige anhaltende wahnhafte Störungen",
+    "kategorie": "F2",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.1,
+      "alter_18_30": 0.3,
+      "alter_31_50": 0.8,
+      "alter_51_plus": 2.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Anhaltende wahnhafte Störung, die nicht den Kriterien für F22.0 entspricht",
+        "Wahn besteht seit mind. 3 Monaten",
+        "Kein Nachweis von Schizophrenie (F20) oder affektiver Störung als primäre Ursache"
+      ],
+      "optionale_symptome": [
+        "Wahn begleitet von anhaltenden Halluzinationen (ohne Schizophrenie-Kriterien)",
+        "Dysmorphophobie: Wahn körperlicher Entstellung oder Missbildung",
+        "Involutionsparanoia: paranoide Entwicklung im höheren Lebensalter",
+        "Paranoia querulans: überwertiger querulatorischer Wahn ohne volle Wahnform",
+        "Wahnhafte Dysmorphophobie"
+      ]
+    },
+    "differentialdiagnose": "Wahnhafte Störung (F22.0, erfüllt vollständige Kriterien), Schizophrenie (F20), körperdysmorphe Störung (F45.2).",
+    "komorbiditaeten": [
+      "F32",
+      "F45.2"
+    ]
+  },
+  {
+    "code": "F23.0",
+    "name": "Akute polymorphe psychotische Störung ohne Schizophrenie-Symptome",
+    "kategorie": "F2",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.1,
+      "alter_18_30": 2.5,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.3
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Akuter Beginn (vollständiges klinisches Bild innerhalb ≤2 Wochen)",
+        "Symptome wechseln rasch in Art und Intensität (von Tag zu Tag oder innerhalb desselben Tages)",
+        "Mind. eine Art von Halluzinationen oder Wahn für mind. einige Stunden",
+        "Gleichzeitig Symptome aus mind. zwei Bereichen: emotionale Turbulenzen, Verwirrung/Desorientiertheit, Wahrnehmungsstörungen, Denkstörungen",
+        "Schizophrenie-Kriterien (G1 für F20) sind nicht erfüllt",
+        "Keine organische Ursache (G5)"
+      ],
+      "optionale_symptome": [
+        "Rasch wechselnde Wahnideen und Halluzinationen",
+        "Intensive Hochgefühle oder Ekstase wechselnd mit Angst oder Reizbarkeit",
+        "Verwirrung, Ratlosigkeit, Desorientiertheit",
+        "Abrupter Beginn (innerhalb 48h) oder akuter Beginn (48h–2 Wochen)",
+        "Vollständige Erholung meist innerhalb von Wochen bis Monaten",
+        "Assoziation mit akutem Stress möglich (F23.x1) – vorausgehend 1–2 Wochen"
+      ]
+    },
+    "differentialdiagnose": "Schizophrenie (F20, >1 Monat + G1 erfüllt), manische Episode mit Psychose (F30.2), substanzinduzierte Psychose (F1x.5), Delir (F05).",
+    "komorbiditaeten": [
+      "F43.1",
+      "F23.1"
+    ]
+  },
+  {
+    "code": "F23.1",
+    "name": "Akute polymorphe psychotische Störung mit Schizophrenie-Symptomen",
+    "kategorie": "F2",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.03,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.1,
+      "weiblich": 1.0,
+      "alter_18_30": 2.5,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.2
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Kriterien für F23.0 (akute polymorphe Störung) erfüllt",
+        "Gleichzeitig schizophrene Symptome aus G1 für F20 vorhanden (z.B. Gedankeneingebung, dialogisierende Stimmen), ohne dass die vollständigen Schizophrenie-Kriterien erfüllt sind"
+      ],
+      "optionale_symptome": [
+        "Flüchtige Erstrangsymptome (Gedankeneingebung, dialogisierende Stimmen) im Kontext polymorphen klinischen Bilds",
+        "Rascher Wechsel des klinischen Bilds",
+        "Vollständige Erholung meist innerhalb weniger Monate",
+        "Wenn Symptome >1 Monat persistieren: Überdiagnostik Schizophrenie prüfen"
+      ]
+    },
+    "differentialdiagnose": "Akute polymorphe Störung ohne Schizophreniesymptome (F23.0), Schizophrenie (F20), akute schizophreniforme Störung (F23.2).",
+    "komorbiditaeten": [
+      "F23.0",
+      "F43.1"
+    ]
+  },
+  {
+    "code": "F23.2",
+    "name": "Akute schizophreniforme psychotische Störung",
+    "kategorie": "F2",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.03,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.1,
+      "weiblich": 1.0,
+      "alter_18_30": 2.5,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.2
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Kriterien für akute und vorübergehende psychotische Störungen (G1–G5) erfüllt",
+        "Schizophrene Symptome (G1 für F20.0–F20.3) sind vorhanden",
+        "Kein polymorphes, instabiles klinisches Bild (kein rascher Symptomwechsel)",
+        "Vollständige Erholung innerhalb von 1 Monat erwartet"
+      ],
+      "optionale_symptome": [
+        "Typische schizophrene Symptome: Wahn, Halluzinationen, Ich-Störungen",
+        "Stabiler als bei F23.0/F23.1 (kein polymorphes Bild)",
+        "Bei Persistenz >1 Monat: Diagnose Schizophrenie prüfen",
+        "Abrupter Beginn möglich; häufig Assoziation mit Stress"
+      ]
+    },
+    "differentialdiagnose": "Schizophrenie (F20, >1 Monat), akute polymorphe Störung (F23.0/F23.1), substanzinduzierte Psychose (F1x.5).",
+    "komorbiditaeten": [
+      "F43.1",
+      "F20"
+    ]
+  },
+  {
+    "code": "F23.3",
+    "name": "Sonstige akute vorwiegend wahnhafte psychotische Störungen",
+    "kategorie": "F2",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.03,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.1,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 0.8
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Kriterien für akute und vorübergehende psychotische Störungen (G1–G5) erfüllt",
+        "Relativ stabile Wahnideen oder Halluzinationen dominieren das klinische Bild",
+        "Kein polymorphes Bild (kein rascher Symptomwechsel)"
+      ],
+      "optionale_symptome": [
+        "Anhaltender Wahn oder Stimmenhören",
+        "Weniger instabil als F23.0/F23.1",
+        "Vollständige Erholung innerhalb von Monaten erwartet",
+        "Paranoide Reaktion auf Stress"
+      ]
+    },
+    "differentialdiagnose": "Wahnhafte Störung (F22.0, >3 Monate), akute polymorphe Störung (F23.0), substanzinduzierte Psychose (F1x.5).",
+    "komorbiditaeten": [
+      "F43.1",
+      "F22.0"
+    ]
+  },
+  {
+    "code": "F24",
+    "name": "Induzierte wahnhafte Störung",
+    "kategorie": "F2",
+    "seltenheit_score": 9,
+    "praevalenz_allgemein_prozent": 0.01,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.9,
+      "weiblich": 1.2,
+      "alter_18_30": 0.8,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 1.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Wahnideen, die bei zwei (oder mehr) Personen geteilt werden und inhaltlich übereinstimmen",
+        "Person A (Induzierende): hat eine echte psychotische Störung (z.B. wahnhafte Störung, Schizophrenie)",
+        "Person B (Induzierte): übernimmt die Wahnideen durch engen Kontakt mit Person A",
+        "Person B: Kein Nachweis einer anderen psychotischen Störung vor dem induzierten Wahn",
+        "Wahn passt nicht zum normalen Vorstellungsvermögen der induzierten Person (kein kulturell normiertes Glaubenssystem)"
+      ],
+      "optionale_symptome": [
+        "Enge, oft isolierte emotionale Beziehung zwischen Person A und B (häufig: Ehepartner, Geschwister)",
+        "Räumliche oder soziale Isolation des Paares oder der Gruppe",
+        "Dominante Person A überträgt Wahn auf passivere Person B",
+        "Rückbildung des Wahns bei Person B nach Trennung von Person A (wichtiger Differenzierungshinweis)",
+        "Folie à deux (häufigste Form), folie à trois, folie à famille",
+        "Verfolgungswahn als häufigster gemeinsamer Wahninhalt"
+      ]
+    },
+    "differentialdiagnose": "Wahnhafte Störung (F22.0) bei Person A, kulturbedingtes Glaubenssystem, Simulation.",
+    "komorbiditaeten": [
+      "F22.0",
+      "F20.0"
     ]
   },
   {
@@ -169,18 +568,22 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Gleichzeitig ausgeprägte manische Symptome UND schizophrene Symptome",
-        "Beide Symptomkomplexe in derselben Episode prominent"
+        "Innerhalb derselben Episode gleichzeitig schizophrene UND manische Symptome in ausgeprägter Form",
+        "Schizophrene Symptome (G1): mind. 1 Erstrangsymptom oder mind. 2 andere Schizophrenie-Symptome",
+        "Manische Symptome: gehobene oder gereizte Stimmung + Antriebssteigerung, vermindertes Schlafbedürfnis, Grandiosität",
+        "Beide Symptomkomplexe sind in der gleichen Episode gleichzeitig prominent"
       ],
       "optionale_symptome": [
         "Expansiver oder gereizter Affekt",
-        "Größenwahn mit halluzinatorischer Verstärkung",
-        "Formale Denkstörungen"
+        "Grandioser Wahn, kombiniert mit schizophrenen Erstrangsymptomen",
+        "Formale Denkstörungen (Ideenflucht, Zerfahrenheit)",
+        "Stimmenhören mit manischem Inhalt (Gottesstimmen, besondere Sendung)",
+        "Psychomotorische Erregung, Enthemmung, Schlaflosigkeit"
       ]
     },
-    "differentialdiagnose": "Manische Episode mit psychotischen Symptomen (F30.2), paranoide Schizophrenie (F20.0), Bipolare Störung (F31).",
+    "differentialdiagnose": "Manische Episode mit psychotischen Symptomen (F30.2, schizophrene Erstrangsymptome fehlen), paranoide Schizophrenie (F20.0, keine vollständige Manie), Bipolare Störung (F31).",
     "komorbiditaeten": [
-      "F10",
+      "F10.2",
       "F43.1"
     ]
   },
@@ -193,25 +596,122 @@
     "praevalenz_modifikatoren": {
       "männlich": 0.8,
       "weiblich": 1.3,
-      "alter_18_30": 1,
+      "alter_18_30": 1.0,
       "alter_31_50": 1.5,
       "alter_51_plus": 0.8
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Gleichzeitig ausgeprägte depressive Symptome UND schizophrene Symptome",
-        "Beide Symptomkomplexe in derselben Episode prominent"
+        "Innerhalb derselben Episode gleichzeitig schizophrene UND depressive Symptome in ausgeprägter Form",
+        "Schizophrene Symptome (G1): mind. 1 Erstrangsymptom oder mind. 2 andere Schizophrenie-Symptome",
+        "Depressive Symptome: gedrückte Stimmung + Interessen-/Freudlosigkeit + Antriebsminderung, mind. 2 Wochen",
+        "Beide Symptomkomplexe sind in der gleichen Episode gleichzeitig prominent"
       ],
       "optionale_symptome": [
-        "Nihilistischer Wahn, Schuldwahn",
-        "Psychomotorische Hemmung",
-        "Suizidales Erleben"
+        "Nihilistischer Wahn, Schuld- und Versündigungswahn",
+        "Halluzinationen mit depressivem Inhalt (anklagende, beschimpfende Stimmen)",
+        "Psychomotorische Hemmung bis Stupor",
+        "Erhöhtes Suizidrisiko",
+        "Konzentrationsstörungen, Grübeln, Hoffnungslosigkeit"
       ]
     },
-    "differentialdiagnose": "Schwere depressive Episode mit Psychose (F32.3), paranoide Schizophrenie (F20.0), schizoaffektiver manischer Typ (F25.0).",
+    "differentialdiagnose": "Schwere depressive Episode mit Psychose (F32.3, schizophrene Erstrangsymptome fehlen), paranoide Schizophrenie (F20.0, keine vollständige Depression), postschizophrene Depression (F20.4).",
     "komorbiditaeten": [
       "F32",
       "F43.1"
+    ]
+  },
+  {
+    "code": "F25.2",
+    "name": "Schizoaffektive Störung, gemischter Typ",
+    "kategorie": "F2",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.9,
+      "weiblich": 1.2,
+      "alter_18_30": 1.0,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 0.8
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Schizophrene Symptome (G1) vorhanden",
+        "Gleichzeitig gemischte affektive Symptome (sowohl manische als auch depressive Symptome in derselben Episode) oder rascher Wechsel zwischen beiden"
+      ],
+      "optionale_symptome": [
+        "Dysphorische Gereiztheit und depressive Verstimmung gleichzeitig",
+        "Psychomotorische Unruhe oder Hemmung wechselnd",
+        "Schizophrene Symptome (Halluzinationen, Wahn) im Hintergrund",
+        "Rascher Stimmungswechsel"
+      ]
+    },
+    "differentialdiagnose": "Schizoaffektive Störung manischer oder depressiver Typ (F25.0/F25.1), Bipolare Störung gemischt (F31.6), Schizophrenie (F20).",
+    "komorbiditaeten": [
+      "F25.0",
+      "F25.1"
+    ]
+  },
+  {
+    "code": "F28",
+    "name": "Sonstige nichtorganische psychotische Störungen",
+    "kategorie": "F2",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 0.8
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychotische Symptome (Wahn, Halluzinationen oder formale Denkstörungen) vorhanden",
+        "Nicht zuordenbar zu: Schizophrenie (F20), wahnhafte Störung (F22), schizoaffektiver Störung (F25) oder affektiver Störung mit Psychose (F30–F39)",
+        "Kein Nachweis organischer oder substanzbedingter Ursache"
+      ],
+      "optionale_symptome": [
+        "Atypische Psychose mit gemischtem, nicht klassifizierbarem Bild",
+        "Psychotische Symptome in ungewöhnlicher Kombination",
+        "Restkategorie nach Ausschluss aller anderen psychotischen Störungen"
+      ]
+    },
+    "differentialdiagnose": "Alle anderen psychotischen Störungen (F20–F25), organische Psychose (F06.2), substanzinduzierte Psychose (F1x.5).",
+    "komorbiditaeten": [
+      "F20",
+      "F25"
+    ]
+  },
+  {
+    "code": "F29",
+    "name": "Nicht näher bezeichnete nichtorganische Psychose",
+    "kategorie": "F2",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.1,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.0,
+      "weiblich": 1.0,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.8
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Klinisch signifikante psychotische Symptome (Wahn, Halluzinationen oder schwere Desorganisation)",
+        "Keine ausreichende Information für spezifischere Diagnose",
+        "Kein Nachweis organischer oder substanzbedingter Ursache"
+      ],
+      "optionale_symptome": [
+        "Akute Präsentation ohne vollständige Anamnese",
+        "Wird üblicherweise nach vollständiger Diagnostik durch spezifischere Diagnose ersetzt",
+        "Häufig als vorläufige Notfalldiagnose verwendet"
+      ]
+    },
+    "differentialdiagnose": "Alle psychotischen Störungen F20–F28, organische Psychose (F06.2), substanzinduzierte Psychose (F1x.5).",
+    "komorbiditaeten": [
+      "F20",
+      "F10.2"
     ]
   }
 ]

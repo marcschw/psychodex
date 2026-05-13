@@ -46,21 +46,29 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Vorübergehende Störung nach Alkoholkonsum",
-        "Bewusstseins-, Wahrnehmungs- oder Verhaltensveränderung"
+        "Klare Evidenz für kürzlichen Alkoholkonsum in intoxikationsrelevanter Dosis",
+        "Dysfunktionales Verhalten: mind. eines von Enthemmung, Streitlust, Aggressivität, Stimmungslabilität, Aufmerksamkeits- oder Urteilsvermögensbeeinträchtigung",
+        "Mind. eines der körperlichen Zeichen: Gangunsicherheit, Standunsicherheit, verwaschene Sprache, Nystagmus, Bewusstseinssenkung, gerötetes Gesicht oder konjunktivale Injektion"
       ],
       "optionale_symptome": [
-        "Enthemmung",
-        "Sprachstörungen",
-        "Gangunsicherheit",
-        "Aggressivität",
-        "Somnolenz"
+        "Enthemmung und Distanzlosigkeit",
+        "Streitlust oder Aggressivität",
+        "Stimmungslabilität (Euphorie bis Dysphorie)",
+        "Aufmerksamkeits- und Konzentrationsstörung",
+        "Beeinträchtigtes Urteilsvermögen",
+        "Gangunsicherheit / Ataxie",
+        "Verwaschene Sprache (Dysarthrie)",
+        "Nystagmus",
+        "Bewusstseinssenkung (Stupor bis Koma)",
+        "Gerötetes Gesicht, konjunktivale Injektion",
+        "F10.07 Pathologischer Rausch: schwere Aggressivität bereits nach kleinen Alkoholmengen, abrupter Beginn"
       ]
     },
-    "differentialdiagnose": "Schädel-Hirn-Trauma, Delir, andere Intoxikationen.",
+    "differentialdiagnose": "Hypoglykämie, Schädel-Hirn-Trauma, hepatische Enzephalopathie, Delir anderer Ursache, andere Substanzintoxikationen, Wernicke-Enzephalopathie.",
     "komorbiditaeten": [
       "F10.2",
-      "Traumatische Verletzungen"
+      "F32",
+      "F41.1"
     ]
   },
   {
@@ -305,19 +313,26 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Konsummuster mit psychischen oder körperlichen Schäden",
-        "Kein vollständiges Abhängigkeitssyndrom"
+        "Klare Evidenz, dass Alkoholkonsum für nachweisbare körperliche oder psychische Schäden verantwortlich ist",
+        "Art des Schadens klar identifizierbar (körperlich z.B. Hepatitis, Pankreatitis; psychisch z.B. depressive Episode)",
+        "Konsummuster besteht seit mind. 1 Monat oder trat wiederholt innerhalb von 12 Monaten auf",
+        "Störung erfüllt nicht die Kriterien für Alkoholabhängigkeit (F10.2)"
       ],
       "optionale_symptome": [
-        "Berufliche Probleme",
-        "Familiäre Konflikte",
-        "Blackouts"
+        "Körperlicher Schaden: Lebererkrankung (Steatose, Alkohol-Hepatitis, Zirrhose)",
+        "Körperlicher Schaden: Pankreatitis, Gastritis, Polyneuropathie",
+        "Psychischer Schaden: depressive Episoden durch Alkohol",
+        "Psychischer Schaden: Angststörungen, Schlafstörungen",
+        "Beeinträchtigte Urteils- und Handlungsfähigkeit",
+        "Soziale Folgeschäden (Arbeitsplatzverlust, Beziehungsprobleme)"
       ]
     },
-    "differentialdiagnose": "Alkoholabhängigkeit, sozialer Konsum.",
+    "differentialdiagnose": "Alkoholabhängigkeit (F10.2), primäre Depression, Angststörungen, andere Lebererkrankungen.",
     "komorbiditaeten": [
       "F32",
-      "F41"
+      "F41.1",
+      "K70",
+      "K85"
     ]
   },
   {
@@ -335,21 +350,30 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Starker Wunsch nach Alkohol",
-        "Kontrollverlust",
-        "Toleranzentwicklung",
-        "Fortgesetzter Konsum trotz Schäden"
+        "Mindestens 3 der folgenden Kriterien gleichzeitig für mind. 1 Monat (oder wiederholt innerhalb 12 Monate):",
+        "1. Starkes Verlangen (Craving) oder Zwang, Alkohol zu konsumieren",
+        "2. Eingeschränkte Kontrolle über Beginn, Ende oder Menge des Konsums",
+        "3. Körperliches Entzugssyndrom (F10.3) bei Reduktion/Beendigung oder Konsum zur Entzugsvermeidung",
+        "4. Toleranzentwicklung: zunehmend höhere Dosen nötig, um die gleiche Wirkung zu erzielen",
+        "5. Einengung des Verhaltensrepertoires auf den Alkoholkonsum",
+        "6. Anhaltender Konsum trotz eindeutiger körperlicher, psychischer oder sozialer Schäden"
       ],
       "optionale_symptome": [
-        "Entzugssymptome",
-        "Vernachlässigung anderer Interessen"
+        "Vernachlässigung anderer Interessen zugunsten des Trinkens",
+        "Morgendliches Trinken zur Entzugsprävention",
+        "Versteckter Konsum / Bagatellisierung des Konsums",
+        "Kontrollverlust trotz wiederholter Vorsatzbildung zur Abstinenz",
+        "Körperliche Zeichen: Tremor und Schwitzen am Morgen",
+        "Laborwerte: erhöhte γ-GT, GOT, GPT, MCV, CDT"
       ]
     },
-    "differentialdiagnose": "Schädlicher Gebrauch, andere Suchterkrankungen.",
+    "differentialdiagnose": "Schädlicher Gebrauch (F10.1), primäre affektive Störungen, Angststörungen.",
     "komorbiditaeten": [
+      "F10.3",
       "F32",
-      "F43.1",
-      "K70"
+      "F41.1",
+      "K70",
+      "G62"
     ]
   },
   {
@@ -709,19 +733,27 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Reduktion oder Absetzen von Alkohol",
-        "Vegetative Entzugssymptome"
+        "Beendigung oder deutliche Reduktion anhaltend hohen Alkoholkonsums",
+        "Mind. 3 der folgenden Symptome innerhalb von Stunden bis Tagen: Tremor, Schwitzen, Tachykardie, Angst, Schlaflosigkeit, Übelkeit oder Erbrechen",
+        "Symptome nicht durch anderen medizinischen Zustand oder andere psychische Störung erklärbar"
       ],
       "optionale_symptome": [
-        "Tremor",
+        "Tremor (fein bis grob; Hände, Zunge, Augenlider)",
         "Schwitzen",
-        "Angst",
-        "Schlafstörungen"
+        "Tachykardie (Puls >100/min)",
+        "Angst / Panikattacken",
+        "Schlaflosigkeit, Albträume",
+        "Übelkeit und Erbrechen",
+        "Psychomotorische Unruhe / Agitation",
+        "Transiente optische, taktile oder akustische Halluzinationen bei erhaltenem Bewusstsein",
+        "Krampfanfälle (Grand Mal), meist 24–48h nach letztem Konsum"
       ]
     },
-    "differentialdiagnose": "Benzodiazepinentzug, Delir.",
+    "differentialdiagnose": "Delirium tremens (F10.4), Hypoglykämie, andere metabolische Störungen, Benzodiazepin-Entzug.",
     "komorbiditaeten": [
-      "F10.2"
+      "F10.2",
+      "F10.4",
+      "R56"
     ]
   },
   {
@@ -795,20 +827,29 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Alkoholentzug",
-        "Delirante Symptomatik",
-        "Bewusstseinstrübung"
+        "Kriterien für Alkohol-Entzugssyndrom (F10.3) erfüllt",
+        "Bewusstseinstrübung und Desorientiertheit (Zeit, Ort, Person)",
+        "Lebhafte Halluzinationen (meist optisch: zooptisch – Tiere, Insekten, kleine Wesen)",
+        "Ausgeprägte vegetative Zeichen: Tachykardie, Fieber, Schwitzen, Hypertonie",
+        "Schwere psychomotorische Unruhe / Agitation"
       ],
       "optionale_symptome": [
-        "Halluzinationen",
-        "Psychomotorische Unruhe",
-        "Vegetative Entgleisung"
+        "Optische Halluzinationen (Zoopsie: Insekten, Tiere, kleine Personen)",
+        "Taktile Halluzinationen (Kribbeln, Insekten auf der Haut)",
+        "Akustische Halluzinationen",
+        "Schlaf-Wach-Rhythmus-Umkehr",
+        "Ausgeprägte Angst / Terror",
+        "Krampfanfälle (häufig vor Beginn des Delirs)",
+        "Hohes Fieber (>38°C)",
+        "Kreislaufinstabilität – lebensbedrohlich ohne Behandlung"
       ]
     },
-    "differentialdiagnose": "Delir anderer Ursache, schizophrene Psychose.",
+    "differentialdiagnose": "Delir anderer Ursache (F05), Wernicke-Enzephalopathie, ZNS-Infektionen, hepatische Enzephalopathie.",
     "komorbiditaeten": [
       "F10.2",
-      "F05"
+      "F10.3",
+      "G04",
+      "E51"
     ]
   },
   {
@@ -883,19 +924,25 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Halluzinationen oder Wahnideen",
-        "Zeitlicher Zusammenhang mit Alkoholkonsum"
+        "Psychotische Symptome beginnen während oder innerhalb von 2 Wochen nach Alkoholkonsum",
+        "Psychotische Symptome halten länger als 48 Stunden an",
+        "Dauer der psychotischen Störung nicht länger als 6 Monate",
+        "Kein Nachweis einer anderen psychotischen Störung (z.B. Schizophrenie)"
       ],
       "optionale_symptome": [
-        "Angst",
-        "Desorganisation",
-        "Paranoide Ideen"
+        "Akustische Halluzinationen: beschimpfende oder kommentierende Stimmen",
+        "Verfolgungsideen; Eifersuchtswahn (Alkohol-Eifersuchtparanoia)",
+        "Wahnhafte Überzeugungen (Beziehungswahn, Größenwahn)",
+        "Psychomotorische Erregung oder Verlangsamung",
+        "Affektive Begleitsymptome: Angst, Dysphorie",
+        "Suizidalität"
       ]
     },
-    "differentialdiagnose": "Schizophrenie, Delir.",
+    "differentialdiagnose": "Schizophrenie (F20), affektive Störung mit psychotischen Symptomen (F32.3), Delirium (F10.4), wahnhafte Störung (F22).",
     "komorbiditaeten": [
       "F10.2",
-      "F32"
+      "F20",
+      "F32.3"
     ]
   },
   {
@@ -1111,19 +1158,25 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Gedächtnisstörungen",
-        "Beeinträchtigung des Kurzzeitgedächtnisses",
-        "Zusammenhang mit chronischem Alkoholkonsum"
+        "Beeinträchtigtes Neugedächtnis (gestörte Neugedächtnisbildung) in für den Alltag relevantem Ausmaß",
+        "Reduzierte Fähigkeit zur Erinnerung an vergangene Erlebnisse (Altgedächtnis ebenfalls betroffen, aber Neugedächtnis stärker)",
+        "Fehlen: keine Kurzzeitgedächtnisstörung, keine Bewusstseinstrübung, kein globaler intellektueller Abbau",
+        "Kein Nachweis anderer hirnorganischer Erkrankung außer dem Substanzgebrauch (Thiaminmangel bei Alkohol)"
       ],
       "optionale_symptome": [
-        "Konfabulationen",
-        "Orientierungsstörungen"
+        "Konfabulationen (unbewusste Ausfüllung von Gedächtnislücken mit erfundenen Inhalten)",
+        "Zeitdesorientierung / Störung der zeitlichen Einordnung von Ereignissen",
+        "Apathie, Initiativlosigkeit",
+        "Fehlende Krankheitseinsicht (Anosognosie)",
+        "Häufig nach Wernicke-Enzephalopathie (Trias: Ophthalmoplegie, Ataxie, Verwirrtheit)",
+        "Ferngedächtnis besser erhalten als Neugedächtnis"
       ]
     },
-    "differentialdiagnose": "Demenz, organisches amnestisches Syndrom.",
+    "differentialdiagnose": "Demenz (F00–F03), dissoziativer Gedächtnisverlust (F44.0), nichtalkoholisches Korsakow-Syndrom (F04).",
     "komorbiditaeten": [
-      "Vitamin-B1-Mangel",
-      "Polyneuropathie"
+      "F10.2",
+      "G31.2",
+      "E51"
     ]
   },
   {
@@ -1141,18 +1194,25 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Anhaltende psychische oder kognitive Folgen",
-        "Früherer Alkoholkonsum als Ursache"
+        "Alkohol-induzierte Veränderungen von Kognition, Affekt, Persönlichkeit oder Verhalten",
+        "Symptome bestehen über den Zeitraum direkter substanzbedingter Wirkung hinaus",
+        "Klarer zeitlicher Zusammenhang zwischen Substanzkonsum und Beginn des Zustands"
       ],
       "optionale_symptome": [
-        "Persönlichkeitsveränderungen",
-        "Kognitive Defizite"
+        "F10.70 Flashbacks: episodische Wiedererlebnisse früherer Rauscherfahrungen",
+        "F10.71 Persönlichkeits- und Verhaltensänderung: Reizbarkeit, Affektlabilität, Impulsivität",
+        "F10.72 Residuale affektive Störung: anhaltende Depression oder Angst",
+        "F10.73 Alkohol-Demenz: globaler kognitiver Abbau (Gedächtnis, Orientierung, Exekutivfunktionen)",
+        "F10.75 Psychotische Störung mit spätem Beginn (>2 Wochen nach Konsum)",
+        "Alkohol-Polyneuropathie: Taubheit, Kribbeln, Schwäche der Extremitäten"
       ]
     },
-    "differentialdiagnose": "Primäre Demenz.",
+    "differentialdiagnose": "Primäre Demenz, primäre affektive Störungen, primäre Persönlichkeitsstörungen.",
     "komorbiditaeten": [
       "F10.2",
-      "F02"
+      "G31.2",
+      "G62",
+      "F32"
     ]
   },
   {
@@ -1427,19 +1487,26 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Bewusstseinsveränderung nach Opioidkonsum",
-        "Miosis",
-        "Sedierung"
+        "Klare Evidenz für kürzlichen Opioidkonsum",
+        "Dysfunktionales Verhalten: mind. eines von Apathie/Sedierung, Enthemmung, psychomotorische Verlangsamung, Aufmerksamkeitsstörung, Urteilsvermögensbeeinträchtigung",
+        "Mind. eines der körperlichen Zeichen: Schläfrigkeit, verwaschene Sprache, Miosis (außer bei Anoxie), Bewusstseinssenkung"
       ],
       "optionale_symptome": [
-        "Atemdepression",
-        "Euphorie",
-        "Bradykardie"
+        "Tiefe Sedierung bis Bewusstlosigkeit",
+        "Miosis (stecknadelkopfgroße Pupillen – Leitsymptom)",
+        "Atemdepression (Hypoventilation bis Apnoe – lebensbedrohlich)",
+        "Hypothermie",
+        "Bradykardie",
+        "Übelkeit und Erbrechen",
+        "Obstipation",
+        "Juckreiz (Histaminfreisetzung)"
       ]
     },
-    "differentialdiagnose": "Sedativa-Intoxikation.",
+    "differentialdiagnose": "Sedativa-Intoxikation (F13.0), hypoglykämisches Koma, Schädel-Hirn-Trauma, andere ZNS-Erkrankungen. Antagonist Naloxon als diagnostischer Test.",
     "komorbiditaeten": [
-      "Ateminsuffizienz"
+      "F11.2",
+      "F32",
+      "B18"
     ]
   },
   {
@@ -1457,18 +1524,22 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Opioidkonsum mit gesundheitlichen Schäden",
-        "Kein vollständiges Abhängigkeitssyndrom"
+        "Klare Evidenz, dass Opioidkonsum für körperliche oder psychische Schäden verantwortlich ist",
+        "Konsummuster seit mind. 1 Monat oder wiederholt innerhalb 12 Monate",
+        "Kriterien für Opioidabhängigkeit (F11.2) nicht erfüllt"
       ],
       "optionale_symptome": [
-        "Soziale Probleme",
-        "Risikoverhalten"
+        "Injektionsbedingte Infektionen (Hepatitis B/C, HIV, Abszesse)",
+        "Überdosierungen",
+        "Soziale Folgeschäden, Beschaffungskriminalität",
+        "Psychischer Schaden: depressive Episoden"
       ]
     },
-    "differentialdiagnose": "Opioidabhängigkeit.",
+    "differentialdiagnose": "Opioidabhängigkeit (F11.2), chronische Schmerzbehandlung mit Opioiden.",
     "komorbiditaeten": [
-      "Hepatitis C",
-      "F32"
+      "F11.2",
+      "B18",
+      "B20"
     ]
   },
   {
@@ -1486,21 +1557,28 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Craving",
-        "Kontrollverlust",
-        "Toleranzentwicklung",
-        "Entzugssymptome"
+        "Mind. 3 der Abhängigkeitskriterien gleichzeitig für mind. 1 Monat:",
+        "1. Starkes Verlangen (Craving) nach Opioiden",
+        "2. Kontrollverlust über Beginn, Ende oder Menge des Konsums",
+        "3. Körperliches Entzugssyndrom (F11.3) bei Abstinenz oder Konsum zur Entzugsvermeidung",
+        "4. Toleranzentwicklung (Dosissteigerung für gleiche Wirkung)",
+        "5. Einengung des Verhaltensrepertoires auf den Opioidkonsum",
+        "6. Anhaltender Konsum trotz eindeutiger Folgeschäden"
       ],
       "optionale_symptome": [
+        "Ausschließliche Fixierung auf Beschaffung und Konsum",
+        "Vernachlässigung sozialer und beruflicher Verpflichtungen",
+        "Intravenöser Konsum (Injektionszeichen: Narben, Verhärtungen)",
         "Beschaffungskriminalität",
-        "Sozialer Rückzug"
+        "Hochgradige körperliche Verwahrlosung"
       ]
     },
-    "differentialdiagnose": "Schmerzmittelgebrauch ohne Abhängigkeit.",
+    "differentialdiagnose": "Schädlicher Opioidgebrauch (F11.1), medizinische Opioidtherapie bei chronischen Schmerzen.",
     "komorbiditaeten": [
-      "F43.1",
-      "F60.3",
-      "HIV"
+      "F11.3",
+      "F32",
+      "B18",
+      "B20"
     ]
   },
   {
@@ -1518,17 +1596,21 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Absetzen oder Reduktion von Opioiden",
-        "Vegetative Entzugssymptome"
+        "Beendigung oder Reduktion anhaltend hohen Opioidkonsums",
+        "Mind. 3 der folgenden Entzugssymptome: starkes Verlangen, Übelkeit/Erbrechen, Muskelschmerzen, Rhinorrhoe/Tränenfluss, Gänsehaut, Schwitzen, Durchfall, Tachykardie, Angst, Schlaflosigkeit"
       ],
       "optionale_symptome": [
-        "Mydriasis",
-        "Diarrhoe",
-        "Muskel- und Knochenschmerzen",
-        "Gähnen"
+        "Gänsehaut (cold turkey – Leitsymptom der Namensgebung)",
+        "Muskel- und Gliederschmerzen",
+        "Rhinorrhoe, Tränenfluss, Niesen",
+        "Übelkeit, Erbrechen, Bauchkrämpfe, Durchfall",
+        "Tachykardie, Hypertonie",
+        "Schwitzen und Kältegefühl gleichzeitig",
+        "Schlaflosigkeit, ausgeprägte Unruhe",
+        "Starkes Craving"
       ]
     },
-    "differentialdiagnose": "Grippe, Benzodiazepinentzug.",
+    "differentialdiagnose": "Andere Entzugssyndrome, Gastroenteritis, Angststörung, grippeartiger Infekt.",
     "komorbiditaeten": [
       "F11.2"
     ]
@@ -1579,18 +1661,20 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Halluzinationen oder Wahnideen",
-        "Zeitlicher Zusammenhang mit Opioidkonsum"
+        "Psychotische Symptome beginnen während oder innerhalb 2 Wochen nach Opioidkonsum",
+        "Psychotische Symptome halten länger als 48 Stunden an",
+        "Dauer nicht länger als 6 Monate"
       ],
       "optionale_symptome": [
-        "Paranoia",
-        "Desorganisation"
+        "Halluzinationen (akustisch, optisch)",
+        "Wahnhafte Überzeugungen",
+        "Affektive Begleitsymptome"
       ]
     },
-    "differentialdiagnose": "Schizophrenie, delirante Zustände.",
+    "differentialdiagnose": "Schizophrenie, Delir (F11.4), primäre psychotische Störungen.",
     "komorbiditaeten": [
       "F11.2",
-      "F32"
+      "F20"
     ]
   },
   {
@@ -1750,18 +1834,28 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Verhaltens- oder Wahrnehmungsveränderungen nach Cannabiskonsum"
+        "Klare Evidenz für kürzlichen Cannabiskonsum",
+        "Dysfunktionales Verhalten oder Wahrnehmungsstörungen: mind. eines von Euphorie/Enthemmung, Angst/Agitation, Misstrauen/paranoide Ideen, Zeitverzerrungserleben, Urteilsvermögensbeeinträchtigung, Aufmerksamkeitsstörung",
+        "Mind. eines der körperlichen Zeichen: gesteigerter Appetit, Mundtrockenheit, konjunktivale Injektion (Bindehautrötung), Tachykardie"
       ],
       "optionale_symptome": [
-        "Euphorie",
-        "Angst",
-        "Paranoia",
+        "Euphorie und Enthemmung",
+        "Angst, Panik oder Agitation ('Horrortrip')",
+        "Paranoide Ideen / Verfolgungsangst",
+        "Zeitverzerrungserleben (Zeit läuft langsamer oder schneller)",
+        "Depersonalisation / Derealisation",
+        "Halluzinationen bei erhaltenem Bewusstsein",
+        "Konjunktivale Rötung (gerötete Augen – Leitsymptom)",
+        "Tachykardie",
+        "Gesteigerter Appetit ('Munchies')",
         "Mundtrockenheit"
       ]
     },
-    "differentialdiagnose": "Halluzinogenintoxikation, Panikattacke.",
+    "differentialdiagnose": "Panikattacke (F41.0), akute psychotische Störung (F23), Halluzinogen-Intoxikation (F16.0).",
     "komorbiditaeten": [
-      "F41"
+      "F12.2",
+      "F41.0",
+      "F20"
     ]
   },
   {
@@ -1779,19 +1873,23 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Cannabiskonsum mit psychischen oder sozialen Schäden",
-        "Kein vollständiges Abhängigkeitssyndrom"
+        "Klare Evidenz, dass Cannabiskonsum für körperliche oder psychische Schäden verantwortlich ist",
+        "Konsummuster seit mind. 1 Monat oder wiederholt innerhalb 12 Monate",
+        "Kriterien für Cannabisabhängigkeit (F12.2) nicht erfüllt"
       ],
       "optionale_symptome": [
-        "Motivationsverlust",
-        "Gedächtnisprobleme",
-        "Soziale Konflikte"
+        "Psychischer Schaden: depressive Episoden, Amotivationssyndrom",
+        "Psychischer Schaden: Auslösung oder Verschlechterung einer Psychose",
+        "Körperlicher Schaden: chronische Bronchitis (Rauchen)",
+        "Beeinträchtigte Konzentration und Gedächtnisleistung (Kurzzeit)",
+        "Soziale Folgeschäden (Schule, Beruf, Beziehungen)"
       ]
     },
-    "differentialdiagnose": "Cannabisabhängigkeit.",
+    "differentialdiagnose": "Cannabisabhängigkeit (F12.2), primäre Depression, ADHS, primäre Psychosen.",
     "komorbiditaeten": [
+      "F12.2",
       "F32",
-      "F90"
+      "F20"
     ]
   },
   {
@@ -1809,21 +1907,27 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Craving",
-        "Kontrollverlust",
-        "Toleranzentwicklung"
+        "Mind. 3 der Abhängigkeitskriterien für mind. 1 Monat:",
+        "1. Starkes Verlangen nach Cannabis",
+        "2. Kontrollverlust über Menge und Häufigkeit des Konsums",
+        "3. Entzugssymptome (Reizbarkeit, Angst, Schlafstörungen, Appetitverlust) bei Abstinenz oder Konsum zur Entzugsvermeidung",
+        "4. Toleranzentwicklung (höhere Mengen nötig)",
+        "5. Einengung des Verhaltensrepertoires auf Cannabis",
+        "6. Konsum trotz eindeutiger Schäden"
       ],
       "optionale_symptome": [
-        "Entzugssymptome",
-        "Sozialer Rückzug",
-        "Täglicher Konsum"
+        "Täglicher oder mehrmals täglicher Konsum",
+        "Konsum zur Stimmungsregulation / Angstdämpfung",
+        "Amotivationssyndrom: Apathie, Interessenverlust, sozialer Rückzug",
+        "Verschlechterung schulischer oder beruflicher Leistungen",
+        "Frühzeitiger Konsum am Tag"
       ]
     },
-    "differentialdiagnose": "Schädlicher Gebrauch.",
+    "differentialdiagnose": "Schädlicher Gebrauch (F12.1), primäre Depression, ADHS.",
     "komorbiditaeten": [
-      "F41",
-      "F34.1",
-      "F60.3"
+      "F32",
+      "F41.1",
+      "F90"
     ]
   },
   {
@@ -1841,20 +1945,22 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Reduktion oder Absetzen von Cannabis",
-        "Entzugssymptome"
+        "Beendigung oder Reduktion anhaltend hohen Cannabiskonsums",
+        "Mind. 3 der folgenden Entzugssymptome innerhalb von Tagen: Reizbarkeit/Aggressivität, Angst/Nervosität, Schlafstörungen, verminderter Appetit, Unruhe, depressive Stimmung"
       ],
       "optionale_symptome": [
-        "Reizbarkeit",
-        "Schlafstörungen",
-        "Angst",
-        "Appetitminderung"
+        "Reizbarkeit und Aggressivität",
+        "Angst und innere Nervosität",
+        "Schlafstörungen: Einschlafprobleme, lebhafte oder beunruhigende Träume",
+        "Verminderter Appetit / Gewichtsverlust",
+        "Schweißausbrüche, leichter Tremor, leichtes Fieber",
+        "Starkes Craving",
+        "Depressive Verstimmung"
       ]
     },
-    "differentialdiagnose": "Angststörung, depressive Episode.",
+    "differentialdiagnose": "Angststörung, primäre Schlafstörung, andere Entzugssyndrome.",
     "komorbiditaeten": [
-      "F12.2",
-      "F41"
+      "F12.2"
     ]
   },
   {
@@ -1872,19 +1978,24 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Halluzinationen oder Wahnideen nach Cannabiskonsum",
-        "Zeitlicher Zusammenhang mit Konsum"
+        "Psychotische Störung beginnt während oder innerhalb 2 Wochen nach Cannabiskonsum",
+        "Psychotische Symptome halten länger als 48 Stunden an",
+        "Dauer nicht länger als 6 Monate",
+        "Schizophrenie-Kriterien nicht erfüllt"
       ],
       "optionale_symptome": [
-        "Paranoia",
-        "Desorganisation",
-        "Angst"
+        "Paranoide Wahnideen (Verfolgungswahn)",
+        "Stimmenhören",
+        "Größenideen",
+        "Desorganisiertes Denken",
+        "Angst und Agitation",
+        "Risikofaktor für spätere Schizophrenieentwicklung (besonders bei frühem Beginn und genetischer Disposition)"
       ]
     },
-    "differentialdiagnose": "Schizophrenie, bipolare Störung.",
+    "differentialdiagnose": "Schizophrenie (F20), akute polymorphe psychotische Störung (F23), primäre psychotische Störung.",
     "komorbiditaeten": [
-      "F20",
-      "F12.2"
+      "F12.2",
+      "F20"
     ]
   },
   {
@@ -2044,18 +2155,25 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Bewusstseins- oder Verhaltensveränderung nach Einnahme"
+        "Klare Evidenz für kürzlichen Konsum von Sedativa oder Hypnotika (häufig Benzodiazepine)",
+        "Dysfunktionales Verhalten: mind. eines von Euphorie/Apathie, Abusivität/Aggressivität, Stimmungslabilität, Aufmerksamkeitsstörung, anterograde Amnesie, beeinträchtigte psychomotorische Leistung",
+        "Mind. eines der körperlichen Zeichen: Gangunsicherheit, Standunsicherheit, verwaschene Sprache, Nystagmus, Bewusstseinssenkung, erythematöse Hautläsionen oder Blasen"
       ],
       "optionale_symptome": [
-        "Schläfrigkeit",
-        "Sprachstörungen",
-        "Gangunsicherheit",
-        "Atemdepression"
+        "Euphorie oder Sedierung/Apathie",
+        "Anterograde Amnesie ('Filmriss')",
+        "Aggressivität oder paradoxe Enthemmung (v.a. bei Benzodiazepinen)",
+        "Gangunsicherheit, Nystagmus",
+        "Verwaschene Sprache",
+        "Atemdepression bei schwerer Intoxikation",
+        "Hypotonie, Hypothermie"
       ]
     },
-    "differentialdiagnose": "Alkoholintoxikation, Delir.",
+    "differentialdiagnose": "Alkoholintoxikation (F10.0), Opioid-Intoxikation (F11.0), Schädel-Hirn-Trauma.",
     "komorbiditaeten": [
-      "Ateminsuffizienz"
+      "F13.2",
+      "F32",
+      "F41.1"
     ]
   },
   {
@@ -2073,19 +2191,22 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Konsum mit gesundheitlichen Schäden",
-        "Kein vollständiges Abhängigkeitssyndrom"
+        "Klare Evidenz, dass Gebrauch von Sedativa/Hypnotika für körperliche oder psychische Schäden verantwortlich ist",
+        "Konsummuster seit mind. 1 Monat oder wiederholt innerhalb 12 Monate",
+        "Keine Abhängigkeitskriterien erfüllt"
       ],
       "optionale_symptome": [
-        "Kognitive Defizite",
-        "Stürze",
-        "Soziale Probleme"
+        "Kognitive Beeinträchtigungen (Gedächtnis, Konzentration)",
+        "Erhöhtes Sturz- und Unfallrisiko",
+        "Psychischer Schaden: Depression oder Angst",
+        "Einnahme höher als ärztlich verordnet (Dosissteigerung ohne Abhängigkeit)"
       ]
     },
-    "differentialdiagnose": "Abhängigkeitssyndrom.",
+    "differentialdiagnose": "Sedativa-Abhängigkeit (F13.2), primäre Angststörung, primäre Schlafstörung.",
     "komorbiditaeten": [
-      "F32",
-      "F41"
+      "F13.2",
+      "F41.1",
+      "F51"
     ]
   },
   {
@@ -2103,21 +2224,28 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Craving",
-        "Kontrollverlust",
-        "Toleranzentwicklung",
-        "Entzugssymptome"
+        "Mind. 3 der Abhängigkeitskriterien für mind. 1 Monat:",
+        "1. Starkes Verlangen nach Sedativa/Hypnotika (oft Benzodiazepine)",
+        "2. Kontrollverlust über Beginn, Ende oder Menge der Einnahme",
+        "3. Ausgeprägte Entzugssymptome (Angst, Tremor, Schlaflosigkeit, Krampfanfälle) bei Absetzen oder Einnahme zur Entzugsvermeidung",
+        "4. Toleranzentwicklung (Dosiseskalation)",
+        "5. Einengung auf Beschaffung und Einnahme",
+        "6. Konsum trotz bekannter Schäden"
       ],
       "optionale_symptome": [
-        "Dosissteigerung",
-        "Sozialer Rückzug"
+        "Hochdosiger Konsum (oft weit über therapeutischer Dosis)",
+        "Doktor-Shopping / Mehrfachrezepte",
+        "Kombinationskonsum mit Alkohol",
+        "Kognitive Beeinträchtigungen: Gedächtnis, Konzentration",
+        "Erhöhtes Sturz-/Frakturrisiko (v.a. ältere Patienten)"
       ]
     },
-    "differentialdiagnose": "Chronische Schlafstörung ohne Abhängigkeit.",
+    "differentialdiagnose": "Schädlicher Gebrauch (F13.1), primäre Angststörung, primäre Schlafstörung.",
     "komorbiditaeten": [
-      "F41",
+      "F13.3",
+      "F41.1",
       "F32",
-      "F60"
+      "G40"
     ]
   },
   {
@@ -2135,19 +2263,27 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Absetzen oder Reduktion der Substanz",
-        "Vegetative oder psychische Entzugssymptome"
+        "Beendigung oder deutliche Reduktion anhaltend hohen Gebrauchs von Sedativa/Hypnotika",
+        "Mind. 3 der folgenden Entzugssymptome: Angst, Tremor, Schwitzen, Tachykardie, Schlaflosigkeit, Übelkeit/Erbrechen, Agitation",
+        "Symptome nicht durch anderen Zustand erklärbar"
       ],
       "optionale_symptome": [
-        "Angst",
-        "Schlaflosigkeit",
+        "Schwere Angst und Panikattacken",
         "Tremor",
-        "Krampfanfälle"
+        "Schwitzen",
+        "Tachykardie, Hypertonie",
+        "Schlaflosigkeit",
+        "Übelkeit und Erbrechen",
+        "Psychomotorische Agitation",
+        "Krampfanfälle (lebensbedrohlich! – medizinischer Notfall)",
+        "Transiente Halluzinationen"
       ]
     },
-    "differentialdiagnose": "Angststörung, Alkoholentzug.",
+    "differentialdiagnose": "Alkohol-Entzugssyndrom, Angststörung, Delirium.",
     "komorbiditaeten": [
-      "F13.2"
+      "F13.2",
+      "F13.4",
+      "G40"
     ]
   },
   {
@@ -2367,18 +2503,27 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Verhaltens- oder Bewusstseinsveränderung nach Kokainkonsum"
+        "Klare Evidenz für kürzlichen Kokainkonsum",
+        "Dysfunktionales Verhalten oder Wahrnehmungsauffälligkeiten: Euphorie/erhöhte Energie, Hypervigilanz, Grandiosität, Abusivität/Aggressivität, Stimmungslabilität, paranoide Ideen, Verfolgungsangst",
+        "Mind. 2 körperliche Zeichen: Tachykardie, Herzrhythmusstörungen, Hypertonie, Schwitzen/Kälteschauer, Übelkeit/Erbrechen, Gewichtsverlust, Mydriasis, Agitation, Brustschmerzen, Krampfanfälle"
       ],
       "optionale_symptome": [
-        "Euphorie",
-        "Tachykardie",
-        "Agitation",
-        "Hypervigilanz"
+        "Euphorische Hochstimmung, erhöhte Energie und Aktivität",
+        "Hypervigilanz, vermindertes Schlafbedürfnis",
+        "Grandiosität, überhöhtes Selbstwertgefühl",
+        "Paranoide Ideen bis hin zu Verfolgungswahn",
+        "Tachykardie, Herzrhythmusstörungen",
+        "Hypertonie, Hyperthermie",
+        "Mydriasis (Pupillenerweiterung)",
+        "Brustschmerzen (Koronarspasmen – Infarktgefahr)",
+        "Krampfanfälle"
       ]
     },
-    "differentialdiagnose": "Amphetaminintoxikation.",
+    "differentialdiagnose": "Manische Episode (F30), paranoide Schizophrenie (F20.0), Amphetamin-Intoxikation (F15.0).",
     "komorbiditaeten": [
-      "Herzrhythmusstörungen"
+      "F14.2",
+      "F30",
+      "F20"
     ]
   },
   {
@@ -2396,19 +2541,22 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Kokainkonsum mit gesundheitlichen oder sozialen Schäden",
-        "Kein vollständiges Abhängigkeitssyndrom"
+        "Klare Evidenz, dass Kokainkonsum für körperliche oder psychische Schäden verantwortlich ist",
+        "Konsummuster seit mind. 1 Monat oder wiederholt innerhalb 12 Monate",
+        "Keine Abhängigkeitskriterien erfüllt"
       ],
       "optionale_symptome": [
-        "Impulsivität",
-        "Aggressivität",
-        "Finanzielle Probleme"
+        "Nasenschleimhautschäden (Perforation des Nasenseptums bei Schnupfen)",
+        "Kardiologische Schäden (Herzrhythmusstörungen, Infarkt)",
+        "Psychischer Schaden: Depressionen nach Crashphase",
+        "Finanzielle und soziale Folgeschäden"
       ]
     },
-    "differentialdiagnose": "Kokainabhängigkeit.",
+    "differentialdiagnose": "Kokainabhängigkeit (F14.2), primäre affektive Störungen.",
     "komorbiditaeten": [
-      "F41",
-      "F60.2"
+      "F14.2",
+      "F32",
+      "I20"
     ]
   },
   {
@@ -2426,21 +2574,28 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Craving",
-        "Kontrollverlust",
-        "Fortgesetzter Konsum trotz Schäden"
+        "Mind. 3 der Abhängigkeitskriterien für mind. 1 Monat:",
+        "1. Starkes Verlangen (Craving) nach Kokain, besonders nach Entzug",
+        "2. Kontrollverlust – Binge-Muster (mehrtägige Konsumexzesse bis zur Erschöpfung)",
+        "3. Dysphorie, Erschöpfung, Hypersomnie nach Abstinenz ('Crash') oder erneuter Konsum zur Vermeidung",
+        "4. Toleranzentwicklung",
+        "5. Einengung des Verhaltensrepertoires auf Kokainkonsum",
+        "6. Konsum trotz kardiovaskulärer, psychischer oder sozialer Schäden"
       ],
       "optionale_symptome": [
-        "Toleranzentwicklung",
-        "Sozialer Abstieg",
-        "Beschaffungskriminalität"
+        "Binge-Konsum über Tage ohne Schlafen",
+        "Nasenseptumschäden (Schnupfer)",
+        "Kardiologische Komplikationen (Infarkt, Arrhythmie)",
+        "Schwere Depression nach Konsumstopp (Crash)",
+        "Kokain-induzierte Psychose (Verfolgungswahn, Stimmenhören)"
       ]
     },
-    "differentialdiagnose": "Gelegentlicher Konsum.",
+    "differentialdiagnose": "Bipolare Störung, primäre Depression, ADHS.",
     "komorbiditaeten": [
       "F32",
-      "F60.2",
-      "F43.1"
+      "F14.5",
+      "I20",
+      "F20"
     ]
   },
   {
@@ -2661,18 +2816,27 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Verhaltens- oder Bewusstseinsveränderung nach Stimulanzienkonsum"
+        "Klare Evidenz für kürzlichen Konsum von Stimulanzien (Amphetamine, Methamphetamin, MDMA, Koffein u.a.)",
+        "Dysfunktionales Verhalten: Euphorie/erhöhte Energie, Hypervigilanz, Grandiosität, Aggressivität, Stimmungslabilität, stereotype Verhaltensweisen, paranoide Ideen",
+        "Mind. 2 körperliche Zeichen: Tachykardie, Herzrhythmusstörungen, Hypertonie, Schwitzen/Kälteschauer, Übelkeit, Gewichtsverlust, Mydriasis, Agitation, Brustschmerzen, Krampfanfälle"
       ],
       "optionale_symptome": [
-        "Euphorie",
-        "Agitation",
-        "Tachykardie",
-        "Hypertonie"
+        "Euphorie und ausgeprägt gesteigertes Energiegefühl",
+        "Vermindertes Schlafbedürfnis (Tage ohne Schlaf möglich)",
+        "Hyperaktivität und Gesprächigkeit",
+        "Paranoide Wachheit bis Verfolgungsangst",
+        "Mydriasis",
+        "Tachykardie, Hypertonie",
+        "Hyperthermie",
+        "Bruxismus (Zähneknirschen – typisch für MDMA)",
+        "Serotonerges Syndrom (bei MDMA): Hyperthermie, Agitation, Myoklonien"
       ]
     },
-    "differentialdiagnose": "Kokainintoxikation, Manie.",
+    "differentialdiagnose": "Manische Episode (F30), Kokain-Intoxikation (F14.0), Schilddrüsenüberfunktion.",
     "komorbiditaeten": [
-      "Herzrhythmusstörungen"
+      "F15.2",
+      "F30",
+      "F20"
     ]
   },
   {
@@ -2720,21 +2884,27 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Craving",
-        "Kontrollverlust",
-        "Fortgesetzter Konsum trotz Schäden"
+        "Mind. 3 der Abhängigkeitskriterien für mind. 1 Monat:",
+        "1. Starkes Craving nach Stimulanzien",
+        "2. Kontrollverlust über Menge und Häufigkeit des Konsums",
+        "3. Crash-Syndrom bei Abstinenz: Dysphorie, Erschöpfung, Hypersomnie, Hyperphagie",
+        "4. Toleranzentwicklung (Dosiseskalation)",
+        "5. Einengung des Verhaltensrepertoires auf Stimulanzienkonsum",
+        "6. Konsum trotz eindeutiger Schäden"
       ],
       "optionale_symptome": [
-        "Toleranzentwicklung",
-        "Entzugssymptome",
-        "Sozialer Rückzug"
+        "Crash nach Konsum: schwere Erschöpfung, Hypersomnie, Depression",
+        "Erneutes Craving nach der Crashphase (Teufelskreis)",
+        "Gewichtsverlust und Mangelernährung",
+        "Chronische Schlafstörungen",
+        "Amphetamin-induzierte Psychose (Verfolgungswahn, Stimmenhören)"
       ]
     },
-    "differentialdiagnose": "ADHS mit Medikation.",
+    "differentialdiagnose": "Primäre bipolare Störung, ADHS, primäre Depression.",
     "komorbiditaeten": [
-      "F60.2",
-      "F41",
-      "F32"
+      "F15.3",
+      "F32",
+      "F20"
     ]
   },
   {
@@ -2752,17 +2922,20 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Absetzen oder Reduktion von Stimulanzien",
-        "Psychische oder vegetative Entzugssymptome"
+        "Beendigung oder Reduktion anhaltend hohen Stimulanzienkonsums",
+        "Dysphore Stimmung, Erschöpfung oder Lethargie",
+        "Psychomotorische Verlangsamung oder Unruhe"
       ],
       "optionale_symptome": [
-        "Müdigkeit",
-        "Depressive Stimmung",
-        "Schlafbedürfnis",
-        "Craving"
+        "Dysphorie, depressive Verstimmung (Crash)",
+        "Extreme Erschöpfung / Lethargie",
+        "Hypersomnie (Schlafen über Tage)",
+        "Gesteigerter Appetit / Hyperphagie",
+        "Starkes Craving",
+        "Psychomotorische Unruhe oder Verlangsamung"
       ]
     },
-    "differentialdiagnose": "Depressive Episode.",
+    "differentialdiagnose": "Primäre Depression, andere Entzugssyndrome.",
     "komorbiditaeten": [
       "F15.2",
       "F32"
