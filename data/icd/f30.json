@@ -1,5 +1,33 @@
 [
   {
+    "code": "F30.0",
+    "name": "Hypomanie",
+    "kategorie": "F3",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 1.5,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.1,
+      "weiblich": 0.9,
+      "alter_18_30": 1.8,
+      "alter_31_50": 1.4,
+      "alter_51_plus": 0.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Anhaltend leicht gehobene oder gereizte Stimmung, mindestens 4 aufeinanderfolgende Tage",
+        "Mindestens 3 der folgenden Zeichen: gesteigerte Aktivität oder Ruhelosigkeit, vermehrte Gesprächigkeit, Konzentrationsschwierigkeiten, vermindertes Schlafbedürfnis, gesteigerte Sexualenergie, leichtsinniges Verhalten, erhöhte Geselligkeit",
+        "Beeinträchtigung der persönlichen Funktionen, aber kein Auftreten von Halluzinationen oder Wahn"
+      ],
+      "optionale_symptome": [
+        "Gesteigertes Selbstwertgefühl, Überheblichkeit",
+        "Übermäßige Vertrautheit gegenüber Fremden",
+        "Erhöhtes körperliches und geistiges Leistungsgefühl"
+      ]
+    },
+    "differentialdiagnose": "Manie ohne Psychose (F30.1, schwerer), manische Episode bei Bipolar (F31), Zyklothymia (F34.0), substanzinduziert (F1x).",
+    "komorbiditaeten": ["F41", "F10", "F34.0"]
+  },
+  {
     "code": "F30.1",
     "name": "Manie ohne psychotische Symptome",
     "kategorie": "F3",
@@ -14,22 +42,18 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Gehobene, expansive oder gereizte Stimmung, deutlich abnorm",
-        "Gesteigerte Aktivität oder Rastlosigkeit",
-        "Mindestens 3 weitere Symptome (Rededrang, Größenideen, vermindertes Schlafbedürfnis)"
+        "Stimmung vorwiegend gehoben, expansiv oder gereizt, deutlich abnorm, mindestens 1 Woche",
+        "Mindestens 3 der folgenden Zeichen: gesteigerte Aktivität/Ruhelosigkeit, Rededrang, Gedankenrasen/Ideenflucht, vermindertes Schlafbedürfnis, aufgeblähtes Selbstwertgefühl/Grandiosität, Ablenkbarkeit, leichtsinniges Verhalten",
+        "Keine Halluzinationen oder Wahnideen"
       ],
       "optionale_symptome": [
-        "Ablenkbarkeit, Konzentrationsstörungen",
-        "Rücksichtsloses Verhalten (Kaufexzesse, sexuelle Enthemmung)",
-        "Subjektiv gesteigertes Denktempo (Gedankenrasen)"
+        "Verlust sozialer Hemmungen, inadäquates Verhalten",
+        "Subjektives Gedankenrasen, Konzentrationsstörungen",
+        "Rücksichtsloses Verhalten (Kaufexzesse, sexuelle Enthemmung, rücksichtsloses Fahren)"
       ]
     },
-    "differentialdiagnose": "Hypomanie (F30.0, weniger schwer), Manie mit Psychose (F30.2), schizoaffektive Störung (F25.0), drogeninduzierte Manie.",
-    "komorbiditaeten": [
-      "F10",
-      "F12",
-      "F41"
-    ]
+    "differentialdiagnose": "Hypomanie (F30.0, weniger schwer), Manie mit Psychose (F30.2), schizoaffektive Störung manischer Typ (F25.0), substanzinduzierte Manie.",
+    "komorbiditaeten": ["F10", "F12", "F41"]
   },
   {
     "code": "F30.2",
@@ -46,25 +70,49 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Vollständiges manisches Zustandsbild",
-        "Zusätzlich Wahnideen (meist stimmungskongruent: Größen-, Liebes-, Sendungswahn)",
-        "Oder Halluzinationen"
+        "Episode erfüllt Kriterien für Manie ohne psychotische Symptome (F30.1), außer Kriterium C",
+        "Die Episode erfüllt nicht gleichzeitig die Kriterien für Schizophrenie (F20.0–F20.3)",
+        "Wahnideen (meist stimmungskongruent: Größen-, Liebes-, Sendungswahn) oder Halluzinationen"
       ],
       "optionale_symptome": [
-        "Agitation und Unruhe",
-        "Fehlende Krankheitseinsicht",
-        "Gefährdungsverhalten"
+        "Agitation und extreme motorische Überaktivität",
+        "Ideenflucht so ausgeprägt, dass der Patient unverständlich ist",
+        "Stimmungsinkongruente psychotische Symptome möglich"
       ]
     },
     "differentialdiagnose": "Schizoaffektive Störung manischer Typ (F25.0), paranoide Schizophrenie (F20.0), organische maniforme Störung.",
-    "komorbiditaeten": [
-      "F10",
-      "F25"
-    ]
+    "komorbiditaeten": ["F10", "F25"]
+  },
+  {
+    "code": "F31.0",
+    "name": "Bipolare affektive Störung, gegenwärtig hypomanische Episode",
+    "kategorie": "F3",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.8,
+    "praevalenz_modifikatoren": {
+      "männlich": 1,
+      "weiblich": 1.1,
+      "alter_18_30": 1.6,
+      "alter_31_50": 1.4,
+      "alter_51_plus": 0.6
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Gegenwärtige Episode erfüllt Kriterien für Hypomanie (F30.0)",
+        "Mindestens eine weitere affektive Episode in der Vergangenheit (hypoman, manisch oder depressiv)"
+      ],
+      "optionale_symptome": [
+        "Übergang zu vollständiger Manie möglich",
+        "Oft bessere Funktionsfähigkeit als bei Vollmanie",
+        "Häufig mit beruflichen Hochphasen verbunden"
+      ]
+    },
+    "differentialdiagnose": "Unipolare Hypomanie (F30.0, keine Vorgeschichte), Zyklothymia (F34.0), Bipolar I (F31.1).",
+    "komorbiditaeten": ["F41", "F10", "F60.3"]
   },
   {
     "code": "F31.1",
-    "name": "Bipolare Störung, gegenwärtig manische Episode ohne Psychose",
+    "name": "Bipolare affektive Störung, gegenwärtig manische Episode ohne Psychose",
     "kategorie": "F3",
     "seltenheit_score": 5,
     "praevalenz_allgemein_prozent": 1,
@@ -77,25 +125,48 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Mindestens eine frühere affektive Episode in der Anamnese",
-        "Gegenwärtige Manie ohne psychotische Symptome (≥F30.1-Kriterien)"
+        "Gegenwärtige Episode erfüllt Kriterien für Manie ohne psychotische Symptome (F30.1)",
+        "Mindestens eine weitere affektive Episode in der Vergangenheit"
       ],
       "optionale_symptome": [
-        "Rapid Cycling (≥4 Episoden/Jahr)",
-        "Gemischte Zustände",
+        "Rapid Cycling möglich (≥4 Episoden/Jahr)",
+        "Gemischte Zustände oder schnelle Wechsel",
         "Stimmungskongruente Kognition"
       ]
     },
-    "differentialdiagnose": "Unipolare Manie (F30), schizoaffektive Störung (F25), Borderline-PS (F60.3, impulsive Stimmungsschwankungen).",
-    "komorbiditaeten": [
-      "F41",
-      "F10",
-      "F43.1"
-    ]
+    "differentialdiagnose": "Unipolare Manie (F30.1), schizoaffektive Störung (F25), Borderline-PS (F60.3).",
+    "komorbiditaeten": ["F41", "F10", "F43.1"]
+  },
+  {
+    "code": "F31.2",
+    "name": "Bipolare affektive Störung, gegenwärtig manische Episode mit Psychose",
+    "kategorie": "F3",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.3,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.1,
+      "weiblich": 1,
+      "alter_18_30": 1.4,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 0.4
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Gegenwärtige Episode erfüllt Kriterien für Manie mit psychotischen Symptomen (F30.2)",
+        "Mindestens eine weitere affektive Episode in der Vergangenheit"
+      ],
+      "optionale_symptome": [
+        "Stimmungskongruente oder -inkongruente psychotische Symptome",
+        "Hochgradige Fremdgefährdung möglich",
+        "Stationäre Behandlung oft erforderlich"
+      ]
+    },
+    "differentialdiagnose": "Schizoaffektive Störung (F25.0), paranoide Schizophrenie (F20.0), organische Störung (F06).",
+    "komorbiditaeten": ["F25", "F10"]
   },
   {
     "code": "F31.3",
-    "name": "Bipolare Störung, gegenwärtig mittelgradige Depression",
+    "name": "Bipolare affektive Störung, gegenwärtig leichte oder mittelgradige Depression",
     "kategorie": "F3",
     "seltenheit_score": 4,
     "praevalenz_allgemein_prozent": 2,
@@ -108,21 +179,71 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Früherer manischer, hypomaner oder gemischter Episode",
-        "Gegenwärtige mittelgradige depressive Episode"
+        "Gegenwärtige Episode erfüllt Kriterien für leichte (F32.0) oder mittelgradige (F32.1) depressive Episode",
+        "Mindestens eine frühere hypomane, manische oder gemischte affektive Episode in der Anamnese"
       ],
       "optionale_symptome": [
         "Atypische Symptome (Hypersomnie, Gewichtszunahme)",
-        "Antriebsmangel und Interessenverlust",
-        "Suizidalität"
+        "Antriebsmangel und Interessenverlust im Vordergrund",
+        "Suizidalität, besonders in Mischzuständen erhöhtes Risiko"
       ]
     },
     "differentialdiagnose": "Unipolare Depression (F32/F33, keine manische Vorgeschichte), Zyklothymia (F34.0), schizoaffektive Störung.",
-    "komorbiditaeten": [
-      "F41",
-      "F60.3",
-      "F43.1"
-    ]
+    "komorbiditaeten": ["F41", "F60.3", "F43.1"]
+  },
+  {
+    "code": "F31.4",
+    "name": "Bipolare affektive Störung, gegenwärtig schwere depressive Episode ohne Psychose",
+    "kategorie": "F3",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.5,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.8,
+      "weiblich": 1.3,
+      "alter_18_30": 1.2,
+      "alter_31_50": 1.4,
+      "alter_51_plus": 1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Gegenwärtige Episode erfüllt Kriterien für schwere depressive Episode ohne Psychose (F32.2)",
+        "Mindestens eine frühere hypomane oder manische Episode in der Anamnese"
+      ],
+      "optionale_symptome": [
+        "Ausgeprägte Suizidalität, stationäre Einweisung oft notwendig",
+        "Somatisches Syndrom fast immer vorhanden",
+        "Besondere Vorsicht bei Antidepressiva (Switch-Risiko)"
+      ]
+    },
+    "differentialdiagnose": "Unipolare schwere Depression (F32.2), schizoaffektive Störung depressiver Typ (F25.1).",
+    "komorbiditaeten": ["F41", "F43.1"]
+  },
+  {
+    "code": "F31.5",
+    "name": "Bipolare affektive Störung, gegenwärtig schwere depressive Episode mit Psychose",
+    "kategorie": "F3",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.2,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.9,
+      "weiblich": 1.2,
+      "alter_18_30": 1,
+      "alter_31_50": 1.3,
+      "alter_51_plus": 1.2
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Gegenwärtige Episode erfüllt Kriterien für schwere depressive Episode mit Psychose (F32.3)",
+        "Mindestens eine frühere hypomane oder manische Episode in der Anamnese"
+      ],
+      "optionale_symptome": [
+        "Stimmungskongruente oder -inkongruente psychotische Symptome",
+        "Depressiver Stupor möglich",
+        "Höchste Suizidgefahr unter allen bipolaren Episoden"
+      ]
+    },
+    "differentialdiagnose": "Schizoaffektive Störung depressiver Typ (F25.1), schwere unipolare Depression mit Psychose (F32.3).",
+    "komorbiditaeten": ["F25", "F43.1"]
   },
   {
     "code": "F32.0",
@@ -139,23 +260,18 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Mindestens 2 Kernsymptome: gedrückte Stimmung, Interessenverlust, Antriebsminderung",
-        "Mindestens 2 weitere Symptome aus der Kriterienliste",
+        "Mindestens 2 der 3 Kernsymptome: gedrückte Stimmung, Interessenverlust, Antriebsminderung",
+        "Zusätzliche Symptome aus der Liste (Selbstwertminderung, Schuldgefühle, Konzentrationsstörungen, Schlaf-/Appetitstörungen, Suizidgedanken, psychomotorische Veränderungen): gesamt mindestens 4 Symptome",
         "Dauer mindestens 2 Wochen"
       ],
       "optionale_symptome": [
-        "Konzentrationsstörungen",
-        "Vermindertes Selbstwertgefühl",
-        "Schlaf- oder Appetitstörungen",
-        "Schuldgefühle"
+        "Konzentrationsstörungen, Entscheidungsunfähigkeit",
+        "Vermindertes Selbstwertgefühl und Selbstvertrauen",
+        "Schlaf- oder Appetitstörungen"
       ]
     },
-    "differentialdiagnose": "Mittelgradige depressive Episode (F32.1, mehr Symptome), Anpassungsstörung (F43.2, reaktiv auf Ereignis), Dysthymia (F34.1, chronisch aber leichter).",
-    "komorbiditaeten": [
-      "F41.1",
-      "F45",
-      "F60"
-    ]
+    "differentialdiagnose": "Mittelgradige depressive Episode (F32.1, mehr Symptome), Anpassungsstörung (F43.2, reaktiv), Dysthymia (F34.1, chronisch).",
+    "komorbiditaeten": ["F41.1", "F45", "F60"]
   },
   {
     "code": "F32.1",
@@ -172,9 +288,9 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Mindestens 2 Kernsymptome: gedrückte Stimmung, Interessenverlust, Antriebsminderung",
-        "Mindestens 3–4 weitere Symptome",
-        "Erhebliche Beeinträchtigung sozialer/beruflicher Funktionen"
+        "Mindestens 2 der 3 Kernsymptome wie bei F32.0",
+        "Zusätzliche Symptome aus F32.0-Kriterienliste: gesamt mindestens 6 Symptome",
+        "Erhebliche Beeinträchtigung sozialer und beruflicher Funktionen"
       ],
       "optionale_symptome": [
         "Psychomotorische Hemmung oder Agitiertheit",
@@ -183,11 +299,7 @@
       ]
     },
     "differentialdiagnose": "Leichte depressive Episode (F32.0), schwere depressive Episode (F32.2), Bipolare Störung (F31), Dysthymia (F34.1).",
-    "komorbiditaeten": [
-      "F41",
-      "F60.3",
-      "F43.1"
-    ]
+    "komorbiditaeten": ["F41", "F60.3", "F43.1"]
   },
   {
     "code": "F32.2",
@@ -204,22 +316,18 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Alle 3 Kernsymptome vorhanden",
-        "Mindestens 4 weitere Symptome, einige davon schwer",
-        "Schwere Beeinträchtigung oder vollständige Unfähigkeit, Alltagsfunktionen auszufüllen"
+        "Alle 3 Kernsymptome vorhanden: gedrückte Stimmung, Interessenverlust, Antriebsminderung",
+        "Weitere Symptome aus der Liste: gesamt mindestens 8 Symptome",
+        "Keine Halluzinationen oder Wahnideen, schwere Beeinträchtigung sozialer/beruflicher Funktionen"
       ],
       "optionale_symptome": [
         "Ausgeprägte Suizidalität",
         "Somatisches Syndrom fast immer vorhanden",
-        "Agitierter Stupor möglich"
+        "Agitierter oder gehemmter Stupor möglich"
       ]
     },
-    "differentialdiagnose": "Schwere depressive Episode mit Psychose (F32.3), Bipolare Depression (F31.3), schizoaffektive Störung depressiver Typ (F25.1).",
-    "komorbiditaeten": [
-      "F41",
-      "F43.1",
-      "F60.3"
-    ]
+    "differentialdiagnose": "Schwere depressive Episode mit Psychose (F32.3), Bipolare Depression (F31.4), schizoaffektive Störung depressiver Typ (F25.1).",
+    "komorbiditaeten": ["F41", "F43.1", "F60.3"]
   },
   {
     "code": "F32.3",
@@ -236,24 +344,49 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Schwere depressive Episode (F32.2-Kriterien erfüllt)",
-        "Zusätzlich: Wahnideen (Schuld, Hypochondrie, Nihilismus) oder Halluzinationen"
+        "Schwere depressive Episode (F32.2-Kriterien erfüllt, außer Kriterium D)",
+        "Kriterien für Schizophrenie (F20.0–F20.3) oder schizoaffektive Störung (F25.1) werden nicht erfüllt",
+        "Wahnideen (Schuld, Hypochondrie, Nihilismus, Selbstreferenz) oder Halluzinationen, oder depressiver Stupor"
       ],
       "optionale_symptome": [
-        "Depressiver Stupor",
-        "Stimmungsinkongruente Psychose möglich",
-        "Ausgeprägte Suizidalität"
+        "Stimmungsinkongruente Psychose möglich (perseverative oder selbstbezügliche Wahnideen)",
+        "Gefährdung durch Suizid, Dehydration oder Nahrungsverweigerung",
+        "Ausgeprägte psychomotorische Verlangsamung bis Stupor"
       ]
     },
     "differentialdiagnose": "Schizoaffektive Störung depressiver Typ (F25.1), paranoide Schizophrenie (F20.0), organische Depression (F06.3).",
-    "komorbiditaeten": [
-      "F43.1",
-      "F25"
-    ]
+    "komorbiditaeten": ["F43.1", "F25"]
+  },
+  {
+    "code": "F33.0",
+    "name": "Rezidivierende depressive Störung, gegenwärtig leichte Episode",
+    "kategorie": "F3",
+    "seltenheit_score": 3,
+    "praevalenz_allgemein_prozent": 8,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.6,
+      "weiblich": 1.5,
+      "alter_18_30": 1.1,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 1.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Kriterien für rezidivierende depressive Störung erfüllt: mindestens 2 frühere Episoden (>2 Wochen, >2 Monate Abstand), keine manische/hypomane Vorgeschichte",
+        "Gegenwärtige Episode erfüllt Kriterien für leichte depressive Episode (F32.0)"
+      ],
+      "optionale_symptome": [
+        "Saisonales Muster möglich (Winter-Depression)",
+        "Zunehmende Episodendauer mit jeder Wiederkehr",
+        "Funktionseinschränkung trotz leichter Symptomatik"
+      ]
+    },
+    "differentialdiagnose": "Einzelne leichte depressive Episode (F32.0), Dysthymia (F34.1, chronisch-fluktuierend), Bipolare Störung (F31, bei hypomanen Episoden).",
+    "komorbiditaeten": ["F41.1", "F45", "F60"]
   },
   {
     "code": "F33.1",
-    "name": "Rezidivierende depressive Störung, gegenwärtig mittelgradig",
+    "name": "Rezidivierende depressive Störung, gegenwärtig mittelgradige Episode",
     "kategorie": "F3",
     "seltenheit_score": 3,
     "praevalenz_allgemein_prozent": 6,
@@ -266,21 +399,71 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Mindestens 2 frühere depressive Episoden (>2 Wochen, >2 Monate Abstand)",
-        "Gegenwärtige mittelgradige depressive Episode (F32.1-Kriterien)"
+        "Allgemeine Kriterien für rezidivierende depressive Störung (F33) erfüllt",
+        "Gegenwärtige Episode erfüllt Kriterien für mittelgradige depressive Episode (F32.1)"
       ],
       "optionale_symptome": [
-        "Saisonales Muster (Winter-Depression)",
-        "Kurze Hypomanien in der Anamnese",
-        "Zunehmendes Chronifizierungsrisiko"
+        "Saisonales Muster (Saisonal abhängige Depression möglich)",
+        "Kurze Hypomanien in der Anamnese nach Episoden",
+        "Zunehmendes Chronifizierungsrisiko bei spätem Erkrankungsbeginn"
       ]
     },
-    "differentialdiagnose": "Einzelne depressive Episode (F32), Dysthymia (F34.1, chronisch-leicht), Bipolare Störung (F31, bei hypomanen Episoden).",
-    "komorbiditaeten": [
-      "F41.1",
-      "F45",
-      "F60"
-    ]
+    "differentialdiagnose": "Einzelne depressive Episode (F32), Dysthymia (F34.1), Bipolare Störung (F31, bei hypomanen Episoden).",
+    "komorbiditaeten": ["F41.1", "F45", "F60"]
+  },
+  {
+    "code": "F33.2",
+    "name": "Rezidivierende depressive Störung, gegenwärtig schwere Episode ohne Psychose",
+    "kategorie": "F3",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 2,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.6,
+      "weiblich": 1.5,
+      "alter_18_30": 0.9,
+      "alter_31_50": 1.4,
+      "alter_51_plus": 1.3
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Kriterien für rezidivierende depressive Störung (F33) erfüllt",
+        "Gegenwärtige Episode erfüllt Kriterien für schwere depressive Episode ohne Psychose (F32.2)"
+      ],
+      "optionale_symptome": [
+        "Suizidalität als zentrales Risiko",
+        "Mögliche Hospitalisierung erforderlich",
+        "Chronifizierung und Behandlungsresistenz bei Wiederholung möglich"
+      ]
+    },
+    "differentialdiagnose": "Schwere unipolare Episode (F32.2), Bipolare schwere Depression (F31.4), schizoaffektive Störung (F25.1).",
+    "komorbiditaeten": ["F41", "F43.1"]
+  },
+  {
+    "code": "F33.3",
+    "name": "Rezidivierende depressive Störung, gegenwärtig schwere Episode mit Psychose",
+    "kategorie": "F3",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.4,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.7,
+      "weiblich": 1.4,
+      "alter_18_30": 0.7,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 1.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Kriterien für rezidivierende depressive Störung (F33) erfüllt",
+        "Gegenwärtige Episode erfüllt Kriterien für schwere depressive Episode mit Psychose (F32.3)"
+      ],
+      "optionale_symptome": [
+        "Stimmungskongruente oder -inkongruente Wahnideen und Halluzinationen",
+        "Depressiver Stupor als Extremausprägung",
+        "Höchstes Suizidrisiko"
+      ]
+    },
+    "differentialdiagnose": "Schizoaffektive Störung (F25.1), Bipolare schwere Depression mit Psychose (F31.5), Paranoide Schizophrenie (F20.0).",
+    "komorbiditaeten": ["F25", "F43.1"]
   },
   {
     "code": "F34.0",
@@ -297,22 +480,18 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Chronische Stimmungsinstabilität über mindestens 2 Jahre",
-        "Perioden mit leichter Hypomanie und leichter Depression wechselnd",
-        "Kein symptomfreies Intervall > 2 Monate"
+        "Mindestens 2 Jahre anhaltende Stimmungsinstabilität mit mehreren Perioden leichter Depression und leichter Hypomanie",
+        "Keine einzelne Manifestation depressiv oder hypomanisch ist schwer genug für Kriterien einer Manie oder mittelgradigen/schweren Depression",
+        "Keine symptomfreien Intervalle über 2 Monate im 2-Jahres-Zeitraum"
       ],
       "optionale_symptome": [
-        "Kein vollständiges Ansprechen auf Antidepressiva",
-        "Impulsives Verhalten in hypomanen Phasen",
-        "Erhöhtes Risiko für Bipolare I/II"
+        "Reduzierte Energie/Aktivität, Insomnie, Interessenverlust in Depressionsphasen",
+        "Gesteigertes Selbstwertgefühl, vermindertes Schlafbedürfnis, vermehrte Geselligkeit in Hypomaniephasen",
+        "Erhöhtes Risiko für Entwicklung einer Bipolaren Störung I oder II"
       ]
     },
     "differentialdiagnose": "Bipolare II (F31, vollständige hypomane Episoden), Dysthymia (F34.1, nur depressive Pole), Borderline-PS (F60.3).",
-    "komorbiditaeten": [
-      "F41",
-      "F60.3",
-      "F10"
-    ]
+    "komorbiditaeten": ["F41", "F60.3", "F10"]
   },
   {
     "code": "F34.1",
@@ -329,21 +508,17 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Chronisch gedrückte Stimmung über mindestens 2 Jahre",
-        "Keine symptomfreien Intervalle > 2 Monate",
-        "Weniger schwer als depressive Episode"
+        "Mindestens 2 Jahre konstant oder ständig wiederkehrend gedrückte Stimmung",
+        "Symptomfreie Intervalle selten länger als einige Wochen, keine hypomanen Episoden",
+        "Mindestens 3 der folgenden Symptome: Antriebsmangel, Insomnie, Verlust des Selbstvertrauens, Konzentrationsstörungen, häufiges Weinen, Anhedonie, Hoffnungslosigkeit, Unfähigkeit Alltagsverantwortung zu tragen, Pessimismus, sozialer Rückzug, vermindertes Sprechen"
       ],
       "optionale_symptome": [
-        "Schlechtes Selbstbild, Hoffnungslosigkeit",
-        "Konzentrationsschwäche",
-        "Schlaf- und Appetitprobleme"
+        "Individuelle Episoden zu wenig schwer oder kurz für rezidivierende depressive Störung",
+        "Früher Beginn (späte Adoleszenz bis 20er) oder später Beginn (nach 30) möglich",
+        "Erhöhtes Risiko für Doppeldepression (Dysthymia + akute depressive Episode)"
       ]
     },
-    "differentialdiagnose": "Leichte depressive Episode (F32.0, zeitlich begrenzt), Rezidivierende Depression (F33), Depressive Persönlichkeit (kein eigener ICD-Code).",
-    "komorbiditaeten": [
-      "F41.1",
-      "F60",
-      "F45"
-    ]
+    "differentialdiagnose": "Leichte depressive Episode (F32.0, zeitlich begrenzt), Rezidivierende Depression (F33), Depressive Persönlichkeit.",
+    "komorbiditaeten": ["F41.1", "F60", "F45"]
   }
 ]
