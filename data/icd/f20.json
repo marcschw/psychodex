@@ -5,7 +5,13 @@
     "kategorie": "F2",
     "seltenheit_score": 6,
     "praevalenz_allgemein_prozent": 0.8,
-    "praevalenz_modifikatoren": { "männlich": 1.2, "weiblich": 0.9, "alter_18_30": 2.0, "alter_31_50": 1.5, "alter_51_plus": 0.5 },
+    "praevalenz_modifikatoren": {
+      "männlich": 1.2,
+      "weiblich": 0.9,
+      "alter_18_30": 2,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 0.5
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Prominente Wahnphänomene (Verfolgungswahn, Beziehungswahn)",
@@ -19,7 +25,11 @@
       ]
     },
     "differentialdiagnose": "Schizoaffektive Störung (F25, prominente affektive Symptome), wahnhafte Störung (F22, kein Ich-Störung), drogeninduzierte Psychose (F1x.5).",
-    "komorbiditaeten": ["F32 (Depression)", "F10 (Alkohol)", "F17 (Tabak)"]
+    "komorbiditaeten": [
+      "F32",
+      "F10",
+      "F17"
+    ]
   },
   {
     "code": "F20.1",
@@ -27,7 +37,13 @@
     "kategorie": "F2",
     "seltenheit_score": 7,
     "praevalenz_allgemein_prozent": 0.2,
-    "praevalenz_modifikatoren": { "männlich": 1.3, "weiblich": 0.8, "alter_18_30": 3.0, "alter_31_50": 0.8, "alter_51_plus": 0.2 },
+    "praevalenz_modifikatoren": {
+      "männlich": 1.3,
+      "weiblich": 0.8,
+      "alter_18_30": 3,
+      "alter_31_50": 0.8,
+      "alter_51_plus": 0.2
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Inadäquater oder flacher Affekt (unsinniges Lachen, Grimassieren)",
@@ -41,7 +57,10 @@
       ]
     },
     "differentialdiagnose": "Paranoide Schizophrenie (F20.0, Wahn prominenter), Schizophrenia simplex (F20.6, ohne Wahn), manische Episode (F30).",
-    "komorbiditaeten": ["F17.2 (Tabakabhängigkeit)", "F10.2 (Alkohol)"]
+    "komorbiditaeten": [
+      "F17.2",
+      "F10.2"
+    ]
   },
   {
     "code": "F20.6",
@@ -49,7 +68,13 @@
     "kategorie": "F2",
     "seltenheit_score": 8,
     "praevalenz_allgemein_prozent": 0.1,
-    "praevalenz_modifikatoren": { "männlich": 1.1, "weiblich": 0.9, "alter_18_30": 2.0, "alter_31_50": 0.8, "alter_51_plus": 0.3 },
+    "praevalenz_modifikatoren": {
+      "männlich": 1.1,
+      "weiblich": 0.9,
+      "alter_18_30": 2,
+      "alter_31_50": 0.8,
+      "alter_51_plus": 0.3
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Schleichende Entwicklung von Negativsymptomen ohne vorangegangene psychotische Phase",
@@ -63,7 +88,9 @@
       ]
     },
     "differentialdiagnose": "Schizotype Störung (F21, weniger schwer), Depressive Störung mit psychomotorischer Hemmung, Persönlichkeitsstörung (F60.1).",
-    "komorbiditaeten": ["F34.1 (Dysthymia)"]
+    "komorbiditaeten": [
+      "F34.1"
+    ]
   },
   {
     "code": "F21",
@@ -71,7 +98,13 @@
     "kategorie": "F2",
     "seltenheit_score": 5,
     "praevalenz_allgemein_prozent": 0.6,
-    "praevalenz_modifikatoren": { "männlich": 1.2, "weiblich": 0.9, "alter_18_30": 1.5, "alter_31_50": 1.2, "alter_51_plus": 0.8 },
+    "praevalenz_modifikatoren": {
+      "männlich": 1.2,
+      "weiblich": 0.9,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 0.8
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Sonderliches oder exzentrisches Verhalten",
@@ -85,7 +118,10 @@
       ]
     },
     "differentialdiagnose": "Schizoide PS (F60.1, kein Denk-/Wahrnehmungsstörungen), paranoide PS (F60.0), Schizophrenie (F20, vollständige Symptome).",
-    "komorbiditaeten": ["F60.1 (Schizoide PS)", "F34.1 (Dysthymia)"]
+    "komorbiditaeten": [
+      "F60.1",
+      "F34.1"
+    ]
   },
   {
     "code": "F22.0",
@@ -93,7 +129,13 @@
     "kategorie": "F2",
     "seltenheit_score": 6,
     "praevalenz_allgemein_prozent": 0.3,
-    "praevalenz_modifikatoren": { "männlich": 1.0, "weiblich": 1.1, "alter_18_30": 0.3, "alter_31_50": 1.0, "alter_51_plus": 2.0 },
+    "praevalenz_modifikatoren": {
+      "männlich": 1,
+      "weiblich": 1.1,
+      "alter_18_30": 0.3,
+      "alter_31_50": 1,
+      "alter_51_plus": 2
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Anhaltender Wahn (Verfolgung, Eifersucht, Größe, Körper) über mindestens 3 Monate",
@@ -107,7 +149,10 @@
       ]
     },
     "differentialdiagnose": "Paranoide Schizophrenie (F20.0, Halluzinationen, Ich-Störungen), paranoide PS (F60.0, kein ausgestalteter Wahn), organische Ursachen.",
-    "komorbiditaeten": ["F32 (Depression)", "F60.0 (Paranoide PS)"]
+    "komorbiditaeten": [
+      "F32",
+      "F60.0"
+    ]
   },
   {
     "code": "F25.0",
@@ -115,7 +160,13 @@
     "kategorie": "F2",
     "seltenheit_score": 7,
     "praevalenz_allgemein_prozent": 0.3,
-    "praevalenz_modifikatoren": { "männlich": 0.9, "weiblich": 1.2, "alter_18_30": 1.5, "alter_31_50": 1.5, "alter_51_plus": 0.5 },
+    "praevalenz_modifikatoren": {
+      "männlich": 0.9,
+      "weiblich": 1.2,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 0.5
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Gleichzeitig ausgeprägte manische Symptome UND schizophrene Symptome",
@@ -128,7 +179,10 @@
       ]
     },
     "differentialdiagnose": "Manische Episode mit psychotischen Symptomen (F30.2), paranoide Schizophrenie (F20.0), Bipolare Störung (F31).",
-    "komorbiditaeten": ["F10 (Alkohol)", "F43.1 (PTBS)"]
+    "komorbiditaeten": [
+      "F10",
+      "F43.1"
+    ]
   },
   {
     "code": "F25.1",
@@ -136,7 +190,13 @@
     "kategorie": "F2",
     "seltenheit_score": 6,
     "praevalenz_allgemein_prozent": 0.4,
-    "praevalenz_modifikatoren": { "männlich": 0.8, "weiblich": 1.3, "alter_18_30": 1.0, "alter_31_50": 1.5, "alter_51_plus": 0.8 },
+    "praevalenz_modifikatoren": {
+      "männlich": 0.8,
+      "weiblich": 1.3,
+      "alter_18_30": 1,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 0.8
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Gleichzeitig ausgeprägte depressive Symptome UND schizophrene Symptome",
@@ -149,6 +209,9 @@
       ]
     },
     "differentialdiagnose": "Schwere depressive Episode mit Psychose (F32.3), paranoide Schizophrenie (F20.0), schizoaffektiver manischer Typ (F25.0).",
-    "komorbiditaeten": ["F32 (Depression)", "F43.1 (PTBS)"]
+    "komorbiditaeten": [
+      "F32",
+      "F43.1"
+    ]
   }
 ]

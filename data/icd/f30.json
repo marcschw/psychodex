@@ -5,7 +5,13 @@
     "kategorie": "F3",
     "seltenheit_score": 6,
     "praevalenz_allgemein_prozent": 0.5,
-    "praevalenz_modifikatoren": { "männlich": 1.0, "weiblich": 1.1, "alter_18_30": 1.5, "alter_31_50": 1.5, "alter_51_plus": 0.5 },
+    "praevalenz_modifikatoren": {
+      "männlich": 1,
+      "weiblich": 1.1,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 0.5
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Gehobene, expansive oder gereizte Stimmung, deutlich abnorm",
@@ -19,7 +25,11 @@
       ]
     },
     "differentialdiagnose": "Hypomanie (F30.0, weniger schwer), Manie mit Psychose (F30.2), schizoaffektive Störung (F25.0), drogeninduzierte Manie.",
-    "komorbiditaeten": ["F10 (Alkohol)", "F12 (Cannabis)", "F41 (Angst)"]
+    "komorbiditaeten": [
+      "F10",
+      "F12",
+      "F41"
+    ]
   },
   {
     "code": "F30.2",
@@ -27,7 +37,13 @@
     "kategorie": "F3",
     "seltenheit_score": 7,
     "praevalenz_allgemein_prozent": 0.3,
-    "praevalenz_modifikatoren": { "männlich": 1.1, "weiblich": 1.0, "alter_18_30": 1.5, "alter_31_50": 1.5, "alter_51_plus": 0.4 },
+    "praevalenz_modifikatoren": {
+      "männlich": 1.1,
+      "weiblich": 1,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 0.4
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Vollständiges manisches Zustandsbild",
@@ -41,15 +57,24 @@
       ]
     },
     "differentialdiagnose": "Schizoaffektive Störung manischer Typ (F25.0), paranoide Schizophrenie (F20.0), organische maniforme Störung.",
-    "komorbiditaeten": ["F10 (Alkohol)", "F25 (Schizoaffektive Störung)"]
+    "komorbiditaeten": [
+      "F10",
+      "F25"
+    ]
   },
   {
     "code": "F31.1",
     "name": "Bipolare Störung, gegenwärtig manische Episode ohne Psychose",
     "kategorie": "F3",
     "seltenheit_score": 5,
-    "praevalenz_allgemein_prozent": 1.0,
-    "praevalenz_modifikatoren": { "männlich": 1.0, "weiblich": 1.0, "alter_18_30": 1.5, "alter_31_50": 1.5, "alter_51_plus": 0.5 },
+    "praevalenz_allgemein_prozent": 1,
+    "praevalenz_modifikatoren": {
+      "männlich": 1,
+      "weiblich": 1,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 0.5
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Mindestens eine frühere affektive Episode in der Anamnese",
@@ -62,15 +87,25 @@
       ]
     },
     "differentialdiagnose": "Unipolare Manie (F30), schizoaffektive Störung (F25), Borderline-PS (F60.3, impulsive Stimmungsschwankungen).",
-    "komorbiditaeten": ["F41 (Angst)", "F10 (Alkohol)", "F43.1 (PTBS)"]
+    "komorbiditaeten": [
+      "F41",
+      "F10",
+      "F43.1"
+    ]
   },
   {
     "code": "F31.3",
     "name": "Bipolare Störung, gegenwärtig mittelgradige Depression",
     "kategorie": "F3",
     "seltenheit_score": 4,
-    "praevalenz_allgemein_prozent": 2.0,
-    "praevalenz_modifikatoren": { "männlich": 0.9, "weiblich": 1.2, "alter_18_30": 1.3, "alter_31_50": 1.5, "alter_51_plus": 0.8 },
+    "praevalenz_allgemein_prozent": 2,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.9,
+      "weiblich": 1.2,
+      "alter_18_30": 1.3,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 0.8
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Früherer manischer, hypomaner oder gemischter Episode",
@@ -83,15 +118,25 @@
       ]
     },
     "differentialdiagnose": "Unipolare Depression (F32/F33, keine manische Vorgeschichte), Zyklothymia (F34.0), schizoaffektive Störung.",
-    "komorbiditaeten": ["F41 (Angst)", "F60.3 (BPS)", "F43.1 (PTBS)"]
+    "komorbiditaeten": [
+      "F41",
+      "F60.3",
+      "F43.1"
+    ]
   },
   {
     "code": "F32.0",
     "name": "Leichte depressive Episode",
     "kategorie": "F3",
     "seltenheit_score": 2,
-    "praevalenz_allgemein_prozent": 10.0,
-    "praevalenz_modifikatoren": { "männlich": 0.6, "weiblich": 1.4, "alter_18_30": 1.3, "alter_31_50": 1.5, "alter_51_plus": 0.8 },
+    "praevalenz_allgemein_prozent": 10,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.6,
+      "weiblich": 1.4,
+      "alter_18_30": 1.3,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 0.8
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Mindestens 2 Kernsymptome: gedrückte Stimmung, Interessenverlust, Antriebsminderung",
@@ -106,15 +151,25 @@
       ]
     },
     "differentialdiagnose": "Mittelgradige depressive Episode (F32.1, mehr Symptome), Anpassungsstörung (F43.2, reaktiv auf Ereignis), Dysthymia (F34.1, chronisch aber leichter).",
-    "komorbiditaeten": ["F41.1 (GAD)", "F45 (Somatoform)", "F60 (PS)"]
+    "komorbiditaeten": [
+      "F41.1",
+      "F45",
+      "F60"
+    ]
   },
   {
     "code": "F32.1",
     "name": "Mittelgradige depressive Episode",
     "kategorie": "F3",
     "seltenheit_score": 2,
-    "praevalenz_allgemein_prozent": 8.0,
-    "praevalenz_modifikatoren": { "männlich": 0.6, "weiblich": 1.4, "alter_18_30": 1.2, "alter_31_50": 1.5, "alter_51_plus": 1.0 },
+    "praevalenz_allgemein_prozent": 8,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.6,
+      "weiblich": 1.4,
+      "alter_18_30": 1.2,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 1
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Mindestens 2 Kernsymptome: gedrückte Stimmung, Interessenverlust, Antriebsminderung",
@@ -128,15 +183,25 @@
       ]
     },
     "differentialdiagnose": "Leichte depressive Episode (F32.0), schwere depressive Episode (F32.2), Bipolare Störung (F31), Dysthymia (F34.1).",
-    "komorbiditaeten": ["F41 (Angst)", "F60.3 (BPS)", "F43.1 (PTBS)"]
+    "komorbiditaeten": [
+      "F41",
+      "F60.3",
+      "F43.1"
+    ]
   },
   {
     "code": "F32.2",
     "name": "Schwere depressive Episode ohne psychotische Symptome",
     "kategorie": "F3",
     "seltenheit_score": 4,
-    "praevalenz_allgemein_prozent": 3.0,
-    "praevalenz_modifikatoren": { "männlich": 0.6, "weiblich": 1.5, "alter_18_30": 1.0, "alter_31_50": 1.3, "alter_51_plus": 1.2 },
+    "praevalenz_allgemein_prozent": 3,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.6,
+      "weiblich": 1.5,
+      "alter_18_30": 1,
+      "alter_31_50": 1.3,
+      "alter_51_plus": 1.2
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Alle 3 Kernsymptome vorhanden",
@@ -150,7 +215,11 @@
       ]
     },
     "differentialdiagnose": "Schwere depressive Episode mit Psychose (F32.3), Bipolare Depression (F31.3), schizoaffektive Störung depressiver Typ (F25.1).",
-    "komorbiditaeten": ["F41 (Angst)", "F43.1 (PTBS)", "F60.3 (BPS)"]
+    "komorbiditaeten": [
+      "F41",
+      "F43.1",
+      "F60.3"
+    ]
   },
   {
     "code": "F32.3",
@@ -158,7 +227,13 @@
     "kategorie": "F3",
     "seltenheit_score": 6,
     "praevalenz_allgemein_prozent": 0.5,
-    "praevalenz_modifikatoren": { "männlich": 0.7, "weiblich": 1.4, "alter_18_30": 0.8, "alter_31_50": 1.2, "alter_51_plus": 1.5 },
+    "praevalenz_modifikatoren": {
+      "männlich": 0.7,
+      "weiblich": 1.4,
+      "alter_18_30": 0.8,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 1.5
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Schwere depressive Episode (F32.2-Kriterien erfüllt)",
@@ -171,15 +246,24 @@
       ]
     },
     "differentialdiagnose": "Schizoaffektive Störung depressiver Typ (F25.1), paranoide Schizophrenie (F20.0), organische Depression (F06.3).",
-    "komorbiditaeten": ["F43.1 (PTBS)", "F25 (Schizoaffektiv)"]
+    "komorbiditaeten": [
+      "F43.1",
+      "F25"
+    ]
   },
   {
     "code": "F33.1",
     "name": "Rezidivierende depressive Störung, gegenwärtig mittelgradig",
     "kategorie": "F3",
     "seltenheit_score": 3,
-    "praevalenz_allgemein_prozent": 6.0,
-    "praevalenz_modifikatoren": { "männlich": 0.6, "weiblich": 1.5, "alter_18_30": 1.0, "alter_31_50": 1.5, "alter_51_plus": 1.2 },
+    "praevalenz_allgemein_prozent": 6,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.6,
+      "weiblich": 1.5,
+      "alter_18_30": 1,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 1.2
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Mindestens 2 frühere depressive Episoden (>2 Wochen, >2 Monate Abstand)",
@@ -192,15 +276,25 @@
       ]
     },
     "differentialdiagnose": "Einzelne depressive Episode (F32), Dysthymia (F34.1, chronisch-leicht), Bipolare Störung (F31, bei hypomanen Episoden).",
-    "komorbiditaeten": ["F41.1 (GAD)", "F45 (Somatoform)", "F60 (PS)"]
+    "komorbiditaeten": [
+      "F41.1",
+      "F45",
+      "F60"
+    ]
   },
   {
     "code": "F34.0",
     "name": "Zyklothymia",
     "kategorie": "F3",
     "seltenheit_score": 4,
-    "praevalenz_allgemein_prozent": 1.0,
-    "praevalenz_modifikatoren": { "männlich": 1.0, "weiblich": 1.0, "alter_18_30": 1.5, "alter_31_50": 1.5, "alter_51_plus": 0.5 },
+    "praevalenz_allgemein_prozent": 1,
+    "praevalenz_modifikatoren": {
+      "männlich": 1,
+      "weiblich": 1,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 0.5
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Chronische Stimmungsinstabilität über mindestens 2 Jahre",
@@ -214,15 +308,25 @@
       ]
     },
     "differentialdiagnose": "Bipolare II (F31, vollständige hypomane Episoden), Dysthymia (F34.1, nur depressive Pole), Borderline-PS (F60.3).",
-    "komorbiditaeten": ["F41 (Angst)", "F60.3 (BPS)", "F10 (Alkohol)"]
+    "komorbiditaeten": [
+      "F41",
+      "F60.3",
+      "F10"
+    ]
   },
   {
     "code": "F34.1",
     "name": "Dysthymia",
     "kategorie": "F3",
     "seltenheit_score": 3,
-    "praevalenz_allgemein_prozent": 3.0,
-    "praevalenz_modifikatoren": { "männlich": 0.7, "weiblich": 1.4, "alter_18_30": 1.0, "alter_31_50": 1.3, "alter_51_plus": 1.2 },
+    "praevalenz_allgemein_prozent": 3,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.7,
+      "weiblich": 1.4,
+      "alter_18_30": 1,
+      "alter_31_50": 1.3,
+      "alter_51_plus": 1.2
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Chronisch gedrückte Stimmung über mindestens 2 Jahre",
@@ -236,6 +340,10 @@
       ]
     },
     "differentialdiagnose": "Leichte depressive Episode (F32.0, zeitlich begrenzt), Rezidivierende Depression (F33), Depressive Persönlichkeit (kein eigener ICD-Code).",
-    "komorbiditaeten": ["F41.1 (GAD)", "F60 (PS)", "F45 (Somatoform)"]
+    "komorbiditaeten": [
+      "F41.1",
+      "F60",
+      "F45"
+    ]
   }
 ]

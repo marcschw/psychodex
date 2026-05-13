@@ -5,7 +5,13 @@
     "kategorie": "F4",
     "seltenheit_score": 4,
     "praevalenz_allgemein_prozent": 3.5,
-    "praevalenz_modifikatoren": { "männlich": 0.5, "weiblich": 1.7, "alter_18_30": 1.5, "alter_31_50": 1.2, "alter_51_plus": 0.8 },
+    "praevalenz_modifikatoren": {
+      "männlich": 0.5,
+      "weiblich": 1.7,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 0.8
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Angst vor Orten, von denen Flucht schwierig wäre (Menschenmengen, Verkehr, allein außer Haus)",
@@ -19,15 +25,25 @@
       ]
     },
     "differentialdiagnose": "Soziale Phobie (F40.1, Angst vor Bewertung), spezifische Phobie (F40.2, einzelner Auslöser), generalisierte Angststörung (F41.1).",
-    "komorbiditaeten": ["F41.0 (Panikstörung)", "F32 (Depression)", "F40.1 (Soziale Phobie)"]
+    "komorbiditaeten": [
+      "F41.0",
+      "F32",
+      "F40.1"
+    ]
   },
   {
     "code": "F40.1",
     "name": "Soziale Phobie",
     "kategorie": "F4",
     "seltenheit_score": 3,
-    "praevalenz_allgemein_prozent": 7.0,
-    "praevalenz_modifikatoren": { "männlich": 0.8, "weiblich": 1.3, "alter_18_30": 2.0, "alter_31_50": 1.0, "alter_51_plus": 0.5 },
+    "praevalenz_allgemein_prozent": 7,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.8,
+      "weiblich": 1.3,
+      "alter_18_30": 2,
+      "alter_31_50": 1,
+      "alter_51_plus": 0.5
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Anhaltende Angst vor sozialen Situationen mit Bewertungspotenzial",
@@ -41,15 +57,25 @@
       ]
     },
     "differentialdiagnose": "Agoraphobie (F40.0, keine Bewertungsangst im Vordergrund), schüchterne Persönlichkeit (F60.6), generalisierte Angststörung.",
-    "komorbiditaeten": ["F32 (Depression)", "F41.0 (Panikstörung)", "F10.1 (Alkohol)"]
+    "komorbiditaeten": [
+      "F32",
+      "F41.0",
+      "F10.1"
+    ]
   },
   {
     "code": "F40.2",
     "name": "Spezifische Phobie",
     "kategorie": "F4",
     "seltenheit_score": 3,
-    "praevalenz_allgemein_prozent": 10.0,
-    "praevalenz_modifikatoren": { "männlich": 0.6, "weiblich": 1.6, "alter_18_30": 1.5, "alter_31_50": 1.0, "alter_51_plus": 0.8 },
+    "praevalenz_allgemein_prozent": 10,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.6,
+      "weiblich": 1.6,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1,
+      "alter_51_plus": 0.8
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Anhaltende, unangemessene Angst vor einem spezifischen Objekt oder Situation",
@@ -63,15 +89,24 @@
       ]
     },
     "differentialdiagnose": "Soziale Phobie (F40.1), Agoraphobie (F40.0), OCD (F42, Zwanggedanken treiben Vermeidung).",
-    "komorbiditaeten": ["F41.0 (Panikstörung)", "F32 (Depression)"]
+    "komorbiditaeten": [
+      "F41.0",
+      "F32"
+    ]
   },
   {
     "code": "F41.0",
     "name": "Panikstörung",
     "kategorie": "F4",
     "seltenheit_score": 4,
-    "praevalenz_allgemein_prozent": 4.0,
-    "praevalenz_modifikatoren": { "männlich": 0.6, "weiblich": 1.6, "alter_18_30": 1.8, "alter_31_50": 1.3, "alter_51_plus": 0.5 },
+    "praevalenz_allgemein_prozent": 4,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.6,
+      "weiblich": 1.6,
+      "alter_18_30": 1.8,
+      "alter_31_50": 1.3,
+      "alter_51_plus": 0.5
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Wiederkehrende unerwartete Panikattacken (intensive Angst mit körperlichen Symptomen)",
@@ -85,15 +120,25 @@
       ]
     },
     "differentialdiagnose": "Agoraphobie (F40.0, situationsgebunden), GAD (F41.1, anhaltend statt episodisch), kardiale Erkrankung, Hyperthyreose.",
-    "komorbiditaeten": ["F40.0 (Agoraphobie)", "F32 (Depression)", "F41.1 (GAD)"]
+    "komorbiditaeten": [
+      "F40.0",
+      "F32",
+      "F41.1"
+    ]
   },
   {
     "code": "F41.1",
     "name": "Generalisierte Angststörung",
     "kategorie": "F4",
     "seltenheit_score": 3,
-    "praevalenz_allgemein_prozent": 5.0,
-    "praevalenz_modifikatoren": { "männlich": 0.7, "weiblich": 1.5, "alter_18_30": 1.2, "alter_31_50": 1.5, "alter_51_plus": 1.2 },
+    "praevalenz_allgemein_prozent": 5,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.7,
+      "weiblich": 1.5,
+      "alter_18_30": 1.2,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 1.2
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Anhaltende, generalisierte und frei flottierende Angst über mindestens 6 Monate",
@@ -107,15 +152,25 @@
       ]
     },
     "differentialdiagnose": "Panikstörung (F41.0, episodisch), depressive Störung (F32, Angst als Begleitsymptom), Hyperthyreose, somatoforme Störung.",
-    "komorbiditaeten": ["F32 (Depression)", "F41.0 (Panikstörung)", "F45 (Somatoform)"]
+    "komorbiditaeten": [
+      "F32",
+      "F41.0",
+      "F45"
+    ]
   },
   {
     "code": "F41.2",
     "name": "Angst und depressive Störung, gemischt",
     "kategorie": "F4",
     "seltenheit_score": 2,
-    "praevalenz_allgemein_prozent": 12.0,
-    "praevalenz_modifikatoren": { "männlich": 0.7, "weiblich": 1.4, "alter_18_30": 1.2, "alter_31_50": 1.4, "alter_51_plus": 1.2 },
+    "praevalenz_allgemein_prozent": 12,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.7,
+      "weiblich": 1.4,
+      "alter_18_30": 1.2,
+      "alter_31_50": 1.4,
+      "alter_51_plus": 1.2
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Gleichzeitig Angst- und Depressionssymptome",
@@ -129,15 +184,24 @@
       ]
     },
     "differentialdiagnose": "Depressive Episode (F32), generalisierte Angststörung (F41.1), Anpassungsstörung (F43.2).",
-    "komorbiditaeten": ["F45 (Somatoform)", "F60 (PS)"]
+    "komorbiditaeten": [
+      "F45",
+      "F60"
+    ]
   },
   {
     "code": "F42.0",
     "name": "Zwangsstörung – vorwiegend Zwangsgedanken",
     "kategorie": "F4",
     "seltenheit_score": 5,
-    "praevalenz_allgemein_prozent": 1.0,
-    "praevalenz_modifikatoren": { "männlich": 1.1, "weiblich": 1.0, "alter_18_30": 1.8, "alter_31_50": 1.2, "alter_51_plus": 0.5 },
+    "praevalenz_allgemein_prozent": 1,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.1,
+      "weiblich": 1,
+      "alter_18_30": 1.8,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 0.5
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Aufdringliche, ich-dystone Gedanken (Kontamination, Aggression, Sex, Religion)",
@@ -151,15 +215,25 @@
       ]
     },
     "differentialdiagnose": "Zwangshandlungen-Typ (F42.1), Phobien (ich-synton), Depressive Grübelei (kein Ich-Dystonie), Schizophrenie (keine Einsicht).",
-    "komorbiditaeten": ["F32 (Depression)", "F41.1 (GAD)", "F93 (Kindliche Angststörung)"]
+    "komorbiditaeten": [
+      "F32",
+      "F41.1",
+      "F93"
+    ]
   },
   {
     "code": "F42.1",
     "name": "Zwangsstörung – vorwiegend Zwangshandlungen",
     "kategorie": "F4",
     "seltenheit_score": 5,
-    "praevalenz_allgemein_prozent": 1.0,
-    "praevalenz_modifikatoren": { "männlich": 0.9, "weiblich": 1.2, "alter_18_30": 1.5, "alter_31_50": 1.3, "alter_51_plus": 0.7 },
+    "praevalenz_allgemein_prozent": 1,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.9,
+      "weiblich": 1.2,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.3,
+      "alter_51_plus": 0.7
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Wiederholende Zwangshandlungen als Rituale (Waschen, Prüfen, Ordnen)",
@@ -173,15 +247,25 @@
       ]
     },
     "differentialdiagnose": "Zwangsgedanken-Typ (F42.0), Sucht (keine Ich-Dystonie), Stereotypien bei Autismus (F84), Tic-Störungen.",
-    "komorbiditaeten": ["F32 (Depression)", "F41 (Angst)", "F60.5 (Anankastische PS)"]
+    "komorbiditaeten": [
+      "F32",
+      "F41",
+      "F60.5"
+    ]
   },
   {
     "code": "F43.0",
     "name": "Akute Belastungsreaktion",
     "kategorie": "F4",
     "seltenheit_score": 3,
-    "praevalenz_allgemein_prozent": 5.0,
-    "praevalenz_modifikatoren": { "männlich": 0.8, "weiblich": 1.3, "alter_18_30": 1.5, "alter_31_50": 1.2, "alter_51_plus": 0.8 },
+    "praevalenz_allgemein_prozent": 5,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.8,
+      "weiblich": 1.3,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 0.8
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Exposition gegenüber außergewöhnlichem körperlichem oder psychischem Stressor",
@@ -195,7 +279,10 @@
       ]
     },
     "differentialdiagnose": "PTBS (F43.1, > 4 Wochen), Anpassungsstörung (F43.2, weniger akut), Dissoziation (F44).",
-    "komorbiditaeten": ["F43.1 (PTBS)", "F32 (Depression)"]
+    "komorbiditaeten": [
+      "F43.1",
+      "F32"
+    ]
   },
   {
     "code": "F43.1",
@@ -203,7 +290,13 @@
     "kategorie": "F4",
     "seltenheit_score": 5,
     "praevalenz_allgemein_prozent": 3.5,
-    "praevalenz_modifikatoren": { "männlich": 0.6, "weiblich": 1.6, "alter_18_30": 1.5, "alter_31_50": 1.3, "alter_51_plus": 0.8 },
+    "praevalenz_modifikatoren": {
+      "männlich": 0.6,
+      "weiblich": 1.6,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.3,
+      "alter_51_plus": 0.8
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Exposition gegenüber traumatischem Ereignis (Bedrohung des Lebens/Integrität)",
@@ -219,15 +312,25 @@
       ]
     },
     "differentialdiagnose": "Akute Belastungsreaktion (F43.0, < 4 Wochen), Anpassungsstörung (F43.2, weniger intensiv), komorbide Depression, Borderline-PS.",
-    "komorbiditaeten": ["F32 (Depression)", "F10 (Alkohol)", "F60.3 (BPS)"]
+    "komorbiditaeten": [
+      "F32",
+      "F10",
+      "F60.3"
+    ]
   },
   {
     "code": "F43.2",
     "name": "Anpassungsstörung",
     "kategorie": "F4",
     "seltenheit_score": 3,
-    "praevalenz_allgemein_prozent": 8.0,
-    "praevalenz_modifikatoren": { "männlich": 0.8, "weiblich": 1.3, "alter_18_30": 1.5, "alter_31_50": 1.3, "alter_51_plus": 0.8 },
+    "praevalenz_allgemein_prozent": 8,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.8,
+      "weiblich": 1.3,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.3,
+      "alter_51_plus": 0.8
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Identifizierbarer psychosozialer Stressor innerhalb von 1 Monat vor Beginn",
@@ -241,7 +344,10 @@
       ]
     },
     "differentialdiagnose": "Normale Trauerreaktion, leichte depressive Episode (F32.0), PTBS (F43.1, traumatisches Ereignis).",
-    "komorbiditaeten": ["F32 (Depression)", "F41 (Angst)"]
+    "komorbiditaeten": [
+      "F32",
+      "F41"
+    ]
   },
   {
     "code": "F44.0",
@@ -249,7 +355,13 @@
     "kategorie": "F4",
     "seltenheit_score": 6,
     "praevalenz_allgemein_prozent": 0.2,
-    "praevalenz_modifikatoren": { "männlich": 0.5, "weiblich": 1.8, "alter_18_30": 1.5, "alter_31_50": 1.2, "alter_51_plus": 0.5 },
+    "praevalenz_modifikatoren": {
+      "männlich": 0.5,
+      "weiblich": 1.8,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 0.5
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Unfähigkeit, wichtige persönliche Informationen zu erinnern (oft traumabezogen)",
@@ -263,7 +375,11 @@
       ]
     },
     "differentialdiagnose": "Organisches amnestisches Syndrom (F04, zerebrale Ursache), Demenz (F00), Simulation.",
-    "komorbiditaeten": ["F43.1 (PTBS)", "F44.81 (DIS)", "F60.3 (BPS)"]
+    "komorbiditaeten": [
+      "F43.1",
+      "F44.81",
+      "F60.3"
+    ]
   },
   {
     "code": "F44.81",
@@ -271,7 +387,13 @@
     "kategorie": "F4",
     "seltenheit_score": 9,
     "praevalenz_allgemein_prozent": 0.1,
-    "praevalenz_modifikatoren": { "männlich": 0.3, "weiblich": 1.9, "alter_18_30": 1.5, "alter_31_50": 1.5, "alter_51_plus": 0.5 },
+    "praevalenz_modifikatoren": {
+      "männlich": 0.3,
+      "weiblich": 1.9,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 0.5
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Zwei oder mehr distinkte Identitätszustände mit eigenem Erleben, Denken und Verhalten",
@@ -285,15 +407,25 @@
       ]
     },
     "differentialdiagnose": "Schizophrenie (F20, Stimmen extern erlebt), Borderline-PS (F60.3, keine Amnesie), Epilepsie.",
-    "komorbiditaeten": ["F43.1 (PTBS)", "F60.3 (BPS)", "F32 (Depression)"]
+    "komorbiditaeten": [
+      "F43.1",
+      "F60.3",
+      "F32"
+    ]
   },
   {
     "code": "F45.0",
     "name": "Somatisierungsstörung",
     "kategorie": "F4",
     "seltenheit_score": 4,
-    "praevalenz_allgemein_prozent": 2.0,
-    "praevalenz_modifikatoren": { "männlich": 0.4, "weiblich": 1.8, "alter_18_30": 1.0, "alter_31_50": 1.5, "alter_51_plus": 1.0 },
+    "praevalenz_allgemein_prozent": 2,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.4,
+      "weiblich": 1.8,
+      "alter_18_30": 1,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 1
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Multiple körperliche Symptome über mindestens 2 Jahre",
@@ -307,7 +439,11 @@
       ]
     },
     "differentialdiagnose": "Hypochondrische Störung (F45.2, Krankheitsangst im Vordergrund), anhaltende Schmerzstörung (F45.4), körperliche Erkrankung.",
-    "komorbiditaeten": ["F32 (Depression)", "F41 (Angst)", "F60 (PS)"]
+    "komorbiditaeten": [
+      "F32",
+      "F41",
+      "F60"
+    ]
   },
   {
     "code": "F45.2",
@@ -315,7 +451,13 @@
     "kategorie": "F4",
     "seltenheit_score": 4,
     "praevalenz_allgemein_prozent": 1.5,
-    "praevalenz_modifikatoren": { "männlich": 1.0, "weiblich": 1.1, "alter_18_30": 1.0, "alter_31_50": 1.5, "alter_51_plus": 1.5 },
+    "praevalenz_modifikatoren": {
+      "männlich": 1,
+      "weiblich": 1.1,
+      "alter_18_30": 1,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 1.5
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Anhaltende Überzeugung, an einer oder mehreren schweren körperlichen Krankheiten zu leiden",
@@ -329,15 +471,25 @@
       ]
     },
     "differentialdiagnose": "Somatisierungsstörung (F45.0, multiple Symptome), Angststörung (F41, keine Krankheitsüberzeugung), wahnhafte Störung (F22, kein Einsicht).",
-    "komorbiditaeten": ["F32 (Depression)", "F41.1 (GAD)", "F42 (Zwang)"]
+    "komorbiditaeten": [
+      "F32",
+      "F41.1",
+      "F42"
+    ]
   },
   {
     "code": "F45.4",
     "name": "Anhaltende somatoforme Schmerzstörung",
     "kategorie": "F4",
     "seltenheit_score": 4,
-    "praevalenz_allgemein_prozent": 5.0,
-    "praevalenz_modifikatoren": { "männlich": 0.7, "weiblich": 1.4, "alter_18_30": 0.8, "alter_31_50": 1.5, "alter_51_plus": 1.8 },
+    "praevalenz_allgemein_prozent": 5,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.7,
+      "weiblich": 1.4,
+      "alter_18_30": 0.8,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 1.8
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Anhaltender, schwerer Schmerz, der durch physiologischen Prozess nicht vollständig erklärt wird",
@@ -351,6 +503,10 @@
       ]
     },
     "differentialdiagnose": "Chronischer Schmerz mit organischer Ursache, fibromyalgie, somatisierungsstörung (F45.0, multiple Symptome).",
-    "komorbiditaeten": ["F32 (Depression)", "F41 (Angst)", "F43.1 (PTBS)"]
+    "komorbiditaeten": [
+      "F32",
+      "F41",
+      "F43.1"
+    ]
   }
 ]

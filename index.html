@@ -103,9 +103,14 @@
           <div class="form-group">
             <label class="form-label">Diensttyp</label>
             <div class="type-selector">
-              <button class="type-btn active" data-type="half" data-xp="65">
+              <button class="type-btn active" data-type="früh" data-xp="65">
                 <span class="type-icon">🌅</span>
-                <span>Früh / Spät</span>
+                <span>Früh</span>
+                <span class="type-xp">65 XP · 6,5h</span>
+              </button>
+              <button class="type-btn" data-type="spät" data-xp="65">
+                <span class="type-icon">🌇</span>
+                <span>Spät</span>
                 <span class="type-xp">65 XP · 6,5h</span>
               </button>
               <button class="type-btn" data-type="full" data-xp="120">
@@ -166,6 +171,7 @@
         <div class="heatmap-scroll">
           <div id="heatmap" class="heatmap"></div>
         </div>
+        <div id="heatmap-detail" class="heatmap-detail hidden"></div>
 
         <div class="section-header">Diagnose-Verteilung</div>
         <div id="category-chart" class="category-chart"></div>
@@ -204,7 +210,7 @@
         <button class="modal-close" id="diag-modal-close">✕</button>
       </div>
       <input type="search" id="diag-search-input" class="search-input"
-             placeholder="ICD-Code oder Bezeichnung (mind. 2 Zeichen)…" autocomplete="off">
+             placeholder="ICD-Code, Bezeichnung oder Symptom suchen…" autocomplete="off">
       <div id="diag-search-results" class="search-results"></div>
 
       <div id="diag-detail" class="diag-detail hidden">
@@ -247,6 +253,39 @@
         <button class="modal-close" id="modal-close">✕</button>
       </div>
       <div id="modal-diagnoses-list" class="diagnoses-list"></div>
+    </div>
+  </div>
+
+  <!-- ── Edit Shift Modal ───────────────────────────────────────────────── -->
+  <div id="edit-shift-modal" class="modal hidden">
+    <div class="modal-backdrop" id="edit-shift-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Dienst bearbeiten</div>
+        <button class="modal-close" id="edit-shift-close">✕</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="edit-shift-date">Datum</label>
+        <input type="date" id="edit-shift-date" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Diensttyp</label>
+        <div class="type-selector" id="edit-type-selector">
+          <button class="type-btn" data-type="früh" data-xp="65">
+            <span class="type-icon">🌅</span><span>Früh</span>
+            <span class="type-xp">65 XP</span>
+          </button>
+          <button class="type-btn" data-type="spät" data-xp="65">
+            <span class="type-icon">🌇</span><span>Spät</span>
+            <span class="type-xp">65 XP</span>
+          </button>
+          <button class="type-btn" data-type="full" data-xp="120">
+            <span class="type-icon">☀️</span><span>Ganztags</span>
+            <span class="type-xp">120 XP</span>
+          </button>
+        </div>
+      </div>
+      <button id="btn-save-edit-shift" class="btn-primary" style="margin-top:4px">Speichern</button>
     </div>
   </div>
 

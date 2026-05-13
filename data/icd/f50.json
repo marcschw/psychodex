@@ -5,7 +5,13 @@
     "kategorie": "F5",
     "seltenheit_score": 6,
     "praevalenz_allgemein_prozent": 0.5,
-    "praevalenz_modifikatoren": { "männlich": 0.1, "weiblich": 2.2, "alter_18_30": 3.0, "alter_31_50": 0.8, "alter_51_plus": 0.1 },
+    "praevalenz_modifikatoren": {
+      "männlich": 0.1,
+      "weiblich": 2.2,
+      "alter_18_30": 3,
+      "alter_31_50": 0.8,
+      "alter_51_plus": 0.1
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Körpergewicht mindestens 15% unter dem Normalgewicht (BMI < 17,5)",
@@ -19,7 +25,11 @@
       ]
     },
     "differentialdiagnose": "Bulimia nervosa (F50.2, Normalgewicht, Binge-Purge), körperliche Erkrankung (Malignome, GI-Erkrankungen), depressive Störung mit Appetitminderung.",
-    "komorbiditaeten": ["F32 (Depression)", "F42 (Zwang)", "F60.3 (BPS)"]
+    "komorbiditaeten": [
+      "F32",
+      "F42",
+      "F60.3"
+    ]
   },
   {
     "code": "F50.2",
@@ -27,7 +37,13 @@
     "kategorie": "F5",
     "seltenheit_score": 5,
     "praevalenz_allgemein_prozent": 1.5,
-    "praevalenz_modifikatoren": { "männlich": 0.2, "weiblich": 2.0, "alter_18_30": 3.0, "alter_31_50": 1.0, "alter_51_plus": 0.2 },
+    "praevalenz_modifikatoren": {
+      "männlich": 0.2,
+      "weiblich": 2,
+      "alter_18_30": 3,
+      "alter_31_50": 1,
+      "alter_51_plus": 0.2
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Wiederholende Essanfälle mit Kontrollverlust über das Essen",
@@ -41,15 +57,26 @@
       ]
     },
     "differentialdiagnose": "Anorexia nervosa mit Binge-Purge-Typ (F50.0/F50.3), Binge-Eating-Störung (keine Kompensation), depressive Episode.",
-    "komorbiditaeten": ["F32 (Depression)", "F60.3 (BPS)", "F41 (Angst)", "F10 (Alkohol)"]
+    "komorbiditaeten": [
+      "F32",
+      "F60.3",
+      "F41",
+      "F10"
+    ]
   },
   {
     "code": "F50.4",
     "name": "Essattacken bei sonstigen psychischen Störungen",
     "kategorie": "F5",
     "seltenheit_score": 4,
-    "praevalenz_allgemein_prozent": 3.0,
-    "praevalenz_modifikatoren": { "männlich": 0.8, "weiblich": 1.3, "alter_18_30": 1.5, "alter_31_50": 1.5, "alter_51_plus": 0.8 },
+    "praevalenz_allgemein_prozent": 3,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.8,
+      "weiblich": 1.3,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 0.8
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Wiederkehrende Essanfälle (mindestens 1x/Woche für 3 Monate)",
@@ -63,15 +90,25 @@
       ]
     },
     "differentialdiagnose": "Bulimia nervosa (F50.2, mit Kompensation), adipositas ohne Essstörung, emotionales Essen bei Angst/Depression.",
-    "komorbiditaeten": ["F32 (Depression)", "F41 (Angst)", "F60.3 (BPS)"]
+    "komorbiditaeten": [
+      "F32",
+      "F41",
+      "F60.3"
+    ]
   },
   {
     "code": "F51.0",
     "name": "Nichtorganische Insomnie",
     "kategorie": "F5",
     "seltenheit_score": 3,
-    "praevalenz_allgemein_prozent": 15.0,
-    "praevalenz_modifikatoren": { "männlich": 0.8, "weiblich": 1.3, "alter_18_30": 1.0, "alter_31_50": 1.2, "alter_51_plus": 1.8 },
+    "praevalenz_allgemein_prozent": 15,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.8,
+      "weiblich": 1.3,
+      "alter_18_30": 1,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 1.8
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Schwierigkeiten beim Ein- oder Durchschlafen oder nicht erholsamer Schlaf",
@@ -85,15 +122,25 @@
       ]
     },
     "differentialdiagnose": "Organische Ursachen (Schlafapnoe, RLS), psychiatrische Schlafstörung bei Depression/Angst, Substanz-induzierte Schlafstörung.",
-    "komorbiditaeten": ["F32 (Depression)", "F41 (Angst)", "F43.1 (PTBS)"]
+    "komorbiditaeten": [
+      "F32",
+      "F41",
+      "F43.1"
+    ]
   },
   {
     "code": "F52.0",
     "name": "Mangel an sexuellem Verlangen",
     "kategorie": "F5",
     "seltenheit_score": 4,
-    "praevalenz_allgemein_prozent": 5.0,
-    "praevalenz_modifikatoren": { "männlich": 0.6, "weiblich": 1.6, "alter_18_30": 1.0, "alter_31_50": 1.3, "alter_51_plus": 1.5 },
+    "praevalenz_allgemein_prozent": 5,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.6,
+      "weiblich": 1.6,
+      "alter_18_30": 1,
+      "alter_31_50": 1.3,
+      "alter_51_plus": 1.5
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Subjektiv empfundenes Fehlen sexuellen Verlangens",
@@ -107,15 +154,25 @@
       ]
     },
     "differentialdiagnose": "Hyposexuelles Verlangen bei Depression (F32), körperliche Ursachen (Hormonstörungen), Medikamentennebenwirkung.",
-    "komorbiditaeten": ["F32 (Depression)", "F41 (Angst)", "F43.1 (PTBS)"]
+    "komorbiditaeten": [
+      "F32",
+      "F41",
+      "F43.1"
+    ]
   },
   {
     "code": "F54",
     "name": "Psychische Faktoren bei andernorts klassifizierten Erkrankungen",
     "kategorie": "F5",
     "seltenheit_score": 4,
-    "praevalenz_allgemein_prozent": 5.0,
-    "praevalenz_modifikatoren": { "männlich": 0.9, "weiblich": 1.2, "alter_18_30": 0.8, "alter_31_50": 1.3, "alter_51_plus": 1.5 },
+    "praevalenz_allgemein_prozent": 5,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.9,
+      "weiblich": 1.2,
+      "alter_18_30": 0.8,
+      "alter_31_50": 1.3,
+      "alter_51_plus": 1.5
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Körperliche Erkrankung bestätigt (z.B. Asthma, Colitis ulcerosa, Neurodermitis)",
@@ -129,6 +186,10 @@
       ]
     },
     "differentialdiagnose": "Somatoforme Störungen (F45, körperliche Erkrankung nicht nachweisbar), Anpassungsstörung (F43.2).",
-    "komorbiditaeten": ["F32 (Depression)", "F41 (Angst)", "F43 (Belastungsstörungen)"]
+    "komorbiditaeten": [
+      "F32",
+      "F41",
+      "F43"
+    ]
   }
 ]

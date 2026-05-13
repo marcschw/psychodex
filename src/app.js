@@ -10,6 +10,7 @@ const state = {
   icdFlat: [],
   icdIndex: null,
   activeShift: null,
+  editingShiftId: null,
   searchContext: { patientIndex: null, selectedDiagnosis: null },
   profile: null,
   shifts: [],
@@ -36,6 +37,7 @@ async function init() {
     setupDiagnosisModalListeners();
     setupLevelupListeners();
     setupCategoryModalListeners();
+    setupEditShiftListeners();
     setDefaultDate();
     document.getElementById('loading-screen').classList.add('fade-out');
     setTimeout(() => {
@@ -131,7 +133,7 @@ function renderDashboard() {
   const streak = calcStreak(state.shifts);
   document.getElementById('streak-icon').textContent  = streak.frozen ? '🧊' : '🔥';
   document.getElementById('streak-value').textContent = streak.count;
-  const totalHours = state.shifts.reduce((s, sh) => s + (sh.type === 'full' ? 12 : 6.5), 0);
+  const totalHours = state.shifts.reduce((s, sh) => s + (sh.type === 'full' ? 12 : 6.5), 0).toFixed(1).replace(/\.0$/, '');
   document.getElementById('total-hours').textContent  = `${totalHours}h`;
   document.getElementById('total-catches').textContent = state.catches.length;
 
@@ -150,15 +152,23 @@ function renderDashboard() {
 
   const shiftEl = document.getElementById('recent-shifts');
   shiftEl.innerHTML = state.shifts.length
-    ? state.shifts.slice(0, 3).map(s => `
+    ? state.shifts.slice(0, 5).map(s => `
         <div class="recent-item">
-          <div class="shift-icon">${s.type === 'full' ? '☀️' : '🌅'}</div>
+          <div class="shift-icon">${shiftIcon(s.type)}</div>
           <div class="recent-info">
             <div class="recent-name">${fmtDateShort(s.date)}</div>
-            <div class="recent-meta">${s.type === 'full' ? 'Ganztags 12h' : 'Früh/Spät 6,5h'} · +${s.xpEarned} XP · ${s.patientCount} Pat.</div>
+            <div class="recent-meta">${shiftLabel(s.type)} · +${s.xpEarned} XP · ${s.patientCount} Pat.</div>
           </div>
+          <button class="btn-icon btn-edit-shift" data-id="${s.id}" title="Bearbeiten">✎</button>
         </div>`).join('')
     : '<div class="empty-state">Noch keine Dienste geloggt.</div>';
+
+  shiftEl.querySelectorAll('.btn-edit-shift').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      openEditShiftModal(parseInt(btn.dataset.id));
+    });
+  });
 }
 
 // ─── Streak ───────────────────────────────────────────────────────────────────
@@ -245,7 +255,7 @@ function showStep(id) {
 function addPatientCard() {
   if (!state.activeShift) return;
   const idx = state.activeShift.patients.length;
-  state.activeShift.patients.push({ ageGroup: '31-50', gender: 'weiblich', diagnoses: [] });
+  state.activeShift.patients.push({ ageGroup: '31-50', gender: 'weiblich', patientType: 'erstgespraech', diagnoses: [] });
   const card = buildPatientCard(idx, state.activeShift.patients[idx]);
   document.getElementById('patient-list').appendChild(card);
 }
@@ -254,6 +264,7 @@ function buildPatientCard(idx, patient) {
   const card = document.createElement('div');
   card.className = 'patient-card';
   card.id = `patient-card-${idx}`;
+  const pt = patient.patientType || 'erstgespraech';
   card.innerHTML = `
     <div class="patient-header">
       <span class="patient-num">Patient ${idx + 1}</span>
@@ -270,18 +281,26 @@ function buildPatientCard(idx, patient) {
         <option value="männlich" ${patient.gender === 'männlich' ? 'selected' : ''}>Männlich</option>
         <option value="divers"   ${patient.gender === 'divers'   ? 'selected' : ''}>Divers</option>
       </select>
+      <select class="demo-select demo-wide" data-field="patientType">
+        <option value="erstgespraech" ${pt === 'erstgespraech' ? 'selected' : ''}>Erstgespräch</option>
+        <option value="interview"     ${pt === 'interview'     ? 'selected' : ''}>Interview</option>
+      </select>
     </div>
     <div class="patient-diagnoses" id="diagnoses-${idx}">
       <div class="no-diag-hint">Noch keine Diagnose</div>
     </div>
-    <button class="btn-search-diag">🔬 Diagnose suchen & fangen</button>`;
+    <button class="btn-search-diag" style="${pt === 'interview' ? 'display:none' : ''}">🔬 Diagnose suchen & fangen</button>`;
 
   card.querySelector('.btn-remove-patient').addEventListener('click', () => removePatient(idx));
   card.querySelector('.btn-search-diag').addEventListener('click', () => openDiagnosisSearch(idx));
+  const diagBtn = card.querySelector('.btn-search-diag');
   card.querySelectorAll('.demo-select').forEach(sel => {
     sel.addEventListener('change', e => {
       if (state.activeShift?.patients[idx]) {
         state.activeShift.patients[idx][e.target.dataset.field] = e.target.value;
+        if (e.target.dataset.field === 'patientType') {
+          diagBtn.style.display = e.target.value === 'interview' ? 'none' : '';
+        }
       }
     });
   });
@@ -328,10 +347,12 @@ function setupDiagnosisModalListeners() {
 
 function openDiagnosisSearch(patientIndex) {
   state.searchContext = { patientIndex, selectedDiagnosis: null };
+  const patient = state.activeShift?.patients[patientIndex];
+  const autoKomorbid = patient && patient.diagnoses.length >= 1;
   document.getElementById('diag-search-input').value = '';
   document.getElementById('diag-search-results').innerHTML = '';
   document.getElementById('diag-detail').classList.add('hidden');
-  document.getElementById('komorbid-checkbox').checked = false;
+  document.getElementById('komorbid-checkbox').checked = autoKomorbid;
   document.getElementById('diagnosis-modal').classList.remove('hidden');
   document.getElementById('diag-search-input').focus();
 }
@@ -473,6 +494,7 @@ async function finishShift() {
           code: diagnosis.code, name: diagnosis.name,
           kategorie: diagnosis.kategorie, shiftId,
           ageGroup: patient.ageGroup, gender: patient.gender,
+          patientType: patient.patientType || 'erstgespraech',
           hasComorbidity, xpEarned,
           caughtAt: new Date().toISOString()
         });
@@ -618,7 +640,7 @@ function closeCategoryModal() {
 function renderStats() {
   const xp         = state.profile?.totalXP ?? 0;
   const shifts     = state.shifts.length;
-  const hours      = state.shifts.reduce((s, sh) => s + (sh.type === 'full' ? 12 : 6.5), 0);
+  const hours      = parseFloat(state.shifts.reduce((s, sh) => s + (sh.type === 'full' ? 12 : 6.5), 0).toFixed(1));
   const avgXP      = shifts ? Math.round(xp / shifts) : 0;
 
   document.getElementById('stat-total-xp').textContent    = xp.toLocaleString('de-AT');
@@ -658,6 +680,24 @@ function renderHeatmap() {
     html += '</div>';
   }
   el.innerHTML = html;
+
+  el.querySelectorAll('.heatmap-cell.hm-active').forEach(cell => {
+    cell.addEventListener('click', () => showHeatmapDetail(cell.title));
+  });
+}
+
+function showHeatmapDetail(dateStr) {
+  const detail = document.getElementById('heatmap-detail');
+  const shift = state.shifts.find(s => s.date === dateStr);
+  if (!shift) { detail.classList.add('hidden'); return; }
+  const catches = state.catches.filter(c => c.shiftId === shift.id);
+  detail.innerHTML = `
+    <span>${shiftIcon(shift.type)}</span>
+    <span><strong>${fmtDateShort(shift.date)}</strong> · ${shiftLabel(shift.type)} · +${shift.xpEarned} XP · ${shift.patientCount} Pat.</span>
+    ${catches.length ? `<span style="color:var(--success)">${catches.length} Diagnosen: ${catches.map(c=>c.code).join(', ')}</span>` : ''}
+    <span class="heatmap-detail-close" id="hd-close">✕</span>`;
+  detail.classList.remove('hidden');
+  detail.querySelector('#hd-close').addEventListener('click', () => detail.classList.add('hidden'));
 }
 
 function renderCategoryChart() {
@@ -674,12 +714,72 @@ function renderCategoryChart() {
     const total = (state.icdData[cat] || []).length;
     const pct   = Math.round((count / maxVal) * 100);
     return `
-      <div class="chart-row">
-        <div class="chart-label">${cat}x</div>
+      <div class="chart-row" data-cat="${cat}">
+        <div class="chart-label">${cat}</div>
         <div class="chart-track"><div class="chart-fill" style="width:${pct}%"></div></div>
         <div class="chart-count">${count}/${total}</div>
       </div>`;
   }).join('');
+
+  el.querySelectorAll('.chart-row').forEach(row => {
+    row.addEventListener('click', () => openCategoryModal(row.dataset.cat));
+  });
+}
+
+// ─── Edit Shift ───────────────────────────────────────────────────────────────
+function setupEditShiftListeners() {
+  document.getElementById('edit-shift-close').addEventListener('click', closeEditShiftModal);
+  document.getElementById('edit-shift-backdrop').addEventListener('click', closeEditShiftModal);
+  document.getElementById('edit-type-selector').querySelectorAll('.type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('edit-type-selector').querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+  document.getElementById('btn-save-edit-shift').addEventListener('click', saveEditShift);
+}
+
+function openEditShiftModal(shiftId) {
+  const shift = state.shifts.find(s => s.id === shiftId);
+  if (!shift) return;
+  state.editingShiftId = shiftId;
+  document.getElementById('edit-shift-date').value = shift.date;
+  document.getElementById('edit-type-selector').querySelectorAll('.type-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.type === shift.type || (btn.dataset.type === 'früh' && !['spät','full'].includes(shift.type)));
+  });
+  document.getElementById('edit-shift-modal').classList.remove('hidden');
+}
+
+function closeEditShiftModal() {
+  document.getElementById('edit-shift-modal').classList.add('hidden');
+  state.editingShiftId = null;
+}
+
+async function saveEditShift() {
+  const shift = state.shifts.find(s => s.id === state.editingShiftId);
+  if (!shift) return;
+  const newDate = document.getElementById('edit-shift-date').value;
+  const newType = document.getElementById('edit-type-selector').querySelector('.type-btn.active')?.dataset.type || shift.type;
+
+  const oldBase = shift.type === 'full' ? 120 : 65;
+  const newBase = newType === 'full' ? 120 : 65;
+  const xpDelta = newBase - oldBase;
+
+  await db.shiftLogs.update(state.editingShiftId, {
+    date: newDate,
+    type: newType,
+    xpEarned: shift.xpEarned + xpDelta
+  });
+  if (xpDelta !== 0) {
+    const newTotal = (state.profile.totalXP ?? 0) + xpDelta;
+    await db.profile.update(state.profile.id, { totalXP: newTotal });
+    state.profile.totalXP = newTotal;
+  }
+
+  state.shifts  = await db.shiftLogs.orderBy('date').reverse().toArray();
+  closeEditShiftModal();
+  renderDashboard();
+  updateHeader();
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -688,6 +788,9 @@ const fmtDate = iso =>
 
 const fmtDateShort = ds =>
   new Date(ds).toLocaleDateString('de-AT', { weekday: 'short', day: '2-digit', month: '2-digit' });
+
+const shiftIcon  = t => t === 'full' ? '☀️' : t === 'spät' ? '🌇' : '🌅';
+const shiftLabel = t => t === 'full' ? 'Ganztags 12h' : t === 'spät' ? 'Spät 6,5h' : 'Früh 6,5h';
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', init);
