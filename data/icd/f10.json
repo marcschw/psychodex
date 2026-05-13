@@ -1,24 +1,324 @@
 [
   {
+    "code": "F10",
+    "name": "Psychische und Verhaltensstörungen durch Alkohol",
+    "kategorie": "F1",
+    "seltenheit_score": 3,
+    "praevalenz_allgemein_prozent": 12.0,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.7,
+      "weiblich": 0.6,
+      "alter_18_30": 1.4,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 1.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische oder körperliche Symptome im Zusammenhang mit Alkoholkonsum",
+        "Zeitlicher Zusammenhang zwischen Konsum und Beschwerden"
+      ],
+      "optionale_symptome": [
+        "Kontrollverlust",
+        "Toleranzentwicklung",
+        "Entzugssymptome",
+        "Soziale Folgeschäden"
+      ]
+    },
+    "differentialdiagnose": "Andere substanzbezogene Störungen, primäre psychische Erkrankungen.",
+    "komorbiditaeten": [
+      "F32",
+      "F41",
+      "K70"
+    ]
+  },
+  {
+    "code": "F10.0",
+    "name": "Akute Alkoholintoxikation",
+    "kategorie": "F1",
+    "seltenheit_score": 2,
+    "praevalenz_allgemein_prozent": 10.0,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.5,
+      "alter_18_30": 2.0,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 0.7
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Vorübergehende Störung nach Alkoholkonsum",
+        "Bewusstseins-, Wahrnehmungs- oder Verhaltensveränderung"
+      ],
+      "optionale_symptome": [
+        "Enthemmung",
+        "Sprachstörungen",
+        "Gangunsicherheit",
+        "Aggressivität",
+        "Somnolenz"
+      ]
+    },
+    "differentialdiagnose": "Schädel-Hirn-Trauma, Delir, andere Intoxikationen.",
+    "komorbiditaeten": [
+      "F10.2",
+      "Traumatische Verletzungen"
+    ]
+  },
+  {
+    "code": "F10.00",
+    "name": "Akute Alkoholintoxikation, unkompliziert",
+    "kategorie": "F1",
+    "seltenheit_score": 2,
+    "praevalenz_allgemein_prozent": 8.0,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.5,
+      "alter_18_30": 2.2,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 0.6
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Alkoholbedingte Verhaltensänderung",
+        "Keine schweren Komplikationen"
+      ],
+      "optionale_symptome": [
+        "Enthemmung",
+        "Koordinationsstörung"
+      ]
+    },
+    "differentialdiagnose": "Andere Intoxikationen.",
+    "komorbiditaeten": [
+      "F10.2"
+    ]
+  },
+  {
+    "code": "F10.01",
+    "name": "Akute Alkoholintoxikation mit Trauma oder anderer körperlicher Schädigung",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 1.0,
+    "praevalenz_modifikatoren": {
+      "männlich": 2.0,
+      "weiblich": 0.4,
+      "alter_18_30": 2.0,
+      "alter_31_50": 1.3,
+      "alter_51_plus": 0.6
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Akute Alkoholintoxikation",
+        "Begleitendes Trauma oder körperliche Verletzung"
+      ],
+      "optionale_symptome": [
+        "Sturzverletzungen",
+        "Kopfverletzungen"
+      ]
+    },
+    "differentialdiagnose": "Schädel-Hirn-Trauma ohne Alkoholintoxikation.",
+    "komorbiditaeten": [
+      "S06",
+      "F10.2"
+    ]
+  },
+  {
+    "code": "F10.02",
+    "name": "Akute Alkoholintoxikation mit anderen medizinischen Komplikationen",
+    "kategorie": "F1",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.5,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.6,
+      "alter_18_30": 1.5,
+      "alter_31_50": 1.3,
+      "alter_51_plus": 1.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Akute Alkoholintoxikation",
+        "Medizinische Komplikationen"
+      ],
+      "optionale_symptome": [
+        "Aspiration",
+        "Hypoglykämie",
+        "Elektrolytstörungen"
+      ]
+    },
+    "differentialdiagnose": "Andere metabolische Entgleisungen.",
+    "komorbiditaeten": [
+      "K70",
+      "E16"
+    ]
+  },
+  {
+    "code": "F10.03",
+    "name": "Akute Alkoholintoxikation mit Delir",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.1,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.7,
+      "weiblich": 0.7,
+      "alter_18_30": 0.5,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 1.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Alkoholintoxikation",
+        "Bewusstseinstrübung",
+        "Desorientierung"
+      ],
+      "optionale_symptome": [
+        "Halluzinationen",
+        "Psychomotorische Unruhe"
+      ]
+    },
+    "differentialdiagnose": "Delir anderer Ursache.",
+    "komorbiditaeten": [
+      "F05"
+    ]
+  },
+  {
+    "code": "F10.04",
+    "name": "Akute Alkoholintoxikation mit Wahrnehmungsstörungen",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.2,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.6,
+      "weiblich": 0.7,
+      "alter_18_30": 1.0,
+      "alter_31_50": 0.8,
+      "alter_51_plus": 0.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Akute Alkoholintoxikation",
+        "Illusionen oder Halluzinationen"
+      ],
+      "optionale_symptome": [
+        "Angst",
+        "Verwirrtheit"
+      ]
+    },
+    "differentialdiagnose": "Psychotische Störung, Delir.",
+    "komorbiditaeten": [
+      "F10.5"
+    ]
+  },
+  {
+    "code": "F10.05",
+    "name": "Akute Alkoholintoxikation mit Koma",
+    "kategorie": "F1",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.5,
+      "alter_18_30": 1.0,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.8
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Schwere Alkoholintoxikation",
+        "Bewusstlosigkeit oder Koma"
+      ],
+      "optionale_symptome": [
+        "Atemdepression",
+        "Hypothermie"
+      ]
+    },
+    "differentialdiagnose": "Andere Ursachen des Komas.",
+    "komorbiditaeten": [
+      "Respiratorische Insuffizienz"
+    ]
+  },
+  {
+    "code": "F10.06",
+    "name": "Akute Alkoholintoxikation mit Krampfanfällen",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.08,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.7,
+      "weiblich": 0.6,
+      "alter_18_30": 0.8,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.7
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Alkoholintoxikation",
+        "Krampfanfälle"
+      ],
+      "optionale_symptome": [
+        "Bewusstseinsstörung"
+      ]
+    },
+    "differentialdiagnose": "Epilepsie, Entzugskrampf.",
+    "komorbiditaeten": [
+      "Epilepsie"
+    ]
+  },
+  {
+    "code": "F10.07",
+    "name": "Pathologischer Alkoholrausch",
+    "kategorie": "F1",
+    "seltenheit_score": 9,
+    "praevalenz_allgemein_prozent": 0.01,
+    "praevalenz_modifikatoren": {
+      "männlich": 2.0,
+      "weiblich": 0.3,
+      "alter_18_30": 1.2,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Plötzliche schwere Verhaltensentgleisung nach geringer Alkoholmenge",
+        "Aggressivität oder Automatismen"
+      ],
+      "optionale_symptome": [
+        "Amnesie",
+        "Bewusstseinseinengung"
+      ]
+    },
+    "differentialdiagnose": "Dissoziative Störung, Epilepsie.",
+    "komorbiditaeten": [
+      "Persönlichkeitsstörungen"
+    ]
+  },
+  {
     "code": "F10.1",
-    "name": "Schädlicher Alkoholgebrauch",
+    "name": "Schädlicher Gebrauch von Alkohol",
     "kategorie": "F1",
     "seltenheit_score": 3,
     "praevalenz_allgemein_prozent": 8.0,
-    "praevalenz_modifikatoren": { "männlich": 1.5, "weiblich": 0.7, "alter_18_30": 1.4, "alter_31_50": 1.2, "alter_51_plus": 0.8 },
+    "praevalenz_modifikatoren": {
+      "männlich": 1.5,
+      "weiblich": 0.7,
+      "alter_18_30": 1.4,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 0.8
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Konsummuster, das zu tatsächlichen körperlichen oder psychischen Schäden führt",
-        "Schädlicher Gebrauch ohne Abhängigkeitssyndrom"
+        "Konsummuster mit psychischen oder körperlichen Schäden",
+        "Kein vollständiges Abhängigkeitssyndrom"
       ],
       "optionale_symptome": [
-        "Soziale Folgeschäden (beruflich, familiär)",
-        "Gedächtnisblockaden (Blackouts)",
-        "Risikoverhalten unter Alkohol"
+        "Berufliche Probleme",
+        "Familiäre Konflikte",
+        "Blackouts"
       ]
     },
-    "differentialdiagnose": "Alkoholabhängigkeit (F10.2, Kontrollverlust, Toleranz), Soziales Trinken (kein Schaden), Angststörung mit Alkohol als Bewältigungsstrategie.",
-    "komorbiditaeten": ["F32 (Depression)", "F41.1 (Generalisierte Angststörung)"]
+    "differentialdiagnose": "Alkoholabhängigkeit, sozialer Konsum.",
+    "komorbiditaeten": [
+      "F32",
+      "F41"
+    ]
   },
   {
     "code": "F10.2",
@@ -26,21 +326,373 @@
     "kategorie": "F1",
     "seltenheit_score": 4,
     "praevalenz_allgemein_prozent": 4.0,
-    "praevalenz_modifikatoren": { "männlich": 1.8, "weiblich": 0.5, "alter_18_30": 1.0, "alter_31_50": 1.5, "alter_51_plus": 1.0 },
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.5,
+      "alter_18_30": 1.0,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 1.0
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Starker Wunsch oder Zwang, Alkohol zu konsumieren",
-        "Verminderte Kontrolle über Beginn, Ende oder Menge des Konsums",
-        "Toleranzentwicklung (deutliche Dosissteigerung für gleiche Wirkung)"
+        "Starker Wunsch nach Alkohol",
+        "Kontrollverlust",
+        "Toleranzentwicklung",
+        "Fortgesetzter Konsum trotz Schäden"
       ],
       "optionale_symptome": [
-        "Körperliches Entzugssyndrom bei Reduktion",
-        "Fortgesetzter Konsum trotz schädlicher Folgen",
-        "Vernachlässigung anderer Aktivitäten zugunsten des Konsums"
+        "Entzugssymptome",
+        "Vernachlässigung anderer Interessen"
       ]
     },
-    "differentialdiagnose": "Schädlicher Gebrauch (F10.1, keine Toleranz/Entzug), Alkohol-induzierte Störungen, depressive Störung als Primärdiagnose.",
-    "komorbiditaeten": ["F32 (Depression)", "F60.2 (Dissoziale PS)", "F43.1 (PTBS)"]
+    "differentialdiagnose": "Schädlicher Gebrauch, andere Suchterkrankungen.",
+    "komorbiditaeten": [
+      "F32",
+      "F43.1",
+      "K70"
+    ]
+  },
+  {
+    "code": "F10.20",
+    "name": "Alkoholabhängigkeit, gegenwärtig abstinent",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.8,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.7,
+      "weiblich": 0.6,
+      "alter_18_30": 0.8,
+      "alter_31_50": 1.3,
+      "alter_51_plus": 1.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Frühere Alkoholabhängigkeit",
+        "Aktuelle Abstinenz"
+      ],
+      "optionale_symptome": [
+        "Craving",
+        "Rückfallgefahr"
+      ]
+    },
+    "differentialdiagnose": "Gelegentlicher Konsum ohne Abhängigkeit.",
+    "komorbiditaeten": [
+      "F32"
+    ]
+  },
+  {
+    "code": "F10.200",
+    "name": "Alkoholabhängigkeit, frühe Remission",
+    "kategorie": "F1",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.3,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.7,
+      "weiblich": 0.6,
+      "alter_18_30": 0.8,
+      "alter_31_50": 1.3,
+      "alter_51_plus": 0.9
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Abstinenz nach Alkoholabhängigkeit",
+        "Kurze Remissionsdauer"
+      ],
+      "optionale_symptome": [
+        "Craving",
+        "Psychische Instabilität"
+      ]
+    },
+    "differentialdiagnose": "Partielle Remission.",
+    "komorbiditaeten": [
+      "F41"
+    ]
+  },
+  {
+    "code": "F10.201",
+    "name": "Alkoholabhängigkeit, partielle Remission",
+    "kategorie": "F1",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.4,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.7,
+      "weiblich": 0.6,
+      "alter_18_30": 0.8,
+      "alter_31_50": 1.4,
+      "alter_51_plus": 1.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Frühere Alkoholabhängigkeit",
+        "Teilweise Symptomfreiheit",
+        "Gelegentliche Rückfälle möglich"
+      ],
+      "optionale_symptome": [
+        "Craving",
+        "Kontrollprobleme"
+      ]
+    },
+    "differentialdiagnose": "Vollremission, aktiver Konsum.",
+    "komorbiditaeten": [
+      "F32",
+      "F41"
+    ]
+  },
+  {
+    "code": "F10.202",
+    "name": "Alkoholabhängigkeit, vollständige Remission",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.5,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.6,
+      "weiblich": 0.7,
+      "alter_18_30": 0.6,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 1.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Frühere Alkoholabhängigkeit",
+        "Längere vollständige Abstinenz"
+      ],
+      "optionale_symptome": [
+        "Residualsymptome",
+        "Rückfallängste"
+      ]
+    },
+    "differentialdiagnose": "Partielle Remission.",
+    "komorbiditaeten": [
+      "F43.1"
+    ]
+  },
+  {
+    "code": "F10.21",
+    "name": "Alkoholabhängigkeit, abstinent in geschützter Umgebung",
+    "kategorie": "F1",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.2,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.5,
+      "alter_18_30": 0.7,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 1.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Abhängigkeitssyndrom",
+        "Abstinenz durch kontrollierte Umgebung"
+      ],
+      "optionale_symptome": [
+        "Craving",
+        "Rückfallgefahr"
+      ]
+    },
+    "differentialdiagnose": "Freiwillige Abstinenz.",
+    "komorbiditaeten": [
+      "F32"
+    ]
+  },
+  {
+    "code": "F10.22",
+    "name": "Alkoholabhängigkeit unter Substitution oder kontrollierter Gabe",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.5,
+      "weiblich": 0.7,
+      "alter_18_30": 0.5,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 0.8
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Abhängigkeitssyndrom",
+        "Kontrollierte pharmakologische Behandlung"
+      ],
+      "optionale_symptome": [
+        "Reduzierter Konsum",
+        "Rückfallprävention"
+      ]
+    },
+    "differentialdiagnose": "Aktive Alkoholabhängigkeit.",
+    "komorbiditaeten": [
+      "F41"
+    ]
+  },
+  {
+    "code": "F10.23",
+    "name": "Alkoholabhängigkeit unter aversiver oder blockierender Behandlung",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.04,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.6,
+      "weiblich": 0.6,
+      "alter_18_30": 0.4,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 0.8
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Alkoholabhängigkeit",
+        "Behandlung mit aversiven oder blockierenden Medikamenten"
+      ],
+      "optionale_symptome": [
+        "Craving",
+        "Abstinenzbemühungen"
+      ]
+    },
+    "differentialdiagnose": "Unbehandelte Alkoholabhängigkeit.",
+    "komorbiditaeten": [
+      "F32"
+    ]
+  },
+  {
+    "code": "F10.24",
+    "name": "Aktiver Alkoholkonsum bei Alkoholabhängigkeit",
+    "kategorie": "F1",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 2.5,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.5,
+      "alter_18_30": 1.0,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 1.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Fortgesetzter Alkoholkonsum trotz Abhängigkeit",
+        "Kontrollverlust"
+      ],
+      "optionale_symptome": [
+        "Soziale Probleme",
+        "Entzugssymptome"
+      ]
+    },
+    "differentialdiagnose": "Schädlicher Gebrauch.",
+    "komorbiditaeten": [
+      "K70",
+      "F32"
+    ]
+  },
+  {
+    "code": "F10.240",
+    "name": "Aktive Alkoholabhängigkeit ohne körperliche Symptome",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.8,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.7,
+      "weiblich": 0.6,
+      "alter_18_30": 1.0,
+      "alter_31_50": 1.4,
+      "alter_51_plus": 0.9
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische Abhängigkeit",
+        "Keine deutlichen körperlichen Entzugssymptome"
+      ],
+      "optionale_symptome": [
+        "Craving",
+        "Kontrollverlust"
+      ]
+    },
+    "differentialdiagnose": "Körperliche Alkoholabhängigkeit.",
+    "komorbiditaeten": [
+      "F41"
+    ]
+  },
+  {
+    "code": "F10.241",
+    "name": "Aktive Alkoholabhängigkeit mit körperlichen Symptomen",
+    "kategorie": "F1",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 1.7,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.9,
+      "weiblich": 0.5,
+      "alter_18_30": 0.9,
+      "alter_31_50": 1.6,
+      "alter_51_plus": 1.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische und körperliche Alkoholabhängigkeit",
+        "Entzugssymptome"
+      ],
+      "optionale_symptome": [
+        "Toleranzentwicklung",
+        "Morgendliches Trinken"
+      ]
+    },
+    "differentialdiagnose": "Schädlicher Gebrauch.",
+    "komorbiditaeten": [
+      "K70",
+      "Polyneuropathie"
+    ]
+  },
+  {
+    "code": "F10.25",
+    "name": "Kontinuierlicher Alkoholkonsum",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 1.2,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.5,
+      "alter_18_30": 0.7,
+      "alter_31_50": 1.5,
+      "alter_51_plus": 1.2
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Täglicher oder nahezu täglicher Konsum",
+        "Abhängigkeitssyndrom"
+      ],
+      "optionale_symptome": [
+        "Sozialer Abstieg",
+        "Körperliche Folgeschäden"
+      ]
+    },
+    "differentialdiagnose": "Episodischer Konsum.",
+    "komorbiditaeten": [
+      "Leberzirrhose",
+      "F32"
+    ]
+  },
+  {
+    "code": "F10.26",
+    "name": "Episodischer Alkoholkonsum [Dipsomanie]",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.2,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.7,
+      "weiblich": 0.6,
+      "alter_18_30": 0.9,
+      "alter_31_50": 1.1,
+      "alter_51_plus": 0.7
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Periodische Trinkexzesse",
+        "Zwischenphasen relativer Abstinenz"
+      ],
+      "optionale_symptome": [
+        "Kontrollverlust",
+        "Soziale Probleme"
+      ]
+    },
+    "differentialdiagnose": "Kontinuierlicher Alkoholkonsum.",
+    "komorbiditaeten": [
+      "F31",
+      "F32"
+    ]
   },
   {
     "code": "F10.3",
@@ -48,21 +700,776 @@
     "kategorie": "F1",
     "seltenheit_score": 6,
     "praevalenz_allgemein_prozent": 1.0,
-    "praevalenz_modifikatoren": { "männlich": 1.7, "weiblich": 0.6, "alter_18_30": 0.5, "alter_31_50": 1.0, "alter_51_plus": 1.5 },
+    "praevalenz_modifikatoren": {
+      "männlich": 1.7,
+      "weiblich": 0.6,
+      "alter_18_30": 0.5,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 1.5
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Absetzen oder Reduktion nach längerem/hochdosiertem Alkoholkonsum",
-        "Autonome Symptome: Tremor, Schwitzen, Tachykardie",
-        "Schlaflosigkeit, Angst, psychomotorische Unruhe"
+        "Reduktion oder Absetzen von Alkohol",
+        "Vegetative Entzugssymptome"
       ],
       "optionale_symptome": [
-        "Übelkeit, Erbrechen",
-        "Transiente Halluzinationen",
-        "Grand-Mal-Krampfanfälle (Entzugsanfälle)"
+        "Tremor",
+        "Schwitzen",
+        "Angst",
+        "Schlafstörungen"
       ]
     },
-    "differentialdiagnose": "Delir tremens (F10.4, schweres Entzugsbild), Entzug von Benzodiazepinen (F13.3), vegetative Dysregulation anderer Ursache.",
-    "komorbiditaeten": ["F10.2 (Alkoholabhängigkeit)"]
+    "differentialdiagnose": "Benzodiazepinentzug, Delir.",
+    "komorbiditaeten": [
+      "F10.2"
+    ]
+  },
+  {
+    "code": "F10.320",
+    "name": "Alkoholentzugssyndrom ohne Komplikationen",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.7,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.7,
+      "weiblich": 0.6,
+      "alter_18_30": 0.5,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 1.2
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Vegetative Entzugssymptome",
+        "Keine Krampfanfälle"
+      ],
+      "optionale_symptome": [
+        "Unruhe",
+        "Schlaflosigkeit"
+      ]
+    },
+    "differentialdiagnose": "Delir tremens.",
+    "komorbiditaeten": [
+      "F41"
+    ]
+  },
+  {
+    "code": "F10.321",
+    "name": "Alkoholentzugssyndrom mit Krampfanfällen",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.2,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.5,
+      "alter_18_30": 0.6,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 1.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Alkoholentzug",
+        "Grand-mal-Krampfanfälle"
+      ],
+      "optionale_symptome": [
+        "Tremor",
+        "Verwirrtheit"
+      ]
+    },
+    "differentialdiagnose": "Epilepsie.",
+    "komorbiditaeten": [
+      "Epilepsie"
+    ]
+  },
+  {
+    "code": "F10.4",
+    "name": "Alkoholentzugssyndrom mit Delir",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.15,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.5,
+      "alter_18_30": 0.3,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 1.8
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Alkoholentzug",
+        "Delirante Symptomatik",
+        "Bewusstseinstrübung"
+      ],
+      "optionale_symptome": [
+        "Halluzinationen",
+        "Psychomotorische Unruhe",
+        "Vegetative Entgleisung"
+      ]
+    },
+    "differentialdiagnose": "Delir anderer Ursache, schizophrene Psychose.",
+    "komorbiditaeten": [
+      "F10.2",
+      "F05"
+    ]
+  },
+  {
+    "code": "F10.40",
+    "name": "Alkoholentzugssyndrom mit Delir ohne Krampfanfälle",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.1,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.5,
+      "alter_18_30": 0.2,
+      "alter_31_50": 0.9,
+      "alter_51_plus": 1.7
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Delir im Rahmen des Alkoholentzugs",
+        "Keine Krampfanfälle"
+      ],
+      "optionale_symptome": [
+        "Desorientierung",
+        "Halluzinationen"
+      ]
+    },
+    "differentialdiagnose": "Infektiöses Delir.",
+    "komorbiditaeten": [
+      "F10.2"
+    ]
+  },
+  {
+    "code": "F10.41",
+    "name": "Alkoholentzugssyndrom mit Delir und Krampfanfällen",
+    "kategorie": "F1",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.9,
+      "weiblich": 0.4,
+      "alter_18_30": 0.2,
+      "alter_31_50": 0.8,
+      "alter_51_plus": 1.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Delir im Alkoholentzug",
+        "Krampfanfälle"
+      ],
+      "optionale_symptome": [
+        "Bewusstseinsstörung",
+        "Vegetative Entgleisung"
+      ]
+    },
+    "differentialdiagnose": "Epileptischer Status, Enzephalitis.",
+    "komorbiditaeten": [
+      "Epilepsie",
+      "F10.2"
+    ]
+  },
+  {
+    "code": "F10.5",
+    "name": "Psychotische Störung durch Alkohol",
+    "kategorie": "F1",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.3,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.7,
+      "weiblich": 0.6,
+      "alter_18_30": 0.5,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 1.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Halluzinationen oder Wahnideen",
+        "Zeitlicher Zusammenhang mit Alkoholkonsum"
+      ],
+      "optionale_symptome": [
+        "Angst",
+        "Desorganisation",
+        "Paranoide Ideen"
+      ]
+    },
+    "differentialdiagnose": "Schizophrenie, Delir.",
+    "komorbiditaeten": [
+      "F10.2",
+      "F32"
+    ]
+  },
+  {
+    "code": "F10.50",
+    "name": "Schizophreniforme psychotische Störung durch Alkohol",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.08,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.5,
+      "alter_18_30": 0.5,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.8
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Schizophreniforme Symptome",
+        "Zusammenhang mit Alkohol"
+      ],
+      "optionale_symptome": [
+        "Halluzinationen",
+        "Wahnideen"
+      ]
+    },
+    "differentialdiagnose": "Schizophrenie.",
+    "komorbiditaeten": [
+      "F10.2"
+    ]
+  },
+  {
+    "code": "F10.51",
+    "name": "Vorwiegend wahnhafte psychotische Störung durch Alkohol",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.07,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.7,
+      "weiblich": 0.6,
+      "alter_18_30": 0.4,
+      "alter_31_50": 1.1,
+      "alter_51_plus": 0.8
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Dominierende Wahnideen",
+        "Zusammenhang mit Alkohol"
+      ],
+      "optionale_symptome": [
+        "Misstrauen",
+        "Aggressivität"
+      ]
+    },
+    "differentialdiagnose": "Paranoide Schizophrenie.",
+    "komorbiditaeten": [
+      "F10.2"
+    ]
+  },
+  {
+    "code": "F10.52",
+    "name": "Vorwiegend halluzinatorische psychotische Störung durch Alkohol",
+    "kategorie": "F1",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.1,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.5,
+      "alter_18_30": 0.5,
+      "alter_31_50": 1.1,
+      "alter_51_plus": 0.9
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Akustische oder visuelle Halluzinationen",
+        "Klares Bewusstsein"
+      ],
+      "optionale_symptome": [
+        "Angst",
+        "Paranoide Deutung"
+      ]
+    },
+    "differentialdiagnose": "Delir tremens, Schizophrenie.",
+    "komorbiditaeten": [
+      "F10.2"
+    ]
+  },
+  {
+    "code": "F10.53",
+    "name": "Vorwiegend polymorphe psychotische Störung durch Alkohol",
+    "kategorie": "F1",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.04,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.6,
+      "weiblich": 0.7,
+      "alter_18_30": 0.3,
+      "alter_31_50": 0.8,
+      "alter_51_plus": 0.7
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Wechselnde psychotische Symptome",
+        "Zusammenhang mit Alkohol"
+      ],
+      "optionale_symptome": [
+        "Halluzinationen",
+        "Wahn",
+        "Affektive Symptome"
+      ]
+    },
+    "differentialdiagnose": "Akute polymorphe psychotische Störung.",
+    "komorbiditaeten": [
+      "F10.2"
+    ]
+  },
+  {
+    "code": "F10.54",
+    "name": "Vorwiegend depressive psychotische Störung durch Alkohol",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.5,
+      "weiblich": 0.8,
+      "alter_18_30": 0.3,
+      "alter_31_50": 0.9,
+      "alter_51_plus": 0.8
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Depressive Symptome mit psychotischen Merkmalen",
+        "Zusammenhang mit Alkohol"
+      ],
+      "optionale_symptome": [
+        "Schuldwahn",
+        "Suizidgedanken"
+      ]
+    },
+    "differentialdiagnose": "Schwere Depression mit psychotischen Symptomen.",
+    "komorbiditaeten": [
+      "F32.3"
+    ]
+  },
+  {
+    "code": "F10.55",
+    "name": "Vorwiegend manische psychotische Störung durch Alkohol",
+    "kategorie": "F1",
+    "seltenheit_score": 9,
+    "praevalenz_allgemein_prozent": 0.02,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.6,
+      "weiblich": 0.7,
+      "alter_18_30": 0.2,
+      "alter_31_50": 0.5,
+      "alter_51_plus": 0.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Manische Symptome mit psychotischen Merkmalen",
+        "Zusammenhang mit Alkohol"
+      ],
+      "optionale_symptome": [
+        "Größenideen",
+        "Enthemmung"
+      ]
+    },
+    "differentialdiagnose": "Bipolare Störung.",
+    "komorbiditaeten": [
+      "F31"
+    ]
+  },
+  {
+    "code": "F10.56",
+    "name": "Gemischte psychotische Störung durch Alkohol",
+    "kategorie": "F1",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.03,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.6,
+      "weiblich": 0.7,
+      "alter_18_30": 0.2,
+      "alter_31_50": 0.7,
+      "alter_51_plus": 0.6
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Gemischte psychotische Symptome",
+        "Zusammenhang mit Alkohol"
+      ],
+      "optionale_symptome": [
+        "Halluzinationen",
+        "Affektive Symptome",
+        "Wahnideen"
+      ]
+    },
+    "differentialdiagnose": "Schizoaffektive Störung.",
+    "komorbiditaeten": [
+      "F10.2"
+    ]
+  },
+  {
+    "code": "F10.6",
+    "name": "Amnestisches Syndrom durch Alkohol",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.1,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.7,
+      "weiblich": 0.6,
+      "alter_18_30": 0.1,
+      "alter_31_50": 0.8,
+      "alter_51_plus": 1.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Gedächtnisstörungen",
+        "Beeinträchtigung des Kurzzeitgedächtnisses",
+        "Zusammenhang mit chronischem Alkoholkonsum"
+      ],
+      "optionale_symptome": [
+        "Konfabulationen",
+        "Orientierungsstörungen"
+      ]
+    },
+    "differentialdiagnose": "Demenz, organisches amnestisches Syndrom.",
+    "komorbiditaeten": [
+      "Vitamin-B1-Mangel",
+      "Polyneuropathie"
+    ]
+  },
+  {
+    "code": "F10.7",
+    "name": "Residual- und Spätfolgezustände durch Alkohol",
+    "kategorie": "F1",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.4,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.7,
+      "weiblich": 0.6,
+      "alter_18_30": 0.2,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 1.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Anhaltende psychische oder kognitive Folgen",
+        "Früherer Alkoholkonsum als Ursache"
+      ],
+      "optionale_symptome": [
+        "Persönlichkeitsveränderungen",
+        "Kognitive Defizite"
+      ]
+    },
+    "differentialdiagnose": "Primäre Demenz.",
+    "komorbiditaeten": [
+      "F10.2",
+      "F02"
+    ]
+  },
+  {
+    "code": "F10.70",
+    "name": "Flashbacks durch Alkohol",
+    "kategorie": "F1",
+    "seltenheit_score": 9,
+    "praevalenz_allgemein_prozent": 0.01,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.5,
+      "weiblich": 0.8,
+      "alter_18_30": 0.2,
+      "alter_31_50": 0.3,
+      "alter_51_plus": 0.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Wiedererleben alkoholbedingter Wahrnehmungsstörungen"
+      ],
+      "optionale_symptome": [
+        "Angst",
+        "Desorientierung"
+      ]
+    },
+    "differentialdiagnose": "PTBS, Halluzinogen-Flashbacks.",
+    "komorbiditaeten": [
+      "F41"
+    ]
+  },
+  {
+    "code": "F10.71",
+    "name": "Persönlichkeits- oder Verhaltensstörung als Residualzustand durch Alkohol",
+    "kategorie": "F1",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.15,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.5,
+      "alter_18_30": 0.2,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 1.4
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Dauerhafte Persönlichkeits- oder Verhaltensänderung",
+        "Frühere Alkoholschädigung"
+      ],
+      "optionale_symptome": [
+        "Impulsivität",
+        "Affektive Instabilität",
+        "Sozialer Rückzug"
+      ]
+    },
+    "differentialdiagnose": "Persönlichkeitsstörung, organische Persönlichkeitsstörung.",
+    "komorbiditaeten": [
+      "F07.0",
+      "F32"
+    ]
+  },
+  {
+    "code": "F10.72",
+    "name": "Residual-affektive Störung durch Alkohol",
+    "kategorie": "F1",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.12,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.5,
+      "weiblich": 0.8,
+      "alter_18_30": 0.2,
+      "alter_31_50": 0.9,
+      "alter_51_plus": 1.2
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Anhaltende affektive Symptome",
+        "Frühere Alkoholschädigung"
+      ],
+      "optionale_symptome": [
+        "Depressive Verstimmung",
+        "Reizbarkeit",
+        "Antriebsminderung"
+      ]
+    },
+    "differentialdiagnose": "Primäre depressive Störung.",
+    "komorbiditaeten": [
+      "F32",
+      "F10.2"
+    ]
+  },
+  {
+    "code": "F10.73",
+    "name": "Demenz als Residualzustand durch Alkohol",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.08,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.7,
+      "weiblich": 0.6,
+      "alter_18_30": 0.0,
+      "alter_31_50": 0.4,
+      "alter_51_plus": 1.8
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Fortschreitende kognitive Defizite",
+        "Langjähriger Alkoholmissbrauch"
+      ],
+      "optionale_symptome": [
+        "Gedächtnisstörungen",
+        "Persönlichkeitsveränderungen"
+      ]
+    },
+    "differentialdiagnose": "Alzheimer-Demenz, vaskuläre Demenz.",
+    "komorbiditaeten": [
+      "F02",
+      "Polyneuropathie"
+    ]
+  },
+  {
+    "code": "F10.74",
+    "name": "Sonstige anhaltende kognitive Störung durch Alkohol",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.07,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.6,
+      "weiblich": 0.7,
+      "alter_18_30": 0.1,
+      "alter_31_50": 0.5,
+      "alter_51_plus": 1.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Persistierende kognitive Einschränkungen",
+        "Zusammenhang mit Alkohol"
+      ],
+      "optionale_symptome": [
+        "Konzentrationsstörungen",
+        "Gedächtnisprobleme"
+      ]
+    },
+    "differentialdiagnose": "Leichte kognitive Störung.",
+    "komorbiditaeten": [
+      "F06.7"
+    ]
+  },
+  {
+    "code": "F10.75",
+    "name": "Psychotische Störung mit spätem Beginn durch Alkohol",
+    "kategorie": "F1",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.03,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.7,
+      "weiblich": 0.6,
+      "alter_18_30": 0.0,
+      "alter_31_50": 0.4,
+      "alter_51_plus": 1.3
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Spät einsetzende psychotische Symptome",
+        "Zusammenhang mit chronischem Alkoholkonsum"
+      ],
+      "optionale_symptome": [
+        "Wahnideen",
+        "Halluzinationen"
+      ]
+    },
+    "differentialdiagnose": "Paranoide Schizophrenie.",
+    "komorbiditaeten": [
+      "F10.2"
+    ]
+  },
+  {
+    "code": "F10.8",
+    "name": "Sonstige psychische und Verhaltensstörungen durch Alkohol",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.2,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.6,
+      "weiblich": 0.7,
+      "alter_18_30": 0.5,
+      "alter_31_50": 0.8,
+      "alter_51_plus": 1.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische oder Verhaltenssymptome durch Alkohol",
+        "Nicht anderweitig klassifizierbar"
+      ],
+      "optionale_symptome": [
+        "Affektive Symptome",
+        "Impulsivität"
+      ]
+    },
+    "differentialdiagnose": "Andere substanzbezogene Störungen.",
+    "komorbiditaeten": [
+      "F32",
+      "F41"
+    ]
+  },
+  {
+    "code": "F10.9",
+    "name": "Nicht näher bezeichnete psychische und Verhaltensstörung durch Alkohol",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.5,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.6,
+      "weiblich": 0.7,
+      "alter_18_30": 0.8,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 1.0
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische oder Verhaltenssymptome im Zusammenhang mit Alkohol"
+      ],
+      "optionale_symptome": [
+        "Kognitive Defizite",
+        "Verhaltensänderungen"
+      ]
+    },
+    "differentialdiagnose": "Primäre psychische Erkrankungen.",
+    "komorbiditaeten": [
+      "F10.2"
+    ]
+  },
+  {
+    "code": "F11",
+    "name": "Psychische und Verhaltensstörungen durch Opioide",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.7,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.6,
+      "weiblich": 0.7,
+      "alter_18_30": 2.0,
+      "alter_31_50": 1.3,
+      "alter_51_plus": 0.4
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische oder körperliche Symptome durch Opioidkonsum"
+      ],
+      "optionale_symptome": [
+        "Craving",
+        "Entzug",
+        "Toleranz"
+      ]
+    },
+    "differentialdiagnose": "Andere substanzbezogene Störungen.",
+    "komorbiditaeten": [
+      "F32",
+      "F43.1"
+    ]
+  },
+  {
+    "code": "F11.0",
+    "name": "Akute Opioidintoxikation",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.3,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.7,
+      "weiblich": 0.6,
+      "alter_18_30": 2.0,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 0.3
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Bewusstseinsveränderung nach Opioidkonsum",
+        "Miosis",
+        "Sedierung"
+      ],
+      "optionale_symptome": [
+        "Atemdepression",
+        "Euphorie",
+        "Bradykardie"
+      ]
+    },
+    "differentialdiagnose": "Sedativa-Intoxikation.",
+    "komorbiditaeten": [
+      "Ateminsuffizienz"
+    ]
+  },
+  {
+    "code": "F11.1",
+    "name": "Schädlicher Gebrauch von Opioiden",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.2,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.6,
+      "weiblich": 0.7,
+      "alter_18_30": 1.8,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 0.3
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Opioidkonsum mit gesundheitlichen Schäden",
+        "Kein vollständiges Abhängigkeitssyndrom"
+      ],
+      "optionale_symptome": [
+        "Soziale Probleme",
+        "Risikoverhalten"
+      ]
+    },
+    "differentialdiagnose": "Opioidabhängigkeit.",
+    "komorbiditaeten": [
+      "Hepatitis C",
+      "F32"
+    ]
   },
   {
     "code": "F11.2",
@@ -70,42 +1477,322 @@
     "kategorie": "F1",
     "seltenheit_score": 6,
     "praevalenz_allgemein_prozent": 0.4,
-    "praevalenz_modifikatoren": { "männlich": 1.5, "weiblich": 0.7, "alter_18_30": 2.0, "alter_31_50": 1.2, "alter_51_plus": 0.3 },
+    "praevalenz_modifikatoren": {
+      "männlich": 1.5,
+      "weiblich": 0.7,
+      "alter_18_30": 2.0,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 0.3
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Starkes Verlangen nach Opioiden (Craving)",
-        "Kontrollverlust über Konsum",
-        "Toleranzentwicklung und Entzugssymptome"
+        "Craving",
+        "Kontrollverlust",
+        "Toleranzentwicklung",
+        "Entzugssymptome"
       ],
       "optionale_symptome": [
-        "Nadeleinstichstellen, Abszesse",
-        "Sozialer Rückzug, kriminelle Beschaffung",
-        "Vernachlässigung von Hygiene und sozialen Pflichten"
+        "Beschaffungskriminalität",
+        "Sozialer Rückzug"
       ]
     },
-    "differentialdiagnose": "Schmerzmittelabhängigkeit bei chronsichem Schmerzpatienten (F55), Kokainabhängigkeit (F14.2), kombinierter Substanzmissbrauch (F19).",
-    "komorbiditaeten": ["F43.1 (PTBS)", "F32 (Depression)", "F60.3 (BPS)"]
+    "differentialdiagnose": "Schmerzmittelgebrauch ohne Abhängigkeit.",
+    "komorbiditaeten": [
+      "F43.1",
+      "F60.3",
+      "HIV"
+    ]
+  },
+  {
+    "code": "F11.3",
+    "name": "Opioidentzugssyndrom",
+    "kategorie": "F1",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.15,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.5,
+      "weiblich": 0.7,
+      "alter_18_30": 1.8,
+      "alter_31_50": 1.1,
+      "alter_51_plus": 0.3
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Absetzen oder Reduktion von Opioiden",
+        "Vegetative Entzugssymptome"
+      ],
+      "optionale_symptome": [
+        "Mydriasis",
+        "Diarrhoe",
+        "Muskel- und Knochenschmerzen",
+        "Gähnen"
+      ]
+    },
+    "differentialdiagnose": "Grippe, Benzodiazepinentzug.",
+    "komorbiditaeten": [
+      "F11.2"
+    ]
+  },
+  {
+    "code": "F11.4",
+    "name": "Opioidentzugssyndrom mit Delir",
+    "kategorie": "F1",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.03,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.5,
+      "weiblich": 0.7,
+      "alter_18_30": 1.2,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.3
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Opioidentzug",
+        "Bewusstseinstrübung",
+        "Delirante Symptomatik"
+      ],
+      "optionale_symptome": [
+        "Desorientierung",
+        "Halluzinationen",
+        "Agitation"
+      ]
+    },
+    "differentialdiagnose": "Delir anderer Ursache, Mischintoxikation.",
+    "komorbiditaeten": [
+      "F11.2",
+      "Infektionen"
+    ]
+  },
+  {
+    "code": "F11.5",
+    "name": "Psychotische Störung durch Opioide",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.5,
+      "weiblich": 0.7,
+      "alter_18_30": 1.3,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.2
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Halluzinationen oder Wahnideen",
+        "Zeitlicher Zusammenhang mit Opioidkonsum"
+      ],
+      "optionale_symptome": [
+        "Paranoia",
+        "Desorganisation"
+      ]
+    },
+    "differentialdiagnose": "Schizophrenie, delirante Zustände.",
+    "komorbiditaeten": [
+      "F11.2",
+      "F32"
+    ]
+  },
+  {
+    "code": "F11.6",
+    "name": "Amnestisches Syndrom durch Opioide",
+    "kategorie": "F1",
+    "seltenheit_score": 9,
+    "praevalenz_allgemein_prozent": 0.01,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.4,
+      "weiblich": 0.8,
+      "alter_18_30": 0.5,
+      "alter_31_50": 0.5,
+      "alter_51_plus": 0.2
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Gedächtnisstörungen",
+        "Zusammenhang mit Opioidkonsum"
+      ],
+      "optionale_symptome": [
+        "Konzentrationsprobleme",
+        "Orientierungsstörungen"
+      ]
+    },
+    "differentialdiagnose": "Organisches amnestisches Syndrom.",
+    "komorbiditaeten": [
+      "F11.2"
+    ]
+  },
+  {
+    "code": "F11.7",
+    "name": "Residual- und Spätfolgezustände durch Opioide",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.08,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.5,
+      "weiblich": 0.7,
+      "alter_18_30": 0.8,
+      "alter_31_50": 0.7,
+      "alter_51_plus": 0.3
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Persistierende psychische oder kognitive Folgen",
+        "Früherer Opioidkonsum"
+      ],
+      "optionale_symptome": [
+        "Affektive Symptome",
+        "Kognitive Defizite"
+      ]
+    },
+    "differentialdiagnose": "Primäre psychische Erkrankungen.",
+    "komorbiditaeten": [
+      "F32",
+      "F11.2"
+    ]
+  },
+  {
+    "code": "F11.8",
+    "name": "Sonstige psychische und Verhaltensstörungen durch Opioide",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.5,
+      "weiblich": 0.7,
+      "alter_18_30": 1.0,
+      "alter_31_50": 0.8,
+      "alter_51_plus": 0.2
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische Symptome durch Opioide",
+        "Nicht anderweitig klassifizierbar"
+      ],
+      "optionale_symptome": [
+        "Impulsivität",
+        "Affektive Symptome"
+      ]
+    },
+    "differentialdiagnose": "Andere substanzbezogene Störungen.",
+    "komorbiditaeten": [
+      "F41"
+    ]
+  },
+  {
+    "code": "F11.9",
+    "name": "Nicht näher bezeichnete psychische und Verhaltensstörung durch Opioide",
+    "kategorie": "F1",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.08,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.5,
+      "weiblich": 0.7,
+      "alter_18_30": 1.1,
+      "alter_31_50": 0.9,
+      "alter_51_plus": 0.2
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische oder Verhaltenssymptome im Zusammenhang mit Opioiden"
+      ],
+      "optionale_symptome": [
+        "Kognitive Defizite",
+        "Affektive Symptome"
+      ]
+    },
+    "differentialdiagnose": "Andere substanzbezogene Störungen.",
+    "komorbiditaeten": [
+      "F11.2"
+    ]
+  },
+  {
+    "code": "F12",
+    "name": "Psychische und Verhaltensstörungen durch Cannabinoide",
+    "kategorie": "F1",
+    "seltenheit_score": 3,
+    "praevalenz_allgemein_prozent": 7.0,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.7,
+      "weiblich": 0.6,
+      "alter_18_30": 3.0,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.2
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische oder körperliche Symptome durch Cannabiskonsum"
+      ],
+      "optionale_symptome": [
+        "Antriebsminderung",
+        "Gedächtnisprobleme",
+        "Angst"
+      ]
+    },
+    "differentialdiagnose": "Primäre Psychosen, Angststörungen.",
+    "komorbiditaeten": [
+      "F32",
+      "F41",
+      "F20"
+    ]
+  },
+  {
+    "code": "F12.0",
+    "name": "Akute Cannabisintoxikation",
+    "kategorie": "F1",
+    "seltenheit_score": 3,
+    "praevalenz_allgemein_prozent": 4.0,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.5,
+      "alter_18_30": 3.5,
+      "alter_31_50": 0.9,
+      "alter_51_plus": 0.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Verhaltens- oder Wahrnehmungsveränderungen nach Cannabiskonsum"
+      ],
+      "optionale_symptome": [
+        "Euphorie",
+        "Angst",
+        "Paranoia",
+        "Mundtrockenheit"
+      ]
+    },
+    "differentialdiagnose": "Halluzinogenintoxikation, Panikattacke.",
+    "komorbiditaeten": [
+      "F41"
+    ]
   },
   {
     "code": "F12.1",
-    "name": "Schädlicher Cannabisgebrauch",
+    "name": "Schädlicher Gebrauch von Cannabinoiden",
     "kategorie": "F1",
     "seltenheit_score": 3,
     "praevalenz_allgemein_prozent": 5.0,
-    "praevalenz_modifikatoren": { "männlich": 1.6, "weiblich": 0.6, "alter_18_30": 3.0, "alter_31_50": 1.0, "alter_51_plus": 0.2 },
+    "praevalenz_modifikatoren": {
+      "männlich": 1.6,
+      "weiblich": 0.6,
+      "alter_18_30": 3.0,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.2
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Konsummuster, das zu psychischen oder sozialen Schäden führt",
-        "Keine Abhängigkeit nachweisbar"
+        "Cannabiskonsum mit psychischen oder sozialen Schäden",
+        "Kein vollständiges Abhängigkeitssyndrom"
       ],
       "optionale_symptome": [
-        "Motivationales Syndrom (Antriebsminderung, Apathie)",
-        "Kurzzeit-Gedächtnisprobleme",
-        "Auslösung psychotischer Episoden bei Vulnerabilität"
+        "Motivationsverlust",
+        "Gedächtnisprobleme",
+        "Soziale Konflikte"
       ]
     },
-    "differentialdiagnose": "Cannabisabhängigkeit (F12.2), primäre Psychose (F20), ADHS mit Cannabis als Selbstmedikation.",
-    "komorbiditaeten": ["F32 (Depression)", "F41 (Angststörung)", "F90 (ADHS)"]
+    "differentialdiagnose": "Cannabisabhängigkeit.",
+    "komorbiditaeten": [
+      "F32",
+      "F90"
+    ]
   },
   {
     "code": "F12.2",
@@ -113,64 +1800,971 @@
     "kategorie": "F1",
     "seltenheit_score": 4,
     "praevalenz_allgemein_prozent": 2.0,
-    "praevalenz_modifikatoren": { "männlich": 1.6, "weiblich": 0.5, "alter_18_30": 2.5, "alter_31_50": 1.0, "alter_51_plus": 0.1 },
+    "praevalenz_modifikatoren": {
+      "männlich": 1.6,
+      "weiblich": 0.5,
+      "alter_18_30": 2.5,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.1
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Starkes Craving nach Cannabis",
-        "Kontrollverlust und Toleranzentwicklung",
-        "Entzugssymptome bei Absetzen (Reizbarkeit, Schlafstörungen)"
+        "Craving",
+        "Kontrollverlust",
+        "Toleranzentwicklung"
       ],
       "optionale_symptome": [
-        "Vernachlässigung von Pflichten und sozialen Kontakten",
-        "Täglicher Konsum trotz negativer Folgen",
-        "Schwierigkeiten, ohne Cannabis zu entspannen"
+        "Entzugssymptome",
+        "Sozialer Rückzug",
+        "Täglicher Konsum"
       ]
     },
-    "differentialdiagnose": "Schädlicher Gebrauch (F12.1), primäre Angststörung, depressive Störung.",
-    "komorbiditaeten": ["F34.1 (Dysthymia)", "F41.1 (GAD)", "F60.3 (BPS)"]
+    "differentialdiagnose": "Schädlicher Gebrauch.",
+    "komorbiditaeten": [
+      "F41",
+      "F34.1",
+      "F60.3"
+    ]
+  },
+  {
+    "code": "F12.3",
+    "name": "Cannabisentzugssyndrom",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.4,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.5,
+      "weiblich": 0.7,
+      "alter_18_30": 2.0,
+      "alter_31_50": 0.8,
+      "alter_51_plus": 0.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Reduktion oder Absetzen von Cannabis",
+        "Entzugssymptome"
+      ],
+      "optionale_symptome": [
+        "Reizbarkeit",
+        "Schlafstörungen",
+        "Angst",
+        "Appetitminderung"
+      ]
+    },
+    "differentialdiagnose": "Angststörung, depressive Episode.",
+    "komorbiditaeten": [
+      "F12.2",
+      "F41"
+    ]
+  },
+  {
+    "code": "F12.4",
+    "name": "Psychotische Störung durch Cannabinoide",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.2,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.7,
+      "weiblich": 0.5,
+      "alter_18_30": 2.2,
+      "alter_31_50": 0.7,
+      "alter_51_plus": 0.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Halluzinationen oder Wahnideen nach Cannabiskonsum",
+        "Zeitlicher Zusammenhang mit Konsum"
+      ],
+      "optionale_symptome": [
+        "Paranoia",
+        "Desorganisation",
+        "Angst"
+      ]
+    },
+    "differentialdiagnose": "Schizophrenie, bipolare Störung.",
+    "komorbiditaeten": [
+      "F20",
+      "F12.2"
+    ]
+  },
+  {
+    "code": "F12.5",
+    "name": "Amnestisches Syndrom durch Cannabinoide",
+    "kategorie": "F1",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.03,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.5,
+      "weiblich": 0.7,
+      "alter_18_30": 1.5,
+      "alter_31_50": 0.5,
+      "alter_51_plus": 0.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Anhaltende Gedächtnisstörungen",
+        "Zusammenhang mit Cannabiskonsum"
+      ],
+      "optionale_symptome": [
+        "Konzentrationsprobleme",
+        "Orientierungsstörungen"
+      ]
+    },
+    "differentialdiagnose": "Organisches amnestisches Syndrom.",
+    "komorbiditaeten": [
+      "F12.2"
+    ]
+  },
+  {
+    "code": "F12.6",
+    "name": "Residual- und Spätfolgezustände durch Cannabinoide",
+    "kategorie": "F1",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.15,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.6,
+      "weiblich": 0.6,
+      "alter_18_30": 1.8,
+      "alter_31_50": 0.7,
+      "alter_51_plus": 0.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Persistierende psychische oder kognitive Symptome",
+        "Früherer Cannabiskonsum"
+      ],
+      "optionale_symptome": [
+        "Antriebsminderung",
+        "Affektive Symptome",
+        "Kognitive Defizite"
+      ]
+    },
+    "differentialdiagnose": "Primäre Psychosen, Depression.",
+    "komorbiditaeten": [
+      "F32",
+      "F20"
+    ]
+  },
+  {
+    "code": "F12.7",
+    "name": "Sonstige psychische und Verhaltensstörungen durch Cannabinoide",
+    "kategorie": "F1",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.1,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.6,
+      "weiblich": 0.6,
+      "alter_18_30": 1.5,
+      "alter_31_50": 0.6,
+      "alter_51_plus": 0.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische Symptome durch Cannabinoide",
+        "Nicht anderweitig klassifizierbar"
+      ],
+      "optionale_symptome": [
+        "Impulsivität",
+        "Affektive Symptome"
+      ]
+    },
+    "differentialdiagnose": "Andere substanzbezogene Störungen.",
+    "komorbiditaeten": [
+      "F41"
+    ]
+  },
+  {
+    "code": "F12.8",
+    "name": "Nicht näher bezeichnete psychische und Verhaltensstörung durch Cannabinoide",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.2,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.6,
+      "weiblich": 0.6,
+      "alter_18_30": 1.8,
+      "alter_31_50": 0.7,
+      "alter_51_plus": 0.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische oder Verhaltenssymptome im Zusammenhang mit Cannabinoiden"
+      ],
+      "optionale_symptome": [
+        "Kognitive Auffälligkeiten",
+        "Affektive Symptome"
+      ]
+    },
+    "differentialdiagnose": "Andere substanzbezogene Störungen.",
+    "komorbiditaeten": [
+      "F12.2"
+    ]
+  },
+  {
+    "code": "F13",
+    "name": "Psychische und Verhaltensstörungen durch Sedativa oder Hypnotika",
+    "kategorie": "F1",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 2.0,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.8,
+      "weiblich": 1.4,
+      "alter_18_30": 0.8,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 1.8
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische oder körperliche Symptome durch Sedativa oder Hypnotika"
+      ],
+      "optionale_symptome": [
+        "Sedierung",
+        "Gedächtnisprobleme",
+        "Abhängigkeit"
+      ]
+    },
+    "differentialdiagnose": "Andere substanzbezogene Störungen, Schlafstörungen.",
+    "komorbiditaeten": [
+      "F41",
+      "F32"
+    ]
+  },
+  {
+    "code": "F13.0",
+    "name": "Akute Intoxikation durch Sedativa oder Hypnotika",
+    "kategorie": "F1",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 0.8,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.7,
+      "weiblich": 1.5,
+      "alter_18_30": 0.8,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 1.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Bewusstseins- oder Verhaltensveränderung nach Einnahme"
+      ],
+      "optionale_symptome": [
+        "Schläfrigkeit",
+        "Sprachstörungen",
+        "Gangunsicherheit",
+        "Atemdepression"
+      ]
+    },
+    "differentialdiagnose": "Alkoholintoxikation, Delir.",
+    "komorbiditaeten": [
+      "Ateminsuffizienz"
+    ]
+  },
+  {
+    "code": "F13.1",
+    "name": "Schädlicher Gebrauch von Sedativa oder Hypnotika",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.9,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.7,
+      "weiblich": 1.6,
+      "alter_18_30": 0.7,
+      "alter_31_50": 1.2,
+      "alter_51_plus": 1.7
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Konsum mit gesundheitlichen Schäden",
+        "Kein vollständiges Abhängigkeitssyndrom"
+      ],
+      "optionale_symptome": [
+        "Kognitive Defizite",
+        "Stürze",
+        "Soziale Probleme"
+      ]
+    },
+    "differentialdiagnose": "Abhängigkeitssyndrom.",
+    "komorbiditaeten": [
+      "F32",
+      "F41"
+    ]
   },
   {
     "code": "F13.2",
-    "name": "Abhängigkeit von Sedativa und Hypnotika",
+    "name": "Abhängigkeitssyndrom durch Sedativa oder Hypnotika",
     "kategorie": "F1",
     "seltenheit_score": 5,
-    "praevalenz_allgemein_prozent": 1.5,
-    "praevalenz_modifikatoren": { "männlich": 0.8, "weiblich": 1.3, "alter_18_30": 0.5, "alter_31_50": 1.0, "alter_51_plus": 2.5 },
+    "praevalenz_allgemein_prozent": 0.7,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.7,
+      "weiblich": 1.7,
+      "alter_18_30": 0.6,
+      "alter_31_50": 1.1,
+      "alter_51_plus": 1.8
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Starkes Verlangen nach Benzodiazepinen oder Schlafmitteln",
-        "Toleranzentwicklung mit Dosissteigerung",
-        "Körperliche Entzugssymptome"
+        "Craving",
+        "Kontrollverlust",
+        "Toleranzentwicklung",
+        "Entzugssymptome"
       ],
       "optionale_symptome": [
-        "Einnahme gegen medizinischen Rat",
-        "Beschaffung über mehrere Ärzte",
-        "Versagen bisheriger Absetzvsuche"
+        "Dosissteigerung",
+        "Sozialer Rückzug"
       ]
     },
-    "differentialdiagnose": "Bestimmungsgemäße Einnahme bei Angst (keine Abhängigkeit), Alkoholabhängigkeit (F10.2), Schlafstörungen primärer Genese (F51).",
-    "komorbiditaeten": ["F41 (Angststörungen)", "F32 (Depression)", "F51 (Schlafstörungen)"]
+    "differentialdiagnose": "Chronische Schlafstörung ohne Abhängigkeit.",
+    "komorbiditaeten": [
+      "F41",
+      "F32",
+      "F60"
+    ]
   },
   {
-    "code": "F17.2",
-    "name": "Tabakabhängigkeit",
+    "code": "F13.3",
+    "name": "Entzugssyndrom durch Sedativa oder Hypnotika",
     "kategorie": "F1",
-    "seltenheit_score": 2,
-    "praevalenz_allgemein_prozent": 25.0,
-    "praevalenz_modifikatoren": { "männlich": 1.1, "weiblich": 0.9, "alter_18_30": 1.3, "alter_31_50": 1.2, "alter_51_plus": 1.0 },
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.3,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.8,
+      "weiblich": 1.5,
+      "alter_18_30": 0.5,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 1.7
+    },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Starkes Verlangen nach Nikotin",
-        "Schwierigkeiten, den Konsum einzuschränken",
-        "Entzugssymptome bei Abstinenz (Reizbarkeit, Konzentrationsprobleme)"
+        "Absetzen oder Reduktion der Substanz",
+        "Vegetative oder psychische Entzugssymptome"
       ],
       "optionale_symptome": [
-        "Konsum trotz bekannter Gesundheitsschäden",
-        "Tagesprogramm um Rauchzeiten herum organisiert",
-        "Erste Zigarette innerhalb von 30 min nach dem Aufwachen"
+        "Angst",
+        "Schlaflosigkeit",
+        "Tremor",
+        "Krampfanfälle"
       ]
     },
-    "differentialdiagnose": "Schädlicher Gebrauch (F17.1), reine Gewohnheit ohne Abhängigkeitskriterien.",
-    "komorbiditaeten": ["F32 (Depression)", "F41 (Angststörungen)", "F20 (Schizophrenie)"]
-  }
-]
+    "differentialdiagnose": "Angststörung, Alkoholentzug.",
+    "komorbiditaeten": [
+      "F13.2"
+    ]
+  },
+  {
+    "code": "F13.4",
+    "name": "Entzugssyndrom mit Delir durch Sedativa oder Hypnotika",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.08,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.8,
+      "weiblich": 1.5,
+      "alter_18_30": 0.4,
+      "alter_31_50": 0.8,
+      "alter_51_plus": 1.8
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Entzug nach Sedativa- oder Hypnotikagebrauch",
+        "Bewusstseinstrübung",
+        "Delirante Symptomatik"
+      ],
+      "optionale_symptome": [
+        "Halluzinationen",
+        "Agitation",
+        "Desorientierung"
+      ]
+    },
+    "differentialdiagnose": "Alkoholentzugsdelir, infektiöses Delir.",
+    "komorbiditaeten": [
+      "F13.2",
+      "F05"
+    ]
+  },
+  {
+    "code": "F13.5",
+    "name": "Psychotische Störung durch Sedativa oder Hypnotika",
+    "kategorie": "F1",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.05,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.7,
+      "weiblich": 1.4,
+      "alter_18_30": 0.5,
+      "alter_31_50": 0.9,
+      "alter_51_plus": 1.2
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Halluzinationen oder Wahnideen",
+        "Zeitlicher Zusammenhang mit Substanzgebrauch"
+      ],
+      "optionale_symptome": [
+        "Paranoia",
+        "Verwirrtheit",
+        "Desorganisation"
+      ]
+    },
+    "differentialdiagnose": "Schizophrenie, Delir.",
+    "komorbiditaeten": [
+      "F13.2",
+      "F32"
+    ]
+  },
+  {
+    "code": "F13.6",
+    "name": "Amnestisches Syndrom durch Sedativa oder Hypnotika",
+    "kategorie": "F1",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.03,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.7,
+      "weiblich": 1.5,
+      "alter_18_30": 0.4,
+      "alter_31_50": 0.8,
+      "alter_51_plus": 1.5
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Gedächtnisstörungen",
+        "Zusammenhang mit Sedativa oder Hypnotika"
+      ],
+      "optionale_symptome": [
+        "Orientierungsstörungen",
+        "Konzentrationsprobleme"
+      ]
+    },
+    "differentialdiagnose": "Organisches amnestisches Syndrom.",
+    "komorbiditaeten": [
+      "F13.2"
+    ]
+  },
+  {
+    "code": "F13.7",
+    "name": "Residual- und Spätfolgezustände durch Sedativa oder Hypnotika",
+    "kategorie": "F1",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.07,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.8,
+      "weiblich": 1.4,
+      "alter_18_30": 0.4,
+      "alter_31_50": 0.9,
+      "alter_51_plus": 1.4
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Persistierende psychische oder kognitive Symptome",
+        "Frühere Sedativa- oder Hypnotikaexposition"
+      ],
+      "optionale_symptome": [
+        "Affektive Symptome",
+        "Kognitive Defizite"
+      ]
+    },
+    "differentialdiagnose": "Primäre psychische Erkrankungen.",
+    "komorbiditaeten": [
+      "F32",
+      "F41"
+    ]
+  },
+  {
+    "code": "F13.8",
+    "name": "Sonstige psychische und Verhaltensstörungen durch Sedativa oder Hypnotika",
+    "kategorie": "F1",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.04,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.8,
+      "weiblich": 1.4,
+      "alter_18_30": 0.4,
+      "alter_31_50": 0.8,
+      "alter_51_plus": 1.2
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische Symptome durch Sedativa oder Hypnotika",
+        "Nicht anderweitig klassifizierbar"
+      ],
+      "optionale_symptome": [
+        "Affektive Veränderungen",
+        "Impulsivität"
+      ]
+    },
+    "differentialdiagnose": "Andere substanzbezogene Störungen.",
+    "komorbiditaeten": [
+      "F41"
+    ]
+  },
+  {
+    "code": "F13.9",
+    "name": "Nicht näher bezeichnete psychische und Verhaltensstörung durch Sedativa oder Hypnotika",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.08,
+    "praevalenz_modifikatoren": {
+      "männlich": 0.8,
+      "weiblich": 1.5,
+      "alter_18_30": 0.5,
+      "alter_31_50": 0.9,
+      "alter_51_plus": 1.4
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische oder Verhaltenssymptome im Zusammenhang mit Sedativa oder Hypnotika"
+      ],
+      "optionale_symptome": [
+        "Kognitive Auffälligkeiten",
+        "Affektive Symptome"
+      ]
+    },
+    "differentialdiagnose": "Andere substanzbezogene Störungen.",
+    "komorbiditaeten": [
+      "F13.2"
+    ]
+  },
+  {
+    "code": "F14",
+    "name": "Psychische und Verhaltensstörungen durch Kokain",
+    "kategorie": "F1",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 1.2,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.5,
+      "alter_18_30": 2.2,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.2
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische oder körperliche Symptome durch Kokain"
+      ],
+      "optionale_symptome": [
+        "Euphorie",
+        "Paranoia",
+        "Herz-Kreislauf-Symptome"
+      ]
+    },
+    "differentialdiagnose": "Amphetaminstörung, bipolare Störung.",
+    "komorbiditaeten": [
+      "F32",
+      "F60.2"
+    ]
+  },
+  {
+    "code": "F14.0",
+    "name": "Akute Kokainintoxikation",
+    "kategorie": "F1",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 0.6,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.9,
+      "weiblich": 0.4,
+      "alter_18_30": 2.5,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Verhaltens- oder Bewusstseinsveränderung nach Kokainkonsum"
+      ],
+      "optionale_symptome": [
+        "Euphorie",
+        "Tachykardie",
+        "Agitation",
+        "Hypervigilanz"
+      ]
+    },
+    "differentialdiagnose": "Amphetaminintoxikation.",
+    "komorbiditaeten": [
+      "Herzrhythmusstörungen"
+    ]
+  },
+  {
+    "code": "F14.1",
+    "name": "Schädlicher Gebrauch von Kokain",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.5,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.5,
+      "alter_18_30": 2.0,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Kokainkonsum mit gesundheitlichen oder sozialen Schäden",
+        "Kein vollständiges Abhängigkeitssyndrom"
+      ],
+      "optionale_symptome": [
+        "Impulsivität",
+        "Aggressivität",
+        "Finanzielle Probleme"
+      ]
+    },
+    "differentialdiagnose": "Kokainabhängigkeit.",
+    "komorbiditaeten": [
+      "F41",
+      "F60.2"
+    ]
+  },
+  {
+    "code": "F14.2",
+    "name": "Kokainabhängigkeit",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.4,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.9,
+      "weiblich": 0.4,
+      "alter_18_30": 2.2,
+      "alter_31_50": 0.9,
+      "alter_51_plus": 0.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Craving",
+        "Kontrollverlust",
+        "Fortgesetzter Konsum trotz Schäden"
+      ],
+      "optionale_symptome": [
+        "Toleranzentwicklung",
+        "Sozialer Abstieg",
+        "Beschaffungskriminalität"
+      ]
+    },
+    "differentialdiagnose": "Gelegentlicher Konsum.",
+    "komorbiditaeten": [
+      "F32",
+      "F60.2",
+      "F43.1"
+    ]
+  },
+  {
+    "code": "F14.3",
+    "name": "Kokainentzugssyndrom",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.2,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.5,
+      "alter_18_30": 2.0,
+      "alter_31_50": 0.8,
+      "alter_51_plus": 0.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Absetzen oder Reduktion von Kokain",
+        "Psychische oder vegetative Entzugssymptome"
+      ],
+      "optionale_symptome": [
+        "Dysphorie",
+        "Müdigkeit",
+        "Schlafstörungen",
+        "Craving"
+      ]
+    },
+    "differentialdiagnose": "Depressive Episode.",
+    "komorbiditaeten": [
+      "F14.2",
+      "F32"
+    ]
+  },
+  {
+    "code": "F14.4",
+    "name": "Psychotische Störung durch Kokain",
+    "kategorie": "F1",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.15,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.9,
+      "weiblich": 0.4,
+      "alter_18_30": 2.0,
+      "alter_31_50": 0.8,
+      "alter_51_plus": 0.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Halluzinationen oder Wahnideen nach Kokainkonsum",
+        "Zeitlicher Zusammenhang mit Substanzgebrauch"
+      ],
+      "optionale_symptome": [
+        "Paranoia",
+        "Agitation",
+        "Hypervigilanz"
+      ]
+    },
+    "differentialdiagnose": "Schizophrenie, amphetamininduzierte Psychose.",
+    "komorbiditaeten": [
+      "F14.2",
+      "F60.2"
+    ]
+  },
+  {
+    "code": "F14.5",
+    "name": "Amnestisches Syndrom durch Kokain",
+    "kategorie": "F1",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.02,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.7,
+      "weiblich": 0.5,
+      "alter_18_30": 1.5,
+      "alter_31_50": 0.7,
+      "alter_51_plus": 0.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Gedächtnisstörungen",
+        "Zusammenhang mit Kokainkonsum"
+      ],
+      "optionale_symptome": [
+        "Konzentrationsstörungen",
+        "Orientierungsprobleme"
+      ]
+    },
+    "differentialdiagnose": "Organisches amnestisches Syndrom.",
+    "komorbiditaeten": [
+      "F14.2"
+    ]
+  },
+  {
+    "code": "F14.6",
+    "name": "Residual- und Spätfolgezustände durch Kokain",
+    "kategorie": "F1",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.08,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.5,
+      "alter_18_30": 1.8,
+      "alter_31_50": 0.7,
+      "alter_51_plus": 0.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Persistierende psychische oder kognitive Symptome",
+        "Früherer Kokainkonsum"
+      ],
+      "optionale_symptome": [
+        "Affektive Symptome",
+        "Kognitive Defizite",
+        "Impulsivität"
+      ]
+    },
+    "differentialdiagnose": "Primäre affektive oder psychotische Störungen.",
+    "komorbiditaeten": [
+      "F32",
+      "F41"
+    ]
+  },
+  {
+    "code": "F14.7",
+    "name": "Sonstige psychische und Verhaltensstörungen durch Kokain",
+    "kategorie": "F1",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.04,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.5,
+      "alter_18_30": 1.7,
+      "alter_31_50": 0.6,
+      "alter_51_plus": 0.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische Symptome durch Kokain",
+        "Nicht anderweitig klassifizierbar"
+      ],
+      "optionale_symptome": [
+        "Affektive Veränderungen",
+        "Impulsivität"
+      ]
+    },
+    "differentialdiagnose": "Andere substanzbezogene Störungen.",
+    "komorbiditaeten": [
+      "F41"
+    ]
+  },
+  {
+    "code": "F14.8",
+    "name": "Nicht näher bezeichnete psychische und Verhaltensstörung durch Kokain",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.06,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.8,
+      "weiblich": 0.5,
+      "alter_18_30": 1.8,
+      "alter_31_50": 0.7,
+      "alter_51_plus": 0.1
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische oder Verhaltenssymptome im Zusammenhang mit Kokain"
+      ],
+      "optionale_symptome": [
+        "Kognitive Auffälligkeiten",
+        "Affektive Symptome"
+      ]
+    },
+    "differentialdiagnose": "Andere substanzbezogene Störungen.",
+    "komorbiditaeten": [
+      "F14.2"
+    ]
+  },
+  {
+    "code": "F15",
+    "name": "Psychische und Verhaltensstörungen durch andere Stimulanzien einschließlich Koffein",
+    "kategorie": "F1",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 2.5,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.5,
+      "weiblich": 0.7,
+      "alter_18_30": 2.5,
+      "alter_31_50": 1.0,
+      "alter_51_plus": 0.4
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Psychische oder körperliche Symptome durch Stimulanzien"
+      ],
+      "optionale_symptome": [
+        "Hyperaktivität",
+        "Schlaflosigkeit",
+        "Tachykardie"
+      ]
+    },
+    "differentialdiagnose": "Bipolare Störung, Angststörungen.",
+    "komorbiditaeten": [
+      "F41",
+      "F90"
+    ]
+  },
+  {
+    "code": "F15.0",
+    "name": "Akute Intoxikation durch andere Stimulanzien einschließlich Koffein",
+    "kategorie": "F1",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 1.0,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.5,
+      "weiblich": 0.7,
+      "alter_18_30": 2.5,
+      "alter_31_50": 0.9,
+      "alter_51_plus": 0.3
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Verhaltens- oder Bewusstseinsveränderung nach Stimulanzienkonsum"
+      ],
+      "optionale_symptome": [
+        "Euphorie",
+        "Agitation",
+        "Tachykardie",
+        "Hypertonie"
+      ]
+    },
+    "differentialdiagnose": "Kokainintoxikation, Manie.",
+    "komorbiditaeten": [
+      "Herzrhythmusstörungen"
+    ]
+  },
+  {
+    "code": "F15.1",
+    "name": "Schädlicher Gebrauch von anderen Stimulanzien einschließlich Koffein",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.9,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.4,
+      "weiblich": 0.8,
+      "alter_18_30": 2.0,
+      "alter_31_50": 0.9,
+      "alter_51_plus": 0.3
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Konsum mit gesundheitlichen oder sozialen Schäden",
+        "Kein vollständiges Abhängigkeitssyndrom"
+      ],
+      "optionale_symptome": [
+        "Schlafstörungen",
+        "Gewichtsverlust",
+        "Reizbarkeit"
+      ]
+    },
+    "differentialdiagnose": "Abhängigkeitssyndrom.",
+    "komorbiditaeten": [
+      "F41",
+      "Essstörungen"
+    ]
+  },
+  {
+    "code": "F15.2",
+    "name": "Abhängigkeitssyndrom durch andere Stimulanzien einschließlich Koffein",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.8,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.5,
+      "weiblich": 0.7,
+      "alter_18_30": 2.3,
+      "alter_31_50": 0.8,
+      "alter_51_plus": 0.2
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Craving",
+        "Kontrollverlust",
+        "Fortgesetzter Konsum trotz Schäden"
+      ],
+      "optionale_symptome": [
+        "Toleranzentwicklung",
+        "Entzugssymptome",
+        "Sozialer Rückzug"
+      ]
+    },
+    "differentialdiagnose": "ADHS mit Medikation.",
+    "komorbiditaeten": [
+      "F60.2",
+      "F41",
+      "F32"
+    ]
+  },
+  {
+    "code": "F15.3",
+    "name": "Entzugssyndrom durch andere Stimulanzien einschließlich Koffein",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.3,
+    "praevalenz_modifikatoren": {
+      "männlich": 1.5,
+      "weiblich": 0.7,
+      "alter_18_30": 2.0,
+      "alter_31_50": 0.7,
+      "alter_51_plus": 0.2
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Absetzen oder Reduktion von Stimulanzien",
+        "Psychische oder vegetative Entzugssymptome"
+      ],
+      "optionale_symptome": [
+        "Müdigkeit",
+        "Depressive Stimmung",
+        "Schlafbedürfnis",
+        "Craving"
+      ]
+    },
+    "differentialdiagnose": "Depressive Episode.",
+    "komorbiditaeten": [
+      "F15.2",
+      "F32"
+    ]
+  },

@@ -474,7 +474,7 @@ img{max-width:100%;display:block}
   box-shadow:0 8px 30px rgba(0,0,0,.4);
 }
 .cat-bg{
-  position:absolute;inset:0;background-size:cover;background-position:center;
+  position:absolute;inset:0;background-size:cover;background-position:top center;
   background-color:var(--cat-color,#1c1c2e);
   opacity:.4;
   transition:opacity .2s;
