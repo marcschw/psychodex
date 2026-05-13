@@ -155,16 +155,34 @@ img{max-width:100%;display:block}
 }
 .rank-card-bg{
   position:absolute;inset:0;
-  background-size:cover;background-position:center;
-  background-color:var(--bg-raised);
-  transition:opacity .3s;
+  background:linear-gradient(135deg,#0d0d1a 0%,#1a0a2e 50%,#0a1020 100%);
 }
 .rank-card-bg::after{
   content:'';position:absolute;inset:0;
-  background:linear-gradient(to top,rgba(8,8,15,.95) 0%,rgba(8,8,15,.4) 50%,transparent 100%);
+  background:linear-gradient(to top,rgba(8,8,15,.98) 0%,rgba(8,8,15,.5) 60%,transparent 100%);
+}
+/* Rank icon image */
+.rank-card-center{
+  position:relative;z-index:2;
+  display:flex;justify-content:center;
+  padding:20px 20px 0;
+}
+.rank-img{
+  width:96px;height:96px;
+  object-fit:contain;
+  filter:drop-shadow(0 4px 24px rgba(124,58,237,.6));
+  transition:opacity .3s,filter .3s;
+}
+/* Stars overlay – top right of card */
+.rank-stars{
+  position:absolute;top:14px;right:16px;
+  font-size:20px;letter-spacing:3px;
+  z-index:3;
+  filter:drop-shadow(0 0 8px rgba(245,158,11,.8));
+  line-height:1;
 }
 .rank-card-content{
-  position:relative;z-index:1;padding:20px 20px 8px;
+  position:relative;z-index:1;padding:12px 20px 8px;
 }
 .rank-title{
   font-family:var(--font-disp);
@@ -342,33 +360,68 @@ img{max-width:100%;display:block}
 }
 .btn-search-diag:hover{background:rgba(124,58,237,.1);border-style:solid}
 
-/* ── Diagnosis Modal ───────────────────────────────────────────────────────── */
+/* ── Modal System (Sheet) ──────────────────────────────────────────────────── */
 .modal{position:fixed;inset:0;z-index:200}
 .modal.hidden{display:none}
 .modal-backdrop{
   position:absolute;inset:0;
-  background:rgba(0,0,0,.7);backdrop-filter:blur(4px);
+  background:rgba(0,0,0,.75);backdrop-filter:blur(6px);
 }
-.modal-content{
+/* Sheet slides up from the bottom */
+.modal-sheet{
   position:absolute;left:0;right:0;bottom:0;
   background:var(--bg-card);
   border-radius:var(--r-lg) var(--r-lg) 0 0;
-  max-height:90vh;overflow-y:auto;
-  padding:20px;
-  padding-bottom:calc(20px + env(safe-area-inset-bottom));
+  max-height:88vh;
+  display:flex;flex-direction:column;
+  animation:sheetIn .25s cubic-bezier(.4,0,.2,1);
 }
+.modal-sheet-tall{max-height:94vh}
+@keyframes sheetIn{
+  from{transform:translateY(60px);opacity:0}
+  to  {transform:translateY(0);opacity:1}
+}
+/* Drag handle visual */
+.sheet-handle{
+  width:40px;height:4px;border-radius:2px;
+  background:rgba(255,255,255,.15);
+  margin:10px auto 0;flex-shrink:0;
+}
+/* Sticky header – always visible, never scrolls away */
+.sheet-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 20px 12px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+  position:relative;z-index:2;
+}
+/* Scrollable body */
+.sheet-body{
+  flex:1;overflow-y:auto;
+  padding:16px 20px;
+  padding-bottom:calc(20px + env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling:touch;
+}
+.sheet-body::-webkit-scrollbar{width:3px}
+.sheet-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+.modal-title{font-size:16px;font-weight:700}
+/* Close button – large touch target */
+.modal-close{
+  width:40px;height:40px;border-radius:50%;
+  background:var(--bg-raised);color:var(--text-muted);
+  font-size:15px;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .2s;
+  flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+.modal-close:hover,.modal-close:active{background:var(--bg-hover);color:var(--text)}
+/* Legacy .modal-content kept for levelup/xp-popup compatibility */
 .modal-header{
   display:flex;justify-content:space-between;align-items:center;
   margin-bottom:14px;
 }
-.modal-title{font-size:16px;font-weight:700}
-.modal-close{
-  width:30px;height:30px;border-radius:50%;
-  background:var(--bg-raised);color:var(--text-muted);
-  font-size:14px;display:flex;align-items:center;justify-content:center;
-  transition:background .2s;
-}
-.modal-close:hover{background:var(--bg-hover)}
 
 /* Search Input */
 .search-input{
@@ -644,3 +697,177 @@ img{max-width:100%;display:block}
 
 /* ── Utilities ─────────────────────────────────────────────────────────────── */
 .hidden{display:none!important}
+
+/* ── Stat Card Clickable ───────────────────────────────────────────────────── */
+.stat-clickable{cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent}
+.stat-clickable:hover{border-color:var(--border-glow);transform:translateY(-1px)}
+.stat-clickable:active{transform:scale(.97)}
+
+/* ── Danger Button ─────────────────────────────────────────────────────────── */
+.btn-danger{
+  width:100%;padding:13px;border-radius:var(--r);
+  background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);
+  color:var(--danger);font-size:14px;font-weight:600;
+  transition:all .2s;margin-top:8px;
+}
+.btn-danger:hover{background:rgba(239,68,68,.25)}
+
+/* ── Shift Detail Modal ────────────────────────────────────────────────────── */
+.shift-detail-header{
+  display:flex;align-items:center;gap:12px;
+  padding:14px;background:var(--bg-raised);border-radius:var(--r);
+  margin-bottom:14px;border:1px solid var(--border);
+}
+.shift-detail-info{flex:1}
+.shift-detail-date{font-size:15px;font-weight:700}
+.shift-detail-meta{font-size:12px;color:var(--text-dim);margin-top:2px}
+.patient-section{
+  margin-bottom:14px;background:var(--bg-raised);
+  border-radius:var(--r);border:1px solid var(--border);overflow:hidden;
+}
+.patient-section-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;border-bottom:1px solid var(--border);
+  background:rgba(255,255,255,.03);
+}
+.patient-section-label{font-size:12px;font-weight:600;color:var(--text-muted)}
+.patient-section-demo{font-size:11px;color:var(--text-dim);margin-top:1px}
+.patient-diag-row{
+  display:flex;align-items:center;gap:8px;
+  padding:9px 14px;border-bottom:1px solid rgba(255,255,255,.04);
+  font-size:12px;
+}
+.patient-diag-row:last-child{border-bottom:none}
+.pd-code{font-family:monospace;font-weight:700;color:var(--success);min-width:52px}
+.pd-name{flex:1;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pd-xp{color:var(--accent);font-weight:700;white-space:nowrap}
+.patient-section-add{
+  display:block;width:100%;padding:10px 14px;
+  text-align:center;font-size:12px;color:var(--accent);
+  border-top:1px dashed rgba(124,58,237,.3);
+  transition:background .15s;
+}
+.patient-section-add:hover{background:rgba(124,58,237,.08)}
+
+/* Patient inline edit */
+.patient-edit-row{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;
+  padding:10px 14px;border-top:1px solid var(--border);
+}
+.demo-select-sm{
+  width:100%;padding:6px 8px;
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:6px;font-size:11px;color:var(--text);
+  appearance:auto;
+}
+
+/* ── Symptom Finder ────────────────────────────────────────────────────────── */
+.symptom-chips-row{
+  display:flex;flex-wrap:wrap;gap:6px;
+  min-height:0;margin-bottom:4px;
+}
+.symptom-chip{
+  display:flex;align-items:center;gap:5px;
+  padding:5px 10px;border-radius:20px;
+  background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);
+  color:var(--accent);font-size:12px;font-weight:600;
+  cursor:pointer;transition:background .15s;
+}
+.symptom-chip:hover{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.4);color:var(--danger)}
+.symptom-chip-x{font-size:10px;opacity:.7}
+.symptom-match-list{max-height:180px;overflow-y:auto;margin-bottom:4px}
+.symptom-match-item{
+  padding:8px 12px;border-radius:var(--r);
+  cursor:pointer;font-size:13px;color:var(--text-muted);
+  transition:background .15s;
+}
+.symptom-match-item:hover{background:var(--bg-raised);color:var(--text)}
+.symptom-match-item mark{
+  background:none;color:var(--accent);font-weight:600;
+}
+.symptom-diag-suggestions{display:flex;flex-direction:column;gap:6px}
+.symptom-diag-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;background:var(--bg-raised);
+  border:1px solid var(--border);border-radius:var(--r);
+  cursor:pointer;transition:all .15s;
+}
+.symptom-diag-item:hover{border-color:var(--border-glow);background:var(--bg-hover)}
+.symptom-diag-score-bar{
+  flex-shrink:0;width:40px;height:4px;
+  background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;
+}
+.symptom-diag-score-fill{height:100%;background:var(--grad-xp);border-radius:2px}
+.symptom-diag-score-pct{font-size:10px;color:var(--text-dim);min-width:28px;text-align:right}
+.symptom-diag-info{flex:1;min-width:0}
+.symptom-diag-code{font-family:monospace;font-size:11px;color:var(--text-dim)}
+.symptom-diag-name{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.symptom-diag-catch{
+  flex-shrink:0;padding:5px 10px;border-radius:6px;
+  background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.3);
+  color:var(--accent);font-size:11px;font-weight:600;
+  transition:background .15s;
+}
+.symptom-diag-catch:hover{background:rgba(124,58,237,.3)}
+
+/* ── Hours Modal ───────────────────────────────────────────────────────────── */
+.hours-summary{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px;background:var(--bg-raised);border-radius:var(--r);
+  margin-bottom:16px;border:1px solid var(--border);
+}
+.hours-total{font-size:24px;font-weight:800;color:var(--accent)}
+.hours-label{font-size:11px;color:var(--text-dim);margin-top:2px;text-transform:uppercase;letter-spacing:.8px}
+.hours-list{display:flex;flex-direction:column;gap:6px}
+.hours-row{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;background:var(--bg-raised);
+  border-radius:var(--r);border:1px solid var(--border);
+  cursor:pointer;transition:border-color .2s;
+}
+.hours-row:hover{border-color:var(--border-glow)}
+.hours-row-icon{font-size:18px;min-width:24px}
+.hours-row-info{flex:1}
+.hours-row-date{font-size:13px;font-weight:600}
+.hours-row-meta{font-size:11px;color:var(--text-dim);margin-top:1px}
+.hours-row-val{font-size:14px;font-weight:700;color:var(--text-muted)}
+
+/* ── Catches Modal ─────────────────────────────────────────────────────────── */
+.catches-filter{
+  display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;
+}
+.filter-btn{
+  padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;
+  background:var(--bg-raised);border:1px solid var(--border);color:var(--text-dim);
+  transition:all .15s;
+}
+.filter-btn.active{background:rgba(124,58,237,.15);border-color:rgba(124,58,237,.4);color:var(--accent)}
+.catch-detail-item{
+  padding:12px;background:var(--bg-raised);border-radius:var(--r);
+  border:1px solid var(--border);margin-bottom:6px;
+}
+.catch-detail-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.catch-detail-code{font-family:monospace;font-size:13px;font-weight:700;color:var(--accent)}
+.catch-detail-name{flex:1;font-size:13px;font-weight:500}
+.catch-detail-xp{font-size:12px;color:var(--success);font-weight:700}
+.catch-detail-meta{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  font-size:11px;color:var(--text-dim);
+}
+.catch-detail-tag{
+  padding:2px 8px;border-radius:20px;
+  background:var(--bg-card);border:1px solid var(--border);
+}
+
+/* ── Shift Assign Modal ────────────────────────────────────────────────────── */
+.assign-option{
+  padding:14px;background:var(--bg-raised);
+  border-radius:var(--r);border:1px solid var(--border);
+  cursor:pointer;margin-bottom:8px;
+  transition:all .2s;
+}
+.assign-option:hover{border-color:var(--border-glow);background:var(--bg-hover)}
+.assign-option-title{font-size:14px;font-weight:600;margin-bottom:2px}
+.assign-option-meta{font-size:12px;color:var(--text-dim)}
+.assign-option.assign-primary{border-color:rgba(124,58,237,.4);background:rgba(124,58,237,.08)}
+.assign-option.assign-primary:hover{background:rgba(124,58,237,.15)}

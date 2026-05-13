@@ -8,7 +8,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>PsychoDex</title>
   <link rel="stylesheet" href="styles/main.css">
-  <!-- Google Fonts non-blocking: preconnect + media trick so fonts never delay render -->
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cinzel:wght@400;600&display=swap"
         onload="this.onload=null;this.rel='stylesheet'">
@@ -42,10 +41,17 @@
 
       <!-- ── Dashboard ─────────────────────────────────────────────────── -->
       <section id="tab-dashboard" class="tab-view active">
+
+        <!-- Rank Card -->
         <div class="rank-card" id="rank-card">
           <div class="rank-card-bg" id="rank-card-bg"></div>
+          <div id="rank-stars" class="rank-stars"></div>
+          <div class="rank-card-center">
+            <img id="rank-card-img" class="rank-img" src="" alt=""
+                 onerror="this.style.opacity='0';this.onerror=null">
+          </div>
           <div class="rank-card-content">
-            <div class="rank-title"  id="rank-title">Novus</div>
+            <div class="rank-title"   id="rank-title">Novus</div>
             <div class="rank-subtitle" id="rank-subtitle">des Zuhörens</div>
             <div class="rank-level"    id="rank-level">Rang 1 / 18</div>
           </div>
@@ -60,18 +66,19 @@
           </div>
         </div>
 
+        <!-- Stats Row -->
         <div class="stats-row">
           <div class="stat-card">
             <div class="stat-icon" id="streak-icon">🔥</div>
             <div class="stat-value" id="streak-value">0</div>
             <div class="stat-label">Wochen-Streak</div>
           </div>
-          <div class="stat-card">
+          <div class="stat-card stat-clickable" id="stat-hours-card">
             <div class="stat-icon">⏱️</div>
             <div class="stat-value" id="total-hours">0h</div>
             <div class="stat-label">Stunden</div>
           </div>
-          <div class="stat-card">
+          <div class="stat-card stat-clickable" id="stat-catches-card">
             <div class="stat-icon">🔬</div>
             <div class="stat-value" id="total-catches">0</div>
             <div class="stat-label">Diagnosen</div>
@@ -93,7 +100,6 @@
       <section id="tab-log" class="tab-view">
         <div class="view-title">Dienst loggen</div>
 
-        <!-- Step 1 -->
         <div id="step-shift-info" class="step-card">
           <div class="step-number">Schritt 01 – Dienst-Info</div>
           <div class="form-group">
@@ -123,7 +129,6 @@
           <button id="btn-next-to-patients" class="btn-primary">Weiter →</button>
         </div>
 
-        <!-- Step 2 -->
         <div id="step-patients" class="step-card hidden-step">
           <div class="step-number">Schritt 02 – Patienten-Begegnungen</div>
           <div id="patient-list"></div>
@@ -135,9 +140,12 @@
 
       <!-- ── PsychoDex ──────────────────────────────────────────────────── -->
       <section id="tab-dex" class="tab-view">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:8px">
           <div class="view-title" style="margin-bottom:0">PsychoDex</div>
-          <button id="btn-standalone-catch" class="btn-search-diag" style="width:auto;padding:8px 14px">🔬 Diagnose fangen</button>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button id="btn-symptom-finder" class="btn-search-diag" style="width:auto;padding:8px 12px;font-size:12px">🧩 Symptom-Finder</button>
+            <button id="btn-standalone-catch" class="btn-search-diag" style="width:auto;padding:8px 12px;font-size:12px">🔬 Fangen</button>
+          </div>
         </div>
         <div class="dex-progress-bar">
           <span id="dex-caught-count">0</span> / <span id="dex-total-count">0</span> Diagnosen gefangen
@@ -207,42 +215,43 @@
   <!-- ── Diagnosis Search Modal ──────────────────────────────────────────── -->
   <div id="diagnosis-modal" class="modal hidden">
     <div class="modal-backdrop" id="diag-modal-backdrop"></div>
-    <div class="modal-content">
-      <div class="modal-header">
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
         <div class="modal-title">Diagnose suchen & fangen</div>
-        <button class="modal-close" id="diag-modal-close">✕</button>
+        <button class="modal-close" id="diag-modal-close" aria-label="Schließen">✕</button>
       </div>
-      <input type="search" id="diag-search-input" class="search-input"
-             placeholder="ICD-Code, Bezeichnung oder Symptom suchen…" autocomplete="off">
-      <div id="diag-search-results" class="search-results"></div>
+      <div class="sheet-body">
+        <input type="search" id="diag-search-input" class="search-input"
+               placeholder="ICD-Code, Bezeichnung oder Symptom…" autocomplete="off">
+        <div id="diag-search-results" class="search-results"></div>
 
-      <div id="diag-detail" class="diag-detail hidden">
-        <div id="diag-detail-header"></div>
-
-        <div class="diag-detail-section">
-          <div class="diag-detail-label">Pflicht-Symptome</div>
-          <ul id="diag-pflicht-list" class="symptom-list"></ul>
+        <div id="diag-detail" class="diag-detail hidden">
+          <div id="diag-detail-header"></div>
+          <div class="diag-detail-section">
+            <div class="diag-detail-label">Pflicht-Symptome</div>
+            <ul id="diag-pflicht-list" class="symptom-list"></ul>
+          </div>
+          <div class="diag-detail-section">
+            <div class="diag-detail-label">Optionale Symptome</div>
+            <ul id="diag-optional-list" class="symptom-list"></ul>
+          </div>
+          <div class="diag-detail-section">
+            <div class="diag-detail-label">Häufige Komorbiditäten</div>
+            <div id="diag-komorbid-chips" class="komorbid-chips"></div>
+          </div>
+          <div class="diag-detail-section">
+            <div class="diag-detail-label">Differentialdiagnose</div>
+            <div id="diag-diff-text" class="diff-text"></div>
+          </div>
+          <div class="komorbid-toggle">
+            <label class="toggle-label">
+              <input type="checkbox" id="komorbid-checkbox">
+              Komorbidität korrekt verlinkt (+20% XP)
+            </label>
+          </div>
+          <button id="btn-catch-diagnosis" class="btn-catch">🎯 Diagnose fangen!</button>
         </div>
-        <div class="diag-detail-section">
-          <div class="diag-detail-label">Optionale Symptome</div>
-          <ul id="diag-optional-list" class="symptom-list"></ul>
-        </div>
-        <div class="diag-detail-section">
-          <div class="diag-detail-label">Häufige Komorbiditäten</div>
-          <div id="diag-komorbid-chips" class="komorbid-chips"></div>
-        </div>
-        <div class="diag-detail-section">
-          <div class="diag-detail-label">Differentialdiagnose</div>
-          <div id="diag-diff-text" class="diff-text"></div>
-        </div>
-
-        <div class="komorbid-toggle">
-          <label class="toggle-label">
-            <input type="checkbox" id="komorbid-checkbox">
-            Komorbidität korrekt verlinkt (+20% XP)
-          </label>
-        </div>
-        <button id="btn-catch-diagnosis" class="btn-catch">🎯 Diagnose fangen!</button>
       </div>
     </div>
   </div>
@@ -250,45 +259,123 @@
   <!-- ── Category Detail Modal ───────────────────────────────────────────── -->
   <div id="category-modal" class="modal hidden">
     <div class="modal-backdrop" id="modal-backdrop"></div>
-    <div class="modal-content">
-      <div class="modal-header">
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
         <div id="modal-category-title" class="modal-title"></div>
-        <button class="modal-close" id="modal-close">✕</button>
+        <button class="modal-close" id="modal-close" aria-label="Schließen">✕</button>
       </div>
-      <div id="modal-diagnoses-list" class="diagnoses-list"></div>
+      <div class="sheet-body">
+        <div id="modal-diagnoses-list" class="diagnoses-list"></div>
+      </div>
     </div>
   </div>
 
   <!-- ── Edit Shift Modal ───────────────────────────────────────────────── -->
   <div id="edit-shift-modal" class="modal hidden">
     <div class="modal-backdrop" id="edit-shift-backdrop"></div>
-    <div class="modal-content">
-      <div class="modal-header">
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
         <div class="modal-title">Dienst bearbeiten</div>
-        <button class="modal-close" id="edit-shift-close">✕</button>
+        <button class="modal-close" id="edit-shift-close" aria-label="Schließen">✕</button>
       </div>
-      <div class="form-group">
-        <label class="form-label" for="edit-shift-date">Datum</label>
-        <input type="date" id="edit-shift-date" class="form-input">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Diensttyp</label>
-        <div class="type-selector" id="edit-type-selector">
-          <button class="type-btn" data-type="früh" data-xp="65">
-            <span class="type-icon">🌅</span><span>Früh</span>
-            <span class="type-xp">65 XP</span>
-          </button>
-          <button class="type-btn" data-type="spät" data-xp="65">
-            <span class="type-icon">🌇</span><span>Spät</span>
-            <span class="type-xp">65 XP</span>
-          </button>
-          <button class="type-btn" data-type="full" data-xp="120">
-            <span class="type-icon">☀️</span><span>Ganztags</span>
-            <span class="type-xp">120 XP</span>
-          </button>
+      <div class="sheet-body">
+        <div class="form-group">
+          <label class="form-label" for="edit-shift-date">Datum</label>
+          <input type="date" id="edit-shift-date" class="form-input">
         </div>
+        <div class="form-group">
+          <label class="form-label">Diensttyp</label>
+          <div class="type-selector" id="edit-type-selector">
+            <button class="type-btn" data-type="früh" data-xp="65">
+              <span class="type-icon">🌅</span><span>Früh</span>
+              <span class="type-xp">65 XP</span>
+            </button>
+            <button class="type-btn" data-type="spät" data-xp="65">
+              <span class="type-icon">🌇</span><span>Spät</span>
+              <span class="type-xp">65 XP</span>
+            </button>
+            <button class="type-btn" data-type="full" data-xp="120">
+              <span class="type-icon">☀️</span><span>Ganztags</span>
+              <span class="type-xp">120 XP</span>
+            </button>
+          </div>
+        </div>
+        <button id="btn-save-edit-shift" class="btn-primary" style="margin-top:4px">Speichern</button>
       </div>
-      <button id="btn-save-edit-shift" class="btn-primary" style="margin-top:4px">Speichern</button>
+    </div>
+  </div>
+
+  <!-- ── Shift Detail Modal ─────────────────────────────────────────────── -->
+  <div id="shift-detail-modal" class="modal hidden">
+    <div class="modal-backdrop" id="shift-detail-backdrop"></div>
+    <div class="modal-sheet modal-sheet-tall">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div id="shift-detail-title" class="modal-title"></div>
+        <button class="modal-close" id="shift-detail-close" aria-label="Schließen">✕</button>
+      </div>
+      <div class="sheet-body" id="shift-detail-body"></div>
+    </div>
+  </div>
+
+  <!-- ── Symptom Finder Modal ───────────────────────────────────────────── -->
+  <div id="symptom-finder-modal" class="modal hidden">
+    <div class="modal-backdrop" id="symptom-finder-backdrop"></div>
+    <div class="modal-sheet modal-sheet-tall">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="modal-title">🧩 Symptom-Finder</div>
+        <button class="modal-close" id="symptom-finder-close" aria-label="Schließen">✕</button>
+      </div>
+      <div class="sheet-body">
+        <input type="search" id="symptom-search-input" class="search-input"
+               placeholder="Symptom eingeben (z.B. Schlafstörungen, Antrieb…)" autocomplete="off">
+        <div id="symptom-selected-chips" class="symptom-chips-row"></div>
+        <div id="symptom-search-results" class="symptom-match-list"></div>
+        <div id="symptom-diag-header" class="section-header" style="display:none">Passende Diagnosen</div>
+        <div id="symptom-diag-list" class="symptom-diag-suggestions"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Hours Detail Modal ─────────────────────────────────────────────── -->
+  <div id="hours-modal" class="modal hidden">
+    <div class="modal-backdrop" id="hours-backdrop"></div>
+    <div class="modal-sheet modal-sheet-tall">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="modal-title">⏱️ Stunden-Übersicht</div>
+        <button class="modal-close" id="hours-modal-close" aria-label="Schließen">✕</button>
+      </div>
+      <div class="sheet-body" id="hours-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ── Catches Detail Modal ───────────────────────────────────────────── -->
+  <div id="catches-modal" class="modal hidden">
+    <div class="modal-backdrop" id="catches-backdrop"></div>
+    <div class="modal-sheet modal-sheet-tall">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="modal-title">🔬 Alle Diagnosen</div>
+        <button class="modal-close" id="catches-modal-close" aria-label="Schließen">✕</button>
+      </div>
+      <div class="sheet-body" id="catches-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ── Shift Assignment Modal ─────────────────────────────────────────── -->
+  <div id="shift-assign-modal" class="modal hidden">
+    <div class="modal-backdrop" id="shift-assign-backdrop"></div>
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="modal-title">Dienst zuweisen</div>
+        <button class="modal-close" id="shift-assign-close" aria-label="Schließen">✕</button>
+      </div>
+      <div class="sheet-body" id="shift-assign-body"></div>
     </div>
   </div>
 
