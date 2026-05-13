@@ -2,194 +2,582 @@
   {
     "code": "F50.0",
     "name": "Anorexia nervosa",
-    "kategorie": "F5",
-    "seltenheit_score": 6,
+    "kategorie": "F50",
+    "seltenheit_score": 7,
     "praevalenz_allgemein_prozent": 0.5,
     "praevalenz_modifikatoren": {
-      "männlich": 0.1,
-      "weiblich": 2.2,
-      "alter_18_30": 3,
-      "alter_31_50": 0.8,
-      "alter_51_plus": 0.1
+      "weiblich": 3.0,
+      "maennlich": 0.3,
+      "alter_peak": "14-25"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Körpergewicht mindestens 15% unter dem Normalgewicht (BMI < 17,5)",
-        "Selbst herbeigeführter Gewichtsverlust durch Vermeidung kalorienreicher Speisen",
-        "Körperschemastörung (Angst vor Gewichtszunahme auch bei Untergewicht)"
+        "Körpergewicht mindestens 15% unter dem für Alter und Größe normalen oder erwarteten Gewicht (oder Fehlens der erwarteten Gewichtszunahme bei Kindern)",
+        "Gewichtsverlust selbst herbeigeführt durch Vermeidung von 'fattening foods'",
+        "Selbstwahrnehmung als zu dick mit aufdringlicher Angst vor Gewichtszunahme, die zu einem selbst auferlegten niedrigen Gewichtsschwellenwert führt",
+        "Weitreichende endokrine Störung mit Beteiligung der Hypothalamus-Hypophysen-Gonaden-Achse: bei Frauen Amenorrhoe, bei Männern Verlust des sexuellen Interesses und der Potenz",
+        "Erfüllt nicht gleichzeitig Kriterien A und B für Bulimia nervosa (F50.2)"
       ],
       "optionale_symptome": [
-        "Amenorrhoe bei Frauen",
-        "Exzessive körperliche Betätigung",
-        "Heimliches Essen oder Vermeidung von Mahlzeiten in Gesellschaft"
+        "Selbst induziertes Erbrechen",
+        "Selbst induziertes Purgieren (Abführmittel)",
+        "Übermäßige sportliche Betätigung",
+        "Gebrauch von Appetitzüglern und/oder Diuretika",
+        "Bei präpubertalem Beginn: verzögerte oder gehemmte Pubertätsentwicklung",
+        "Körperschemastörung",
+        "Bradykardie, Hypotonie, Lanugobehaarung"
       ]
     },
-    "differentialdiagnose": "Bulimia nervosa (F50.2, Normalgewicht, Binge-Purge), körperliche Erkrankung (Malignome, GI-Erkrankungen), depressive Störung mit Appetitminderung.",
-    "komorbiditaeten": [
-      "F32",
-      "F42",
-      "F60.3"
-    ]
+    "differentialdiagnose": ["F50.1 Atypische Anorexia nervosa", "F50.2 Bulimia nervosa", "F32 Depression", "körperliche Erkrankungen mit Gewichtsverlust", "F20 Schizophrenie"],
+    "komorbiditaeten": ["F32 Depression", "F42 Zwangsstörung", "F60.31 Borderline-PS", "F50.2 Bulimia nervosa (gemischt)"]
+  },
+  {
+    "code": "F50.1",
+    "name": "Atypische Anorexia nervosa",
+    "kategorie": "F50",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.3,
+    "praevalenz_modifikatoren": {
+      "weiblich": 2.5,
+      "maennlich": 0.4,
+      "alter_peak": "14-30"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Erfüllt einige Merkmale der Anorexia nervosa, aber das klinische Gesamtbild rechtfertigt diese Diagnose nicht",
+        "Markanter Gewichtsverlust und gewichtsreduzierendes Verhalten vorhanden",
+        "Ein oder mehrere Schlüsselsymptome der Anorexia nervosa fehlen (z.B. Amenorrhoe oder ausgeprägte Angst vor Übergewicht)"
+      ],
+      "optionale_symptome": [
+        "Fehlendes Körperschemabild-Disturbanz bei sonst typischem Bild",
+        "Amenorrhoe fehlt trotz deutlichem Gewichtsverlust",
+        "Nicht in Anwesenheit bekannter körperlicher Erkrankungen mit Gewichtsverlust"
+      ]
+    },
+    "differentialdiagnose": ["F50.0 Anorexia nervosa", "F50.3 Atypische Bulimia nervosa", "F32 Depression", "körperliche Erkrankungen"],
+    "komorbiditaeten": ["F32 Depression", "F41 Angststörungen", "F50.0 Anorexia nervosa"]
   },
   {
     "code": "F50.2",
     "name": "Bulimia nervosa",
-    "kategorie": "F5",
-    "seltenheit_score": 5,
+    "kategorie": "F50",
+    "seltenheit_score": 6,
     "praevalenz_allgemein_prozent": 1.5,
     "praevalenz_modifikatoren": {
-      "männlich": 0.2,
-      "weiblich": 2,
-      "alter_18_30": 3,
-      "alter_31_50": 1,
-      "alter_51_plus": 0.2
+      "weiblich": 3.5,
+      "maennlich": 0.3,
+      "alter_peak": "16-30"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Wiederholende Essanfälle mit Kontrollverlust über das Essen",
-        "Kompensatorisches Verhalten (Erbrechen, Laxantien, Fasten, Sport)",
-        "Übermäßiger Einfluss von Figur und Gewicht auf Selbstbewertung"
+        "Anhaltende Beschäftigung mit dem Essen sowie unwiderstehliche Gier nach Nahrung; Episoden von Essattacken (große Nahrungsmengen in kurzer Zeit)",
+        "Der Patient versucht den gewichtsmachenden Effekt durch mindestens eines: selbst induziertes Erbrechen, Purgieren (Laxantien), Nahrungsrestriktion, Gebrauch von Appetitzüglern, Schilddrüsenpräparaten, Diuretika",
+        "Selbstwahrnehmung als zu dick mit aufdringlicher Angst vor Übergewicht (führt oft zu Untergewicht)"
       ],
       "optionale_symptome": [
-        "Oft Normalgewicht (anders als Anorexie)",
-        "Zahnschäden durch Magenssäure",
-        "Schamgefühle und Geheimhaltung"
+        "Häufig Vorgeschichte einer Anorexia nervosa (Monate bis Jahre früher)",
+        "Heißhungerattacken typischerweise auf kohlenhydrat- und fettreiche Nahrung",
+        "Elektrolytstörungen durch wiederholtes Erbrechen",
+        "Zahnschäden durch Magensäure",
+        "Schwellung der Speicheldrüsen",
+        "Begleitsymptome von Depression und Schuldgefühlen"
       ]
     },
-    "differentialdiagnose": "Anorexia nervosa mit Binge-Purge-Typ (F50.0/F50.3), Binge-Eating-Störung (keine Kompensation), depressive Episode.",
-    "komorbiditaeten": [
-      "F32",
-      "F60.3",
-      "F41",
-      "F10"
-    ]
+    "differentialdiagnose": ["F50.0 Anorexia nervosa", "F50.3 Atypische Bulimia nervosa", "F32 Depression", "F60.31 Borderline-PS", "neurologische Erkrankungen mit Essverhaltensstörung"],
+    "komorbiditaeten": ["F32 Depression", "F41 Angststörungen", "F60.31 Borderline-PS", "F10 Alkohol-/Substanzmissbrauch", "F50.0 Anorexia nervosa"]
+  },
+  {
+    "code": "F50.3",
+    "name": "Atypische Bulimia nervosa",
+    "kategorie": "F50",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.5,
+    "praevalenz_modifikatoren": {
+      "weiblich": 3.0,
+      "maennlich": 0.4,
+      "alter_peak": "16-35"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Erfüllt einige Merkmale der Bulimia nervosa, aber das klinische Gesamtbild rechtfertigt diese Diagnose nicht",
+        "Bulimische Episoden und übermäßige Verwendung von Purgativa vorhanden"
+      ],
+      "optionale_symptome": [
+        "Kein signifikanter Gewichtsverlust trotz Essattacken und Purgieren",
+        "Fehlendes typisches Körperschema-Bedenken bezüglich Figur und Gewicht",
+        "Normales oder übermäßiges Körpergewicht"
+      ]
+    },
+    "differentialdiagnose": ["F50.2 Bulimia nervosa", "F50.4 Essattacken", "F32 Depression", "körperliche Erkrankungen"],
+    "komorbiditaeten": ["F32 Depression", "F41 Angststörungen", "F60.31 Borderline-PS"]
   },
   {
     "code": "F50.4",
-    "name": "Essattacken bei sonstigen psychischen Störungen",
-    "kategorie": "F5",
+    "name": "Essattacken bei anderen psychischen Störungen (Psychogene Essattacken)",
+    "kategorie": "F50",
     "seltenheit_score": 4,
-    "praevalenz_allgemein_prozent": 3,
+    "praevalenz_allgemein_prozent": 2.0,
     "praevalenz_modifikatoren": {
-      "männlich": 0.8,
-      "weiblich": 1.3,
-      "alter_18_30": 1.5,
-      "alter_31_50": 1.5,
-      "alter_51_plus": 0.8
+      "weiblich": 1.5,
+      "maennlich": 0.8,
+      "alter_peak": "20-50"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Wiederkehrende Essanfälle (mindestens 1x/Woche für 3 Monate)",
-        "Kontrollverlust über Essen während der Episode",
-        "Kein regelmäßiges kompensatorisches Verhalten"
+        "Übermäßiges Essen als Reaktion auf belastende Ereignisse (z.B. Trauer, Unfall, Geburt)",
+        "Psychogene Hyperphagie ohne vollständiges Bild einer Bulimia nervosa"
       ],
       "optionale_symptome": [
-        "Rasches Essen ohne Hunger",
-        "Alleine essen aus Scham",
-        "Ausgeprägte Schuldgefühle danach"
+        "Übergewicht als Folge häufiger emotionaler Essattacken",
+        "Kompensatorisches Verhalten fehlt",
+        "Essen als Copingstrategie"
       ]
     },
-    "differentialdiagnose": "Bulimia nervosa (F50.2, mit Kompensation), adipositas ohne Essstörung, emotionales Essen bei Angst/Depression.",
-    "komorbiditaeten": [
-      "F32",
-      "F41",
-      "F60.3"
-    ]
+    "differentialdiagnose": ["F50.2 Bulimia nervosa", "F43.2 Anpassungsstörung", "F32 Depression", "Adipositas (E66)"],
+    "komorbiditaeten": ["F32 Depression", "F43 Stressreaktionen", "F41 Angststörungen"]
   },
   {
     "code": "F51.0",
-    "name": "Nichtorganische Insomnie",
-    "kategorie": "F5",
+    "name": "Nicht-organische Insomnie",
+    "kategorie": "F51",
     "seltenheit_score": 3,
-    "praevalenz_allgemein_prozent": 15,
+    "praevalenz_allgemein_prozent": 10.0,
     "praevalenz_modifikatoren": {
-      "männlich": 0.8,
       "weiblich": 1.3,
-      "alter_18_30": 1,
-      "alter_31_50": 1.2,
-      "alter_51_plus": 1.8
+      "maennlich": 0.8,
+      "alter_peak": "30-65"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Schwierigkeiten beim Ein- oder Durchschlafen oder nicht erholsamer Schlaf",
-        "Mindestens 3 Nächte pro Woche für mindestens 1 Monat",
-        "Deutliche Beeinträchtigung der Tagesfunktion"
+        "Klagen über Einschlafstörungen, Durchschlafstörungen oder nicht erholsamen Schlaf",
+        "Schlafstörungen treten mindestens dreimal pro Woche über mindestens 1 Monat auf",
+        "Schlafstörung verursacht deutliche persönliche Beeinträchtigung oder Interferenz mit persönlicher Funktionsfähigkeit im Alltag",
+        "Kein bekannter organischer Kausalfaktor (keine neurologische oder sonstige körperliche Erkrankung, kein Substanzmissbrauch oder Medikament als Ursache)"
       ],
       "optionale_symptome": [
-        "Grübeln im Bett",
-        "Konditionierte Schlafangst (Bett als Stressor erlebt)",
-        "Übermäßige Tagesmüdigkeit"
+        "Grübeln oder Gedankenrasen beim Einschlafen",
+        "Hypersensibilität auf Geräusche",
+        "Tagesmüdigkeit und Leistungsminderung",
+        "Reizbarkeit und Konzentrationsstörungen",
+        "Angst vor dem Schlafen ('Schlafangst')"
       ]
     },
-    "differentialdiagnose": "Organische Ursachen (Schlafapnoe, RLS), psychiatrische Schlafstörung bei Depression/Angst, Substanz-induzierte Schlafstörung.",
-    "komorbiditaeten": [
-      "F32",
-      "F41",
-      "F43.1"
-    ]
+    "differentialdiagnose": ["G47.0 Organische Insomnie", "F32 Depression", "F41.1 GAD", "F43 Stressreaktionen", "Schlafapnoe"],
+    "komorbiditaeten": ["F32 Depression", "F41.1 GAD", "F43 Stressreaktionen", "F45 Somatoforme Störungen"]
+  },
+  {
+    "code": "F51.1",
+    "name": "Nicht-organische Hypersomnie",
+    "kategorie": "F51",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.5,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.0,
+      "maennlich": 1.0,
+      "alter_peak": "15-40"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Übermäßige Tagesschläfrigkeit oder Schlafattacken (nicht durch unzureichende Schlafdauer erklärbar) ODER verlängerter Übergang zum vollen Wachzustand nach Erwachen",
+        "Tägliches Auftreten über mindestens 1 Monat oder wiederholt über kürzere Zeiträume, mit deutlicher Beeinträchtigung oder Interferenz mit persönlicher Funktionsfähigkeit",
+        "Kein Hinweis auf Schlafapnoe (kein nächtlicher Atemstillstand, kein intermittierendes Schnarchen)",
+        "Kein bekannter organischer Kausalfaktor"
+      ],
+      "optionale_symptome": [
+        "Assoziation mit psychischen Störungen (affektive Störungen häufig)",
+        "Schwierigkeiten morgens aufzuwachen ('Schlaftrunkenheit')",
+        "Verlängerter Nachtschlaf"
+      ]
+    },
+    "differentialdiagnose": ["G47.1 Organische Hypersomnie", "G47.4 Narkolepsie", "F32 Depression", "Schlafapnoe", "Kleine-Levin-Syndrom"],
+    "komorbiditaeten": ["F32 Depression", "F31 Bipolare Störung", "F43 Stressreaktionen"]
+  },
+  {
+    "code": "F51.2",
+    "name": "Nicht-organische Störung des Schlaf-Wach-Rhythmus",
+    "kategorie": "F51",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.5,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.0,
+      "maennlich": 1.0,
+      "alter_peak": "15-45"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Schlaf-Wach-Muster des Patienten ist nicht im Einklang mit dem gewünschten Schlaf-Wach-Schema (bedingt durch gesellschaftliche Anforderungen und durch das Umfeld)",
+        "Infolge der Störung des Schlaf-Wach-Rhythmus: Insomnie in der Hauptschlafzeit ODER Hypersomnie in der Wachzeit, fast täglich über mindestens 1 Monat oder wiederholt",
+        "Unzureichende Quantität, Qualität und zeitliche Lage des Schlafs verursacht deutliche persönliche Beeinträchtigung",
+        "Kein bekannter organischer Kausalfaktor"
+      ],
+      "optionale_symptome": [
+        "Verzögertes Schlafphasensyndrom (Einschlafen erst sehr spät)",
+        "Vorverlegtes Schlafphasensyndrom",
+        "Schichtarbeiter oder Reisende als Risikofaktor"
+      ]
+    },
+    "differentialdiagnose": ["G47.2 Organische Schlaf-Wach-Rhythmusstörung", "F51.0 Insomnie", "F32 Depression"],
+    "komorbiditaeten": ["F32 Depression", "F41.1 GAD"]
+  },
+  {
+    "code": "F51.3",
+    "name": "Schlafwandeln (Somnambulismus)",
+    "kategorie": "F51",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 1.0,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.0,
+      "maennlich": 1.0,
+      "alter_peak": "5-12"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Wiederkehrende (zwei oder mehr) Episoden des Aufstehens vom Bett, gewöhnlich im ersten Drittel des Nachtschlafs, und Umhergehen für mehrere Minuten bis zu einer halben Stunde",
+        "Während einer Episode: leerer, starrender Blick, relative Unresponsivität auf Kommunikationsversuche anderer, nur unter erheblichen Schwierigkeiten aufzuwecken",
+        "Nach dem Aufwachen (entweder aus der Episode oder am nächsten Morgen): Amnesie für die Episode",
+        "Keine Einschränkung der geistigen Aktivität oder des Verhaltens innerhalb weniger Minuten nach dem Aufwachen aus einer Episode",
+        "Kein Hinweis auf eine organische psychische Störung (z.B. Demenz) oder körperliche Erkrankung (z.B. Epilepsie)"
+      ],
+      "optionale_symptome": [
+        "Automatische Alltagshandlungen während des Schlafwandelns",
+        "Gelegentliches Sprechen im Schlaf",
+        "Erhöhtes Risiko für Verletzungen",
+        "Familiäre Häufung"
+      ]
+    },
+    "differentialdiagnose": ["Epileptische Anfälle im Schlaf (G40)", "F44 Dissoziative Störungen", "F51.4 Schlafterror", "REM-Schlaf-Verhaltensstörung"],
+    "komorbiditaeten": ["F51.4 Schlafterror", "F51.0 Insomnie"]
+  },
+  {
+    "code": "F51.4",
+    "name": "Schlafterror (Pavor nocturnus)",
+    "kategorie": "F51",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 1.0,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.0,
+      "maennlich": 1.0,
+      "alter_peak": "3-12"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Wiederkehrende (zwei oder mehr) Episoden, in denen der Patient mit einem Panikschrei aus dem Schlaf aufsteht, mit intensiver Angst, Körpermotilität und autonomer Hyperaktivität (Tachykardie, Herzklopfen, schnelles Atmen, Schwitzen)",
+        "Episoden treten hauptsächlich im ersten Drittel des Schlafs auf",
+        "Dauer der Episode weniger als 10 Minuten",
+        "Fehlendes Ansprechen auf Beruhigungsversuche anderer; anschließend Desorientiertheit und perseverative Bewegungen",
+        "Begrenzte Erinnerung für das Ereignis",
+        "Kein bekannter organischer Kausalfaktor"
+      ],
+      "optionale_symptome": [
+        "Kind versucht zur Tür zu laufen (Fluchtreaktion)",
+        "Vollständige Amnesie für die Episode am nächsten Morgen",
+        "Familiäre Häufung",
+        "Bei Erwachsenen häufig Assoziation mit psychischer Belastung"
+      ]
+    },
+    "differentialdiagnose": ["F51.5 Alpträume", "Epilepsie (G40)", "F51.3 Schlafwandeln", "organische Schlafstörungen"],
+    "komorbiditaeten": ["F51.3 Schlafwandeln", "F43 Stressreaktionen", "F41 Angststörungen"]
+  },
+  {
+    "code": "F51.5",
+    "name": "Alpträume",
+    "kategorie": "F51",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 4.0,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.3,
+      "maennlich": 0.8,
+      "alter_peak": "5-45"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Aufwachen aus Nachtschlaf oder Nickerchen mit detaillierter und lebhafter Erinnerung an intensiv erschreckende Träume, die typischerweise Bedrohungen von Überleben, Sicherheit oder Selbstachtung beinhalten",
+        "Nach dem Aufwachen aus den erschreckenden Träumen schnelle Orientiertheit und Wachheit des Patienten",
+        "Traumerlebnis und resultierende Schlafstörung verursachen deutlichen Leidensdruck"
+      ],
+      "optionale_symptome": [
+        "Typisch: Aufwachen in der zweiten Schlafhälfte (REM-Schlaf)",
+        "Wiederkehrende Themen gleicher Natur",
+        "Begleitende autonome Erregung (weniger ausgeprägt als bei Schlafterror)",
+        "Assoziation mit traumatischen Erlebnissen",
+        "Kein bekannter organischer Kausalfaktor"
+      ]
+    },
+    "differentialdiagnose": ["F51.4 Schlafterror", "F43.1 PTBS (traumatische Alpträume)", "F32 Depression", "Medikamentennebenwirkungen"],
+    "komorbiditaeten": ["F43.1 PTBS", "F32 Depression", "F41 Angststörungen"]
   },
   {
     "code": "F52.0",
-    "name": "Mangel an sexuellem Verlangen",
-    "kategorie": "F5",
-    "seltenheit_score": 4,
-    "praevalenz_allgemein_prozent": 5,
+    "name": "Mangel oder Verlust von sexuellem Verlangen",
+    "kategorie": "F52",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 5.0,
     "praevalenz_modifikatoren": {
-      "männlich": 0.6,
-      "weiblich": 1.6,
-      "alter_18_30": 1,
-      "alter_31_50": 1.3,
-      "alter_51_plus": 1.5
+      "weiblich": 1.5,
+      "maennlich": 0.8,
+      "alter_peak": "25-55"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Subjektiv empfundenes Fehlen sexuellen Verlangens",
-        "Nicht durch körperliche Erkrankung oder Substanz erklärbar",
-        "Leidensdruck oder Beziehungsprobleme"
+        "Allgemeine Kriterien für sexuelle Funktionsstörung (F52) erfüllt: Unfähigkeit zu einer gewünschten sexuellen Beziehung, häufig vorkommend, für mindestens 6 Monate, nicht vollständig auf andere psychische/körperliche Störungen oder Medikamente zurückführbar",
+        "Mangel oder Verlust von sexuellem Verlangen als Hauptproblem (nicht sekundär zu anderen sexuellen Schwierigkeiten)",
+        "Vermindertes Aufsuchen sexueller Reize, verminderte sexuelle Gedanken und Fantasien",
+        "Mangelndes Interesse an sexueller Aktivität mit Partner oder alleine, mit deutlich verringerter Häufigkeit"
       ],
       "optionale_symptome": [
-        "Häufig als Sekundärsymptom bei Depression",
-        "Kann situationsgebunden (Partner-spezifisch) sein",
-        "Hormonelle Faktoren ausschließen"
+        "Frigidität",
+        "Hypoaktive sexuelle Begierdestörung",
+        "Nicht Ablehnung bei Annäherung (das wäre sexuelle Aversion)",
+        "Assoziation mit Depressionen oder hormonellen Veränderungen"
       ]
     },
-    "differentialdiagnose": "Hyposexuelles Verlangen bei Depression (F32), körperliche Ursachen (Hormonstörungen), Medikamentennebenwirkung.",
-    "komorbiditaeten": [
-      "F32",
-      "F41",
-      "F43.1"
-    ]
+    "differentialdiagnose": ["F52.1 Sexuelle Aversion", "F32 Depression", "körperliche Erkrankungen", "Medikamentennebenwirkungen (Antidepressiva, Antipsychotika)"],
+    "komorbiditaeten": ["F32 Depression", "F41 Angststörungen", "F60 Persönlichkeitsstörungen", "Beziehungsprobleme"]
+  },
+  {
+    "code": "F52.1",
+    "name": "Sexuelle Aversion und mangelnde sexuelle Befriedigung",
+    "kategorie": "F52",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 2.0,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.5,
+      "maennlich": 0.8,
+      "alter_peak": "20-45"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Kriterien für sexuelle Funktionsstörung (F52) erfüllt",
+        "Entweder: Aussicht auf sexuelle Interaktion erzeugt hinreichende Angst/Aversion, sodass sexuelle Aktivität vermieden wird (sexuelle Aversion); ODER: sexuelle Reaktion/Orgasmus erfolgt normal, aber fehlende Lustempfindung (mangelnde Befriedigung)"
+      ],
+      "optionale_symptome": [
+        "F52.10 Sexuelle Aversion: Angst, Ekel oder starke Aversion",
+        "F52.11 Mangelnde sexuelle Befriedigung: normaler Orgasmus ohne lustvolles Erleben",
+        "Häufig Assoziation mit traumatischen sexuellen Erfahrungen",
+        "Aversion nicht Folge von Leistungsangst"
+      ]
+    },
+    "differentialdiagnose": ["F52.0 Mangel an sexuellem Verlangen", "F40.2 Spezifische Phobie", "F43.1 PTBS", "F32 Depression"],
+    "komorbiditaeten": ["F32 Depression", "F43.1 PTBS", "F60.31 Borderline-PS", "F41 Angststörungen"]
+  },
+  {
+    "code": "F52.2",
+    "name": "Versagen genitaler Reaktionen",
+    "kategorie": "F52",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 5.0,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.2,
+      "maennlich": 1.0,
+      "alter_peak": "25-60"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Kriterien für sexuelle Funktionsstörung (F52) erfüllt",
+        "Bei Männern: Erektion versagt (erektile Dysfunktion): (1) Erektion tritt ein, verschwindet aber bei Penetrationsversuch; (2) Erektion nur in Zeiten ohne Sexualakt; (3) partielle unzureichende Erektion; (4) keinerlei penile Tumeszenz",
+        "Bei Frauen: Versagen der genitalen Reaktion – vaginale Lubrikation tritt nicht auf oder hält nicht an; Formen: allgemein oder situativ"
+      ],
+      "optionale_symptome": [
+        "Leistungsangst als häufiger aufrechterhaltender Faktor",
+        "Psychogene Impotenz",
+        "Weibliche sexuelle Erregungsstörung",
+        "Assoziation mit Partnerschaftsproblemen"
+      ]
+    },
+    "differentialdiagnose": ["organische erektile Dysfunktion (N48.4)", "F32 Depression", "Medikamentennebenwirkungen", "Diabetes mellitus, kardiovaskuläre Erkrankungen"],
+    "komorbiditaeten": ["F32 Depression", "F41 Angststörungen", "F52.3 Orgasmusstörung", "Beziehungsprobleme"]
+  },
+  {
+    "code": "F52.3",
+    "name": "Orgasmusstörung",
+    "kategorie": "F52",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 5.0,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.8,
+      "maennlich": 0.5,
+      "alter_peak": "20-50"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Kriterien für sexuelle Funktionsstörung (F52) erfüllt",
+        "Orgasmusstörung: entweder Ausbleiben oder deutliche Verzögerung des Orgasmus",
+        "Formen: (1) Primäre Anorgasmie (noch nie Orgasmus erlebt); (2) Sekundäre Anorgasmie nach Periode normaler Reaktion: (a) generell in allen Situationen; (b) situativ (z.B. nur beim Masturbieren, nicht mit Partner)"
+      ],
+      "optionale_symptome": [
+        "Bei Männern: Orgasmus nur im Schlaf (nie im Wachzustand), oder nie in Anwesenheit des Partners",
+        "Psychogene Anorgasmie",
+        "Hemmter Orgasmus"
+      ]
+    },
+    "differentialdiagnose": ["organische Orgasmusstörungen", "F32 Depression", "Medikamentennebenwirkungen (SSRIs)"],
+    "komorbiditaeten": ["F32 Depression", "F41 Angststörungen", "F52.0 Mangel an sexuellem Verlangen"]
+  },
+  {
+    "code": "F52.4",
+    "name": "Ejaculatio praecox",
+    "kategorie": "F52",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 5.0,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0,
+      "maennlich": 1.5,
+      "alter_peak": "18-45"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Kriterien für sexuelle Funktionsstörung (F52) erfüllt",
+        "Unfähigkeit, die Ejakulation so lange hinreichend zu kontrollieren, dass beide Partner die sexuelle Interaktion genießen können",
+        "Ejakulation erfolgt vor oder sehr bald nach Koitusbeginn (oder in Abwesenheit ausreichender Erektion)",
+        "Nicht Folge längerer sexueller Abstinenz"
+      ],
+      "optionale_symptome": [
+        "Zeitdefinition (wenn gewünscht): vor oder innerhalb von 15 Sekunden",
+        "Leistungsangst als häufiger Faktor",
+        "Sekundäre Entwicklung erektiler Dysfunktion möglich"
+      ]
+    },
+    "differentialdiagnose": ["organische Ursachen", "F52.2 Erektionsstörung", "F32 Depression", "Hypersensibilität"],
+    "komorbiditaeten": ["F52.2 Erektionsstörung", "F41 Angststörungen", "F32 Depression"]
+  },
+  {
+    "code": "F52.5",
+    "name": "Nicht-organischer Vaginismus",
+    "kategorie": "F52",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 1.0,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.5,
+      "maennlich": 0,
+      "alter_peak": "18-40"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Kriterien für sexuelle Funktionsstörung (F52) erfüllt",
+        "Spasmus der Beckenbodenmuskulatur um die Vagina, der die vaginale Öffnung verschließt; Penetration ist entweder unmöglich oder schmerzhaft",
+        "Formen: (1) Primärer Vaginismus (nie normale Reaktion erlebt); (2) Sekundärer Vaginismus (nach Periode normaler Reaktion)"
+      ],
+      "optionale_symptome": [
+        "Assoziation mit sexuellen Traumata",
+        "Vorausgehende schmerzhafte Erfahrungen",
+        "Angst vor Schmerzen oder Kontrollverlust",
+        "Psychogener Vaginismus"
+      ]
+    },
+    "differentialdiagnose": ["organischer Vaginismus (N94.2)", "F52.6 Dyspareunie", "F43.1 PTBS (sexuelles Trauma)", "F52.1 Sexuelle Aversion"],
+    "komorbiditaeten": ["F43.1 PTBS", "F52.6 Dyspareunie", "F41 Angststörungen", "F32 Depression"]
+  },
+  {
+    "code": "F52.6",
+    "name": "Nicht-organische Dyspareunie",
+    "kategorie": "F52",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 3.0,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.5,
+      "maennlich": 0.4,
+      "alter_peak": "20-50"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Kriterien für sexuelle Funktionsstörung (F52) erfüllt",
+        "Schmerzen beim Geschlechtsverkehr (sowohl bei Frauen als auch Männern)",
+        "Bei Frauen: Schmerz beim Vaginaleintritt oder bei tiefem Eindringen; nicht durch Vaginismus oder fehlende Lubrikation bedingt",
+        "Bei Männern: Schmerzen oder Unbehagen während sexueller Aktivität"
+      ],
+      "optionale_symptome": [
+        "Psychogene Dyspareunie",
+        "Assoziation mit Infektionen, Verletzungen oder anderen körperlichen Faktoren ausgeschlossen",
+        "Häufig zusammen mit Vaginismus"
+      ]
+    },
+    "differentialdiagnose": ["organische Dyspareunie (N94.1)", "F52.5 Vaginismus", "entzündliche gynäkologische/urologische Erkrankungen"],
+    "komorbiditaeten": ["F52.5 Vaginismus", "F43.1 PTBS", "F32 Depression"]
   },
   {
     "code": "F54",
-    "name": "Psychische Faktoren bei andernorts klassifizierten Erkrankungen",
-    "kategorie": "F5",
+    "name": "Psychologische Faktoren oder Verhaltensfaktoren bei andernorts klassifizierten Erkrankungen",
+    "kategorie": "F54",
     "seltenheit_score": 4,
-    "praevalenz_allgemein_prozent": 5,
+    "praevalenz_allgemein_prozent": 3.0,
     "praevalenz_modifikatoren": {
-      "männlich": 0.9,
-      "weiblich": 1.2,
-      "alter_18_30": 0.8,
-      "alter_31_50": 1.3,
-      "alter_51_plus": 1.5
+      "weiblich": 1.1,
+      "maennlich": 0.9,
+      "alter_peak": "20-60"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Körperliche Erkrankung bestätigt (z.B. Asthma, Colitis ulcerosa, Neurodermitis)",
-        "Psychologische Faktoren beeinflussen Entstehung oder Verlauf der körperlichen Erkrankung nachweisbar",
-        "Keine Somatisierung (die körperliche Erkrankung ist real)"
+        "Psychische Faktoren spielen eine Hauptrolle bei der Entstehung oder dem Verlauf einer körperlichen Erkrankung (andernorts klassifiziert)",
+        "Körperliche Erkrankung erfüllt Kriterien einer ICD-10-Kategorie außerhalb Kapitel V",
+        "Psychologische/verhaltensmäßige Einflüsse sind kausal bedeutsam (z.B. Asthma durch emotionale Belastung)"
       ],
       "optionale_symptome": [
-        "Psychosozialer Stressor zeitlich mit Verschlechterung verbunden",
-        "Emotionale Reaktionen, die physiologische Reaktionen auslösen",
-        "Sekundärer Krankheitsgewinn"
+        "Psychogener Tortikollis",
+        "Psychogene Dermatitis",
+        "Psychogenes Ekzem",
+        "Psychogene Urtikaria",
+        "Psychogenes Magengeschwür"
       ]
     },
-    "differentialdiagnose": "Somatoforme Störungen (F45, körperliche Erkrankung nicht nachweisbar), Anpassungsstörung (F43.2).",
-    "komorbiditaeten": [
-      "F32",
-      "F41",
-      "F43"
-    ]
+    "differentialdiagnose": ["F45 Somatoforme Störungen", "F32 Depression", "F41 Angststörungen", "körperliche Erkrankungen ohne psychische Komponente"],
+    "komorbiditaeten": ["F32 Depression", "F41 Angststörungen", "F45 Somatoforme Störungen"]
+  },
+  {
+    "code": "F55",
+    "name": "Schädlicher Gebrauch von nicht abhängigkeitserzeugenden Substanzen",
+    "kategorie": "F55",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 1.5,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.3,
+      "maennlich": 0.9,
+      "alter_peak": "20-50"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Anhaltender schädlicher Gebrauch einer nicht abhängigkeitserzeugenden Substanz trotz klarer Belege für Schädlichkeit",
+        "Schädliches Gebrauchsmuster von Substanzen wie Analgetika, Antazida, Vitamine, Laxanzien, Antazida, Steroide oder Hormone"
+      ],
+      "optionale_symptome": [
+        "F55.0 Antidepressiva",
+        "F55.1 Laxanzien",
+        "F55.2 Analgetika",
+        "F55.3 Antazida",
+        "F55.4 Vitamine",
+        "F55.5 Steroide oder Hormone",
+        "Körperlicher Schaden durch Gebrauch"
+      ]
+    },
+    "differentialdiagnose": ["F10-F19 Störungen durch psychoaktive Substanzen", "körperliche Erkrankungen", "F45 Somatoforme Störungen"],
+    "komorbiditaeten": ["F45.0 Somatisierungsstörung", "F32 Depression", "F45.2 Hypochondrie"]
+  },
+  {
+    "code": "F48.1",
+    "name": "Depersonalisations-Derealisations-Syndrom",
+    "kategorie": "F48",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.8,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.2,
+      "maennlich": 0.9,
+      "alter_peak": "15-40"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Patient klagt spontan darüber, dass seine geistige Aktivität, sein Körper und seine Umgebung in ihrer Qualität verändert sind, sich unwirklich, fern oder automatisiert anfühlen",
+        "Patienten klagen häufig über Verlust von Gefühlen sowie über Entfremdung oder Loslösung vom eigenen Denken, Körper oder der realen Welt",
+        "Patient ist sich trotz dramatischer Erfahrung der Unwirklichkeit der Veränderung bewusst (Realitätsprüfung intakt)",
+        "Sensorium normal, Fähigkeit zum emotionalen Ausdruck intakt"
+      ],
+      "optionale_symptome": [
+        "Gefühl, die eigenen Handlungen von außen zu beobachten",
+        "Gefühl, sich selbst nicht zu kennen",
+        "Unwirklichkeitsgefühl der Umgebung",
+        "Verschiedene andere Phänomene der Entfremdung",
+        "Häufig sekundär bei anderen Störungen (Panik, Depression)"
+      ]
+    },
+    "differentialdiagnose": ["F44 Dissoziative Störungen", "F32 Depression", "F41.0 Panikstörung", "F20 Schizophrenie", "organische psychische Störungen", "Substanzintoxikation"],
+    "komorbiditaeten": ["F41.0 Panikstörung", "F32 Depression", "F43.1 PTBS", "F40 Phobien"]
   }
 ]
