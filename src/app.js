@@ -126,7 +126,7 @@ function renderDashboard() {
   const pctEl = document.getElementById('xp-pct');
   if (pctEl) pctEl.textContent = `${Math.round(Math.min(100, pct))}%`;
   document.getElementById('rank-card-bg').style.backgroundImage =
-    `url('assets/images/ranks/${rank.title.toLowerCase()}.jpg')`;
+    `url('assets/images/ranks/${rank.title.toLowerCase()}.png')`;
 
   const streak = calcStreak(state.shifts);
   document.getElementById('streak-icon').textContent  = streak.frozen ? '🧊' : '🔥';
