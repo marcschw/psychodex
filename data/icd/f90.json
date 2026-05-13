@@ -2,191 +2,501 @@
   {
     "code": "F90.0",
     "name": "Einfache Aktivitäts- und Aufmerksamkeitsstörung (ADHS)",
-    "kategorie": "F9",
-    "seltenheit_score": 3,
-    "praevalenz_allgemein_prozent": 5,
+    "kategorie": "F90",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 5.0,
     "praevalenz_modifikatoren": {
-      "männlich": 2,
-      "weiblich": 0.6,
-      "alter_18_30": 1.5,
-      "alter_31_50": 0.8,
-      "alter_51_plus": 0.3
+      "weiblich": 0.5,
+      "maennlich": 1.7,
+      "alter_peak": "Diagnose 6-12 Jahre"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Ausgeprägte Unaufmerksamkeit (Details, Durchhalteprobleme, Ablenkbarkeit)",
-        "Ausgeprägte Überaktivität (Zappeln, Herumrennen, Geräusche machen)",
-        "Symptombeginn vor dem 7. Lebensjahr, in mindestens 2 Kontexten"
+        "Allgemeine Kriterien für Hyperkinetische Störung (F90) erfüllt: abnorme Aufmerksamkeit, Hyperaktivität und Impulsivität über Situationen hinweg, persistent, nicht bedingt durch Autismus oder affektive Störungen",
+        "Unaufmerksamkeit: mind. 6 der folgenden über mind. 6 Monate: Flüchtigkeitsfehler, Schwierigkeit Aufmerksamkeit aufrechtzuerhalten, scheint nicht zuzuhören, Anweisungen nicht ausführen, Probleme mit Planung/Organisation, vermeidet anhaltende geistige Anstrengung, verliert Dinge, leicht ablenkbar, vergesslich",
+        "Hyperaktivität: mind. 3 der folgenden über mind. 6 Monate: Zappeln, verlässt den Platz, läuft herum/klettert, lärmt beim Spielen, anhaltend übermäßige motorische Aktivität",
+        "Impulsivität: mind. 1 der folgenden über mind. 6 Monate: platzt heraus, kann nicht warten, unterbricht andere, redet exzessiv ohne auf soziale Grenzen zu achten",
+        "Beginn der Störung nicht später als im 7. Lebensjahr",
+        "Pervasivität: Kriterien in mehr als einer Situation erfüllt (z.B. Schule UND Zuhause)",
+        "Klinisch bedeutsames Leid oder Beeinträchtigung in sozialen, schulischen oder beruflichen Funktionen",
+        "Erfüllt nicht die Kriterien für Tiefgreifende Entwicklungsstörungen (F84), Manie, Depression oder Angststörungen",
+        "Allgemeine F90-Kriterien erfüllt, NICHT die Kriterien für Störungen des Sozialverhaltens (F91)"
       ],
       "optionale_symptome": [
-        "Impulsivität (herausrufen, nicht warten können)",
-        "Schulische und soziale Beeinträchtigungen",
-        "Erwachsene: eher internales ADHS möglich"
+        "Aufmerksamkeitsdefizit ohne Hyperaktivität (Subform möglich)",
+        "Aktivitätsstörung ohne Aufmerksamkeitsprobleme (Subform möglich)",
+        "Im Erwachsenenalter oft nur Gefühl innerer Unruhe statt Hyperaktivität",
+        "Sekundäre Komplikationen: dissoziales Verhalten und geringes Selbstwertgefühl"
       ]
     },
-    "differentialdiagnose": "Angststörung (F41, innere Unruhe), depressive Störung (F32, Konzentrationsprobleme), Asperger (F84.5), Begabung mit Unterforderung.",
-    "komorbiditaeten": [
-      "F81.0",
-      "F91",
-      "F32",
-      "F41"
-    ]
+    "differentialdiagnose": ["F90.1 ADHS mit Störung des Sozialverhaltens", "F84.0 Autismus", "F41 Angststörungen", "F31 Bipolare Störung", "F32 Depression", "F81 Schulische Fertigkeitsstörungen"],
+    "komorbiditaeten": ["F91 Störung des Sozialverhaltens", "F81.0 Lese-Rechtschreibstörung", "F32 Depression", "F41 Angststörungen", "F94.1 Reaktive Bindungsstörung"]
   },
   {
     "code": "F90.1",
-    "name": "Hyperkinetische Störung des Sozialverhaltens",
-    "kategorie": "F9",
+    "name": "Hyperkinetische Störung mit Störung des Sozialverhaltens",
+    "kategorie": "F90",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 2.0,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.4,
+      "maennlich": 1.8,
+      "alter_peak": "Diagnose 6-14 Jahre"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Kriterien für Hyperkinetische Störung (F90) UND allgemeine Kriterien für Störungen des Sozialverhaltens (F91) gleichzeitig erfüllt"
+      ],
+      "optionale_symptome": [
+        "Kombination aus Unaufmerksamkeit, Hyperaktivität und dissozialem/aggressivem Verhalten",
+        "Schlechtere Langzeitprognose als F90.0",
+        "Häufig Risikofaktor für spätere dissoziale Persönlichkeitsstörung"
+      ]
+    },
+    "differentialdiagnose": ["F90.0 ADHS ohne SVS", "F91 Isolierte SVS", "F84.0 Autismus", "F60.2 Dissoziale PS"],
+    "komorbiditaeten": ["F32 Depression", "F10 Substanzmissbrauch (Folgeprobleme)", "F60.2 Dissoziale PS (Risiko)"]
+  },
+  {
+    "code": "F91.0",
+    "name": "Auf den familiären Rahmen beschränkte Störung des Sozialverhaltens",
+    "kategorie": "F91",
     "seltenheit_score": 5,
     "praevalenz_allgemein_prozent": 1.5,
     "praevalenz_modifikatoren": {
-      "männlich": 2.5,
-      "weiblich": 0.4,
-      "alter_18_30": 1.5,
-      "alter_31_50": 0.5,
-      "alter_51_plus": 0.1
+      "weiblich": 0.6,
+      "maennlich": 1.5,
+      "alter_peak": "Kindheit-Adoleszenz"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Kriterien für ADHS erfüllt (F90.0)",
-        "Gleichzeitig Kriterien für Störung des Sozialverhaltens (F91) erfüllt"
+        "Allgemeine Kriterien für Störung des Sozialverhaltens (F91) erfüllt: repetitives, persistentes Muster dissozialen, aggressiven oder aufsässigen Verhaltens über mind. 6 Monate, das altersangemessene soziale Erwartungen massiv verletzt",
+        "Mindestens 3 Symptome aus dem F91 Symptomkatalog, davon mind. 3 aus Items (9)-(23)",
+        "Mind. ein Symptom aus Items (9)-(23) über mind. 6 Monate",
+        "Dissoziales oder aggressives Verhalten nahezu ausschließlich auf häusliches Umfeld und Kernfamilienmitglieder beschränkt"
       ],
       "optionale_symptome": [
-        "Aggressivität und Regelverletzungen",
-        "Schlechte Peer-Beziehungen",
-        "Häufige Schulverweise"
+        "Stehlen innerhalb der Familie",
+        "Destruktives Verhalten zuhause",
+        "Körperliche Grausamkeit gegenüber Geschwistern (nicht Gleichaltrigen)"
       ]
     },
-    "differentialdiagnose": "ADHS (F90.0, ohne Sozialverhaltsstörung), Störung des Sozialverhaltens (F91, ohne ADHS).",
-    "komorbiditaeten": [
-      "F81.0",
-      "F32"
-    ]
+    "differentialdiagnose": ["F91.3 Oppositionelles Trotzverhalten", "F91.1/F91.2 generalisierte SVS", "F92 Gemischte SVS", "F90.1 ADHS mit SVS"],
+    "komorbiditaeten": ["F93 Emotionale Störungen", "F32 Depression", "F90.0 ADHS"]
+  },
+  {
+    "code": "F91.1",
+    "name": "Störung des Sozialverhaltens bei fehlenden sozialen Bindungen",
+    "kategorie": "F91",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 1.0,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.4,
+      "maennlich": 1.7,
+      "alter_peak": "Kindheit-frühe Adoleszenz"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Kriterien für Störung des Sozialverhaltens (F91) erfüllt",
+        "Mindestens 3 Symptome aus Items (9)-(23) des F91 Symptomkatalogs",
+        "Mind. ein Symptom aus Items (9)-(23) seit mind. 6 Monaten",
+        "Deutlich gestörte Beziehungen zur Gleichaltrigengruppe: Isolation, Ablehnung oder Unbeliebtheit sowie fehlendes dauerhaftes gegenseitiges Freundschaftsverhältnis"
+      ],
+      "optionale_symptome": [
+        "Solitäre Aggressivität",
+        "Hohe Rückfallquote bei Straftaten",
+        "Schlechte Langzeitprognose"
+      ]
+    },
+    "differentialdiagnose": ["F91.2 Störung des SV bei vorhandenen Bindungen", "F90.1 ADHS mit SVS", "F60.2 Dissoziale PS"],
+    "komorbiditaeten": ["F32 Depression", "F93 Emotionale Störungen", "F90.0 ADHS"]
+  },
+  {
+    "code": "F91.2",
+    "name": "Störung des Sozialverhaltens bei vorhandenen sozialen Bindungen",
+    "kategorie": "F91",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 2.0,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.5,
+      "maennlich": 1.6,
+      "alter_peak": "Adoleszenz"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Kriterien für Störung des Sozialverhaltens (F91) erfüllt",
+        "Mindestens 3 Symptome aus Items (9)-(23), mind. eines davon seit 6 Monaten",
+        "Verhaltensauffälligkeiten auch außerhalb des häuslichen Umfelds",
+        "Peer-Beziehungen im Normbereich (dauerhafte Freundschaften vorhanden)"
+      ],
+      "optionale_symptome": [
+        "Gruppendelinquenz (Stehlen in Gruppe, Schuleschwänzen, Bandenaktivitäten)",
+        "Bessere Langzeitprognose als F91.1 (Resozialisation leichter)",
+        "Häufig Adoleszenz-Beginn"
+      ]
+    },
+    "differentialdiagnose": ["F91.1 ohne soziale Bindungen", "F91.3 Oppositionelles Trotzverhalten", "F90.1 ADHS mit SVS"],
+    "komorbiditaeten": ["F10 Substanzmissbrauch", "F32 Depression", "F90.0 ADHS"]
   },
   {
     "code": "F91.3",
-    "name": "Störung des Sozialverhaltens mit oppositionellem Trotzverhalten",
-    "kategorie": "F9",
+    "name": "Störung des Sozialverhaltens mit oppositionellem, aufsässigem Verhalten (Oppositionelles Trotzverhalten)",
+    "kategorie": "F91",
     "seltenheit_score": 4,
-    "praevalenz_allgemein_prozent": 3,
+    "praevalenz_allgemein_prozent": 3.0,
     "praevalenz_modifikatoren": {
-      "männlich": 2,
       "weiblich": 0.6,
-      "alter_18_30": 1.5,
-      "alter_31_50": 0.5,
-      "alter_51_plus": 0.1
+      "maennlich": 1.5,
+      "alter_peak": "Kindergarten-Grundschule"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Deutlich aufsässiges, ungehorsames oder feindseliges Verhalten",
-        "Ohne schwere Verletzungen sozialer Normen",
-        "Dauer mindestens 6 Monate"
+        "Allgemeine Kriterien für Störung des Sozialverhaltens (F91) erfüllt",
+        "Mindestens 4 Symptome aus dem F91 Symptomkatalog, aber nicht mehr als 2 aus Items (9)-(23)",
+        "Symptome müssen altersangemessen unangepasst und mindestens 4 Monate vorhanden sein"
       ],
       "optionale_symptome": [
-        "Häufige Wutausbrüche",
-        "Aktives Verweigern von Anforderungen",
-        "Häufige Streitereien mit Erwachsenen"
+        "Häufige und schwere Wutausbrüche",
+        "Oft streitet mit Erwachsenen",
+        "Widerstand gegen Regeln und Bitten von Erwachsenen",
+        "Absichtliches Ärgern anderer",
+        "Beschuldigung anderer für eigene Fehler",
+        "Empfindlichkeit, Gereiztsein, Rachsucht"
       ]
     },
-    "differentialdiagnose": "ADHS (F90.0), Störung des Sozialverhaltens ohne Trotz (F91.1), normale Pubertätskonflikte.",
-    "komorbiditaeten": [
-      "F90.0",
-      "F32",
-      "F41"
-    ]
+    "differentialdiagnose": ["F91.1/F91.2 schwerere SVS", "F90.0 ADHS", "F32 Depression", "F41 Angststörungen"],
+    "komorbiditaeten": ["F90.0 ADHS", "F32 Depression", "F41 Angststörungen", "F93 Emotionale Störungen"]
+  },
+  {
+    "code": "F92.0",
+    "name": "Depressive Störung des Sozialverhaltens",
+    "kategorie": "F92",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.5,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.7,
+      "maennlich": 1.4,
+      "alter_peak": "Kindheit-Adoleszenz"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Kriterien für Störung des Sozialverhaltens (F91) erfüllt",
+        "Kriterien für eines der affektiven Störungen (F30-F39) gleichzeitig erfüllt"
+      ],
+      "optionale_symptome": [
+        "Kombination aus dissozialem Verhalten und anhaltend niedergedrückter Stimmung",
+        "Freudlosigkeit, Schuldgefühle, Hoffnungslosigkeit",
+        "Schlaf- oder Appetitstörungen"
+      ]
+    },
+    "differentialdiagnose": ["F91 isolierte SVS", "F32 Depression ohne Verhaltensauffälligkeiten", "F92.8 gemischte Störung"],
+    "komorbiditaeten": ["F90.0 ADHS", "F41 Angststörungen"]
+  },
+  {
+    "code": "F92.8",
+    "name": "Andere gemischte Störung des Sozialverhaltens und der Emotionen",
+    "kategorie": "F92",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.5,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.8,
+      "maennlich": 1.3,
+      "alter_peak": "Kindheit-Adoleszenz"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Allgemeine Kriterien für Störung des Sozialverhaltens (F91) erfüllt",
+        "Kriterien für eine Neurotische, stress-assoziierte oder somatoforme Störung (F40-F48) ODER emotionale Störung des Kindesalters (F93) gleichzeitig erfüllt"
+      ],
+      "optionale_symptome": [
+        "Dissoziales Verhalten kombiniert mit Angst, Obsessionen/Zwängen, Depersonalisation, Phobien oder Hypochondrie",
+        "Kombination nicht erklärbar durch reine SVS oder reine Angststörung"
+      ]
+    },
+    "differentialdiagnose": ["F91 isolierte SVS", "F40-F48 ohne SVS", "F92.0 Depressive SVS"],
+    "komorbiditaeten": ["F90.0 ADHS", "F32 Depression"]
   },
   {
     "code": "F93.0",
     "name": "Emotionale Störung mit Trennungsangst des Kindesalters",
-    "kategorie": "F9",
-    "seltenheit_score": 4,
-    "praevalenz_allgemein_prozent": 4,
+    "kategorie": "F93",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 3.0,
     "praevalenz_modifikatoren": {
-      "männlich": 0.9,
       "weiblich": 1.2,
-      "alter_18_30": 0.5,
-      "alter_31_50": 0.2,
-      "alter_51_plus": 0.1
+      "maennlich": 0.9,
+      "alter_peak": "3-10 Jahre"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Übermäßige und anhaltende Trennungsangst von Bezugspersonen",
-        "Nicht dem Entwicklungsalter entsprechend",
+        "Mindestens 3 der folgenden über mindestens 4 Wochen: unrealistische anhaltende Sorge um Schaden an Bezugspersonen oder Verlust; unrealistische Sorge über Ereignisse die Trennung verursachen; Schulverweigerung wegen Trennungsangst; Schlafschwierigkeiten (ohne Bezugsperson schlafen, Aufstehen in der Nacht, Angst auswärts zu schlafen); anhaltende Angst allein zu sein; wiederholte Albträume mit Trennungsthemen; körperliche Beschwerden bei Trennungen; übermäßiger Leidensdruck bei Trennung",
+        "Erfüllt nicht die Kriterien für Generalisierte Angststörung des Kindesalters (F93.80)",
+        "Beginn vor dem 6. Lebensjahr",
+        "Nicht Teil einer breiteren Störung der Emotionen, des Sozialverhaltens oder der Persönlichkeit, einer Tiefgreifenden Entwicklungsstörung oder psychotischen Störung"
+      ],
+      "optionale_symptome": [
+        "Schulvermeidung als häufigste Konsequenz",
+        "Körperliche Beschwerden (Übelkeit, Kopfschmerzen) als Ausdruck der Angst",
+        "Häufig im Kindergarten/Schulbeginn",
+        "Kann in jedem Alter auftreten (Kriterien verlangen vor 6 Jahren)"
+      ]
+    },
+    "differentialdiagnose": ["F93.80 Generalisierte Angststörung des Kindesalters", "F40.0 Agoraphobie", "F41.1 GAD", "F93.1 Phobische Störung", "normales Trennungsverhalten"],
+    "komorbiditaeten": ["F93.1 Phobische Störung", "F93.2 Soziale Angststörung", "F32 Depression"]
+  },
+  {
+    "code": "F93.1",
+    "name": "Phobische Störung des Kindesalters",
+    "kategorie": "F93",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 3.0,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.3,
+      "maennlich": 0.8,
+      "alter_peak": "3-12 Jahre"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Anhaltende oder wiederkehrende Angst (Phobie) die entwicklungsphasenspezifisch ist (oder zum Zeitpunkt des Beginns war), aber abnorm in ihrem Ausmaß ist und mit signifikanter sozialer Beeinträchtigung verbunden ist",
+        "Erfüllt nicht die Kriterien für Generalisierte Angststörung des Kindesalters (F93.80)",
+        "Nicht Teil einer breiteren Störung, tiefgreifenden Entwicklungsstörung oder psychotischen Störung",
         "Dauer mindestens 4 Wochen"
       ],
       "optionale_symptome": [
-        "Körperliche Beschwerden (Bauchschmerzen, Kopfweh) bei Trennung",
-        "Schulvermeidung",
-        "Albträume über Trennung"
+        "Entwicklungsphasenspezifische Ängste (Tiere, Dunkelheit, medizinische Eingriffe)",
+        "Übermäßig ausgeprägte normale Entwicklungsängste",
+        "Nicht-phasespezifische Ängste sollten unter F40-F48 kodiert werden"
       ]
     },
-    "differentialdiagnose": "Generalisierte Angststörung des Kindes (F93.2), normale Trennungsangst im Kleinkindalter, selektiver Mutismus.",
-    "komorbiditaeten": [
-      "F90.0",
-      "F93.2",
-      "F32"
-    ]
+    "differentialdiagnose": ["F93.0 Trennungsangst", "F40.2 Spezifische Phobie (Erwachsenenalter)", "F41.1 GAD", "normales Entwicklungsphänomen"],
+    "komorbiditaeten": ["F93.0 Trennungsangst", "F93.2 Soziale Angststörung", "F90.0 ADHS"]
   },
   {
     "code": "F93.2",
-    "name": "Soziale Angststörung des Kindesalters",
-    "kategorie": "F9",
-    "seltenheit_score": 4,
-    "praevalenz_allgemein_prozent": 3,
+    "name": "Störung mit sozialer Überempfindlichkeit des Kindesalters",
+    "kategorie": "F93",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 2.0,
     "praevalenz_modifikatoren": {
-      "männlich": 0.8,
-      "weiblich": 1.3,
-      "alter_18_30": 0.8,
-      "alter_31_50": 0.3,
-      "alter_51_plus": 0.1
+      "weiblich": 1.2,
+      "maennlich": 0.9,
+      "alter_peak": "3-10 Jahre"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Anhaltende Angst vor unbekannten Erwachsenen oder Peers",
-        "Soziale Kontakte stark eingeschränkt",
-        "Deutliche Beeinträchtigung der sozialen Entwicklung"
+        "Anhaltende Angst in sozialen Situationen mit unbekannten Menschen (auch Gleichaltrigen), die sich durch sozial vermeidendes Verhalten zeigt",
+        "Befangenheit, Verlegenheit oder übermäßige Sorge über die Angemessenheit des eigenen Verhaltens bei Begegnungen mit unbekannten Personen",
+        "Signifikante Beeinträchtigung sozialer Beziehungen; neue Situationen führen zu Leid (Weinen, Sprachverlust, Rückzug)",
+        "Befriedigende soziale Beziehungen mit bekannten Personen (Familie, bekannte Gleichaltrige) vorhanden",
+        "Abnormer Grad, Persistenz und Beeinträchtigung vor dem 6. Lebensjahr",
+        "Dauer mindestens 4 Wochen"
       ],
       "optionale_symptome": [
-        "Gute Beziehung zu bekannten Erwachsenen",
-        "Schüchternheit und soziale Hemmung",
-        "Erröten, Schweigen in Gruppen"
+        "Schüchternheit und soziale Gehemmtheit in Fremdsituationen",
+        "Vermeidendes Verhalten gegenüber Fremden (auch Gleichaltrigen)",
+        "Avoidant Disorder des Kindesalters"
       ]
     },
-    "differentialdiagnose": "Soziale Phobie (F40.1, Erwachsenenkriterien), Trennungsangst (F93.0), selektiver Mutismus (F94.0).",
-    "komorbiditaeten": [
-      "F93.0",
-      "F81.0",
-      "F90.0"
-    ]
+    "differentialdiagnose": ["F40.1 Soziale Phobie (Erwachsenenalter)", "F93.0 Trennungsangst", "F93.80 GAD des Kindesalters", "normale Schüchternheit"],
+    "komorbiditaeten": ["F93.0 Trennungsangst", "F93.1 Phobische Störung", "F32 Depression"]
+  },
+  {
+    "code": "F93.80",
+    "name": "Generalisierte Angststörung des Kindesalters",
+    "kategorie": "F93",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 2.5,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.3,
+      "maennlich": 0.8,
+      "alter_peak": "Kindheit-Adoleszenz"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Ausgeprägte Angst und Besorgnis (ängstliche Erwartung) an mindestens der Hälfte der Tage über mind. 6 Monate, sich auf mehrere Ereignisse oder Aktivitäten beziehend",
+        "Schwierigkeit die Sorgen zu kontrollieren",
+        "Mind. 3 der folgenden Symptome (mind. 2 an mind. der Hälfte der Tage): Ruhelosigkeit/Gespanntsein, Erschöpfung/Ermüdbarkeit, Konzentrationsschwierigkeiten, Reizbarkeit, Muskelverspannung, Schlafstörungen",
+        "Angsten und Sorgen treten über mind. 2 Situationen auf (nicht episodisch paroxysmale wie Panikstörung, nicht auf einzelnes Thema begrenzt)",
+        "Beginn in Kindheit oder Adoleszenz (vor 18 Jahren)",
+        "Klinisch bedeutsames Leid oder Beeinträchtigung"
+      ],
+      "optionale_symptome": [
+        "Bei Kindern oft auf schulische Leistung, Sport und soziale Akzeptanz bezogen",
+        "Weniger ausgeprägte autonome Symptome als bei Erwachsenen",
+        "Häufig Übergänge zu Erwachsenen-GAD (F41.1)"
+      ]
+    },
+    "differentialdiagnose": ["F41.1 GAD (Erwachsenenalter)", "F93.0 Trennungsangst", "F41.0 Panikstörung", "F93.1 Phobische Störung"],
+    "komorbiditaeten": ["F93.0 Trennungsangst", "F32 Depression", "F90.0 ADHS", "F93.1 Phobische Störung"]
   },
   {
     "code": "F94.0",
-    "name": "Selektiver Mutismus",
-    "kategorie": "F9",
+    "name": "Elektiver Mutismus",
+    "kategorie": "F94",
     "seltenheit_score": 7,
     "praevalenz_allgemein_prozent": 0.5,
     "praevalenz_modifikatoren": {
-      "männlich": 0.8,
-      "weiblich": 1.3,
-      "alter_18_30": 0.2,
-      "alter_31_50": 0.1,
-      "alter_51_plus": 0
+      "weiblich": 1.2,
+      "maennlich": 0.9,
+      "alter_peak": "Diagnose 3-8 Jahre"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Konsistentes Schweigen in bestimmten sozialen Situationen",
-        "Sprachfähigkeit in anderen Situationen vorhanden",
-        "Dauer mindestens 1 Monat, nicht auf ersten Schulmonat begrenzt"
+        "Sprachverständnis und -ausdruck in standardisierten Tests innerhalb der 2-SD-Grenzen für das Alter des Kindes",
+        "Nachweisbares konsistentes Versagen zu sprechen in spezifischen sozialen Situationen (z.B. Schule), obwohl das Kind in anderen Situationen spricht",
+        "Dauer des elektiven Mutismus übersteigt 4 Wochen",
+        "Kein frühkindlicher Autismus (F84)",
+        "Störung nicht durch Unkenntnis der gesprochenen Sprache erklärt"
       ],
       "optionale_symptome": [
-        "Sprechen nur mit Familie oder engen Freunden",
-        "Häufig in Kindergarten/Schule erstmals auffällig",
-        "Komorbide soziale Angst"
+        "Häufig assoziiert mit Persönlichkeitszügen: soziale Angst, Rückzug, Sensitivität oder Resistenz",
+        "Selektiver Mutismus: spricht mit vertrauten Personen, nicht mit Fremden/in Schule",
+        "Häufig familiäre Häufung",
+        "Differenzierung von Trennungsangst-bedingter vorübergehender Stummheit"
       ]
     },
-    "differentialdiagnose": "Kommunikationsstörungen (F80), Autismus-Spektrum (F84), soziale Angststörung des Kindesalters (F93.2).",
-    "komorbiditaeten": [
-      "F93.2",
-      "F40.1"
-    ]
+    "differentialdiagnose": ["F80 Sprachentwicklungsstörungen", "F84.0 Autismus", "F93.0 Trennungsangst", "F40.1 Soziale Phobie", "reaktiver Mutismus nach Trauma"],
+    "komorbiditaeten": ["F93.2 Soziale Überempfindlichkeit", "F40.1 Soziale Phobie", "F93.0 Trennungsangst", "F60 Persönlichkeitszüge"]
+  },
+  {
+    "code": "F94.1",
+    "name": "Reaktive Bindungsstörung des Kindesalters",
+    "kategorie": "F94",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.3,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.0,
+      "maennlich": 1.0,
+      "alter_peak": "Säugling bis 5 Jahre"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Beginn vor dem 5. Lebensjahr",
+        "Das Kind zeigt stark kontrastive oder ambivalente soziale Reaktionen, die situationsübergreifend auftreten (aber Variabilität von Beziehung zu Beziehung möglich)",
+        "Emotionale Störung: fehlende emotionale Reaktionsfähigkeit, Rückzugsreaktionen, aggressive Reaktionen auf eigenes oder fremdes Leid, ängstliche Hypervigilanz",
+        "Gewisse Kapazität für soziale Gegenseitigkeit und Reaktionsfähigkeit bei Interaktion mit normalen Erwachsenen vorhanden",
+        "Erfüllt nicht die Kriterien für Tiefgreifende Entwicklungsstörungen (F84)"
+      ],
+      "optionale_symptome": [
+        "Wahrscheinliches Resultat von schwerem elterlichen Vernachlässigung, Misshandlung oder ernsthafter Fehlbehandlung",
+        "Wachstumsretardierung oder Gedeihstörung als mögliche Komorbidität",
+        "Nicht konstitutionelle soziale Inkompetenz"
+      ]
+    },
+    "differentialdiagnose": ["F94.2 Bindungsstörung mit Enthemmung", "F84.0 Autismus", "F43.2 Anpassungsstörung", "normales Trennungsverhalten"],
+    "komorbiditaeten": ["F43 Stressreaktionen", "F90.0 ADHS", "Gedeihstörung", "F93 Emotionale Störungen"]
+  },
+  {
+    "code": "F94.2",
+    "name": "Bindungsstörung des Kindesalters mit Enthemmung",
+    "kategorie": "F94",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.2,
+    "praevalenz_modifikatoren": {
+      "weiblich": 1.0,
+      "maennlich": 1.0,
+      "alter_peak": "Kleinkind bis 8 Jahre"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Diffuse, nicht selektiv ausgerichtete Bindung als persistentes Merkmal in den ersten 5 Lebensjahren (muss nicht bis ins Grundschulalter persistieren)",
+        "Relatives Versagen, selektive soziale Bindungen zu zeigen: abnorme Tendenz, Trost von Fremden zu suchen; abnormer Mangel an Selektivität bezüglich Bezugspersonen",
+        "Schlecht modulierte Interaktionen mit unbekannten Personen",
+        "Mindestens eines der folgenden: klammerndes Verhalten im Säuglingsalter; aufmerksamkeitsheischendes und unterschiedslos freundliches Verhalten in Kindheit"
+      ],
+      "optionale_symptome": [
+        "Affektlose Psychopathie",
+        "Institutionssyndrom (nach langer Heimunterbringung)",
+        "Desorganisiertes Attachment-Muster",
+        "Kann trotz verbesserten Umfelds persistieren"
+      ]
+    },
+    "differentialdiagnose": ["F94.1 Reaktive Bindungsstörung", "F90.0 ADHS (Überaktivität)", "F84.0 Autismus"],
+    "komorbiditaeten": ["F90.0 ADHS", "F93 Emotionale Störungen", "F91 Störung des Sozialverhaltens"]
+  },
+  {
+    "code": "F95.2",
+    "name": "Tourette-Syndrom (kombinierte vokale und multiple motorische Tic-Störung)",
+    "kategorie": "F95",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.5,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.3,
+      "maennlich": 1.8,
+      "alter_peak": "5-15 Jahre"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Multiple motorische Tics und mindestens ein vokaler Tic traten irgendwann im Verlauf der Störung auf (nicht notwendigerweise gleichzeitig)",
+        "Tics treten viele Male am Tag auf, nahezu täglich oder intermittierend über mehr als ein Jahr, ohne ticfreie Perioden von mehr als 2 aufeinanderfolgenden Monaten",
+        "Beginn vor dem 18. Lebensjahr",
+        "Nicht bedingt durch Erkrankungen (z.B. Huntington) oder psychoaktive Substanzen"
+      ],
+      "optionale_symptome": [
+        "Koprolalie (obszöne Ausrufe) in einem Teil der Fälle",
+        "Echolalie und Echopraxie",
+        "Tics sind unwillkürlich, rapid, rekurrent, nicht-rhythmisch",
+        "Vorausgehende prämotorische Vorahnungsgefühle (Urge-Phänomen)",
+        "Fluktuierende Ausprägung"
+      ]
+    },
+    "differentialdiagnose": ["F95.0 Vorübergehende Tic-Störung", "F95.1 Chronische motorische Tic-Störung", "F20 Schizophrenie (Stereotypien)", "F84.0 Autismus (Stereotypien)", "neurologische Erkrankungen"],
+    "komorbiditaeten": ["F90.0 ADHS (sehr häufig)", "F42 Zwangsstörung", "F93 Angststörungen", "F81 Schulische Fertigkeitsstörungen"]
+  },
+  {
+    "code": "F98.0",
+    "name": "Nicht-organische Enuresis",
+    "kategorie": "F98",
+    "seltenheit_score": 3,
+    "praevalenz_allgemein_prozent": 5.0,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.6,
+      "maennlich": 1.5,
+      "alter_peak": "5-10 Jahre"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Unwillkürliches oder beabsichtigtes Einnässen (tagsüber oder nachts), abnorm für das Entwicklungsalter des Kindes",
+        "Kein Hinweis auf körperliche Ursache",
+        "Kind ist mindestens 5 Jahre alt (chronologisch oder mental)",
+        "Mindestens zweimal pro Monat bei unter 7-Jährigen, mindestens einmal pro Monat bei Älteren",
+        "Mindestens 3 Monate andauernd"
+      ],
+      "optionale_symptome": [
+        "Primäre Enuresis: Kontinenz nie vollständig erreicht",
+        "Sekundäre Enuresis: nach mind. 1 Jahr Trockenheit",
+        "Enuresis nocturna (nächtlich) oder diurna (tagsüber) oder kombiniert",
+        "Psychogene Ursache ohne organischen Befund"
+      ]
+    },
+    "differentialdiagnose": ["Harnwegsinfektion", "Diabetes insipidus/mellitus", "Spina bifida", "organische Enuresis (N39.4)"],
+    "komorbiditaeten": ["F93 Emotionale Störungen", "F91 Störung des Sozialverhaltens", "F90.0 ADHS", "F98.1 Enkopresis"]
+  },
+  {
+    "code": "F98.1",
+    "name": "Nicht-organische Enkopresis",
+    "kategorie": "F98",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 1.5,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.4,
+      "maennlich": 1.7,
+      "alter_peak": "5-10 Jahre"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Wiederholtes willkürliches oder unwillkürliches Absetzen von Fäzes an unangemessenen Stellen (Kleidung, Boden), nicht durch körperliche Ursache bedingt",
+        "Kind ist mindestens 4 Jahre alt (chronologisch oder mental)",
+        "Mindestens einmal pro Monat",
+        "Mindestens 6 Monate andauernd"
+      ],
+      "optionale_symptome": [
+        "Primäre Enkopresis: Stuhlkontinenz nie vollständig erreicht",
+        "Sekundäre Enkopresis: nach mind. 1 Jahr Kontrolle",
+        "Häufig mit Obstipation und Überlauf-Enkopresis",
+        "Psychogene Kausalität"
+      ]
+    },
+    "differentialdiagnose": ["organische Enkopresis (gastrointestinale Erkrankungen)", "F91 Störung des Sozialverhaltens (aggressiv)", "F93 Emotionale Störungen"],
+    "komorbiditaeten": ["F98.0 Enuresis", "F93 Emotionale Störungen", "F91 Störung des Sozialverhaltens", "F90.0 ADHS"]
   }
 ]
