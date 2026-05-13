@@ -8,8 +8,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>PsychoDex</title>
   <link rel="stylesheet" href="styles/main.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+  <!-- Google Fonts non-blocking: preconnect + media trick so fonts never delay render -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cinzel:wght@400;600&display=swap"
+        onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cinzel:wght@400;600&display=swap"></noscript>
 </head>
 <body>
 <div id="app">
@@ -265,7 +268,7 @@
 
 </div><!-- /#app -->
 
-<script src="https://unpkg.com/dexie@4/dist/dexie.umd.js"></script>
+<script src="src/vendor/dexie.js"></script>
 <script type="module" src="src/app.js"></script>
 </body>
 </html>

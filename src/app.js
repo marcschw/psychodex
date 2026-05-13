@@ -18,9 +18,18 @@ const state = {
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
+  const showError = msg => {
+    document.getElementById('loading-screen').innerHTML =
+      `<div class="load-error">${msg}<br><button onclick="location.reload()" style="margin-top:16px;padding:10px 24px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;">Neu laden</button></div>`;
+  };
+
+  const timeout = setTimeout(() => showError('Laden dauert zu lange – mögliche Ursache: IndexedDB blockiert oder Netzwerkfehler.'), 12000);
+
   try {
+    if (typeof Dexie === 'undefined') throw new Error('Dexie nicht geladen – bitte neu laden.');
     await Promise.all([loadAllICD(state), loadICDIndex()]);
     await loadFromDB();
+    clearTimeout(timeout);
     renderApp();
     setupNav();
     setupShiftListeners();
@@ -32,10 +41,10 @@ async function init() {
     setTimeout(() => {
       document.getElementById('loading-screen').style.display = 'none';
       document.getElementById('main-content').classList.remove('hidden');
-    }, 600);
+    }, 500);
   } catch (err) {
-    document.getElementById('loading-screen').innerHTML =
-      `<div class="load-error">Ladefehler: ${err.message}<br>Bitte Seite neu laden.</div>`;
+    clearTimeout(timeout);
+    showError(`Fehler: ${err.message}`);
   }
 }
 
