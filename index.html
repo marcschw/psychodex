@@ -135,7 +135,10 @@
 
       <!-- ── PsychoDex ──────────────────────────────────────────────────── -->
       <section id="tab-dex" class="tab-view">
-        <div class="view-title">PsychoDex</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div class="view-title" style="margin-bottom:0">PsychoDex</div>
+          <button id="btn-standalone-catch" class="btn-search-diag" style="width:auto;padding:8px 14px">🔬 Diagnose fangen</button>
+        </div>
         <div class="dex-progress-bar">
           <span id="dex-caught-count">0</span> / <span id="dex-total-count">0</span> Diagnosen gefangen
           <div class="dex-progress-track">

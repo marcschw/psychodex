@@ -509,6 +509,8 @@ img{max-width:100%;display:block}
   background:rgba(16,185,129,.06);
   border-color:rgba(16,185,129,.2);
 }
+.diag-list-item:not(.is-caught){cursor:pointer}
+.diag-list-item:not(.is-caught):hover{background:var(--bg-hover);border-color:var(--border-glow)}
 .diag-list-left{display:flex;align-items:flex-start;gap:10px}
 .diag-list-code{
   font-family:monospace;font-size:12px;font-weight:700;

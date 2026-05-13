@@ -146,9 +146,19 @@ function renderDashboard() {
             <div class="recent-name">${c.name}</div>
             <div class="recent-meta">+${c.xpEarned} XP · ${fmtDate(c.caughtAt)}</div>
           </div>
-          <div class="catch-badge">✓</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="catch-badge">✓</div>
+            <button class="btn-icon btn-delete-catch" data-id="${c.id}" title="Löschen">🗑</button>
+          </div>
         </div>`).join('')
     : '<div class="empty-state">Noch keine Diagnosen – starte deinen ersten Dienst!</div>';
+
+  catchEl.querySelectorAll('.btn-delete-catch').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      deleteCatch(parseInt(btn.dataset.id));
+    });
+  });
 
   const shiftEl = document.getElementById('recent-shifts');
   shiftEl.innerHTML = state.shifts.length
@@ -343,10 +353,11 @@ function setupDiagnosisModalListeners() {
   document.getElementById('diag-search-input').addEventListener('input', onSearch);
   document.getElementById('btn-catch-diagnosis').addEventListener('click', catchDiagnosis);
   document.getElementById('komorbid-checkbox').addEventListener('change', updateXPPreview);
+  document.getElementById('btn-standalone-catch').addEventListener('click', () => openStandaloneCatch());
 }
 
 function openDiagnosisSearch(patientIndex) {
-  state.searchContext = { patientIndex, selectedDiagnosis: null };
+  state.searchContext = { patientIndex, selectedDiagnosis: null, standalone: false };
   const patient = state.activeShift?.patients[patientIndex];
   const autoKomorbid = patient && patient.diagnoses.length >= 1;
   document.getElementById('diag-search-input').value = '';
@@ -357,9 +368,23 @@ function openDiagnosisSearch(patientIndex) {
   document.getElementById('diag-search-input').focus();
 }
 
+function openStandaloneCatch(prefillDiagnosis = null) {
+  state.searchContext = { patientIndex: null, selectedDiagnosis: null, standalone: true };
+  document.getElementById('diag-search-input').value = '';
+  document.getElementById('diag-search-results').innerHTML = '';
+  document.getElementById('diag-detail').classList.add('hidden');
+  document.getElementById('komorbid-checkbox').checked = false;
+  document.getElementById('diagnosis-modal').classList.remove('hidden');
+  if (prefillDiagnosis) {
+    showDiagnosisDetail(prefillDiagnosis);
+  } else {
+    document.getElementById('diag-search-input').focus();
+  }
+}
+
 function closeDiagnosisModal() {
   document.getElementById('diagnosis-modal').classList.add('hidden');
-  state.searchContext = { patientIndex: null, selectedDiagnosis: null };
+  state.searchContext = { patientIndex: null, selectedDiagnosis: null, standalone: false };
 }
 
 function onSearch(e) {
@@ -443,27 +468,61 @@ function previewXP(diagnosis, hasComorbidity) {
 }
 
 function catchDiagnosis() {
-  const { patientIndex, selectedDiagnosis } = state.searchContext;
-  if (!selectedDiagnosis || patientIndex === null) return;
+  const { patientIndex, selectedDiagnosis, standalone } = state.searchContext;
+  if (!selectedDiagnosis) return;
+  if (!standalone && patientIndex === null) return;
 
   const hasComorbidity = document.getElementById('komorbid-checkbox').checked;
   const caughtCodes    = new Set(state.catches.map(c => c.code));
   const caughtKats     = new Set(state.catches.map(c => c.kategorie));
-  state.activeShift?.patients.forEach(p => p.diagnoses.forEach(d => {
-    caughtCodes.add(d.diagnosis.code);
-    caughtKats.add(d.diagnosis.kategorie);
-  }));
+  if (!standalone) {
+    state.activeShift?.patients.forEach(p => p.diagnoses.forEach(d => {
+      caughtCodes.add(d.diagnosis.code);
+      caughtKats.add(d.diagnosis.kategorie);
+    }));
+  }
 
   const xpResult = calculateCatchXP(selectedDiagnosis, hasComorbidity, caughtCodes, caughtKats);
+
+  if (standalone) {
+    saveStandaloneCatch(selectedDiagnosis, hasComorbidity, xpResult);
+    return;
+  }
+
   state.activeShift.patients[patientIndex].diagnoses.push({
     diagnosis: selectedDiagnosis,
     hasComorbidity,
     xpEarned: xpResult.total
   });
-
   renderPatientDiagnoses(patientIndex, state.activeShift.patients[patientIndex]);
   closeDiagnosisModal();
   showXPPopup(xpResult.total, xpResult.bonuses);
+}
+
+async function saveStandaloneCatch(diagnosis, hasComorbidity, xpResult) {
+  await db.caughtDiagnoses.add({
+    code: diagnosis.code, name: diagnosis.name,
+    kategorie: diagnosis.kategorie, shiftId: null,
+    ageGroup: null, gender: null, patientType: 'standalone',
+    hasComorbidity, xpEarned: xpResult.total,
+    caughtAt: new Date().toISOString()
+  });
+  const oldXP   = state.profile.totalXP ?? 0;
+  const newTotal = oldXP + xpResult.total;
+  await db.profile.update(state.profile.id, { totalXP: newTotal });
+  state.profile.totalXP = newTotal;
+  state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
+
+  closeDiagnosisModal();
+  showXPPopup(xpResult.total, xpResult.bonuses);
+  updateHeader();
+  if (state.currentTab === 'dashboard') renderDashboard();
+  else if (state.currentTab === 'dex') renderPsychoDex();
+
+  const newRank = getRankForXP(newTotal);
+  if (getRankForXP(oldXP).level < newRank.level) {
+    setTimeout(() => showLevelUpModal(newRank), 1800);
+  }
 }
 
 // ─── Finish Shift ─────────────────────────────────────────────────────────────
@@ -611,12 +670,13 @@ function openCategoryModal(catCode) {
   document.getElementById('modal-category-title').textContent =
     catInfo ? `${catInfo.emoji} ${catInfo.label} – ${catInfo.name}` : catCode;
 
-  document.getElementById('modal-diagnoses-list').innerHTML = diags.length
+  const listEl = document.getElementById('modal-diagnoses-list');
+  listEl.innerHTML = diags.length
     ? diags.map(d => {
         const caught = caughtCodes.has(d.code);
         const stars  = '★'.repeat(d.seltenheit_score) + '☆'.repeat(10 - d.seltenheit_score);
         return `
-          <div class="diag-list-item ${caught ? 'is-caught' : ''}">
+          <div class="diag-list-item ${caught ? 'is-caught' : ''}" data-code="${d.code}">
             <div class="diag-list-left">
               <span class="diag-list-code">${d.code}</span>
               <div>
@@ -624,10 +684,17 @@ function openCategoryModal(catCode) {
                 <div class="diag-list-rarity">${stars}</div>
               </div>
             </div>
-            <div class="diag-list-status">${caught ? '✓' : '○'}</div>
+            <div class="diag-list-status">${caught ? '✓' : '🔬'}</div>
           </div>`;
       }).join('')
     : '<div class="empty-state">Keine Diagnosen für diese Kategorie.</div>';
+
+  listEl.querySelectorAll('.diag-list-item:not(.is-caught)').forEach(item => {
+    item.addEventListener('click', () => {
+      const diag = state.icdFlat.find(d => d.code === item.dataset.code);
+      if (diag) { closeCategoryModal(); openStandaloneCatch(diag); }
+    });
+  });
 
   document.getElementById('category-modal').classList.remove('hidden');
 }
@@ -724,6 +791,22 @@ function renderCategoryChart() {
   el.querySelectorAll('.chart-row').forEach(row => {
     row.addEventListener('click', () => openCategoryModal(row.dataset.cat));
   });
+}
+
+// ─── Delete Catch ─────────────────────────────────────────────────────────────
+async function deleteCatch(catchId) {
+  const c = state.catches.find(x => x.id === catchId);
+  if (!c) return;
+  if (!confirm(`Diagnose "${c.code} – ${c.name}" wirklich löschen?\n−${c.xpEarned} XP werden abgezogen.`)) return;
+
+  await db.caughtDiagnoses.delete(catchId);
+  const newTotal = Math.max(0, (state.profile.totalXP ?? 0) - c.xpEarned);
+  await db.profile.update(state.profile.id, { totalXP: newTotal });
+  state.profile.totalXP = newTotal;
+  state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
+
+  renderDashboard();
+  updateHeader();
 }
 
 // ─── Edit Shift ───────────────────────────────────────────────────────────────
