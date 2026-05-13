@@ -24,7 +24,16 @@
       "Bash(git commit -m 'fix: remove catch-all rewrite that blocked JSON data fetches *)",
       "PowerShell(Select-String -Path \"C:\\\\Users\\\\marce\\\\OneDrive - Easycatchup\\\\Dokumente\\\\Work-MARCSCHW\\\\2026-05-Psychodex\\\\src\\\\vendor\\\\dexie.js\" -Pattern \"typeof define|module\\\\.exports|window\\\\.Dexie\" | Select-Object -First 3 | ForEach-Object { $_.Line.Substring\\(0, [Math]::Min\\(120, $_.Line.Length\\)\\) })",
       "PowerShell(Select-String -Path \"C:\\\\Users\\\\marce\\\\OneDrive - Easycatchup\\\\Dokumente\\\\Work-MARCSCHW\\\\2026-05-Psychodex\\\\src\\\\vendor\\\\dexie.js\" -Pattern \"global\\\\.\" | Select-Object -First 2 | ForEach-Object { $_.Line.Substring\\(0, [Math]::Min\\(150, $_.Line.Length\\)\\) })",
-      "Bash(git commit -m 'fix: bundle Dexie locally, non-blocking fonts, loading timeout fallback *)"
+      "Bash(git commit -m 'fix: bundle Dexie locally, non-blocking fonts, loading timeout fallback *)",
+      "Bash(node *)",
+      "Bash(python -c \"import PyPDF2; r=PyPDF2.PdfReader\\('ICD10.pdf'\\); print\\(f'Seiten: {len\\(r.pages\\)}'\\); print\\(r.pages[0].extract_text\\(\\)[:3000]\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(pip install *)",
+      "Bash(python update_icd.py)",
+      "Bash(del update_icd.py)",
+      "Bash(*)",
+      "Edit(*)",
+      "Write(*)"
     ]
   }
 }

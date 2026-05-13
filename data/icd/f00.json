@@ -14,20 +14,26 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Fortschreitende Verschlechterung des Gedächtnisses",
-        "Beeinträchtigung anderer kognitiver Funktionen wie Denken, Orientierung, Auffassung, Sprache oder Urteilsvermögen",
-        "Klares Bewusstsein ohne ausgeprägte Bewusstseinstrübung",
-        "Alltagsfunktionen zunehmend eingeschränkt"
+        "G1: Beeinträchtigung des Gedächtnisses – (1) Merkfähigkeitsbeeinträchtigung (neues verbales und nonverbales Lernmaterial, klinisch relevant); (2) Beeinträchtigung des Altgedächtnisses (früher erworbenes Material)",
+        "G2: Keine Bewusstseinsgetrübung (kein Delir; klares Bewusstsein oder nur leichte Bewusstseinsminderung)",
+        "G3: Mind. eine der folgenden: Affektlabilität, Reizbarkeit, Apathie, soziale Vergröberung des Verhaltens",
+        "G4: Kriterien G1 und G3 seit mind. 6 Monaten vorhanden",
+        "Keine ausreichende Evidenz für eine andere Demenzursache: kein Schlaganfall, kein HIV, kein Parkinson, kein Huntington, keine Hypothyreose, kein Vitaminmangel (B12, Folsäure), kein Alkoholmissbrauch als Ursache"
       ],
       "optionale_symptome": [
-        "Affektveränderungen",
-        "Reizbarkeit",
-        "Apathie",
-        "Sozialer Rückzug",
-        "Verhaltensauffälligkeiten"
+        "Aphasie (Wortfindungsstörungen, Paraphasien)",
+        "Agraphie (Schreibstörungen)",
+        "Apraxie (Handlungsplanungsstörungen)",
+        "Alexie (Lesestörungen)",
+        "Akalkulie (Rechenstörungen)",
+        "Agnosie (Erkennungsstörungen)",
+        "Wahnideen (meist Verfolgung, Eifersucht, Verkennung von Personen)",
+        "Halluzinationen (meist visuell)",
+        "Schlaf-Wach-Umkehr",
+        "Katastrophenreaktionen (Angst, Unruhe bei kognitiver Überforderung)"
       ]
     },
-    "differentialdiagnose": "Vaskuläre Demenz (F01), Delir (F05), depressive Pseudodemenz, frontotemporale Demenz.",
+    "differentialdiagnose": "Vaskuläre Demenz F01 (stufenweiser Verlauf, Herdzeichen), Delir F05 (akuter Beginn, Bewusstseinstrübung, reversibel), depressive Pseudodemenz F32 (kognitive Klagen oft schwergewichtiger als objektiver Befund), frontotemporale Demenz F02.0 (frühe Persönlichkeitsänderung, Enthemmung).",
     "komorbiditaeten": [
       "F32 (Depressive Episode)",
       "F05 (Delir)",
@@ -49,23 +55,24 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Beginn meist vor dem 65. Lebensjahr",
-        "Rasche Verschlechterung der kognitiven Fähigkeiten",
-        "Gedächtnisstörung",
-        "Beeinträchtigung von Sprache, Planung und Orientierung"
+        "Alle allgemeinen Alzheimer-Kriterien F00 erfüllt (G1–G4 + Ausschluss anderer Ursachen)",
+        "Erstmanifestation vor dem 65. Lebensjahr (präsenile Form, Typ 2)",
+        "Relativ rasches Auftreten und Fortschreiten der kognitiven Störungen",
+        "Mind. eine der folgenden kortikalen Funktionsstörungen neben G1: Aphasie (nominal oder sensorisch), Agraphie, Alexie, Akalkulie, Apraxie"
       ],
       "optionale_symptome": [
-        "Aphasie",
-        "Apraxie",
-        "Agnosie",
-        "Verhaltensänderungen"
+        "Ausgeprägte Sprachstörungen im Frühstadium",
+        "Parietale Symptome (räumliche Orientierungsstörung, visuokonstruktive Defizite)",
+        "Positive Familienanamnese (genetische Mutationen APP, PSEN1, PSEN2 möglich)",
+        "Depression im Frühstadium",
+        "Myoklonien im Verlauf"
       ]
     },
-    "differentialdiagnose": "Frontotemporale Demenz, vaskuläre Demenz, depressive Störung.",
+    "differentialdiagnose": "Frontotemporale Demenz G31.0/F02.0 (Verhaltensbetonung statt Gedächtnis), vaskuläre Demenz F01 (Herdzeichen, Schlaganfall-Anamnese), depressive Pseudodemenz, genetische Demenzsyndrome.",
     "komorbiditaeten": [
-      "F32",
-      "F02",
-      "G30.0"
+      "F32 (Depressive Episode)",
+      "F02 (Demenz anderer Ursachen)",
+      "G30.0 (Alzheimer-Krankheit mit frühem Beginn)"
     ]
   },
   {
@@ -83,23 +90,24 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Beginn nach dem 65. Lebensjahr",
-        "Schleichender Beginn",
-        "Fortschreitender Gedächtnisverlust",
-        "Beeinträchtigung kognitiver Leistungen"
+        "Alle allgemeinen Alzheimer-Kriterien F00 erfüllt (G1–G4 + Ausschluss anderer Ursachen)",
+        "Erstmanifestation ab dem 65. Lebensjahr (senile Form, Typ 1)",
+        "Sehr langsames, schleichendes Auftreten mit langsamem Fortschreiten",
+        "Gedächtnisbeeinträchtigung überwiegt gegenüber intellektueller Beeinträchtigung im Frühstadium"
       ],
       "optionale_symptome": [
-        "Persönlichkeitsveränderung",
-        "Affektlabilität",
-        "Desorientierung",
-        "Wahnideen"
+        "Häufige Alltagsfehler als Frühzeichen (vergessene Termine, verlegte Gegenstände)",
+        "Desorientierung (zuerst zeitlich, dann örtlich, schließlich zur Person)",
+        "Persönlichkeitsveränderung (Apathie, Rückzug, Reizbarkeit)",
+        "Wahnideen (Diebstahl, Eifersucht, Verkennung von Angehörigen)",
+        "Agitation und Unruhe (besonders abends: Sundowning)"
       ]
     },
-    "differentialdiagnose": "Normale Altersvergesslichkeit, vaskuläre Demenz, Delir.",
+    "differentialdiagnose": "Normale Altersvergesslichkeit (kein Alltagsdefizit, keine Progredienz), vaskuläre Demenz F01 (Herdzeichen, Stufenverlauf), Delir F05 (akut, reversibel), Lewy-Body-Demenz (Fluktuationen, Halluzinationen, Parkinsonismus).",
     "komorbiditaeten": [
-      "F32",
-      "F05",
-      "G30.1"
+      "F32 (Depressive Episode)",
+      "F05 (Delir)",
+      "G30.1 (Alzheimer-Krankheit mit spätem Beginn)"
     ]
   },
   {
@@ -117,22 +125,22 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Demenzsyndrom mit atypischen Merkmalen",
-        "Kombination degenerativer und vaskulärer Merkmale möglich",
-        "Kognitive Defizite",
-        "Fortschreitender Verlauf"
+        "Alle allgemeinen Alzheimer-Kriterien F00 erfüllt (G1–G4)",
+        "Klinisches Bild passt nicht eindeutig zu F00.0 oder F00.1 ODER Kombination degenerativer und vaskulärer Merkmale liegt vor",
+        "Kognitive Defizite mit atypischer Präsentation oder Verlauf"
       ],
       "optionale_symptome": [
-        "Fokale neurologische Symptome",
-        "Frühe Verhaltensauffälligkeiten",
-        "Psychotische Symptome"
+        "Fokale neurologische Symptome zusätzlich zum Demenzsyndrom",
+        "Frühe Verhaltensauffälligkeiten (atypisch für Alzheimer)",
+        "Psychotische Symptome",
+        "Zerebrovaskuläre Befunde (Mischform mit vaskulärer Komponente)"
       ]
     },
-    "differentialdiagnose": "Lewy-Body-Demenz, vaskuläre Demenz, frontotemporale Demenz.",
+    "differentialdiagnose": "Lewy-Body-Demenz (Fluktuationen, Halluzinationen, Parkinsonismus, REM-Schlafstörung), frontotemporale Demenz F02.0, gemischte Alzheimer-/vaskuläre Demenz F00.2.",
     "komorbiditaeten": [
-      "F01",
-      "F02",
-      "G30.8"
+      "F01 (Vaskuläre Demenz)",
+      "F02 (Demenz andere Ursachen)",
+      "G30.8 (Sonstige Alzheimer-Krankheit)"
     ]
   },
   {
@@ -150,20 +158,21 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Demenzsyndrom mit Alzheimer-typischen Merkmalen",
-        "Gedächtnisstörung",
-        "Beeinträchtigung höherer kortikaler Funktionen"
+        "Alle allgemeinen Alzheimer-Kriterien F00 erfüllt (G1–G4 + Ausschluss anderer Ursachen)",
+        "Zuordnung zu F00.0 oder F00.1 nicht eindeutig möglich",
+        "Gedächtnisstörung und Beeinträchtigung höherer kortikaler Funktionen"
       ],
       "optionale_symptome": [
         "Desorientierung",
         "Sozialer Rückzug",
-        "Apathie"
+        "Apathie",
+        "Alltagsfunktionsbeeinträchtigung"
       ]
     },
     "differentialdiagnose": "Andere organische Demenzen, depressive Pseudodemenz.",
     "komorbiditaeten": [
-      "F32",
-      "F05"
+      "F32 (Depressive Episode)",
+      "F05 (Delir)"
     ]
   },
   {
@@ -181,22 +190,26 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Gedächtnis- und Denkstörungen",
-        "Hinweise auf zerebrovaskuläre Erkrankung",
-        "Ungleichmäßige Verteilung kognitiver Defizite",
-        "Oft stufenweiser Verlauf"
+        "A: Allgemeine Demenzkriterien G1–G4 erfüllt: Gedächtnis- und kognitive Beeinträchtigung (beide Modalitäten), kein Delir, emotionale/Verhaltensänderung, mind. 6 Monate",
+        "B: Ungleichmäßige kognitive Defizite – einige Funktionen stärker betroffen, andere relativ erhalten",
+        "C: Objektive Zeichen einer fokalen Hirnschädigung: mind. eines von – (1) Einseitige spastische Schwäche der Gliedmaßen, (2) Einseitig gesteigerte Muskeleigenreflexe, (3) Positiver Babinski-Reflex, (4) Pseudobulbärparalyse",
+        "D: Anamnestische, klinische oder apparative Evidenz einer zerebrovaskulären Erkrankung (Schlaganfall, Hypertonie, Arteriosklerose)"
       ],
       "optionale_symptome": [
-        "Neurologische Herdsymptome",
-        "Affektinkontinenz",
-        "Gangstörungen"
+        "Stufenweiser Verlauf (charakteristisch, aber nicht obligat)",
+        "Affektinkontinenz (Zwangsweinen/-lachen)",
+        "Gangstörungen (kleinschrittiger Gang, Gangunsicherheit)",
+        "Harninkontinenz",
+        "Persönlichkeitsstörung mit Apathie oder Enthemmung",
+        "Depressive Symptome"
       ]
     },
-    "differentialdiagnose": "Alzheimer-Demenz, Delir, Hirntumor.",
+    "differentialdiagnose": "Alzheimer-Demenz F00 (schleichender Verlauf, keine Herdzeichen), Delir F05 (akut, reversibel), Hirntumor (bildgebend), normaldruck-Hydrozephalus (Gangataxie, Inkontinenz, Demenz-Trias).",
     "komorbiditaeten": [
-      "I10 (Hypertonie)",
+      "I10 (Essentielle Hypertonie)",
       "I63 (Hirninfarkt)",
-      "F32"
+      "F32 (Depressive Episode)",
+      "E11 (Diabetes mellitus Typ 2)"
     ]
   },
   {
@@ -214,19 +227,20 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Plötzlicher Beginn",
-        "Zeitlicher Zusammenhang mit Schlaganfall",
-        "Kognitive Verschlechterung"
+        "Alle allgemeinen vaskulären Demenzkriterien F01 erfüllt (A–D)",
+        "Kognitive Verschlechterung tritt innerhalb eines Monats nach einer Folge von Schlaganfällen auf",
+        "Stufenweise Verschlechterung durch sukzessive Schlaganfälle"
       ],
       "optionale_symptome": [
-        "Neurologische Ausfälle",
-        "Emotionale Instabilität"
+        "Schlagartig auftretende neurologische Ausfälle",
+        "Emotionale Instabilität",
+        "Bewusstseinsfluktuationen in der Akutphase"
       ]
     },
-    "differentialdiagnose": "Delir, Alzheimer-Demenz.",
+    "differentialdiagnose": "Delir (akut, vollständig reversibel), Alzheimer-Demenz (schleichender Verlauf), postiktaler Zustand nach Epilepsie.",
     "komorbiditaeten": [
-      "I63",
-      "I69"
+      "I63 (Hirninfarkt)",
+      "I69 (Folgestände nach zerebrovaskulären Krankheiten)"
     ]
   },
   {
@@ -244,19 +258,23 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Mehrere zerebrale Infarkte",
-        "Schrittweise Verschlechterung",
-        "Kognitive Defizite"
+        "Alle allgemeinen vaskulären Demenzkriterien F01 erfüllt (A–D)",
+        "Überwiegend kortikale Beteiligung (Schädigungen im Kortex und subkortikalen Bereichen)",
+        "Langsamer Beginn über 3–6 Monate durch Akkumulation mehrerer kleiner ischämischer Episoden",
+        "Stufenweiser Verlauf mit relativen Stabilisierungsphasen zwischen den Infarkten"
       ],
       "optionale_symptome": [
-        "Neurologische Herdzeichen",
-        "Emotionale Labilität"
+        "Neurologische Herdzeichen (abhängig vom Infarktort)",
+        "Emotionale Labilität",
+        "Depressive Symptome",
+        "Fokale kognitive Defizite (z.B. Aphasie, Apraxie, Neglect)"
       ]
     },
-    "differentialdiagnose": "Alzheimer-Demenz, subkortikale vaskuläre Demenz.",
+    "differentialdiagnose": "Alzheimer-Demenz F00.1 (gleichmäßiger Verlauf), subkortikale vaskuläre Demenz F01.2 (tiefe Weißmatterläsionen, Kortex erhalten).",
     "komorbiditaeten": [
-      "I63",
-      "I67"
+      "I63 (Hirninfarkt, multipel)",
+      "I67 (Sonstige zerebrovaskuläre Erkrankungen)",
+      "I10 (Hypertonie)"
     ]
   },
   {
@@ -274,20 +292,25 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Verlangsamung des Denkens",
-        "Exekutive Dysfunktion",
-        "Subkortikale vaskuläre Läsionen"
+        "Alle allgemeinen vaskulären Demenzkriterien F01 erfüllt (A–D)",
+        "Hypertonie-Anamnese als Risikofaktor vorhanden",
+        "Befunde einer Erkrankung der tiefen weißen Hirnsubstanz (CT/MRT: periventrikuläre Läsionen, Leukoaraiose, lakunäre Infarkte in Basalganglien/Thalamus)",
+        "Kortex und kortikale Funktionen weitgehend erhalten (keine ausgeprägten Aphasien oder Apraxien im Frühstadium)"
       ],
       "optionale_symptome": [
-        "Gangstörungen",
-        "Affektive Symptome",
-        "Harninkontinenz"
+        "Verlangsamung des Denkens und der Informationsverarbeitung",
+        "Exekutive Dysfunktion (Planung, Problemlösung, kognitive Flexibilität)",
+        "Gangstörungen (kleinschrittiger, breitbasiger Gang)",
+        "Affektive Symptome (Apathie, Depression)",
+        "Harninkontinenz",
+        "Dysarthrie"
       ]
     },
-    "differentialdiagnose": "Parkinson-Demenz, Alzheimer-Demenz.",
+    "differentialdiagnose": "Parkinson-Demenz F02.3 (extrapyramidale Symptome führend), Alzheimer-Demenz F00 (Gedächtnis führend, keine Weißmatterläsionen), normaldruck-Hydrozephalus.",
     "komorbiditaeten": [
-      "I67.3",
-      "F32"
+      "I67.3 (Progressive vaskuläre Leukenzephalopathie / Binswanger)",
+      "F32 (Depressive Episode)",
+      "I10 (Hypertonie)"
     ]
   },
   {
@@ -305,20 +328,21 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Kortikale und subkortikale Defizite",
-        "Vaskuläre Hirnläsionen",
-        "Demenzsyndrom"
+        "Alle allgemeinen vaskulären Demenzkriterien F01 erfüllt (A–D)",
+        "Kombination kortikaler und subkortikaler Schäden (bildgebend oder klinisch nachweisbar)",
+        "Demenzsyndrom mit sowohl kortikalen (Aphasie, Apraxie) als auch subkortikalen Merkmalen (Verlangsamung, Exekutivdysfunktion)"
       ],
       "optionale_symptome": [
         "Gangstörung",
-        "Aphasie",
-        "Emotionale Labilität"
+        "Aphasie (kortikale Komponente)",
+        "Emotionale Labilität",
+        "Exekutive Dysfunktion (subkortikale Komponente)"
       ]
     },
-    "differentialdiagnose": "Gemischte Alzheimer-/vaskuläre Demenz.",
+    "differentialdiagnose": "Reine Alzheimer-Demenz, reine kortikale oder subkortikale vaskuläre Demenz, gemischte Alzheimer-/vaskuläre Demenz F00.2.",
     "komorbiditaeten": [
-      "I63",
-      "F32"
+      "I63 (Hirninfarkt)",
+      "F32 (Depressive Episode)"
     ]
   },
   {
@@ -336,17 +360,18 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Vaskulär bedingtes Demenzsyndrom",
-        "Nicht anderweitig klassifizierbar"
+        "Alle allgemeinen vaskulären Demenzkriterien F01 erfüllt (A–D)",
+        "Spezifischer Subtyp (F01.0–F01.3) nicht eindeutig zuordenbar",
+        "Vaskuläre Hirnschäden als Ursache gesichert"
       ],
       "optionale_symptome": [
-        "Neurologische Symptome",
-        "Kognitive Defizite"
+        "Neurologische Herdsymptome",
+        "Kognitive Defizite variablen Profils"
       ]
     },
-    "differentialdiagnose": "Andere organische Demenzen.",
+    "differentialdiagnose": "Andere organische Demenzen, Alzheimer-Demenz.",
     "komorbiditaeten": [
-      "I67"
+      "I67 (Sonstige zerebrovaskuläre Erkrankungen)"
     ]
   },
   {
@@ -364,18 +389,20 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Demenzsyndrom vaskulärer Ursache",
-        "Kognitive Verschlechterung"
+        "Allgemeine vaskuläre Demenzkriterien F01 erfüllt",
+        "Kognitive Verschlechterung vaskulärer Ursache",
+        "Subtypisierung nicht möglich oder nicht dokumentiert"
       ],
       "optionale_symptome": [
         "Neurologische Herdzeichen",
-        "Affektive Symptome"
+        "Affektive Symptome",
+        "Gangstörung"
       ]
     },
-    "differentialdiagnose": "Alzheimer-Demenz, Delir.",
+    "differentialdiagnose": "Alzheimer-Demenz F00, Delir F05.",
     "komorbiditaeten": [
-      "I10",
-      "F32"
+      "I10 (Hypertonie)",
+      "F32 (Depressive Episode)"
     ]
   },
   {
@@ -393,19 +420,21 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Demenzsyndrom",
-        "Nachweis einer anderen Grunderkrankung als Ursache"
+        "Allgemeine Demenzkriterien G1–G4 erfüllt: Gedächtnis- und kognitive Beeinträchtigung, kein Delir, emotionale/Verhaltensänderung, mind. 6 Monate",
+        "Nachweis einer spezifischen Grunderkrankung (Pick, CJD, Huntington, Parkinson, HIV oder andere), die als Ursache gilt",
+        "Zeitlicher und ätiologischer Zusammenhang zwischen Grunderkrankung und Demenz nachvollziehbar"
       ],
       "optionale_symptome": [
-        "Neurologische Symptome",
-        "Verhaltensauffälligkeiten"
+        "Erkrankungsspezifische neurologische Symptome",
+        "Verhaltensauffälligkeiten je nach Grunderkrankung",
+        "Rasch oder langsam progredient je nach Ätiopathogenese"
       ]
     },
-    "differentialdiagnose": "Alzheimer-Demenz, vaskuläre Demenz.",
+    "differentialdiagnose": "Alzheimer-Demenz F00, vaskuläre Demenz F01, primäre psychiatrische Erkrankungen.",
     "komorbiditaeten": [
-      "G20",
-      "G10",
-      "B20"
+      "G20 (Parkinson)",
+      "G10 (Huntington)",
+      "B20 (HIV)"
     ]
   },
   {
@@ -423,18 +452,21 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Frühe Persönlichkeitsveränderung",
-        "Enthemmung oder Apathie",
-        "Frontotemporale kognitive Defizite"
+        "Progrediente Demenz (allgemeine Demenzkriterien G1–G4 erfüllt)",
+        "Vorherrschen von Frontallappensymptomen mit mind. 2 der folgenden: (1) emotionale Abstumpfung (Affektverflachung, Verlust von Empathie), (2) soziale Vergröberung (Taktlosigkeit, Unhöflichkeit, Enthemmung), (3) Enthemmung (impulsives Handeln, sexuelle Enthemmung), (4) Apathie oder motorische Rastlosigkeit, (5) Aphasie (Sprachverarmung, Echolalie, Stereotypien)",
+        "Im Frühstadium relativ erhaltene Gedächtnisfunktionen und Parietallappenfunktionen (im Gegensatz zu Alzheimer)"
       ],
       "optionale_symptome": [
-        "Sprachstörungen",
-        "Sozial unangemessenes Verhalten"
+        "Frühe Persönlichkeitsveränderung als Leitsymptom (oft bevor Gedächtnisdefizite auffallen)",
+        "Kluver-Bucy-ähnliche Symptome (Hyperoralität, Hypermetamorphose)",
+        "Sprachstörungen im Verlauf (progressive Aphasie, semantische Demenz)",
+        "Bewegungsstörungen im fortgeschrittenen Stadium",
+        "CT/MRT: frontotemporale Atrophie"
       ]
     },
-    "differentialdiagnose": "Alzheimer-Demenz, bipolare Störung.",
+    "differentialdiagnose": "Alzheimer-Demenz F00 (Gedächtnisbetonung, parietale Symptome früher), Schizophrenie F20 (Halluzinationen, formale Denkstörung), bipolare Störung F31 (episodisch, keine kognitive Progredienz).",
     "komorbiditaeten": [
-      "G31.0"
+      "G31.0 (Pick-Krankheit)"
     ]
   },
   {
@@ -452,18 +484,22 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Rasch progrediente Demenz",
-        "Neurologische Auffälligkeiten",
-        "Myoklonien oder Ataxie"
+        "Sehr rasch progrediente Demenz mit Zerfall aller höheren kortikalen Funktionen (allgemeine Demenzkriterien G1–G4 erfüllt)",
+        "Mind. eine der folgenden neurologischen Störungen: Pyramidale Symptome, extrapyramidale Symptome (Rigor, Tremor), zerebelläre Symptome (Ataxie), Aphasie oder visuelle Störungen (kortikale Blindheit)",
+        "Myoklonien (unwillkürliche Muskelzuckungen, oft durch akustische oder taktile Reize ausgelöst)",
+        "Sehr rasches Fortschreiten bis zum Tod oder akinetischem Mutismus (Monate, selten >1 Jahr)"
       ],
       "optionale_symptome": [
-        "Visuelle Symptome",
-        "Akinetischer Mutismus"
+        "Typisches EEG (periodische triphasische Komplexe, insbesondere im Frühstadium)",
+        "Erhöhtes 14-3-3-Protein im Liquor",
+        "MRT-Veränderungen (DWI/FLAIR: kortikale und basalgangliäre Signalveränderungen)",
+        "Akinetischer Mutismus im Endstadium",
+        "Psychiatrische Frühsymptome (Angst, Depression, Halluzinationen)"
       ]
     },
-    "differentialdiagnose": "Enzephalitis, Alzheimer-Demenz.",
+    "differentialdiagnose": "Virale/autoimmune Enzephalitis (reversibel, antikörpergesteuert), vaskuläre Demenz F01 (langsamerer Verlauf), Alzheimer-Demenz F00 (keine Myoklonien, langsamer), Epilepsie (fokale Anfälle).",
     "komorbiditaeten": [
-      "A81.0"
+      "A81.0 (Creutzfeldt-Jakob-Krankheit)"
     ]
   },
   {
@@ -481,19 +517,24 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Demenzsyndrom",
-        "Choreatische Bewegungsstörungen",
-        "Familiäre Belastung"
+        "Choreatische Bewegungsstörungen: unwillkürliche, arrhythmische, rasche Bewegungen des Gesichts, der Hände, der Schultern und im Gangbild",
+        "Subkortikale Demenz (Verlangsamung, Exekutivdysfunktion, Gedächtnisabrufdefizit bei erhaltener Enkodierung – im Gegensatz zu Alzheimer)",
+        "Positive Familienanamnese im Sinne eines autosomal-dominanten Erbgangs (Elternteil betroffen)",
+        "Keine andere ausreichende Erklärung für Chorea und Demenz"
       ],
       "optionale_symptome": [
-        "Depression",
-        "Impulsivität"
+        "Psychiatrische Frühsymptome (Depression, Reizbarkeit, Impulsivität, Psychosen) oft vor motorischen Symptomen",
+        "Dysarthrie und Dysphagie im Verlauf",
+        "Genetischer Nachweis: CAG-Repeat-Expansion im HTT-Gen (>36 Wiederholungen diagnostisch)",
+        "Gangstörungen, Stürze",
+        "Gewichtsverlust"
       ]
     },
-    "differentialdiagnose": "Morbus Parkinson, Schizophrenie.",
+    "differentialdiagnose": "Morbus Parkinson G20 (Rigor/Tremor statt Chorea, kein autosomal-dominantes Muster), Schizophrenie F20 (keine Chorea, keine kognitive Progredienz), benigne hereditäre Chorea (kein Demenz), tardive Dyskinesien (medikamentös induziert).",
     "komorbiditaeten": [
-      "G10",
-      "F32"
+      "G10 (Huntington-Krankheit)",
+      "F32 (Depressive Episode)",
+      "F20 (Schizophrenie, wenn psychiatrische Symptome führend)"
     ]
   },
   {
@@ -511,19 +552,23 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Parkinson-Symptomatik",
-        "Demenzentwicklung",
-        "Verlangsamung des Denkens"
+        "Diagnostizierter Morbus Parkinson (G20): mindestens 2 der Kardinalmerkmale Tremor, Rigor, Bradykinese, posturale Instabilität vorliegend",
+        "Allgemeine Demenzkriterien G1–G4 erfüllt: Gedächtnis- und kognitive Beeinträchtigung (beide Modalitäten), kein Delir, emotionale/Verhaltensänderung, mind. 6 Monate",
+        "Kognitive Symptome traten nach oder im Verlauf der motorischen Parkinson-Symptomatik auf (bei Beginn nach >1 Jahr: Parkinson-Demenz; bei Beginn innerhalb 1 Jahr: eher Lewy-Body-Demenz)"
       ],
       "optionale_symptome": [
-        "Halluzinationen",
-        "Affektive Symptome"
+        "Halluzinationen (besonders visuell, oft medikamentös mitverursacht durch Dopaminagonisten)",
+        "Affektive Symptome (Depression, Apathie)",
+        "Verlangsamung des Denkens (Bradyphrenie)",
+        "Exekutive Dysfunktion (subkortikales Muster)",
+        "Fluktuierende Kognition"
       ]
     },
-    "differentialdiagnose": "Lewy-Body-Demenz, Alzheimer-Demenz.",
+    "differentialdiagnose": "Lewy-Body-Demenz DLB (motorische und kognitive Symptome gleichzeitig oder kognitive zuerst), Alzheimer-Demenz F00 (Gedächtnisbetonung, kein Parkinsonismus), PSP/MSA (atypische Parkinson-Syndrome).",
     "komorbiditaeten": [
-      "G20",
-      "F32"
+      "G20 (Morbus Parkinson)",
+      "F32 (Depressive Episode)",
+      "F06.0 (Organische Halluzinose)"
     ]
   },
   {
@@ -541,19 +586,23 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Kognitive Verlangsamung",
-        "Gedächtnisstörung",
-        "Nachweis einer HIV-Erkrankung"
+        "Laborbestätigte HIV-Infektion (B20)",
+        "Allgemeine Demenzkriterien G1–G4 erfüllt: Gedächtnis- und kognitive Beeinträchtigung, kein Delir, emotionale/Verhaltensänderung, mind. 6 Monate",
+        "Keine andere ausreichende Erklärung: kein ZNS-Tumor, keine opportunistische ZNS-Infektion (Toxoplasmose, Kryptokokken-Meningitis, CMV-Enzephalitis, PML), keine ZNS-Tuberkulose"
       ],
       "optionale_symptome": [
-        "Motorische Auffälligkeiten",
-        "Apathie"
+        "Kognitive Verlangsamung (häufig erstes Symptom)",
+        "Motorische Auffälligkeiten (Gangstörung, feinmotorische Defizite)",
+        "Apathie und sozialer Rückzug",
+        "Gedächtnisstörungen (subkortikales Muster: Abrufdefizit bei erhaltener Enkodierung)",
+        "Verhaltensänderungen"
       ]
     },
-    "differentialdiagnose": "Depression bei HIV, Delir.",
+    "differentialdiagnose": "Opportunistische ZNS-Infektion bei HIV (akuter/subakuter Verlauf, Fieber, Meningismus), Depression bei HIV F32 (kognitive Klagen ohne objektiven Befund), Alzheimer-Demenz F00 (ohne HIV-Infektion).",
     "komorbiditaeten": [
-      "B20",
-      "F32"
+      "B20 (HIV-Krankheit)",
+      "F32 (Depressive Episode)",
+      "F06.3 (Organische affektive Störung)"
     ]
   },
   {
@@ -571,17 +620,19 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Demenzsyndrom",
-        "Nachweis einer anderen zugrunde liegenden Erkrankung"
+        "Allgemeine Demenzkriterien G1–G4 erfüllt",
+        "Nachweis einer spezifischen Grunderkrankung, die nicht unter F02.0–F02.4 fällt (z.B. Epilepsie-Demenz, Hypothyreose, Neurolues, Wernicke-Korsakow-Komplikation, Normaldruckhydrozephalus, Hirntumorfolgen, Autoimmunenzephalitis-Folgen)",
+        "Zeitlicher und ätiologischer Zusammenhang zwischen Grunderkrankung und Demenz plausibel"
       ],
       "optionale_symptome": [
-        "Neurologische Auffälligkeiten",
-        "Verhaltensänderungen"
+        "Grunderkrankungsspezifische neurologische Symptome",
+        "Potenziell reversible Demenz bei behandelbarer Ursache (Hypothyreose, Vitaminmangel, Hydrozephalus)",
+        "Verhaltensauffälligkeiten"
       ]
     },
-    "differentialdiagnose": "Andere organische Demenzen.",
+    "differentialdiagnose": "Alzheimer-Demenz F00, vaskuläre Demenz F01, andere spezifische Demenzen (F02.0–F02.4).",
     "komorbiditaeten": [
-      "Neurologische Erkrankungen"
+      "Spezifische Grunderkrankung (je nach Ursache)"
     ]
   },
   {
@@ -599,19 +650,20 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Demenzsyndrom",
-        "Gedächtnisstörung",
-        "Beeinträchtigung höherer kortikaler Funktionen"
+        "Allgemeine Demenzkriterien G1–G4 erfüllt: (G1) Beeinträchtigung des Gedächtnisses (verbal und nonverbal), (G2) klares Bewusstsein, (G3) mind. eine emotionale/Verhaltensänderung, (G4) Symptome seit mind. 6 Monaten",
+        "Diagnosestellung nicht möglich, da: (a) Informationen für spezifische Diagnose unzureichend, ODER (b) Klinisches Bild passt keiner spezifischen Kategorie eindeutig, ODER (c) Zusatzdiagnostik nicht verfügbar/nicht durchgeführt"
       ],
       "optionale_symptome": [
-        "Desorientierung",
-        "Verhaltensauffälligkeiten"
+        "Desorientierung (zeitlich, örtlich, zur Person)",
+        "Verhaltensauffälligkeiten",
+        "Alltagsfunktionsbeeinträchtigung",
+        "Affektive Symptome"
       ]
     },
-    "differentialdiagnose": "Alzheimer-Demenz, Delir, Depression.",
+    "differentialdiagnose": "Alzheimer-Demenz F00, vaskuläre Demenz F01, Demenz bei anderen Erkrankungen F02, Delir F05, depressive Pseudodemenz F32.",
     "komorbiditaeten": [
-      "F32",
-      "F05"
+      "F32 (Depressive Episode)",
+      "F05 (Delir)"
     ]
   },
   {
@@ -629,21 +681,25 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Beeinträchtigung des Kurzzeitgedächtnisses",
-        "Anterograde Amnesie",
-        "Retrograde Amnesie",
-        "Keine ausgeprägte Bewusstseinsstörung"
+        "A: Gedächtnisbeeinträchtigung: (1) Beeinträchtigung des Neugedächtnisses (anterograde Amnesie – unfähig, nach wenigen Minuten zu erinnern); (2) Beeinträchtigung des Altgedächtnisses (retrograde Amnesie – früher erworbenes Material je nach Zeitgradient)",
+        "B: KEIN Defizit des Immediatgedächtnisses (Gedächtnisspanne für Ziffernfolge/unmittelbares Behalten erhalten)",
+        "C: KEINE Bewusstseinsgetrübung und KEIN Aufmerksamkeitsdefizit (kein Delir)",
+        "D: KEIN globaler intellektueller Abbau (kein Demenzsyndrom – Denken, Urteilen, Sprache weitgehend erhalten)",
+        "E: Objektiver Nachweis einer Hirnschädigung oder Erkrankung (dienzephal: Mammillarkörper, Thalamus; medialtemporal: Hippocampus, Fornix) durch Anamnese, körperliche Befunde oder Labor/Bildgebung"
       ],
       "optionale_symptome": [
-        "Konfabulationen",
-        "Apathie",
-        "Eingeschränkte Krankheitseinsicht"
+        "Konfabulationen (unbewusste Erfindung von Erinnerungen zur Lückenfüllung, besonders in der Akutphase)",
+        "Apathie oder emotionale Verflachung",
+        "Eingeschränkte Krankheitseinsicht (Anosognosie für das Gedächtnisdefizit)",
+        "Zeitliche Desorientierung (trotz erhaltenem Intellekt und Bewusstsein)"
       ]
     },
-    "differentialdiagnose": "Korsakow-Syndrom, Demenz, dissoziative Amnesie.",
+    "differentialdiagnose": "Korsakow-Syndrom F10.6 (alkoholbedingt, ähnliches Bild aber durch Thiaminmangel bei Alkoholismus), Demenz F00–F03 (globale kognitive Beeinträchtigung, nicht nur Gedächtnis), dissoziative Amnesie F44.0 (psychogen, kein organischer Befund, oft dramatischer Beginn), transiente globale Amnesie (TGA, vollständig reversibel innerhalb Stunden).",
     "komorbiditaeten": [
-      "F07",
-      "Neurologische Erkrankungen"
+      "F07 (Organische Persönlichkeitsstörung als Begleitbefund)",
+      "Herpes-simplex-Enzephalitis (häufige Ursache)",
+      "Subarachnoidalblutung",
+      "Thiaminmangel (Wernicke-Enzephalopathie als Vorstufe)"
     ]
   },
   {
@@ -661,23 +717,27 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Bewusstseinstrübung",
-        "Aufmerksamkeitsstörung",
-        "Akuter Beginn und fluktuierender Verlauf",
-        "Kognitive Störungen"
+        "A: Bewusstseinsgetrübung – reduzierte Klarheit der Umgebungswahrnehmung mit verminderter Fähigkeit zur Fokussierung, Aufrechterhalten und Verschieben der Aufmerksamkeit",
+        "B: Kognitive Störung: (1) Beeinträchtigung des Immediatgedächtnisses und Neugedächtnisses bei relativ erhaltenem Altgedächtnis; (2) Desorientierung zu Zeit, Ort oder Person",
+        "C: Mind. eine psychomotorische Störung: rascher Wechsel zwischen Hypo- und Hyperaktivität, verlängerte Reaktionszeit, veränderte Sprechgeschwindigkeit/-menge, verstärkter Schreckreflex",
+        "D: Schlaf-Wach-Störung: Schlaflosigkeit oder vollständige Schlafumkehr, nächtliche Symptomverstärkung, beunruhigende Träume oder Halluzinationen nach dem Aufwachen",
+        "E: Rascher Beginn und Fluktuation der Symptome im Tagesverlauf",
+        "F: Objektiver Nachweis einer organischen Ätiologie (Anamnese, körperliche Untersuchung, Labor, EEG)"
       ],
       "optionale_symptome": [
-        "Halluzinationen",
-        "Psychomotorische Unruhe",
-        "Schlaf-Wach-Störung",
-        "Affektive Symptome"
+        "Halluzinationen (meist visuell, selten auditiv oder taktil)",
+        "Illusionäre Verkennungen",
+        "Wahnideen (fragmentiert, nicht systematisiert, flüchtig)",
+        "Vegetative Dysregulation (Tachykardie, Schwitzen, Fieber, Hypertonie)",
+        "Affektive Symptome (Angst, Reizbarkeit, Euphorie, Apathie)"
       ]
     },
-    "differentialdiagnose": "Demenz, Psychose, Intoxikation.",
+    "differentialdiagnose": "Demenz F00–F03 (chronisch, kein Bewusstseinsgetrübung, kein akuter Beginn – Delir kann bei Demenz aufgepfropft sein: F05.1), akute Psychose F20/F23 (kein Bewusstseinsgetrübung, kein organischer Befund, keine Fluktuation), substanzinduzierter Rauschzustand oder Entzug F10–F19.",
     "komorbiditaeten": [
-      "F00-F03",
-      "Infektionen",
-      "Metabolische Störungen"
+      "F00–F03 (Demenz als Vulnerabilitätsfaktor)",
+      "Infektionen (Pneumonie, Harnwegsinfekt als häufige Auslöser)",
+      "Metabolische Störungen (Elektrolytentgleisungen, Hypoglykämie, Leberversagen)",
+      "Postoperative Zustände"
     ]
   },
   {
@@ -695,18 +755,20 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Akutes Delir",
-        "Keine vorbestehende Demenz"
+        "Alle Delir-Kriterien F05 (A–F) erfüllt",
+        "Kein vorbestehendes Demenzsyndrom (kognitiver Baseline-Status unauffällig)"
       ],
       "optionale_symptome": [
-        "Halluzinationen",
-        "Unruhe"
+        "Halluzinationen (visuell häufig)",
+        "Psychomotorische Unruhe",
+        "Vegetative Dysregulation"
       ]
     },
-    "differentialdiagnose": "Akute Psychose, Demenz.",
+    "differentialdiagnose": "Akute Psychose F20/F23, Demenz F00–F03, Intoxikation oder Entzug F1x.",
     "komorbiditaeten": [
       "Infektionen",
-      "Metabolische Entgleisungen"
+      "Metabolische Entgleisungen",
+      "Postoperative Zustände"
     ]
   },
   {
@@ -724,18 +786,20 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Delir",
-        "Vorliegende Demenz",
-        "Verschlechterung der Aufmerksamkeit"
+        "Alle Delir-Kriterien F05 (A–F) erfüllt",
+        "Vorbestehendes Demenzsyndrom (F00–F03) als Grunderkrankung vorhanden",
+        "Klinisch relevante Verschlechterung der Aufmerksamkeit und Kognition über den demenziellen Baseline-Status hinaus"
       ],
       "optionale_symptome": [
-        "Halluzinationen",
-        "Agitation"
+        "Halluzinationen (häufiger als bei Demenz ohne Delir)",
+        "Ausgeprägte Agitation oder hyperaktive Komponente",
+        "Verstärkte Wahnideen"
       ]
     },
-    "differentialdiagnose": "Reine Demenzprogression, Psychose.",
+    "differentialdiagnose": "Reine Demenzprogression (langsamer, kein Bewusstseinsgetrübung, keine Fluktuation), neue psychotische Episode bei Demenz, akute Exazerbation einer Lewy-Body-Demenz.",
     "komorbiditaeten": [
-      "F00-F03"
+      "F00–F03 (Demenz als Grunderkrankung)",
+      "Infektionen (Harnwegsinfekt, Pneumonie als häufige Auslöser)"
     ]
   },
   {
@@ -753,17 +817,17 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Delirante Symptomatik",
-        "Nicht anderweitig klassifizierbar"
+        "Alle Delir-Kriterien F05 (A–F) erfüllt",
+        "Klinisches Bild entspricht keiner der spezifischen Subkategorien (F05.0, F05.1)"
       ],
       "optionale_symptome": [
-        "Kognitive Störungen",
-        "Psychomotorische Auffälligkeiten"
+        "Gemischte Symptomatik (hypoaktiv und hyperaktiv wechselnd)",
+        "Persistierendes Delir trotz Behandlung der Ursache"
       ]
     },
-    "differentialdiagnose": "Psychose, Demenz.",
+    "differentialdiagnose": "Psychose, Demenz, Intoxikation/Entzug.",
     "komorbiditaeten": [
-      "Organische Erkrankungen"
+      "Organische Erkrankungen verschiedener Art"
     ]
   },
   {
@@ -781,17 +845,18 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Akute Bewusstseins- und Aufmerksamkeitsstörung",
-        "Delirante Symptomatik"
+        "Akute Bewusstseins- und Aufmerksamkeitsstörung mit kognitiver Beeinträchtigung",
+        "Delirante Symptomatik vorliegend, Subtypisierung nicht möglich"
       ],
       "optionale_symptome": [
         "Halluzinationen",
-        "Desorientierung"
+        "Desorientierung",
+        "Vegetative Dysregulation"
       ]
     },
-    "differentialdiagnose": "Demenz, akute Psychose.",
+    "differentialdiagnose": "Demenz F00–F03, akute Psychose F20.",
     "komorbiditaeten": [
-      "F00-F03",
+      "F00–F03 (Demenz)",
       "Internistische Erkrankungen"
     ]
   },
@@ -810,21 +875,22 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Nachweis einer zerebralen oder körperlichen Ursache",
-        "Zeitlicher Zusammenhang zwischen Erkrankung und psychischer Symptomatik",
-        "Psychische Symptome nicht besser durch primäre psychische Störung erklärbar"
+        "G1: Objektiver Nachweis einer zerebralen Erkrankung, Schädigung oder Funktionsstörung ODER einer systemischen körperlichen Erkrankung (KEIN marginaler Befund – z.B. leicht erweiterte Ventrikel allein nicht ausreichend)",
+        "G2: Zeitlicher Zusammenhang (Wochen bis Monate) zwischen dem Beginn der Grunderkrankung und dem Auftreten der psychischen Symptome",
+        "G3: Besserung oder Remission der psychischen Störung nach Behandlung/Behebung der angenommenen Ursache",
+        "G4: Keine ausreichende alternative Erklärung durch eine primäre psychische Erkrankung (z.B. familiäre Belastung, prämorbide Persönlichkeit als alleinige Ursache nicht ausreichend)"
       ],
       "optionale_symptome": [
-        "Kognitive Defizite",
+        "Kognitive Defizite (leicht bis mittelgradig)",
         "Affektive Symptome",
-        "Neurologische Auffälligkeiten"
+        "Neurologische Begleitsymptome"
       ]
     },
-    "differentialdiagnose": "Primäre psychische Erkrankungen, Delir, Demenz.",
+    "differentialdiagnose": "Primäre psychische Erkrankungen ohne organische Ursache (F20–F99), Delir F05, Demenz F00–F03.",
     "komorbiditaeten": [
-      "Neurologische Erkrankungen",
-      "Endokrine Erkrankungen",
-      "F32"
+      "Neurologische Erkrankungen (Epilepsie, Enzephalitis, Hirntumor)",
+      "Endokrine Erkrankungen (Hypo-/Hyperthyreose, Morbus Cushing)",
+      "F32 (Depressive Episode)"
     ]
   },
   {
@@ -842,21 +908,22 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Anhaltende oder wiederkehrende Halluzinationen",
-        "Klares Bewusstsein",
-        "Nachweis organischer Ursache"
+        "Allgemeine F06-Kriterien G1–G4 erfüllt (organische Ursache, zeitlicher Zusammenhang, keine andere Erklärung)",
+        "Persistierende oder wiederkehrende Halluzinationen in jeder Sinnesmodalität (meist visuell oder auditiv, seltener olfaktorisch oder taktil)",
+        "Klares Bewusstsein (kein Delir)"
       ],
       "optionale_symptome": [
-        "Wahnhafte Verarbeitung",
-        "Angst",
-        "Affektive Symptome"
+        "Wahnhafte Verarbeitung der Halluzinationen (Patient entwickelt Überzeugungen über Realität der Wahrnehmungen)",
+        "Angst oder Unruhe als Reaktion auf Halluzinationen",
+        "Affektive Symptome",
+        "Erhaltene Krankheitseinsicht in manchen Fällen"
       ]
     },
-    "differentialdiagnose": "Schizophrenie, Delir, substanzinduzierte Psychose.",
+    "differentialdiagnose": "Schizophrenie F20 (kein organischer Nachweis, Ich-Störungen, formale Denkstörungen), Delir F05 (Bewusstseinstrübung, Fluktuation), substanzinduzierte Psychose F1x.5 (toxikologischer Nachweis, zeitlicher Zusammenhang mit Substanz).",
     "komorbiditaeten": [
-      "Epilepsie",
-      "F32",
-      "Neurologische Erkrankungen"
+      "Epilepsie (besonders Temporallappenepilepsie)",
+      "F32 (Depressive Episode)",
+      "Neuroinfektion, Hirntumor, Migraine avec aura"
     ]
   },
   {
@@ -874,20 +941,21 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Katatoner Stupor oder Erregung",
-        "Mutismus oder Negativismus",
-        "Nachweis organischer Ursache"
+        "Allgemeine F06-Kriterien G1–G4 erfüllt (organische Ursache, zeitlicher Zusammenhang, keine andere Erklärung)",
+        "Katatone Symptome: EINES oder MEHRERE von – (1) katatoner Stupor (deutliche Verringerung von Reaktionsfähigkeit und Bewegung), (2) Negativismus (Widerstand gegen alle Anweisungen oder Versuche, bewegt zu werden), (3) katatone Erregung (ziellose motorische Überaktivität), (4) Alternieren zwischen Stupor und Erregung"
       ],
       "optionale_symptome": [
-        "Haltungsstereotypien",
-        "Echolalie",
-        "Katalepsie"
+        "Haltungsstereotypien (Einnehmen und Beibehalten bizarrer Körperhaltungen)",
+        "Echolalie (automatisches Nachsprechen) oder Echopraxie (automatisches Nachahmen)",
+        "Katalepsie (wächserne Biegsamkeit)",
+        "Mutismus"
       ]
     },
-    "differentialdiagnose": "Katatone Schizophrenie, schwere Depression.",
+    "differentialdiagnose": "Katatone Schizophrenie F20.2 (kein organischer Nachweis), schwere depressive Episode mit psychotischen Merkmalen und psychomotorischer Hemmung F32.3, malignes neuroleptisches Syndrom (Medikamentenanamnese, Fieber, CK-Erhöhung).",
     "komorbiditaeten": [
-      "Enzephalitis",
-      "Epilepsie"
+      "Enzephalitis (Anti-NMDA-Rezeptor-Enzephalitis häufige Ursache)",
+      "Epilepsie",
+      "Metabolische Entgleisungen"
     ]
   },
   {
@@ -905,20 +973,22 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Wahnideen oder schizophreniforme Symptome",
-        "Nachweis einer organischen Ursache",
-        "Klares Bewusstsein"
+        "Allgemeine F06-Kriterien G1–G4 erfüllt (organische Ursache, zeitlicher Zusammenhang, keine andere Erklärung)",
+        "Wahnideen dominieren das klinische Bild (Verfolgungswahn, hypochondrischer Wahn, Körperkrankheitswahn, Eifersuchts- oder Todeswahn)",
+        "Klares Bewusstsein (kein Delir)",
+        "Gedächtnis weitgehend intakt (kein Demenzsyndrom)"
       ],
       "optionale_symptome": [
-        "Halluzinationen",
-        "Affektive Symptome",
-        "Desorganisation"
+        "Halluzinationen (besonders auditiv, schizophreniform)",
+        "Affektive Symptome (Depression oder Angst als Begleitreaktion)",
+        "Formale Denkstörungen (seltener als bei echter Schizophrenie)"
       ]
     },
-    "differentialdiagnose": "Schizophrenie, Delir, substanzinduzierte Psychose.",
+    "differentialdiagnose": "Schizophrenie F20 (kein organischer Befund, typisches schizophrenes Prodrom und Verlauf), wahnhafte Störung F22 (chronisch, kein organischer Nachweis), substanzinduzierte Psychose F1x.5.",
     "komorbiditaeten": [
-      "Epilepsie",
-      "Hirntumoren"
+      "Epilepsie (Temporallappenepilepsie besonders)",
+      "Hirntumoren (Frontallappen, Temporallappen)",
+      "Systemischer Lupus erythematodes"
     ]
   },
   {
@@ -936,19 +1006,20 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Depressive, manische oder bipolare Symptomatik",
-        "Nachweis einer organischen Ursache"
+        "Allgemeine F06-Kriterien G1–G4 erfüllt (organische Ursache, zeitlicher Zusammenhang, keine andere Erklärung)",
+        "Erfüllung der Kriterien für eine affektive Störung: entweder (1) depressive Episode F30–F32, ODER (2) manische Episode F30, ODER (3) bipolare Episode F31"
       ],
       "optionale_symptome": [
-        "Kognitive Einbußen",
-        "Neurologische Symptome",
-        "Affektlabilität"
+        "Kognitive Einbußen (leicht bis mittelgradig, reversibel bei Behandlung der Grunderkrankung)",
+        "Neurologische Symptome der Grunderkrankung",
+        "Affektlabilität (rascher Stimmungswechsel)"
       ]
     },
-    "differentialdiagnose": "Primäre affektive Störungen, Anpassungsstörung.",
+    "differentialdiagnose": "Primäre affektive Störungen F30–F33 (kein organischer Befund als Ursache), Anpassungsstörung F43.2 (reaktiv auf Diagnose der Erkrankung, aber nicht neurobiologisch verursacht).",
     "komorbiditaeten": [
-      "Endokrine Erkrankungen",
-      "Neurologische Erkrankungen"
+      "Endokrine Erkrankungen (Hypothyreose, Cushing, Addison als häufige Ursachen)",
+      "Neurologische Erkrankungen (Schlaganfall, Parkinson, MS)",
+      "Kortikosteroid-Therapie als iatrogene Ursache"
     ]
   },
   {
@@ -966,19 +1037,19 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Gehobene oder gereizte Stimmung",
-        "Gesteigerter Antrieb",
-        "Organische Ursache"
+        "Allgemeine F06-Kriterien G1–G4 erfüllt",
+        "Erfüllung der Kriterien für eine manische Episode F30: gehobene/gereizte Stimmung, gesteigerter Antrieb, mind. 3 weitere Symptome (Größenideen, vermindertes Schlafbedürfnis, Rededrang, Ideenflucht, Ablenkbarkeit, gesteigerte Aktivität, Rücksichtslosigkeit)"
       ],
       "optionale_symptome": [
-        "Größenideen",
-        "Rededrang",
-        "Schlafmangel"
+        "Größenideen oder Grandiosität",
+        "Psychotische Symptome (sekundär zur Manie)",
+        "Schlafmangel ohne subjektive Erschöpfung"
       ]
     },
-    "differentialdiagnose": "Bipolare Störung, substanzinduzierte Manie.",
+    "differentialdiagnose": "Bipolare affektive Störung F31 (ohne organische Ursache), substanzinduzierte Manie (z.B. Steroide, Stimulanzien), Schizophrenie F20.",
     "komorbiditaeten": [
-      "Neurologische Erkrankungen"
+      "Neurologische Erkrankungen (Frontallappenschaden, MS, Syphilis)",
+      "Steroidtherapie (iatrogen)"
     ]
   },
   {
@@ -996,17 +1067,17 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Wechsel zwischen depressiven und manischen Episoden",
-        "Nachweis organischer Ursache"
+        "Allgemeine F06-Kriterien G1–G4 erfüllt",
+        "Wechsel zwischen depressiven und manischen Episoden, der den Kriterien für eine bipolare affektive Störung F31 entspricht"
       ],
       "optionale_symptome": [
-        "Affektive Instabilität",
-        "Kognitive Defizite"
+        "Affektive Instabilität (rascher Stimmungswechsel)",
+        "Kognitive Defizite als zusätzliche organische Beeinträchtigung"
       ]
     },
-    "differentialdiagnose": "Bipolare affektive Störung.",
+    "differentialdiagnose": "Primäre bipolare affektive Störung F31 (kein organischer Befund als Ursache).",
     "komorbiditaeten": [
-      "Neurologische Erkrankungen"
+      "Neurologische Erkrankungen (MS, TBI, Hirntumor)"
     ]
   },
   {
@@ -1024,20 +1095,22 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Depressive Stimmung",
-        "Antriebsminderung",
-        "Nachweis organischer Ursache"
+        "Allgemeine F06-Kriterien G1–G4 erfüllt",
+        "Erfüllung der Kriterien für eine depressive Episode F32: depressive Stimmung, Interessenverlust/Freudlosigkeit, Antriebsminderung, mind. 2 Wochen"
       ],
       "optionale_symptome": [
-        "Schlafstörungen",
+        "Schlafstörungen (Ein- und Durchschlafstörungen, Früherwachen)",
         "Kognitive Verlangsamung",
-        "Suizidgedanken"
+        "Suizidgedanken",
+        "Somatische Symptome (Appetitverlust, Gewichtsverlust)"
       ]
     },
-    "differentialdiagnose": "Primäre Depression, Anpassungsstörung.",
+    "differentialdiagnose": "Primäre depressive Episode F32 (kein organischer Befund als Ursache), Anpassungsstörung F43.2 (reaktiv auf Krankheitsdiagnose, aber nicht neurobiologisch), depressive Pseudodemenz (Demenz-Screening erforderlich).",
     "komorbiditaeten": [
-      "Schlaganfall",
-      "Parkinson-Erkrankung"
+      "Schlaganfall (Post-Stroke-Depression häufig)",
+      "Morbus Parkinson G20",
+      "Hypothyreose E03",
+      "Karzinom (Paraneoplasie)"
     ]
   },
   {
@@ -1055,15 +1128,15 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Gleichzeitige depressive und manische Symptome",
-        "Nachweis organischer Ursache"
+        "Allgemeine F06-Kriterien G1–G4 erfüllt",
+        "Gleichzeitiges Vorliegen depressiver und manischer/hypomanischer Symptome ohne klare Trennung in Episoden"
       ],
       "optionale_symptome": [
-        "Affektive Instabilität",
-        "Reizbarkeit"
+        "Affektive Instabilität und rascher Wechsel",
+        "Reizbarkeit als dominantes Merkmal"
       ]
     },
-    "differentialdiagnose": "Gemischte affektive Episode.",
+    "differentialdiagnose": "Gemischte affektive Episode F38.0 ohne organische Ursache.",
     "komorbiditaeten": [
       "Neurologische Erkrankungen"
     ]
@@ -1083,18 +1156,20 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Ausgeprägte Angst oder Panik",
-        "Nachweis organischer Ursache"
+        "Allgemeine F06-Kriterien G1–G4 erfüllt (organische Ursache, zeitlicher Zusammenhang, keine andere Erklärung)",
+        "Erfüllung der Kriterien für ENTWEDER (1) Panikstörung F41.0: wiederkehrende schwere Panikattacken ohne spezifische Situation mit vegetativer Begleitsymptomatik, ODER (2) Generalisierte Angststörung F41.1: anhaltende Angst und Besorgnis über multiple Bereiche, motorische Anspannung, vegetative Überregbarkeit"
       ],
       "optionale_symptome": [
-        "Vegetative Symptome",
-        "Unruhe"
+        "Vegetative Symptome (Palpitationen, Schwitzen, Zittern, Mundtrockenheit)",
+        "Vermeidungsverhalten",
+        "Anticipatory anxiety (Erwartungsangst)"
       ]
     },
-    "differentialdiagnose": "Generalisierte Angststörung, Panikstörung.",
+    "differentialdiagnose": "Primäre Angststörungen F40–F41 (kein organischer Befund als Ursache), Panikattacken bei Hypoglykämie/Phäochromozytom (endokrine Ursachen häufig).",
     "komorbiditaeten": [
-      "Endokrine Erkrankungen",
-      "Neurologische Erkrankungen"
+      "Endokrine Erkrankungen (Hyperthyreose, Phäochromozytom, Hypoglykämie als häufige Ursachen)",
+      "Neurologische Erkrankungen (Temporallappenepilepsie)",
+      "Herzrhythmusstörungen"
     ]
   },
   {
@@ -1112,17 +1187,19 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Dissoziative Symptome",
-        "Nachweis organischer Ursache"
+        "Allgemeine F06-Kriterien G1–G4 erfüllt (organische Ursache, zeitlicher Zusammenhang, keine andere Erklärung)",
+        "Erfüllung der Kriterien für eine dissoziative Störung F44: partielle oder vollständige Desintegration normaler Integration von Erinnerungen, Identität, unmittelbaren Wahrnehmungen oder Körperbewegungen"
       ],
       "optionale_symptome": [
-        "Amnesie",
-        "Depersonalisation"
+        "Dissoziative Amnesie (organisch bedingt)",
+        "Depersonalisation oder Derealisation",
+        "Pseudoneurologische Symptome (funktionelle Lähmung, Sensibilitätsstörung)"
       ]
     },
-    "differentialdiagnose": "Dissoziative Störungen psychogener Ursache.",
+    "differentialdiagnose": "Dissoziative Störungen psychogener Ursache F44 (kein organischer Befund), Konversionsstörung (oft mit traumatischer Vorgeschichte), Temporallappenepilepsie (periiktal).",
     "komorbiditaeten": [
-      "Neurologische Erkrankungen"
+      "Epilepsie (periiktale Dissoziation)",
+      "Neuroinfektion"
     ]
   },
   {
@@ -1140,19 +1217,22 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Emotionale Labilität",
-        "Ermüdbarkeit",
-        "Reizbarkeit"
+        "Allgemeine F06-Kriterien G1–G4 erfüllt (organische Ursache, zeitlicher Zusammenhang, keine andere Erklärung)",
+        "Emotionale Labilität dominiert das klinische Bild: unkontrollierbare, instabile und fluktuierende Affekte (Weinen oder Lachen ohne adäquaten Anlass, rascher Stimmungswechsel)",
+        "Erhöhte Ermüdbarkeit (mentale und körperliche Erschöpfbarkeit bei minimaler Belastung)"
       ],
       "optionale_symptome": [
+        "Reizbarkeit und niedrige Frustrationsschwelle",
         "Konzentrationsstörungen",
-        "Kopfschmerzen"
+        "Kopfschmerzen",
+        "Schlafstörungen"
       ]
     },
-    "differentialdiagnose": "Neurasthenie, depressive Störung.",
+    "differentialdiagnose": "Neurasthenie F48.0 (kein organischer Nachweis), depressive Störung F32 (Stimmungstiefs dominieren statt Labilität), organische Persönlichkeitsstörung F07.0 (umfassendere Persönlichkeitsveränderung).",
     "komorbiditaeten": [
-      "Schädel-Hirn-Trauma",
-      "Infektionen"
+      "Schädel-Hirn-Trauma (häufige Ursache: posttraumatische asthenische Störung)",
+      "Infektionskrankheiten (postinfektiöse Asthenie)",
+      "Schlaganfall"
     ]
   },
   {
@@ -1170,19 +1250,22 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Subjektive und objektive kognitive Defizite",
-        "Keine Demenz",
-        "Beeinträchtigung von Gedächtnis oder Konzentration"
+        "Allgemeine F06-Kriterien G1–G4 erfüllt (organische Ursache, zeitlicher Zusammenhang)",
+        "Subjektive Klagen über kognitive Beeinträchtigung (Gedächtnis, Konzentration, Lernschwierigkeiten, mentale Ermüdbarkeit)",
+        "Objektiv messbares kognitives Defizit in neuropsychologischer Testung (unterhalb alters- und bildungsnormativer Erwartung)",
+        "Kein Demenzsyndrom (Alltagsfunktionen weitgehend erhalten, Schwelle zur klinisch relevanten Beeinträchtigung nicht vollständig erreicht)"
       ],
       "optionale_symptome": [
-        "Mentale Ermüdbarkeit",
-        "Lernschwierigkeiten"
+        "Mentale Ermüdbarkeit (Fähigkeit zur anhaltenden mentalen Belastung reduziert)",
+        "Lernschwierigkeiten (neue Informationen werden langsamer enkodiert)",
+        "Konzentrationsschwäche"
       ]
     },
-    "differentialdiagnose": "Demenz, Depression.",
+    "differentialdiagnose": "Alzheimer-Demenz F00 im Frühstadium (Progression vorausschauend beobachten), Depression F32 (kognitive Klagen oft proportional zur affektiven Störung, reversibel), altersassoziierter Gedächtnisrückgang (nicht klinisch relevant).",
     "komorbiditaeten": [
-      "F32",
-      "Neurologische Erkrankungen"
+      "F32 (Depressive Episode)",
+      "Neurologische Erkrankungen",
+      "Systemische Erkrankungen (Niereninsuffizienz, Herzinsuffizienz)"
     ]
   },
   {
@@ -1200,17 +1283,19 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Leichte kognitive Defizite",
-        "Keine nachweisbare körperliche Erkrankung"
+        "Kriterien F06.7 erfüllt",
+        "Keine nachweisbare aktive körperliche oder neurologische Grunderkrankung als Erklärung"
       ],
       "optionale_symptome": [
-        "Konzentrationsprobleme",
-        "Gedächtnisstörungen"
+        "Psychosozialer Stress als möglicher Einflussfaktor",
+        "Schlafstörungen",
+        "Erschöpfungssyndrom"
       ]
     },
-    "differentialdiagnose": "Depression, Demenz.",
+    "differentialdiagnose": "Depression F32, Angststörung F41, altersassoziierter Gedächtnisrückgang.",
     "komorbiditaeten": [
-      "F32"
+      "F32 (Depressive Episode)",
+      "F41 (Angststörung)"
     ]
   },
   {
@@ -1228,17 +1313,18 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Leichte kognitive Defizite",
-        "Vorliegen einer körperlichen Erkrankung"
+        "Kriterien F06.7 erfüllt",
+        "Vorliegende aktive körperliche oder neurologische Grunderkrankung, die als Ursache gilt"
       ],
       "optionale_symptome": [
-        "Gedächtnisprobleme",
-        "Mentale Ermüdbarkeit"
+        "Gedächtnisdefizite",
+        "Mentale Ermüdbarkeit",
+        "Verlangsamte Informationsverarbeitung"
       ]
     },
-    "differentialdiagnose": "Demenz, Delir.",
+    "differentialdiagnose": "Demenz F00–F03 (schwererer Schweregrad), Delir F05 (akut und fluktuierend).",
     "komorbiditaeten": [
-      "Internistische Erkrankungen"
+      "Internistische Erkrankungen (Herzinsuffizienz, Niereninsuffizienz, Diabetes)"
     ]
   },
   {
@@ -1256,15 +1342,16 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Psychische Symptome organischer Ursache",
-        "Nicht anderweitig klassifizierbar"
+        "Allgemeine F06-Kriterien G1–G4 erfüllt (organische Ursache nachgewiesen)",
+        "Psychische Symptomatik organischer Ursache, die keiner anderen F06-Kategorie (F06.0–F06.7) zuzuordnen ist"
       ],
       "optionale_symptome": [
         "Kognitive Defizite",
-        "Affektive Symptome"
+        "Affektive Symptome",
+        "Persönlichkeitsveränderungen"
       ]
     },
-    "differentialdiagnose": "Primäre psychische Erkrankungen.",
+    "differentialdiagnose": "Andere F06-Subkategorien, primäre psychische Erkrankungen.",
     "komorbiditaeten": [
       "Neurologische Erkrankungen"
     ]
@@ -1284,14 +1371,16 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Psychische Symptome organischer Ursache"
+        "Allgemeine F06-Kriterien G1–G4 erfüllt (organische Ursache)",
+        "Psychische Symptomatik organischer Ursache, Subtypisierung nicht möglich"
       ],
       "optionale_symptome": [
         "Kognitive Auffälligkeiten",
-        "Affektive Symptome"
+        "Affektive Symptome",
+        "Verhaltensauffälligkeiten"
       ]
     },
-    "differentialdiagnose": "Primäre psychische Erkrankungen.",
+    "differentialdiagnose": "Primäre psychische Erkrankungen ohne organischen Nachweis.",
     "komorbiditaeten": [
       "Internistische Erkrankungen"
     ]
@@ -1311,19 +1400,23 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Anhaltende Persönlichkeits- oder Verhaltensänderung",
-        "Nachweis einer Hirnschädigung oder Erkrankung"
+        "Objektiver Nachweis einer Hirnerkrankung, -schädigung oder -funktionsstörung",
+        "Anhaltende Veränderung der prämorbiden Persönlichkeit oder des Verhaltensmusters (kein vorübergehender Zustand)",
+        "Zeitlicher und ätiologischer Zusammenhang zwischen Hirnschädigung und Persönlichkeits-/Verhaltensänderung plausibel",
+        "Keine andere ausreichende psychiatrische Erklärung"
       ],
       "optionale_symptome": [
-        "Affektlabilität",
-        "Impulsivität",
-        "Soziale Enthemmung"
+        "Affektlabilität (unkontrollierte, situationsinadäquate Stimmungsschwankungen)",
+        "Impulsivität (Handeln ohne Vorüberlegung, Explosivität)",
+        "Soziale Enthemmung (Taktlosigkeit, inadäquate Vertraulichkeit, Ignorieren sozialer Normen)",
+        "Apathie oder Antriebsmangel",
+        "Paranoide Ideen"
       ]
     },
-    "differentialdiagnose": "Persönlichkeitsstörungen, Schizophrenie.",
+    "differentialdiagnose": "Persönlichkeitsstörungen ohne organische Ursache F60 (prämorbid vorliegend, keine Hirnschädigung), Schizophrenie F20 (Ich-Störungen, Halluzinationen, formale Denkstörungen), affektive Störungen F30–F33.",
     "komorbiditaeten": [
-      "F06.3",
-      "Neurologische Erkrankungen"
+      "F06.3 (Organische affektive Störung)",
+      "Neurologische Erkrankungen (TBI, Epilepsie, Tumor)"
     ]
   },
   {
@@ -1341,20 +1434,20 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Veränderung der prämorbiden Persönlichkeit",
-        "Affektive Instabilität oder Enthemmung",
-        "Nachweis einer Hirnschädigung"
+        "Allgemeine F07-Kriterien erfüllt (Hirnschädigung nachgewiesen, anhaltende Persönlichkeitsänderung, zeitlicher Zusammenhang)",
+        "Mind. 2 der folgenden Merkmale: (1) deutlich reduzierte Fähigkeit, zielgerichtete Aktivitäten aufrechtzuerhalten (auch wenn kurzfristiger Aufwand möglich); (2) verändertes emotionales Erleben und Ausdruck – Labilität, Euphorisierung/Dysphorie, Reizbarkeit, Apathie, Misstrauen oder negativistisches Misstrauen; (3) geäußertes Verlangen und antisoziale Tendenzen – Enthemmung, reduzierte Impulskontrolle, sexuelle Rücksichtslosigkeit oder Gewalttätigkeit; (4) kognitive Beeinträchtigungen – Weitschweifigkeit, übertriebenes Moralisieren, Rigidität/Unfähigkeit zu Kompromissen; (5) verändertes Sprechtempo und -fluss (Verlangsamung, Vorbeireden, Hyperviskosität); (6) veränderte sexuelle Aktivität (Hyposexualität oder Veränderung sexueller Präferenz)"
       ],
       "optionale_symptome": [
-        "Paranoide Ideen",
-        "Impulsivität",
-        "Apathie"
+        "Paranoide Ideen (Eifersucht, Verfolgung) ohne Wahnsystem",
+        "Impulsivität mit niedrigem Frustrationslevel und gewalttätigen Ausbrüchen",
+        "Apathie als dominantes Merkmal (besonders bei Frontalhirn-Läsion)",
+        "Frontalhirn-Persönlichkeitsstörung: Enthemmung, Witzelsucht (Moria), Disinhibition"
       ]
     },
-    "differentialdiagnose": "Dissoziale Persönlichkeitsstörung, Schizophrenie.",
+    "differentialdiagnose": "Dissoziale Persönlichkeitsstörung F60.2 (prämorbid, keine Hirnschädigung), Schizophrenie F20 (kein organischer Befund, Positivsymptome), frontale Variante der Alzheimer-Demenz oder Pick-Demenz F02.0 (kognitive Progredienz stärker).",
     "komorbiditaeten": [
-      "F10.2",
-      "F06.3"
+      "F10.2 (Alkoholabhängigkeit als häufige Komorbidität und Differenzialdiagnose)",
+      "F06.3 (Organische affektive Störung)"
     ]
   },
   {
@@ -1372,17 +1465,19 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Persönlichkeits- oder Verhaltensänderungen nach Enzephalitis"
+        "Gesicherter Enzephalitis in der Vorgeschichte (viral, bakteriell, autoimmun)",
+        "Residuelle subjektive und objektive Symptome nach Abklingen der akuten Entzephalitis, die zuvor nicht vorhanden waren",
+        "Mind. eine der folgenden Veränderungen: (1) Stimmungsveränderungen (Depression, Apathie, Reizbarkeit, Angstattacken), (2) Schlafveränderungen (Hypersomnie, Schlaf-Wach-Rhythmusstörung), (3) Kognitive Veränderungen (Gedächtnisdefizite, Konzentrationsprobleme), (4) Persönlichkeitsveränderungen, (5) Residuelle neurologische Symptome (Lähmungen, Hirnnervenausfälle, Dysphasie)"
       ],
       "optionale_symptome": [
-        "Kognitive Defizite",
-        "Affektive Instabilität",
-        "Impulsivität"
+        "Chronische Müdigkeit",
+        "Verhaltensveränderungen (Impulsivität, Enthemmung bei Herpes-simplex-Enzephalitis mit Temporallappenbefall)",
+        "Epileptische Anfälle als Residualsymptom"
       ]
     },
-    "differentialdiagnose": "Posttraumatische Störung, organische Persönlichkeitsstörung.",
+    "differentialdiagnose": "Posttraumatische Belastungsstörung F43.1 (keine Enzephalitis-Anamnese, psychisches Trauma führend), organische Persönlichkeitsstörung F07.0 (andere Hirnschädigung), PTBS nach schwerer Erkrankung.",
     "komorbiditaeten": [
-      "Neurologische Folgeschäden"
+      "Neurologische Folgeschäden (Herpes-simplex-Enzephalitis: Gedächtnisstörung, Temporallappendysfunktion)"
     ]
   },
   {
@@ -1400,20 +1495,21 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Kopfschmerzen nach Schädel-Hirn-Trauma",
-        "Schwindel oder Müdigkeit",
-        "Konzentrations- oder Gedächtnisstörungen"
+        "Schädel-Hirn-Trauma (SHT) mit Bewusstseinsverlust in der Vorgeschichte",
+        "Mind. 3 der folgenden Symptome nach dem SHT (Wochen bis Monate anhaltend): (1) Kopfschmerzen (Dauerkopfschmerz oder rezidivierend), (2) Schwindel, (3) Ermüdbarkeit (körperlich und mental), (4) Reizbarkeit, (5) Konzentrationsstörungen, (6) Gedächtnisprobleme, (7) Schlaflosigkeit oder Schlafstörungen, (8) verringerte Toleranz gegenüber Alkohol oder Belastung"
       ],
       "optionale_symptome": [
-        "Reizbarkeit",
-        "Schlafstörungen",
-        "Affektive Symptome"
+        "Affektive Symptome (Depression, Angst als häufige Komorbidität)",
+        "Lärm- und Lichtempfindlichkeit",
+        "Subjektive kognitive Klagen (oft disproportional zu objektiven Befunden)",
+        "Neuropsychologische Leistungsminderung in Tests"
       ]
     },
-    "differentialdiagnose": "PTBS, Depression, Somatisierungsstörung.",
+    "differentialdiagnose": "PTBS F43.1 (Trauma-spezifische Intrusionen, Vermeidung, Hyperarousal), Depression F32 (vorrangig affektive Symptome ohne SHT-Bezug), Somatisierungsstörung F45.0 (multiple Körperbeschwerden ohne organischen Befund), Simulation (besonders im Begutachtungskontext beachten).",
     "komorbiditaeten": [
-      "F32",
-      "F41"
+      "F32 (Depressive Episode, häufig komorbid)",
+      "F41 (Angststörung)",
+      "F43.1 (PTBS, wenn Trauma-Kriterien zusätzlich erfüllt)"
     ]
   },
   {
@@ -1431,14 +1527,15 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Verhaltensänderungen organischer Ursache"
+        "Allgemeine F07-Kriterien erfüllt (Hirnschädigung nachgewiesen, anhaltende Persönlichkeits-/Verhaltensänderung)",
+        "Klinisches Bild passt keiner anderen F07-Subkategorie (F07.0, F07.1, F07.2)"
       ],
       "optionale_symptome": [
-        "Impulsivität",
+        "Impulsivität oder Verhaltensänderungen organischer Ursache",
         "Affektive Veränderungen"
       ]
     },
-    "differentialdiagnose": "Persönlichkeitsstörungen.",
+    "differentialdiagnose": "Andere F07-Subkategorien, primäre Persönlichkeitsstörungen F60.",
     "komorbiditaeten": [
       "Neurologische Erkrankungen"
     ]
@@ -1458,14 +1555,15 @@
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Organisch bedingte Persönlichkeits- oder Verhaltensänderung"
+        "Allgemeine F07-Kriterien erfüllt (Hirnschädigung, anhaltende Änderung)",
+        "Subtypisierung nicht möglich"
       ],
       "optionale_symptome": [
         "Affektive Instabilität",
         "Soziale Auffälligkeiten"
       ]
     },
-    "differentialdiagnose": "Persönlichkeitsstörungen.",
+    "differentialdiagnose": "Andere F07-Subkategorien, primäre Persönlichkeitsstörungen F60.",
     "komorbiditaeten": [
       "Neurologische Erkrankungen"
     ]
@@ -1486,8 +1584,9 @@
     "diagnose_kriterien": {
       "pflicht_symptome": [
         "Psychische Symptomatik mit vermuteter oder nachgewiesener organischer Ursache",
-        "Symptome lassen sich keiner spezifischeren organischen Störung aus F00-F07 eindeutig zuordnen",
-        "Hinweise auf Hirnerkrankung, Hirnschädigung, Hirnfunktionsstörung oder körperliche Grunderkrankung"
+        "Hinweise auf Hirnerkrankung, Hirnschädigung, Hirnfunktionsstörung oder körperliche Grunderkrankung",
+        "Symptome lassen sich keiner spezifischeren organischen Störung aus F00–F07 eindeutig zuordnen",
+        "Keine primäre psychische Störung ohne organischen Nachweis als bessere Erklärung"
       ],
       "optionale_symptome": [
         "Kognitive Einschränkungen",
@@ -1498,7 +1597,7 @@
         "Neurologische Begleitsymptome"
       ]
     },
-    "differentialdiagnose": "Demenz (F00-F03), organisches amnestisches Syndrom (F04), Delir (F05), sonstige organische psychische Störungen (F06), organische Persönlichkeits- und Verhaltensstörungen (F07), primäre psychische Störungen ohne organischen Nachweis.",
+    "differentialdiagnose": "Demenz F00–F03, organisches amnestisches Syndrom F04, Delir F05, sonstige organische psychische Störungen F06, organische Persönlichkeits- und Verhaltensstörungen F07, primäre psychische Störungen ohne organischen Nachweis.",
     "komorbiditaeten": [
       "Neurologische Erkrankungen",
       "Internistische Erkrankungen",
