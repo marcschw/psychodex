@@ -1,130 +1,404 @@
 [
   {
-    "code": "F81.0",
-    "name": "Lese- und Rechtschreibstörung (Legasthenie)",
-    "kategorie": "F8",
+    "code": "F80.0",
+    "name": "Artikulationsstörung (Spezifische Aussprachestörung)",
+    "kategorie": "F80",
     "seltenheit_score": 3,
-    "praevalenz_allgemein_prozent": 5,
+    "praevalenz_allgemein_prozent": 5.0,
     "praevalenz_modifikatoren": {
-      "männlich": 1.6,
-      "weiblich": 0.5,
-      "alter_18_30": 1.5,
-      "alter_31_50": 1,
-      "alter_51_plus": 0.5
+      "weiblich": 0.7,
+      "maennlich": 1.4,
+      "alter_peak": "Diagnose 3-8 Jahre"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Lese- und Rechtschreibleistungen deutlich unter dem für Alter und Intelligenz erwarteten Niveau",
-        "Beeinträchtigt schulische Leistungen erheblich",
-        "Keine anderen neurologischen oder sensorischen Störungen"
+        "Artikulation (phonologische Fähigkeiten) in standardisierten Tests mindestens 2 Standardabweichungen unter dem alterserwarteten Niveau",
+        "Artikulationsfähigkeiten liegen mindestens 1 Standardabweichung unter dem non-verbalen IQ",
+        "Sprachverständnis und -ausdruck in standardisierten Tests im Normalbereich (+/-2 SD) für das Alter",
+        "Keine neurologischen, sensorischen oder physischen Beeinträchtigungen, die die Sprachlautproduktion direkt betreffen; kein frühkindlicher Autismus",
+        "Non-verbaler IQ ist nicht unter 70 in standardisierten Tests"
       ],
       "optionale_symptome": [
-        "Buchstabenverwechslungen (b/d, p/q)",
-        "Wortumstellungen beim Lesen",
-        "Sekundäre emotionale Probleme (Schulangst, geringes Selbstwertgefühl)"
+        "Entwicklungsbedingtes phonologisches Lallstadium persistiert",
+        "Funktionelle Dyslalie",
+        "Auditive Diskriminationsschwäche",
+        "Häufig spontane Remission, professionelle Sprachtherapie beschleunigt Entwicklung"
       ]
     },
-    "differentialdiagnose": "Rechenstörung (F81.2), Intelligenzminderung (F70), mangelnde Schulung, Sehstörungen.",
-    "komorbiditaeten": [
-      "F90",
-      "F93",
-      "F32"
-    ]
+    "differentialdiagnose": ["F80.1 Expressive Sprachstörung", "F80.2 Rezeptive Sprachstörung", "F70 Intelligenzminderung", "neurologische Störungen der Sprachmotorik", "Hörstörungen"],
+    "komorbiditaeten": ["F80.1 Expressive Sprachstörung", "F81.0 Lese-Rechtschreibstörung", "F90 ADHS"]
+  },
+  {
+    "code": "F80.1",
+    "name": "Expressive Sprachstörung",
+    "kategorie": "F80",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 3.0,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.7,
+      "maennlich": 1.4,
+      "alter_peak": "Diagnose 3-7 Jahre"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Expressive Sprachfähigkeiten in standardisierten Tests mindestens 2 Standardabweichungen unter dem alterserwarteten Niveau",
+        "Expressive Sprachfähigkeiten liegen mindestens 1 Standardabweichung unter dem non-verbalen IQ",
+        "Rezeptive Sprachfähigkeiten in standardisierten Tests im Normalbereich (innerhalb 2 SD) für das Alter",
+        "Verwendung und Verständnis nonverbaler Kommunikation und imaginativer Sprachfunktionen im Normbereich",
+        "Keine neurologischen, sensorischen oder physischen Beeinträchtigungen der Sprache; kein frühkindlicher Autismus"
+      ],
+      "optionale_symptome": [
+        "Reduzierter Wortschatz verglichen mit dem Alter",
+        "Fehler bei der Anwendung von Grammatikregeln",
+        "Probleme bei der Verknüpfung von Gedanken in sinnvollen Sätzen",
+        "Oft frühe Sprachentwicklung verzögert",
+        "Non-verbaler IQ nicht unter 70"
+      ]
+    },
+    "differentialdiagnose": ["F80.0 Artikulationsstörung", "F80.2 Rezeptive Sprachstörung", "F84.0 Autismus", "F70 Intelligenzminderung", "Hörstörungen"],
+    "komorbiditaeten": ["F80.0 Artikulationsstörung", "F81.0 Lese-Rechtschreibstörung", "F90 ADHS"]
+  },
+  {
+    "code": "F80.2",
+    "name": "Rezeptive Sprachstörung",
+    "kategorie": "F80",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 1.5,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.6,
+      "maennlich": 1.5,
+      "alter_peak": "Diagnose 3-7 Jahre"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Rezeptive Sprachfähigkeiten in standardisierten Tests mindestens 2 Standardabweichungen unter dem alterserwarteten Niveau",
+        "Rezeptive Sprachfähigkeiten liegen mindestens 1 Standardabweichung unter dem non-verbalen IQ",
+        "Keine neurologischen, sensorischen oder körperlichen Beeinträchtigungen der rezeptiven Sprache; kein frühkindlicher Autismus",
+        "Non-verbaler IQ ist nicht unter 70"
+      ],
+      "optionale_symptome": [
+        "Expressive Sprachfähigkeiten sind in der Regel ebenfalls deutlich beeinträchtigt",
+        "Störungen in der Sprachlautproduktion häufig",
+        "Wortlaubheit (Unfähigkeit, gesprochene Wörter zu verstehen)",
+        "Häufig kombinierte rezeptiv-expressive Sprachstörung"
+      ]
+    },
+    "differentialdiagnose": ["F80.1 Expressive Sprachstörung", "F84.0 Autismus", "F70 Intelligenzminderung", "Hörstörungen", "F80.3 Landau-Kleffner-Syndrom"],
+    "komorbiditaeten": ["F80.1 Expressive Sprachstörung", "F84.0 Autismus (differentialdiagnostisch)", "F81.0 Lese-Rechtschreibstörung"]
+  },
+  {
+    "code": "F80.3",
+    "name": "Erworbene Aphasie mit Epilepsie (Landau-Kleffner-Syndrom)",
+    "kategorie": "F80",
+    "seltenheit_score": 9,
+    "praevalenz_allgemein_prozent": 0.005,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.8,
+      "maennlich": 1.3,
+      "alter_peak": "3-7 Jahre"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Schwerer Verlust der expressiven und rezeptiven Sprachfähigkeiten innerhalb von maximal 6 Monaten",
+        "Sprachentwicklung vor dem Verlust war normal",
+        "Paroxysmale EEG-Abnormitäten in einem oder beiden Temporallappen, die innerhalb von 2 Jahren vor oder nach dem Sprachverlust auftreten",
+        "Normales Hörvermögen",
+        "Non-verbale Intelligenz im Normalbereich erhalten",
+        "Keine andere neurologische Diagnose außer EEG-Abnormalität und ggf. Epilepsie"
+      ],
+      "optionale_symptome": [
+        "Epileptische Anfälle in der Mehrzahl der Fälle",
+        "Assoziation mit temporaler Epilepsie",
+        "Ca. zwei Drittel haben langfristige rezeptive Sprachdefizite",
+        "Entzündliche enzephalitische Prozesse als mögliche Ursache",
+        "Mädchen etwas häufiger betroffen als Jungen"
+      ]
+    },
+    "differentialdiagnose": ["F80.2 Rezeptive Sprachstörung", "F84.0 Autismus", "F84.3 Desintegrative Störung", "Aphasie durch Hirnläsionen"],
+    "komorbiditaeten": ["Epilepsie (G40)", "F80.2 Rezeptive Sprachstörung"]
+  },
+  {
+    "code": "F81.0",
+    "name": "Lese- und Rechtschreibstörung (Legasthenie)",
+    "kategorie": "F81",
+    "seltenheit_score": 3,
+    "praevalenz_allgemein_prozent": 5.0,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.7,
+      "maennlich": 1.5,
+      "alter_peak": "Diagnose Grundschulalter"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Lesegenauigkeit und Leseverständnis in standardisierten Tests mindestens 2 Standardfehler der Vorhersage unter dem für das chronologische Alter und die allgemeine Intelligenz erwarteten Niveau; ODER: Geschichte ernsthafter Leseschwierigkeiten plus Rechtschreibfähigkeiten mindestens 2 Standardfehler unter dem alterserwarteten Niveau",
+        "Störung beeinträchtigt schulische Leistungen oder Alltagsaktivitäten, die Lesefähigkeiten erfordern, signifikant",
+        "Störung ist kein direktes Ergebnis eines Seh- oder Hördefizits oder einer neurologischen Erkrankung",
+        "Schulerfahrungen im durchschnittlichen Erwartungsbereich",
+        "IQ nicht unter 70 in standardisierten Tests"
+      ],
+      "optionale_symptome": [
+        "Rechtschreibschwierigkeiten persistieren oft bis in die Adoleszenz",
+        "Häufig vorausgehende Sprachentwicklungsstörungen",
+        "Verbundene emotionale und Verhaltensstörungen im Schulalter",
+        "Besondere Schwierigkeiten bei der phonologischen Verarbeitung",
+        "Stärker ausgeprägt bei Jungen"
+      ]
+    },
+    "differentialdiagnose": ["F81.1 Isolierte Rechtschreibstörung", "F70 Intelligenzminderung", "Hörstörungen", "Sehstörungen", "unzureichender Schulunterricht"],
+    "komorbiditaeten": ["F80 Sprachentwicklungsstörungen", "F81.2 Rechenstörung", "F90 ADHS", "F93 Emotionale Störungen"]
+  },
+  {
+    "code": "F81.1",
+    "name": "Isolierte Rechtschreibstörung",
+    "kategorie": "F81",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 2.0,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.8,
+      "maennlich": 1.3,
+      "alter_peak": "Diagnose Grundschulalter"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Rechtschreibfähigkeiten in standardisierten Tests mindestens 2 Standardfehler unter dem für chronologisches Alter und allgemeine Intelligenz erwarteten Niveau",
+        "Lesefähigkeit, Leseverständnis und Rechenleistung im Normalbereich (+/-2 SD vom Mittelwert)",
+        "Keine Geschichte signifikanter Leseschwierigkeiten",
+        "Schulerfahrungen im durchschnittlichen Erwartungsbereich",
+        "Rechtschreibschwierigkeiten ab den frühen Phasen des Schreibenlernens vorhanden",
+        "Beeinträchtigung schulischer Leistungen oder Alltagsaktivitäten, die Rechtschreibung erfordern",
+        "IQ nicht unter 70"
+      ],
+      "optionale_symptome": [
+        "Sowohl mündliche als auch schriftliche Rechtschreibung betroffen",
+        "Spontane Remission möglich, aber häufig klinisch bedeutsam",
+        "Nicht durch mangelhaften Unterricht erklärt"
+      ]
+    },
+    "differentialdiagnose": ["F81.0 Lese-Rechtschreibstörung", "F70 Intelligenzminderung", "unzureichender Unterricht"],
+    "komorbiditaeten": ["F81.0 Lese-Rechtschreibstörung (abzugrenzen)", "F90 ADHS"]
   },
   {
     "code": "F81.2",
     "name": "Rechenstörung (Dyskalkulie)",
-    "kategorie": "F8",
-    "seltenheit_score": 4,
-    "praevalenz_allgemein_prozent": 3,
+    "kategorie": "F81",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 3.0,
     "praevalenz_modifikatoren": {
-      "männlich": 0.9,
-      "weiblich": 1.2,
-      "alter_18_30": 1.5,
-      "alter_31_50": 0.8,
-      "alter_51_plus": 0.3
+      "weiblich": 1.0,
+      "maennlich": 1.0,
+      "alter_peak": "Diagnose Grundschulalter"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Rechenleistungen deutlich unter dem für Alter und Intelligenz erwarteten Niveau",
-        "Beeinträchtigt schulische Leistungen",
-        "Keine Intelligenzminderung oder mangelnde Schulung"
+        "Rechenleistung in standardisierten Tests mindestens 2 Standardfehler unter dem für chronologisches Alter und allgemeine Intelligenz erwarteten Niveau",
+        "Lesefähigkeit, Leseverständnis und Rechtschreiben im Normalbereich (+/-2 SD)",
+        "Keine Geschichte signifikanter Lese- oder Rechtschreibschwierigkeiten",
+        "Schulerfahrungen im durchschnittlichen Erwartungsbereich",
+        "Rechenschwierigkeiten ab den frühen Phasen des Rechenlernens vorhanden",
+        "Beeinträchtigung schulischer Leistungen oder Alltagsaktivitäten, die Rechenfähigkeiten erfordern",
+        "IQ nicht unter 70"
       ],
       "optionale_symptome": [
-        "Schwierigkeiten beim Zählen und Zahlbegriff",
-        "Probleme mit räumlichen Beziehungen",
-        "Oft kombiniert mit LRS"
+        "Beeinträchtigungen bei Grundrechenarten (Addition, Subtraktion, Multiplikation, Division)",
+        "Nicht der abstraktere mathematische Bereich (Algebra, Geometrie)",
+        "Entwicklungsbedingte Akaulie oder Rechenstörung",
+        "Gerstmann-Syndrom als verwandtes Muster"
       ]
     },
-    "differentialdiagnose": "LRS (F81.0), Intelligenzminderung (F70), mangelnde Schulung.",
-    "komorbiditaeten": [
-      "F81.0",
-      "F90"
-    ]
+    "differentialdiagnose": ["F81.0 Lese-Rechtschreibstörung", "F70 Intelligenzminderung", "unzureichender Unterricht", "F81.3 Kombinierte Störung"],
+    "komorbiditaeten": ["F81.0 Lese-Rechtschreibstörung", "F90 ADHS", "F93 Emotionale Störungen"]
+  },
+  {
+    "code": "F81.3",
+    "name": "Kombinierte Störung schulischer Fertigkeiten",
+    "kategorie": "F81",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 1.5,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.8,
+      "maennlich": 1.3,
+      "alter_peak": "Diagnose Grundschulalter"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Sowohl Rechen- als auch Lese- oder Rechtschreibfähigkeiten sind signifikant beeinträchtigt",
+        "Kriterien für F81.2 und entweder F81.0 oder F81.1 erfüllt",
+        "Nicht allein durch Intelligenzminderung oder unzureichenden Unterricht erklärbar"
+      ],
+      "optionale_symptome": [
+        "Weitreichende schulische Schwierigkeiten",
+        "Häufig begleitende emotionale oder Verhaltensstörungen"
+      ]
+    },
+    "differentialdiagnose": ["F81.0 Legasthenie", "F81.2 Dyskalkulie", "F70 Intelligenzminderung"],
+    "komorbiditaeten": ["F90 ADHS", "F93 Emotionale Störungen", "F83 Kombinierte Entwicklungsstörungen"]
+  },
+  {
+    "code": "F82",
+    "name": "Umschriebene Entwicklungsstörung motorischer Funktionen (Entwicklungs-Dyspraxie)",
+    "kategorie": "F82",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 5.0,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.6,
+      "maennlich": 1.6,
+      "alter_peak": "Diagnose Kindergarten-/Grundschulalter"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Leistung in standardisierten Tests fein- oder grobmotorischer Koordination mindestens 2 Standardabweichungen unter dem für das chronologische Alter des Kindes erwarteten Niveau",
+        "Störung beeinträchtigt schulische Leistungen oder Alltagsaktivitäten signifikant",
+        "Keine diagnosizierbare neurologische Erkrankung",
+        "IQ nicht unter 70 in standardisierten Tests"
+      ],
+      "optionale_symptome": [
+        "Choreiforme Bewegungen ungestützter Gliedmaßen oder Spiegelbewegungen",
+        "Klinische Zeichen eingeschränkter Fein- und Grobmotorik-Koordination",
+        "Clumsy Child Syndrom",
+        "Entwicklungskoordinationsstörung",
+        "Entwicklungs-Dyspraxie"
+      ]
+    },
+    "differentialdiagnose": ["Neurologische Bewegungsstörungen", "F70 Intelligenzminderung", "F84.0 Autismus", "Myopathien"],
+    "komorbiditaeten": ["F81 Schulische Fertigkeitsstörungen", "F80 Sprachentwicklungsstörungen", "F90 ADHS", "F83 Kombinierte Entwicklungsstörungen"]
   },
   {
     "code": "F84.0",
-    "name": "Frühkindlicher Autismus",
-    "kategorie": "F8",
+    "name": "Frühkindlicher Autismus (Kanner-Syndrom)",
+    "kategorie": "F84",
     "seltenheit_score": 6,
-    "praevalenz_allgemein_prozent": 0.5,
+    "praevalenz_allgemein_prozent": 1.0,
     "praevalenz_modifikatoren": {
-      "männlich": 1.8,
-      "weiblich": 0.3,
-      "alter_18_30": 1.5,
-      "alter_31_50": 0.8,
-      "alter_51_plus": 0.3
+      "weiblich": 0.4,
+      "maennlich": 1.8,
+      "alter_peak": "Manifestation vor 3 Jahren"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Qualitative Beeinträchtigungen der sozialen Interaktion",
-        "Qualitative Beeinträchtigungen der Kommunikation",
-        "Eingeschränkte, repetitive und stereotype Verhaltensweisen"
+        "Abnorme oder beeinträchtigte Entwicklung vor dem 3. Lebensjahr in mindestens einem: (1) rezeptive oder expressive Sprache; (2) Entwicklung selektiver sozialer Bindungen oder reziproker sozialer Interaktion; (3) funktionales oder symbolisches Spiel",
+        "Mindestens 6 Symptome aus (1), (2) und (3), davon mind. 2 aus (1) und je mind. 1 aus (2) und (3):",
+        "(1) Qualitative Abnormitäten in reziproker sozialer Interaktion: Blickkontakt fehlt/eingeschränkt; keine altersgemäßen Peer-Beziehungen; eingeschränkte sozio-emotionale Reziprozität; kein spontanes Suchen nach Freude oder Interesse mit anderen",
+        "(2) Qualitative Abnormitäten in Kommunikation: Sprachverzögerung ohne Kompensation durch Gesten/Mimik; Unfähigkeit, konversationellen Austausch zu beginnen; stereotyper oder idiosynkratischer Sprachgebrauch; kein variiertes Fantasie- oder Imitationsspiel",
+        "(3) Eingeschränkte, stereotype und repetitive Verhaltens-, Interessens- und Aktivitätsmuster: Beschäftigung mit stereotypen Interessen abnormer Intensität; nicht-funktionale Rituale; motorische Stereotypien (Flattern, Drehen); Beschäftigung mit Teilobjekten"
       ],
       "optionale_symptome": [
-        "Manifestation vor dem 3. Lebensjahr",
-        "Mangelnder Augenkontakt, fehlende gemeinsame Aufmerksamkeit",
-        "Inselbegabungen möglich"
+        "Phobien, Schlaf- und Essstörungen, Wutausbrüche, selbstgerichtete Aggression",
+        "Savant-Fähigkeiten in manchen Fällen",
+        "Epilepsie als häufige Komorbidität",
+        "Sensorische Über- oder Unterempfindlichkeit"
       ]
     },
-    "differentialdiagnose": "Asperger-Syndrom (F84.5, keine Sprachverzögerung), atypischer Autismus (F84.1), Intelligenzminderung (F70), Selektiver Mutismus.",
-    "komorbiditaeten": [
-      "F70",
-      "F90",
-      "F42"
-    ]
+    "differentialdiagnose": ["F84.1 Atypischer Autismus", "F84.5 Asperger-Syndrom", "F80.2 Rezeptive Sprachstörung", "F70 Intelligenzminderung", "F84.2 Rett-Syndrom", "F84.3 Desintegrative Störung"],
+    "komorbiditaeten": ["F70 Intelligenzminderung (ca. 70%)", "Epilepsie", "F90 ADHS", "F42 Zwangsstörung"]
+  },
+  {
+    "code": "F84.1",
+    "name": "Atypischer Autismus",
+    "kategorie": "F84",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.5,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.5,
+      "maennlich": 1.6,
+      "alter_peak": "Manifestation häufig nach 3 Jahren"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Unterscheidet sich von frühkindlichem Autismus entweder im Manifestationsalter ODER dadurch, dass nicht alle drei diagnostischen Kriteriengruppen erfüllt sind",
+        "Qualitative Abnormitäten in reziproker sozialer Interaktion ODER Kommunikation ODER eingeschränkte, stereotype Verhaltens-, Interessens- und Aktivitätsmuster vorhanden (nicht alle drei erfüllen müssen)",
+        "Nicht erklärt durch andere Entwicklungsstörungen, Schizophrenie, Rett-Syndrom, Sprachstörungen"
+      ],
+      "optionale_symptome": [
+        "F84.10 Atypizität im Manifestationsalter (nach dem 3. Lebensjahr)",
+        "F84.11 Atypizität in der Symptomatologie (nur 1-2 der 3 Bereiche betroffen)",
+        "F84.12 Atypizität in Alter und Symptomatologie",
+        "Häufig bei tief greifender Intelligenzminderung"
+      ]
+    },
+    "differentialdiagnose": ["F84.0 Frühkindlicher Autismus", "F84.5 Asperger-Syndrom", "F70-F72 Intelligenzminderung", "F80.2 Rezeptive Sprachstörung"],
+    "komorbiditaeten": ["F70-F72 Intelligenzminderung", "Epilepsie", "F90 ADHS"]
+  },
+  {
+    "code": "F84.2",
+    "name": "Rett-Syndrom",
+    "kategorie": "F84",
+    "seltenheit_score": 9,
+    "praevalenz_allgemein_prozent": 0.01,
+    "praevalenz_modifikatoren": {
+      "weiblich": 2.0,
+      "maennlich": 0.0,
+      "alter_peak": "Beginn 5-30 Monate"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Scheinbar normale pränatale und perinatale Phase sowie normale psychomotorische Entwicklung bis zum 5. Monat, normaler Kopfumfang bei Geburt",
+        "Verzögerung des Kopfwachstums zwischen 5 Monaten und 4 Jahren und Verlust erworbener Handfunktionen zwischen 5 und 30 Monaten (assoziiert mit Kommunikationsdysfunktion und eingeschränkter sozialer Interaktion)",
+        "Schlecht koordinierte/instabile Gang- oder Rumpfbewegungen",
+        "Schwere Beeinträchtigung von expressiver und rezeptiver Sprache sowie schwere psychomotorische Retardierung",
+        "Stereotype Handmittellinien-Bewegungen (z.B. Händewringen, Händewaschen) nach Verlust der gezielten Handfunktionen"
+      ],
+      "optionale_symptome": [
+        "Nur Mädchen betroffen (fast ausschließlich)",
+        "Hyperventilation charakteristisch",
+        "Choreoathetotische Bewegungen häufig ab 4 Jahren",
+        "Schwere geistige Behinderung in fast allen Fällen",
+        "Epilepsie als häufige Komorbidität"
+      ]
+    },
+    "differentialdiagnose": ["F84.0 Frühkindlicher Autismus", "F84.3 Desintegrative Störung", "MECP2-Mutation (genetisch)", "andere neurologische Erkrankungen"],
+    "komorbiditaeten": ["Epilepsie", "F72 Schwere Intelligenzminderung", "Skoliose", "kardiale Auffälligkeiten"]
+  },
+  {
+    "code": "F84.3",
+    "name": "Andere desintegrative Störung des Kindesalters (Heller-Syndrom)",
+    "kategorie": "F84",
+    "seltenheit_score": 9,
+    "praevalenz_allgemein_prozent": 0.005,
+    "praevalenz_modifikatoren": {
+      "weiblich": 0.5,
+      "maennlich": 1.5,
+      "alter_peak": "2-4 Jahre"
+    },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Scheinbar normale Entwicklung bis mindestens zum 2. Lebensjahr (altersgemäße Kommunikation, soziale Fähigkeiten, Spiel und adaptives Verhalten)",
+        "Definierter Verlust zuvor erworbener Fähigkeiten (klinisch bedeutsam, nicht nur situativ) in mindestens 2 Bereichen: (1) expressive oder rezeptive Sprache; (2) Spiel; (3) soziale Fähigkeiten oder adaptives Verhalten; (4) Darm- oder Blasenkontrolle; (5) motorische Fähigkeiten",
+        "Qualitativ abnormes soziales Funktionieren in mind. 2 Bereichen: (1) qualitative Abnormitäten in reziproker sozialer Interaktion; (2) qualitative Abnormitäten in Kommunikation; (3) eingeschränkte, stereotype, repetitive Verhaltensmuster; (4) allgemeiner Interessenverlust"
+      ],
+      "optionale_symptome": [
+        "Assoziation mit Enzephalopathie möglich, Diagnose auf Basis klinischer Merkmale",
+        "Dementia infantilis, desintegrative Psychose",
+        "Verlust innerhalb weniger Monate"
+      ]
+    },
+    "differentialdiagnose": ["F84.0 Frühkindlicher Autismus", "F84.2 Rett-Syndrom", "F80.3 Landau-Kleffner", "F20 Schizophrenie mit frühem Beginn", "metabolische/neurologische Erkrankungen"],
+    "komorbiditaeten": ["Epilepsie", "F72 Schwere Intelligenzminderung"]
   },
   {
     "code": "F84.5",
     "name": "Asperger-Syndrom",
-    "kategorie": "F8",
+    "kategorie": "F84",
     "seltenheit_score": 5,
-    "praevalenz_allgemein_prozent": 1,
+    "praevalenz_allgemein_prozent": 0.7,
     "praevalenz_modifikatoren": {
-      "männlich": 2,
       "weiblich": 0.3,
-      "alter_18_30": 1.5,
-      "alter_31_50": 1.2,
-      "alter_51_plus": 0.5
+      "maennlich": 1.9,
+      "alter_peak": "Diagnose Schulalter-Adoleszenz"
     },
     "diagnose_kriterien": {
       "pflicht_symptome": [
-        "Qualitative Beeinträchtigungen der sozialen Interaktion",
-        "Eingeschränkte, repetitive und stereotype Verhaltensweisen",
-        "Keine klinisch bedeutsame allgemeine Entwicklungsverzögerung"
+        "Kein klinisch bedeutsamer allgemeiner Entwicklungsrückstand in Sprache oder Kognition: Einzelwörter mit 2 Jahren oder früher, kommunikative Phrasen mit 3 Jahren oder früher; Selbsthilfefähigkeiten, adaptives Verhalten und Neugier auf die Umwelt in den ersten 3 Jahren im Normbereich",
+        "Qualitative Abnormitäten in reziproker sozialer Interaktion (wie bei Autismus): Defizite in Blickkontakt, Körpersprache, sozioemotionaler Reziprozität, Peer-Beziehungen",
+        "Ungewöhnlich intensive und umschriebene Interessen ODER eingeschränkte, repetitive und stereotype Verhaltens-, Interessens- und Aktivitätsmuster (wie bei Autismus, aber seltener motorische Stereotypien)"
       ],
       "optionale_symptome": [
-        "Keine klinisch bedeutsame Sprachverzögerung",
-        "Ausgeprägte Spezialinteressen",
-        "Motorische Ungeschicklichkeit"
+        "Motorische Ungeschicklichkeit häufig (kein notwendiges diagnostisches Merkmal)",
+        "Starke Tendenz der Auffälligkeiten in Adoleszenz und Erwachsenenalter zu persistieren",
+        "Gelegentlich psychotische Episoden im frühen Erwachsenenalter",
+        "Solitäre Sonderfähigkeiten (Savant-Anteile möglich)"
       ]
     },
-    "differentialdiagnose": "Frühkindlicher Autismus (F84.0, Sprachverzögerung), schizoide PS (F60.1, Erwachsenendiagnose), ADHS (F90).",
-    "komorbiditaeten": [
-      "F90",
-      "F42",
-      "F32",
-      "F40.1"
-    ]
+    "differentialdiagnose": ["F84.0 Frühkindlicher Autismus", "F60.5 Anankastische PS", "F60.1 Schizoide PS", "F21 Schizotype Störung", "F42 Zwangsstörung"],
+    "komorbiditaeten": ["F90 ADHS", "F41 Angststörungen", "F32 Depression", "F42 Zwangsstörung"]
   }
 ]
