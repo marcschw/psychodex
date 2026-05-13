@@ -1,0 +1,134 @@
+[
+  {
+    "code": "F50.0",
+    "name": "Anorexia nervosa",
+    "kategorie": "F5",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.5,
+    "praevalenz_modifikatoren": { "männlich": 0.1, "weiblich": 2.2, "alter_18_30": 3.0, "alter_31_50": 0.8, "alter_51_plus": 0.1 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Körpergewicht mindestens 15% unter dem Normalgewicht (BMI < 17,5)",
+        "Selbst herbeigeführter Gewichtsverlust durch Vermeidung kalorienreicher Speisen",
+        "Körperschemastörung (Angst vor Gewichtszunahme auch bei Untergewicht)"
+      ],
+      "optionale_symptome": [
+        "Amenorrhoe bei Frauen",
+        "Exzessive körperliche Betätigung",
+        "Heimliches Essen oder Vermeidung von Mahlzeiten in Gesellschaft"
+      ]
+    },
+    "differentialdiagnose": "Bulimia nervosa (F50.2, Normalgewicht, Binge-Purge), körperliche Erkrankung (Malignome, GI-Erkrankungen), depressive Störung mit Appetitminderung.",
+    "komorbiditaeten": ["F32 (Depression)", "F42 (Zwang)", "F60.3 (BPS)"]
+  },
+  {
+    "code": "F50.2",
+    "name": "Bulimia nervosa",
+    "kategorie": "F5",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 1.5,
+    "praevalenz_modifikatoren": { "männlich": 0.2, "weiblich": 2.0, "alter_18_30": 3.0, "alter_31_50": 1.0, "alter_51_plus": 0.2 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Wiederholende Essanfälle mit Kontrollverlust über das Essen",
+        "Kompensatorisches Verhalten (Erbrechen, Laxantien, Fasten, Sport)",
+        "Übermäßiger Einfluss von Figur und Gewicht auf Selbstbewertung"
+      ],
+      "optionale_symptome": [
+        "Oft Normalgewicht (anders als Anorexie)",
+        "Zahnschäden durch Magenssäure",
+        "Schamgefühle und Geheimhaltung"
+      ]
+    },
+    "differentialdiagnose": "Anorexia nervosa mit Binge-Purge-Typ (F50.0/F50.3), Binge-Eating-Störung (keine Kompensation), depressive Episode.",
+    "komorbiditaeten": ["F32 (Depression)", "F60.3 (BPS)", "F41 (Angst)", "F10 (Alkohol)"]
+  },
+  {
+    "code": "F50.4",
+    "name": "Essattacken bei sonstigen psychischen Störungen",
+    "kategorie": "F5",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 3.0,
+    "praevalenz_modifikatoren": { "männlich": 0.8, "weiblich": 1.3, "alter_18_30": 1.5, "alter_31_50": 1.5, "alter_51_plus": 0.8 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Wiederkehrende Essanfälle (mindestens 1x/Woche für 3 Monate)",
+        "Kontrollverlust über Essen während der Episode",
+        "Kein regelmäßiges kompensatorisches Verhalten"
+      ],
+      "optionale_symptome": [
+        "Rasches Essen ohne Hunger",
+        "Alleine essen aus Scham",
+        "Ausgeprägte Schuldgefühle danach"
+      ]
+    },
+    "differentialdiagnose": "Bulimia nervosa (F50.2, mit Kompensation), adipositas ohne Essstörung, emotionales Essen bei Angst/Depression.",
+    "komorbiditaeten": ["F32 (Depression)", "F41 (Angst)", "F60.3 (BPS)"]
+  },
+  {
+    "code": "F51.0",
+    "name": "Nichtorganische Insomnie",
+    "kategorie": "F5",
+    "seltenheit_score": 3,
+    "praevalenz_allgemein_prozent": 15.0,
+    "praevalenz_modifikatoren": { "männlich": 0.8, "weiblich": 1.3, "alter_18_30": 1.0, "alter_31_50": 1.2, "alter_51_plus": 1.8 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Schwierigkeiten beim Ein- oder Durchschlafen oder nicht erholsamer Schlaf",
+        "Mindestens 3 Nächte pro Woche für mindestens 1 Monat",
+        "Deutliche Beeinträchtigung der Tagesfunktion"
+      ],
+      "optionale_symptome": [
+        "Grübeln im Bett",
+        "Konditionierte Schlafangst (Bett als Stressor erlebt)",
+        "Übermäßige Tagesmüdigkeit"
+      ]
+    },
+    "differentialdiagnose": "Organische Ursachen (Schlafapnoe, RLS), psychiatrische Schlafstörung bei Depression/Angst, Substanz-induzierte Schlafstörung.",
+    "komorbiditaeten": ["F32 (Depression)", "F41 (Angst)", "F43.1 (PTBS)"]
+  },
+  {
+    "code": "F52.0",
+    "name": "Mangel an sexuellem Verlangen",
+    "kategorie": "F5",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 5.0,
+    "praevalenz_modifikatoren": { "männlich": 0.6, "weiblich": 1.6, "alter_18_30": 1.0, "alter_31_50": 1.3, "alter_51_plus": 1.5 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Subjektiv empfundenes Fehlen sexuellen Verlangens",
+        "Nicht durch körperliche Erkrankung oder Substanz erklärbar",
+        "Leidensdruck oder Beziehungsprobleme"
+      ],
+      "optionale_symptome": [
+        "Häufig als Sekundärsymptom bei Depression",
+        "Kann situationsgebunden (Partner-spezifisch) sein",
+        "Hormonelle Faktoren ausschließen"
+      ]
+    },
+    "differentialdiagnose": "Hyposexuelles Verlangen bei Depression (F32), körperliche Ursachen (Hormonstörungen), Medikamentennebenwirkung.",
+    "komorbiditaeten": ["F32 (Depression)", "F41 (Angst)", "F43.1 (PTBS)"]
+  },
+  {
+    "code": "F54",
+    "name": "Psychische Faktoren bei andernorts klassifizierten Erkrankungen",
+    "kategorie": "F5",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 5.0,
+    "praevalenz_modifikatoren": { "männlich": 0.9, "weiblich": 1.2, "alter_18_30": 0.8, "alter_31_50": 1.3, "alter_51_plus": 1.5 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Körperliche Erkrankung bestätigt (z.B. Asthma, Colitis ulcerosa, Neurodermitis)",
+        "Psychologische Faktoren beeinflussen Entstehung oder Verlauf der körperlichen Erkrankung nachweisbar",
+        "Keine Somatisierung (die körperliche Erkrankung ist real)"
+      ],
+      "optionale_symptome": [
+        "Psychosozialer Stressor zeitlich mit Verschlechterung verbunden",
+        "Emotionale Reaktionen, die physiologische Reaktionen auslösen",
+        "Sekundärer Krankheitsgewinn"
+      ]
+    },
+    "differentialdiagnose": "Somatoforme Störungen (F45, körperliche Erkrankung nicht nachweisbar), Anpassungsstörung (F43.2).",
+    "komorbiditaeten": ["F32 (Depression)", "F41 (Angst)", "F43 (Belastungsstörungen)"]
+  }
+]

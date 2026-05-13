@@ -1,0 +1,201 @@
+[
+  {
+    "code": "F60.0",
+    "name": "Paranoide Persönlichkeitsstörung",
+    "kategorie": "F6",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 1.5,
+    "praevalenz_modifikatoren": { "männlich": 1.4, "weiblich": 0.7, "alter_18_30": 1.0, "alter_31_50": 1.2, "alter_51_plus": 1.0 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Übermäßige Empfindlichkeit gegenüber Zurückweisung und Niedertracht",
+        "Neigung zu Groll, Unfähigkeit zu verzeihen",
+        "Misstrauen gegenüber anderen (böse Absichten werden vermutet)"
+      ],
+      "optionale_symptome": [
+        "Streitsucht und hartnäckiges Beharren auf eigenen Rechten",
+        "Übertriebenes Selbstbewusstsein kombiniert mit Empfindlichkeit",
+        "Eifersüchtige Ideen (Partner-Untreue vermutet)"
+      ]
+    },
+    "differentialdiagnose": "Wahnhafte Störung (F22.0, echter Wahn), Schizophrenie (F20, Halluzinationen), schizotype Störung (F21).",
+    "komorbiditaeten": ["F32 (Depression)", "F60.1 (Schizoide PS)"]
+  },
+  {
+    "code": "F60.1",
+    "name": "Schizoide Persönlichkeitsstörung",
+    "kategorie": "F6",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 1.0,
+    "praevalenz_modifikatoren": { "männlich": 1.4, "weiblich": 0.7, "alter_18_30": 1.0, "alter_31_50": 1.0, "alter_51_plus": 1.0 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Emotionale Kälte, Distanziertheit oder flacher Affekt",
+        "Wenig Freude an Aktivitäten oder sozialen Kontakten",
+        "Bevorzugte Einsamkeit und solitäre Tätigkeiten"
+      ],
+      "optionale_symptome": [
+        "Gleichgültigkeit gegenüber Lob oder Kritik",
+        "Fehlendes Interesse an sexuellen Beziehungen",
+        "Keine engen Freundschaften oder Vertrauenspersonen"
+      ]
+    },
+    "differentialdiagnose": "Schizotype Störung (F21, magisches Denken), Asperger-Syndrom (F84.5, Kommunikationsdefizite), ängstliche PS (F60.6, möchte Kontakte, traut sich nicht).",
+    "komorbiditaeten": ["F21 (Schizotyp)", "F34.1 (Dysthymia)"]
+  },
+  {
+    "code": "F60.2",
+    "name": "Dissoziale (Antisoziale) Persönlichkeitsstörung",
+    "kategorie": "F6",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 2.0,
+    "praevalenz_modifikatoren": { "männlich": 2.5, "weiblich": 0.3, "alter_18_30": 2.0, "alter_31_50": 1.5, "alter_51_plus": 0.5 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Rücksichtsloses Missachten sozialer Normen und Rechte anderer",
+        "Keine Schuldgefühle oder Empathie",
+        "Niedriges Frustrationstoleranz, Impulsivität, Aggressivität"
+      ],
+      "optionale_symptome": [
+        "Lügen, Manipulation, Betrug",
+        "Risikoverhalten ohne Konsequenzplanung",
+        "Störung des Sozialverhaltens in der Kindheit (Voraussetzung)"
+      ]
+    },
+    "differentialdiagnose": "Borderline-PS (F60.3, Impulsivität + emotionale Dysregulation), Narzissmus (kein kriminelles Verhalten), Manie (F30, episodisch).",
+    "komorbiditaeten": ["F10.2 (Alkohol)", "F11 (Opioide)", "F43.1 (PTBS)"]
+  },
+  {
+    "code": "F60.3",
+    "name": "Emotional instabile Persönlichkeitsstörung (Borderline)",
+    "kategorie": "F6",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 2.5,
+    "praevalenz_modifikatoren": { "männlich": 0.5, "weiblich": 1.7, "alter_18_30": 2.5, "alter_31_50": 1.5, "alter_51_plus": 0.5 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Intensive und instabile Beziehungen (Idealisierung/Entwertung)",
+        "Impulsivität in selbstschädigenden Bereichen",
+        "Affektive Instabilität mit intensiver Dysphorie, Angst oder Reizbarkeit"
+      ],
+      "optionale_symptome": [
+        "Chronische Leere und Identitätsstörung",
+        "Selbstverletzung oder suizidales Verhalten",
+        "Dissoziative Symptome unter Stress",
+        "Paranoide Ideen unter Belastung"
+      ]
+    },
+    "differentialdiagnose": "Bipolare Störung (F31, episodisch, keine Identitätsstörung), PTBS (F43.1, Trauma-Fokus), Histrionische PS (F60.4).",
+    "komorbiditaeten": ["F43.1 (PTBS)", "F32 (Depression)", "F10 (Alkohol)", "F44 (Dissoziation)"]
+  },
+  {
+    "code": "F60.4",
+    "name": "Histrionische Persönlichkeitsstörung",
+    "kategorie": "F6",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 1.5,
+    "praevalenz_modifikatoren": { "männlich": 0.5, "weiblich": 1.7, "alter_18_30": 1.5, "alter_31_50": 1.2, "alter_51_plus": 0.8 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Übertriebener Ausdruck von Emotionen (theatralisch, dramatisch)",
+        "Ständiges Streben nach Aufmerksamkeit",
+        "Übermäßige Sorge um äußeres Erscheinungsbild"
+      ],
+      "optionale_symptome": [
+        "Beeinflussbarkeit durch andere",
+        "Suggestibilität, leichte Ablenkbarkeit",
+        "Unangemessene sexuelle Verführungssignale"
+      ]
+    },
+    "differentialdiagnose": "Borderline-PS (F60.3, Instabilität prominenter), narzistische PS, Manie (F30, episodisch).",
+    "komorbiditaeten": ["F32 (Depression)", "F45 (Somatoform)", "F60.3 (BPS)"]
+  },
+  {
+    "code": "F60.5",
+    "name": "Anankastische (Zwanghafte) Persönlichkeitsstörung",
+    "kategorie": "F6",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 2.0,
+    "praevalenz_modifikatoren": { "männlich": 1.3, "weiblich": 0.8, "alter_18_30": 1.0, "alter_31_50": 1.5, "alter_51_plus": 1.0 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Exzessiver Perfektionismus, der die Aufgabenerledigung behindert",
+        "Übermäßige Ordnungsliebe und Regelorientierung",
+        "Inflexibilität und Starrheit"
+      ],
+      "optionale_symptome": [
+        "Übermäßige Gewissenhaftigkeit bis zur Rigidität",
+        "Schwierigkeiten, Aufgaben zu delegieren",
+        "Geiz und Sparsamkeit"
+      ]
+    },
+    "differentialdiagnose": "Zwangsstörung (F42, Ego-dystone Zwänge), Autismus-Spektrum (F84), schizotype Störung.",
+    "komorbiditaeten": ["F42 (Zwangsstörung)", "F32 (Depression)"]
+  },
+  {
+    "code": "F60.6",
+    "name": "Ängstliche (Vermeidende) Persönlichkeitsstörung",
+    "kategorie": "F6",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 2.5,
+    "praevalenz_modifikatoren": { "männlich": 0.8, "weiblich": 1.3, "alter_18_30": 1.3, "alter_31_50": 1.2, "alter_51_plus": 0.8 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Anhaltende Gefühle von Anspannung und Besorgtheit",
+        "Überzeugung, sozial ungeschickt und unattraktiv zu sein",
+        "Übermäßige Sorge vor Kritik, Missbilligung oder Ablehnung"
+      ],
+      "optionale_symptome": [
+        "Vermeidung sozialer und beruflicher Aktivitäten",
+        "Eingeschränkte Lebensweise aufgrund von Sicherheitsbedürfnis",
+        "Wunsch nach Zuneigung, aber Angst davor"
+      ]
+    },
+    "differentialdiagnose": "Soziale Phobie (F40.1, situationsgebunden, keine PS-Kriterien), schizoide PS (F60.1, kein Wunsch nach Nähe), abhängige PS (F60.7).",
+    "komorbiditaeten": ["F40.1 (Soziale Phobie)", "F32 (Depression)", "F41.1 (GAD)"]
+  },
+  {
+    "code": "F60.7",
+    "name": "Abhängige Persönlichkeitsstörung",
+    "kategorie": "F6",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 1.5,
+    "praevalenz_modifikatoren": { "männlich": 0.6, "weiblich": 1.6, "alter_18_30": 1.2, "alter_31_50": 1.3, "alter_51_plus": 0.9 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Tiefe Angst vor Verlassenwerden",
+        "Unfähigkeit, wichtige Entscheidungen ohne Ratsuche zu treffen",
+        "Unterordnung eigener Bedürfnisse unter die der Bezugsperson"
+      ],
+      "optionale_symptome": [
+        "Schwierigkeiten, Projekte allein zu beginnen",
+        "Toleration von Misshandlung um Beziehung aufrechtzuerhalten",
+        "Unmittelbare neue Beziehungssuche nach Trennung"
+      ]
+    },
+    "differentialdiagnose": "Ängstliche PS (F60.6, soziale Angst im Vordergrund), Borderline-PS (F60.3, Intensität), depressive Störung.",
+    "komorbiditaeten": ["F32 (Depression)", "F40.1 (Soziale Phobie)", "F60.4 (Histrionisch)"]
+  },
+  {
+    "code": "F63.0",
+    "name": "Pathologisches Spielen",
+    "kategorie": "F6",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 1.0,
+    "praevalenz_modifikatoren": { "männlich": 1.8, "weiblich": 0.4, "alter_18_30": 1.5, "alter_31_50": 1.5, "alter_51_plus": 0.8 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Häufige Episoden des Glücksspiels, die das Leben dominieren",
+        "Fortgesetztes Spielen trotz persönlicher und sozialer Schäden",
+        "Kontrollverlust und Toleranzentwicklung"
+      ],
+      "optionale_symptome": [
+        "Schulden und finanzieller Ruin",
+        "Lügen gegenüber Familie",
+        "Spielen um Verluste auszugleichen (Chasing)"
+      ]
+    },
+    "differentialdiagnose": "Manische Episode (F30, episodisch, anderes Verhalten), antisoziale PS (F60.2, kein Glücksspiel im Fokus).",
+    "komorbiditaeten": ["F32 (Depression)", "F10 (Alkohol)", "F41 (Angst)"]
+  }
+]

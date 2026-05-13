@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#08080f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>PsychoDex</title>
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Loading Screen ──────────────────────────────────────────────────── -->
+  <div id="loading-screen" class="loading-screen">
+    <div class="loading-logo">PsychoDex</div>
+    <div class="loading-spinner"></div>
+  </div>
+
+  <!-- ── Main Content ────────────────────────────────────────────────────── -->
+  <main id="main-content" class="hidden">
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-rank">
+        <span id="header-rank-name">Novus des Zuhörens</span>
+        <span id="header-level" class="level-badge">Rang 1</span>
+      </div>
+      <div class="xp-bar-mini">
+        <div id="header-xp-fill" class="xp-fill-mini" style="width:0%"></div>
+      </div>
+    </header>
+
+    <!-- Tab Container -->
+    <div class="tab-container">
+
+      <!-- ── Dashboard ─────────────────────────────────────────────────── -->
+      <section id="tab-dashboard" class="tab-view active">
+        <div class="rank-card" id="rank-card">
+          <div class="rank-card-bg" id="rank-card-bg"></div>
+          <div class="rank-card-content">
+            <div class="rank-title"  id="rank-title">Novus</div>
+            <div class="rank-subtitle" id="rank-subtitle">des Zuhörens</div>
+            <div class="rank-level"    id="rank-level">Rang 1 / 18</div>
+          </div>
+          <div class="rank-xp-container">
+            <div class="xp-label">
+              <span><span id="xp-current">0</span> / <span id="xp-needed">250</span> XP</span>
+              <span id="xp-pct" style="color:var(--text-dim)">0%</span>
+            </div>
+            <div class="xp-bar">
+              <div id="xp-bar-fill" class="xp-fill" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-icon" id="streak-icon">🔥</div>
+            <div class="stat-value" id="streak-value">0</div>
+            <div class="stat-label">Wochen-Streak</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⏱️</div>
+            <div class="stat-value" id="total-hours">0h</div>
+            <div class="stat-label">Stunden</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🔬</div>
+            <div class="stat-value" id="total-catches">0</div>
+            <div class="stat-label">Diagnosen</div>
+          </div>
+        </div>
+
+        <div class="section-header">Zuletzt gefangen</div>
+        <div id="recent-catches" class="recent-list">
+          <div class="empty-state">Noch keine Diagnosen – starte deinen ersten Dienst!</div>
+        </div>
+
+        <div class="section-header">Letzte Dienste</div>
+        <div id="recent-shifts" class="recent-list">
+          <div class="empty-state">Noch keine Dienste geloggt.</div>
+        </div>
+      </section>
+
+      <!-- ── Log Shift ──────────────────────────────────────────────────── -->
+      <section id="tab-log" class="tab-view">
+        <div class="view-title">Dienst loggen</div>
+
+        <!-- Step 1 -->
+        <div id="step-shift-info" class="step-card">
+          <div class="step-number">Schritt 01 – Dienst-Info</div>
+          <div class="form-group">
+            <label class="form-label" for="shift-date">Datum</label>
+            <input type="date" id="shift-date" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Diensttyp</label>
+            <div class="type-selector">
+              <button class="type-btn active" data-type="half" data-xp="65">
+                <span class="type-icon">🌅</span>
+                <span>Früh / Spät</span>
+                <span class="type-xp">65 XP · 6,5h</span>
+              </button>
+              <button class="type-btn" data-type="full" data-xp="120">
+                <span class="type-icon">☀️</span>
+                <span>Ganztags</span>
+                <span class="type-xp">120 XP · 12h</span>
+              </button>
+            </div>
+          </div>
+          <button id="btn-next-to-patients" class="btn-primary">Weiter →</button>
+        </div>
+
+        <!-- Step 2 -->
+        <div id="step-patients" class="step-card hidden-step">
+          <div class="step-number">Schritt 02 – Patienten-Begegnungen</div>
+          <div id="patient-list"></div>
+          <button id="btn-add-patient" class="btn-secondary">+ Patient hinzufügen</button>
+          <button id="btn-finish-shift" class="btn-primary" style="margin-top:12px">Dienst abschließen ✓</button>
+          <button id="btn-back-to-info" class="btn-secondary">← Zurück</button>
+        </div>
+      </section>
+
+      <!-- ── PsychoDex ──────────────────────────────────────────────────── -->
+      <section id="tab-dex" class="tab-view">
+        <div class="view-title">PsychoDex</div>
+        <div class="dex-progress-bar">
+          <span id="dex-caught-count">0</span> / <span id="dex-total-count">0</span> Diagnosen gefangen
+          <div class="dex-progress-track">
+            <div id="dex-progress-fill" class="dex-fill" style="width:0%"></div>
+          </div>
+        </div>
+        <div id="category-grid" class="category-grid"></div>
+      </section>
+
+      <!-- ── Stats ─────────────────────────────────────────────────────── -->
+      <section id="tab-stats" class="tab-view">
+        <div class="view-title">Statistiken</div>
+        <div class="progress-stats">
+          <div class="progress-stat">
+            <div class="ps-label">Gesamt XP</div>
+            <div class="ps-value" id="stat-total-xp">0</div>
+          </div>
+          <div class="progress-stat">
+            <div class="ps-label">Dienste</div>
+            <div class="ps-value" id="stat-total-shifts">0</div>
+          </div>
+          <div class="progress-stat">
+            <div class="ps-label">Ø XP / Dienst</div>
+            <div class="ps-value" id="stat-avg-xp">0</div>
+          </div>
+          <div class="progress-stat">
+            <div class="ps-label">Stunden</div>
+            <div class="ps-value" id="stat-hours">0h</div>
+          </div>
+        </div>
+
+        <div class="section-header">Dienst-Aktivität (52 Wochen)</div>
+        <div class="heatmap-scroll">
+          <div id="heatmap" class="heatmap"></div>
+        </div>
+
+        <div class="section-header">Diagnose-Verteilung</div>
+        <div id="category-chart" class="category-chart"></div>
+      </section>
+
+    </div><!-- /.tab-container -->
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav" id="bottom-nav">
+      <button class="nav-btn active" data-tab="dashboard">
+        <span class="nav-icon">◈</span>
+        <span class="nav-label">Home</span>
+      </button>
+      <button class="nav-btn" data-tab="log">
+        <span class="nav-icon">✦</span>
+        <span class="nav-label">Loggen</span>
+      </button>
+      <button class="nav-btn" data-tab="dex">
+        <span class="nav-icon">◉</span>
+        <span class="nav-label">PsychoDex</span>
+      </button>
+      <button class="nav-btn" data-tab="stats">
+        <span class="nav-icon">◬</span>
+        <span class="nav-label">Stats</span>
+      </button>
+    </nav>
+
+  </main><!-- /#main-content -->
+
+  <!-- ── Diagnosis Search Modal ──────────────────────────────────────────── -->
+  <div id="diagnosis-modal" class="modal hidden">
+    <div class="modal-backdrop" id="diag-modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Diagnose suchen & fangen</div>
+        <button class="modal-close" id="diag-modal-close">✕</button>
+      </div>
+      <input type="search" id="diag-search-input" class="search-input"
+             placeholder="ICD-Code oder Bezeichnung (mind. 2 Zeichen)…" autocomplete="off">
+      <div id="diag-search-results" class="search-results"></div>
+
+      <div id="diag-detail" class="diag-detail hidden">
+        <div id="diag-detail-header"></div>
+
+        <div class="diag-detail-section">
+          <div class="diag-detail-label">Pflicht-Symptome</div>
+          <ul id="diag-pflicht-list" class="symptom-list"></ul>
+        </div>
+        <div class="diag-detail-section">
+          <div class="diag-detail-label">Optionale Symptome</div>
+          <ul id="diag-optional-list" class="symptom-list"></ul>
+        </div>
+        <div class="diag-detail-section">
+          <div class="diag-detail-label">Häufige Komorbiditäten</div>
+          <div id="diag-komorbid-chips" class="komorbid-chips"></div>
+        </div>
+        <div class="diag-detail-section">
+          <div class="diag-detail-label">Differentialdiagnose</div>
+          <div id="diag-diff-text" class="diff-text"></div>
+        </div>
+
+        <div class="komorbid-toggle">
+          <label class="toggle-label">
+            <input type="checkbox" id="komorbid-checkbox">
+            Komorbidität korrekt verlinkt (+20% XP)
+          </label>
+        </div>
+        <button id="btn-catch-diagnosis" class="btn-catch">🎯 Diagnose fangen!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Category Detail Modal ───────────────────────────────────────────── -->
+  <div id="category-modal" class="modal hidden">
+    <div class="modal-backdrop" id="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <div id="modal-category-title" class="modal-title"></div>
+        <button class="modal-close" id="modal-close">✕</button>
+      </div>
+      <div id="modal-diagnoses-list" class="diagnoses-list"></div>
+    </div>
+  </div>
+
+  <!-- ── XP Popup ────────────────────────────────────────────────────────── -->
+  <div id="xp-popup" class="hidden">
+    <div id="xp-popup-text"></div>
+  </div>
+
+  <!-- ── Level Up Modal ──────────────────────────────────────────────────── -->
+  <div id="levelup-modal" class="levelup-modal hidden">
+    <div class="levelup-content">
+      <div class="levelup-title">⬆ AUFGESTIEGEN!</div>
+      <div id="levelup-rank-name"    class="levelup-rank-name"></div>
+      <div id="levelup-rank-subtitle" class="levelup-rank-subtitle"></div>
+      <div id="levelup-rank-level"   class="levelup-rank-level"></div>
+      <button id="levelup-close" class="btn-primary">Weitermachen</button>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<script src="https://unpkg.com/dexie@4/dist/dexie.umd.js"></script>
+<script type="module" src="src/app.js"></script>
+</body>
+</html>

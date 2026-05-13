@@ -1,0 +1,176 @@
+[
+  {
+    "code": "F10.1",
+    "name": "Schädlicher Alkoholgebrauch",
+    "kategorie": "F1",
+    "seltenheit_score": 3,
+    "praevalenz_allgemein_prozent": 8.0,
+    "praevalenz_modifikatoren": { "männlich": 1.5, "weiblich": 0.7, "alter_18_30": 1.4, "alter_31_50": 1.2, "alter_51_plus": 0.8 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Konsummuster, das zu tatsächlichen körperlichen oder psychischen Schäden führt",
+        "Schädlicher Gebrauch ohne Abhängigkeitssyndrom"
+      ],
+      "optionale_symptome": [
+        "Soziale Folgeschäden (beruflich, familiär)",
+        "Gedächtnisblockaden (Blackouts)",
+        "Risikoverhalten unter Alkohol"
+      ]
+    },
+    "differentialdiagnose": "Alkoholabhängigkeit (F10.2, Kontrollverlust, Toleranz), Soziales Trinken (kein Schaden), Angststörung mit Alkohol als Bewältigungsstrategie.",
+    "komorbiditaeten": ["F32 (Depression)", "F41.1 (Generalisierte Angststörung)"]
+  },
+  {
+    "code": "F10.2",
+    "name": "Alkoholabhängigkeitssyndrom",
+    "kategorie": "F1",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 4.0,
+    "praevalenz_modifikatoren": { "männlich": 1.8, "weiblich": 0.5, "alter_18_30": 1.0, "alter_31_50": 1.5, "alter_51_plus": 1.0 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Starker Wunsch oder Zwang, Alkohol zu konsumieren",
+        "Verminderte Kontrolle über Beginn, Ende oder Menge des Konsums",
+        "Toleranzentwicklung (deutliche Dosissteigerung für gleiche Wirkung)"
+      ],
+      "optionale_symptome": [
+        "Körperliches Entzugssyndrom bei Reduktion",
+        "Fortgesetzter Konsum trotz schädlicher Folgen",
+        "Vernachlässigung anderer Aktivitäten zugunsten des Konsums"
+      ]
+    },
+    "differentialdiagnose": "Schädlicher Gebrauch (F10.1, keine Toleranz/Entzug), Alkohol-induzierte Störungen, depressive Störung als Primärdiagnose.",
+    "komorbiditaeten": ["F32 (Depression)", "F60.2 (Dissoziale PS)", "F43.1 (PTBS)"]
+  },
+  {
+    "code": "F10.3",
+    "name": "Alkoholentzugssyndrom",
+    "kategorie": "F1",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 1.0,
+    "praevalenz_modifikatoren": { "männlich": 1.7, "weiblich": 0.6, "alter_18_30": 0.5, "alter_31_50": 1.0, "alter_51_plus": 1.5 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Absetzen oder Reduktion nach längerem/hochdosiertem Alkoholkonsum",
+        "Autonome Symptome: Tremor, Schwitzen, Tachykardie",
+        "Schlaflosigkeit, Angst, psychomotorische Unruhe"
+      ],
+      "optionale_symptome": [
+        "Übelkeit, Erbrechen",
+        "Transiente Halluzinationen",
+        "Grand-Mal-Krampfanfälle (Entzugsanfälle)"
+      ]
+    },
+    "differentialdiagnose": "Delir tremens (F10.4, schweres Entzugsbild), Entzug von Benzodiazepinen (F13.3), vegetative Dysregulation anderer Ursache.",
+    "komorbiditaeten": ["F10.2 (Alkoholabhängigkeit)"]
+  },
+  {
+    "code": "F11.2",
+    "name": "Opioidabhängigkeit",
+    "kategorie": "F1",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.4,
+    "praevalenz_modifikatoren": { "männlich": 1.5, "weiblich": 0.7, "alter_18_30": 2.0, "alter_31_50": 1.2, "alter_51_plus": 0.3 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Starkes Verlangen nach Opioiden (Craving)",
+        "Kontrollverlust über Konsum",
+        "Toleranzentwicklung und Entzugssymptome"
+      ],
+      "optionale_symptome": [
+        "Nadeleinstichstellen, Abszesse",
+        "Sozialer Rückzug, kriminelle Beschaffung",
+        "Vernachlässigung von Hygiene und sozialen Pflichten"
+      ]
+    },
+    "differentialdiagnose": "Schmerzmittelabhängigkeit bei chronsichem Schmerzpatienten (F55), Kokainabhängigkeit (F14.2), kombinierter Substanzmissbrauch (F19).",
+    "komorbiditaeten": ["F43.1 (PTBS)", "F32 (Depression)", "F60.3 (BPS)"]
+  },
+  {
+    "code": "F12.1",
+    "name": "Schädlicher Cannabisgebrauch",
+    "kategorie": "F1",
+    "seltenheit_score": 3,
+    "praevalenz_allgemein_prozent": 5.0,
+    "praevalenz_modifikatoren": { "männlich": 1.6, "weiblich": 0.6, "alter_18_30": 3.0, "alter_31_50": 1.0, "alter_51_plus": 0.2 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Konsummuster, das zu psychischen oder sozialen Schäden führt",
+        "Keine Abhängigkeit nachweisbar"
+      ],
+      "optionale_symptome": [
+        "Motivationales Syndrom (Antriebsminderung, Apathie)",
+        "Kurzzeit-Gedächtnisprobleme",
+        "Auslösung psychotischer Episoden bei Vulnerabilität"
+      ]
+    },
+    "differentialdiagnose": "Cannabisabhängigkeit (F12.2), primäre Psychose (F20), ADHS mit Cannabis als Selbstmedikation.",
+    "komorbiditaeten": ["F32 (Depression)", "F41 (Angststörung)", "F90 (ADHS)"]
+  },
+  {
+    "code": "F12.2",
+    "name": "Cannabisabhängigkeit",
+    "kategorie": "F1",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 2.0,
+    "praevalenz_modifikatoren": { "männlich": 1.6, "weiblich": 0.5, "alter_18_30": 2.5, "alter_31_50": 1.0, "alter_51_plus": 0.1 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Starkes Craving nach Cannabis",
+        "Kontrollverlust und Toleranzentwicklung",
+        "Entzugssymptome bei Absetzen (Reizbarkeit, Schlafstörungen)"
+      ],
+      "optionale_symptome": [
+        "Vernachlässigung von Pflichten und sozialen Kontakten",
+        "Täglicher Konsum trotz negativer Folgen",
+        "Schwierigkeiten, ohne Cannabis zu entspannen"
+      ]
+    },
+    "differentialdiagnose": "Schädlicher Gebrauch (F12.1), primäre Angststörung, depressive Störung.",
+    "komorbiditaeten": ["F34.1 (Dysthymia)", "F41.1 (GAD)", "F60.3 (BPS)"]
+  },
+  {
+    "code": "F13.2",
+    "name": "Abhängigkeit von Sedativa und Hypnotika",
+    "kategorie": "F1",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 1.5,
+    "praevalenz_modifikatoren": { "männlich": 0.8, "weiblich": 1.3, "alter_18_30": 0.5, "alter_31_50": 1.0, "alter_51_plus": 2.5 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Starkes Verlangen nach Benzodiazepinen oder Schlafmitteln",
+        "Toleranzentwicklung mit Dosissteigerung",
+        "Körperliche Entzugssymptome"
+      ],
+      "optionale_symptome": [
+        "Einnahme gegen medizinischen Rat",
+        "Beschaffung über mehrere Ärzte",
+        "Versagen bisheriger Absetzvsuche"
+      ]
+    },
+    "differentialdiagnose": "Bestimmungsgemäße Einnahme bei Angst (keine Abhängigkeit), Alkoholabhängigkeit (F10.2), Schlafstörungen primärer Genese (F51).",
+    "komorbiditaeten": ["F41 (Angststörungen)", "F32 (Depression)", "F51 (Schlafstörungen)"]
+  },
+  {
+    "code": "F17.2",
+    "name": "Tabakabhängigkeit",
+    "kategorie": "F1",
+    "seltenheit_score": 2,
+    "praevalenz_allgemein_prozent": 25.0,
+    "praevalenz_modifikatoren": { "männlich": 1.1, "weiblich": 0.9, "alter_18_30": 1.3, "alter_31_50": 1.2, "alter_51_plus": 1.0 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Starkes Verlangen nach Nikotin",
+        "Schwierigkeiten, den Konsum einzuschränken",
+        "Entzugssymptome bei Abstinenz (Reizbarkeit, Konzentrationsprobleme)"
+      ],
+      "optionale_symptome": [
+        "Konsum trotz bekannter Gesundheitsschäden",
+        "Tagesprogramm um Rauchzeiten herum organisiert",
+        "Erste Zigarette innerhalb von 30 min nach dem Aufwachen"
+      ]
+    },
+    "differentialdiagnose": "Schädlicher Gebrauch (F17.1), reine Gewohnheit ohne Abhängigkeitskriterien.",
+    "komorbiditaeten": ["F32 (Depression)", "F41 (Angststörungen)", "F20 (Schizophrenie)"]
+  }
+]

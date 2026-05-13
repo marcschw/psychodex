@@ -1,0 +1,9 @@
+{
+  "name": "psychodex",
+  "version": "1.0.0",
+  "description": "Gamifiziertes ICD-10 Diagnostik-Logbuch für SFU-Assistenten",
+  "scripts": {
+    "dev": "npx serve . -p 3000",
+    "start": "npx serve ."
+  }
+}

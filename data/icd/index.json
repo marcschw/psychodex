@@ -1,0 +1,14 @@
+{
+  "categories": [
+    {"code": "F0", "label": "F00–F09", "name": "Organische psychische Störungen", "file": "f00.json", "color": "#6B4F35", "emoji": "🧠"},
+    {"code": "F1", "label": "F10–F19", "name": "Störungen durch Substanzkonsum", "file": "f10.json", "color": "#8B3A1F", "emoji": "⚗️"},
+    {"code": "F2", "label": "F20–F29", "name": "Schizophrenie & Psychosen", "file": "f20.json", "color": "#4A3560", "emoji": "🌀"},
+    {"code": "F3", "label": "F30–F39", "name": "Affektive Störungen", "file": "f30.json", "color": "#1B3A5C", "emoji": "🌊"},
+    {"code": "F4", "label": "F40–F48", "name": "Neurotische & Belastungsstörungen", "file": "f40.json", "color": "#1A4A28", "emoji": "🌿"},
+    {"code": "F5", "label": "F50–F59", "name": "Verhaltensauffälligkeiten", "file": "f50.json", "color": "#3D1050", "emoji": "⚖️"},
+    {"code": "F6", "label": "F60–F69", "name": "Persönlichkeitsstörungen", "file": "f60.json", "color": "#5C1A1A", "emoji": "🎭"},
+    {"code": "F7", "label": "F70–F79", "name": "Intelligenzminderung", "file": "f70.json", "color": "#1A3040", "emoji": "📊"},
+    {"code": "F8", "label": "F80–F89", "name": "Entwicklungsstörungen", "file": "f80.json", "color": "#243B16", "emoji": "🌱"},
+    {"code": "F9", "label": "F90–F98", "name": "Kinder- & Jugendpsychiatrie", "file": "f90.json", "color": "#162C4A", "emoji": "⭐"}
+  ]
+}

@@ -1,0 +1,154 @@
+[
+  {
+    "code": "F20.0",
+    "name": "Paranoide Schizophrenie",
+    "kategorie": "F2",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.8,
+    "praevalenz_modifikatoren": { "männlich": 1.2, "weiblich": 0.9, "alter_18_30": 2.0, "alter_31_50": 1.5, "alter_51_plus": 0.5 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Prominente Wahnphänomene (Verfolgungswahn, Beziehungswahn)",
+        "Halluzinationen (meist auditorisch, kommentierende oder dialogisierende Stimmen)",
+        "Symptome seit mindestens 1 Monat"
+      ],
+      "optionale_symptome": [
+        "Ich-Störungen (Gedankeneingebung, -entzug, -ausbreitung)",
+        "Formale Denkstörungen",
+        "Negativsymptome (Affektverflachung, Alogie)"
+      ]
+    },
+    "differentialdiagnose": "Schizoaffektive Störung (F25, prominente affektive Symptome), wahnhafte Störung (F22, kein Ich-Störung), drogeninduzierte Psychose (F1x.5).",
+    "komorbiditaeten": ["F32 (Depression)", "F10 (Alkohol)", "F17 (Tabak)"]
+  },
+  {
+    "code": "F20.1",
+    "name": "Hebephrene Schizophrenie",
+    "kategorie": "F2",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.2,
+    "praevalenz_modifikatoren": { "männlich": 1.3, "weiblich": 0.8, "alter_18_30": 3.0, "alter_31_50": 0.8, "alter_51_plus": 0.2 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Inadäquater oder flacher Affekt (unsinniges Lachen, Grimassieren)",
+        "Desorganisiertes Denken und Sprechen",
+        "Beginn meist im Jugendalter"
+      ],
+      "optionale_symptome": [
+        "Ziellosigkeit und Antriebsminderung",
+        "Fragmentarische Wahnideen und Halluzinationen",
+        "Manieriertes, bizarres Verhalten"
+      ]
+    },
+    "differentialdiagnose": "Paranoide Schizophrenie (F20.0, Wahn prominenter), Schizophrenia simplex (F20.6, ohne Wahn), manische Episode (F30).",
+    "komorbiditaeten": ["F17.2 (Tabakabhängigkeit)", "F10.2 (Alkohol)"]
+  },
+  {
+    "code": "F20.6",
+    "name": "Schizophrenia simplex",
+    "kategorie": "F2",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.1,
+    "praevalenz_modifikatoren": { "männlich": 1.1, "weiblich": 0.9, "alter_18_30": 2.0, "alter_31_50": 0.8, "alter_51_plus": 0.3 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Schleichende Entwicklung von Negativsymptomen ohne vorangegangene psychotische Phase",
+        "Sozialer Rückzug und Leistungsknick über mindestens 1 Jahr",
+        "Keine oder nur rudimentäre Positivsymptome"
+      ],
+      "optionale_symptome": [
+        "Inadäquater Affekt",
+        "Verarmung des Denkens",
+        "Auffälligkeiten im Sozialverhalten"
+      ]
+    },
+    "differentialdiagnose": "Schizotype Störung (F21, weniger schwer), Depressive Störung mit psychomotorischer Hemmung, Persönlichkeitsstörung (F60.1).",
+    "komorbiditaeten": ["F34.1 (Dysthymia)"]
+  },
+  {
+    "code": "F21",
+    "name": "Schizotype Störung",
+    "kategorie": "F2",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.6,
+    "praevalenz_modifikatoren": { "männlich": 1.2, "weiblich": 0.9, "alter_18_30": 1.5, "alter_31_50": 1.2, "alter_51_plus": 0.8 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Sonderliches oder exzentrisches Verhalten",
+        "Magisches Denken, seltsame Überzeugungen",
+        "Misstrauische Ideen ohne echten Verfolgungswahn"
+      ],
+      "optionale_symptome": [
+        "Depersonalisation oder Derealisation",
+        "Unangemessener Affekt",
+        "Soziale Anhedonie und sozialer Rückzug"
+      ]
+    },
+    "differentialdiagnose": "Schizoide PS (F60.1, kein Denk-/Wahrnehmungsstörungen), paranoide PS (F60.0), Schizophrenie (F20, vollständige Symptome).",
+    "komorbiditaeten": ["F60.1 (Schizoide PS)", "F34.1 (Dysthymia)"]
+  },
+  {
+    "code": "F22.0",
+    "name": "Wahnhafte Störung",
+    "kategorie": "F2",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.3,
+    "praevalenz_modifikatoren": { "männlich": 1.0, "weiblich": 1.1, "alter_18_30": 0.3, "alter_31_50": 1.0, "alter_51_plus": 2.0 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Anhaltender Wahn (Verfolgung, Eifersucht, Größe, Körper) über mindestens 3 Monate",
+        "Keine Halluzinationen",
+        "Gut erhaltene Persönlichkeit außerhalb der Wahnthematik"
+      ],
+      "optionale_symptome": [
+        "Querulatorisches Verhalten",
+        "Eifersuchts- oder Liebeswahn",
+        "Hypochondrischer Wahn"
+      ]
+    },
+    "differentialdiagnose": "Paranoide Schizophrenie (F20.0, Halluzinationen, Ich-Störungen), paranoide PS (F60.0, kein ausgestalteter Wahn), organische Ursachen.",
+    "komorbiditaeten": ["F32 (Depression)", "F60.0 (Paranoide PS)"]
+  },
+  {
+    "code": "F25.0",
+    "name": "Schizoaffektive Störung, manischer Typ",
+    "kategorie": "F2",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.3,
+    "praevalenz_modifikatoren": { "männlich": 0.9, "weiblich": 1.2, "alter_18_30": 1.5, "alter_31_50": 1.5, "alter_51_plus": 0.5 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Gleichzeitig ausgeprägte manische Symptome UND schizophrene Symptome",
+        "Beide Symptomkomplexe in derselben Episode prominent"
+      ],
+      "optionale_symptome": [
+        "Expansiver oder gereizter Affekt",
+        "Größenwahn mit halluzinatorischer Verstärkung",
+        "Formale Denkstörungen"
+      ]
+    },
+    "differentialdiagnose": "Manische Episode mit psychotischen Symptomen (F30.2), paranoide Schizophrenie (F20.0), Bipolare Störung (F31).",
+    "komorbiditaeten": ["F10 (Alkohol)", "F43.1 (PTBS)"]
+  },
+  {
+    "code": "F25.1",
+    "name": "Schizoaffektive Störung, depressiver Typ",
+    "kategorie": "F2",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.4,
+    "praevalenz_modifikatoren": { "männlich": 0.8, "weiblich": 1.3, "alter_18_30": 1.0, "alter_31_50": 1.5, "alter_51_plus": 0.8 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Gleichzeitig ausgeprägte depressive Symptome UND schizophrene Symptome",
+        "Beide Symptomkomplexe in derselben Episode prominent"
+      ],
+      "optionale_symptome": [
+        "Nihilistischer Wahn, Schuldwahn",
+        "Psychomotorische Hemmung",
+        "Suizidales Erleben"
+      ]
+    },
+    "differentialdiagnose": "Schwere depressive Episode mit Psychose (F32.3), paranoide Schizophrenie (F20.0), schizoaffektiver manischer Typ (F25.0).",
+    "komorbiditaeten": ["F32 (Depression)", "F43.1 (PTBS)"]
+  }
+]

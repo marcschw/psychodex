@@ -1,0 +1,68 @@
+[
+  {
+    "code": "F70",
+    "name": "Leichte Intelligenzminderung",
+    "kategorie": "F7",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 2.0,
+    "praevalenz_modifikatoren": { "männlich": 1.3, "weiblich": 0.8, "alter_18_30": 1.5, "alter_31_50": 1.0, "alter_51_plus": 0.8 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "IQ zwischen 50 und 69 (MA 9-12 Jahre)",
+        "Beeinträchtigungen im adaptiven Verhalten",
+        "Beginn in der Entwicklungsperiode"
+      ],
+      "optionale_symptome": [
+        "Oft beschulbar mit Förderbedarf",
+        "Kann weitgehend selbstständig leben",
+        "Häufig komorbide psychische Störungen"
+      ]
+    },
+    "differentialdiagnose": "Lernbehinderung ohne Intelligenzminderung, mittelgradige Intelligenzminderung (F71), erworbene Demenz (F00).",
+    "komorbiditaeten": ["F90 (ADHS)", "F84 (Autismus)", "F32 (Depression)"]
+  },
+  {
+    "code": "F71",
+    "name": "Mittelgradige Intelligenzminderung",
+    "kategorie": "F7",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.4,
+    "praevalenz_modifikatoren": { "männlich": 1.2, "weiblich": 0.9, "alter_18_30": 1.3, "alter_31_50": 1.0, "alter_51_plus": 0.8 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "IQ zwischen 35 und 49 (MA 6-9 Jahre)",
+        "Deutliche Beeinträchtigungen in Sprache und sozialer Entwicklung",
+        "Unterstützungsbedarf im täglichen Leben"
+      ],
+      "optionale_symptome": [
+        "Einfache praktische Arbeiten möglich",
+        "Betreutes Wohnen erforderlich",
+        "Häufig genetische Ursachen"
+      ]
+    },
+    "differentialdiagnose": "Leichte (F70) und schwere (F72) Intelligenzminderung, Autismus-Spektrum (F84) mit kognitivem Profil.",
+    "komorbiditaeten": ["F84 (Autismus)", "F90 (ADHS)", "F91 (Verhaltensauffälligkeiten)"]
+  },
+  {
+    "code": "F72",
+    "name": "Schwere Intelligenzminderung",
+    "kategorie": "F7",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.1,
+    "praevalenz_modifikatoren": { "männlich": 1.2, "weiblich": 0.9, "alter_18_30": 1.2, "alter_31_50": 1.0, "alter_51_plus": 0.8 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "IQ zwischen 20 und 34 (MA 3-6 Jahre)",
+        "Ausgeprägte Einschränkungen in Motorik und Kommunikation",
+        "Umfassender Unterstützungsbedarf"
+      ],
+      "optionale_symptome": [
+        "Einfachste Selbstversorgung möglich",
+        "Häufig neurologische Komorbiditäten",
+        "Chromosomale/genetische Ursachen häufig"
+      ]
+    },
+    "differentialdiagnose": "Mittelgradige (F71) und tiefe (F73) Intelligenzminderung, Autismus-Spektrum.",
+    "komorbiditaeten": ["F84 (Autismus)", "G40 (Epilepsie)"]
+  }
+]

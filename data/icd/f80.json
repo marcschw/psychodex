@@ -1,0 +1,90 @@
+[
+  {
+    "code": "F81.0",
+    "name": "Lese- und Rechtschreibstörung (Legasthenie)",
+    "kategorie": "F8",
+    "seltenheit_score": 3,
+    "praevalenz_allgemein_prozent": 5.0,
+    "praevalenz_modifikatoren": { "männlich": 1.6, "weiblich": 0.5, "alter_18_30": 1.5, "alter_31_50": 1.0, "alter_51_plus": 0.5 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Lese- und Rechtschreibleistungen deutlich unter dem für Alter und Intelligenz erwarteten Niveau",
+        "Beeinträchtigt schulische Leistungen erheblich",
+        "Keine anderen neurologischen oder sensorischen Störungen"
+      ],
+      "optionale_symptome": [
+        "Buchstabenverwechslungen (b/d, p/q)",
+        "Wortumstellungen beim Lesen",
+        "Sekundäre emotionale Probleme (Schulangst, geringes Selbstwertgefühl)"
+      ]
+    },
+    "differentialdiagnose": "Rechenstörung (F81.2), Intelligenzminderung (F70), mangelnde Schulung, Sehstörungen.",
+    "komorbiditaeten": ["F90 (ADHS)", "F93 (Emotionale Störungen)", "F32 (Depression)"]
+  },
+  {
+    "code": "F81.2",
+    "name": "Rechenstörung (Dyskalkulie)",
+    "kategorie": "F8",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 3.0,
+    "praevalenz_modifikatoren": { "männlich": 0.9, "weiblich": 1.2, "alter_18_30": 1.5, "alter_31_50": 0.8, "alter_51_plus": 0.3 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Rechenleistungen deutlich unter dem für Alter und Intelligenz erwarteten Niveau",
+        "Beeinträchtigt schulische Leistungen",
+        "Keine Intelligenzminderung oder mangelnde Schulung"
+      ],
+      "optionale_symptome": [
+        "Schwierigkeiten beim Zählen und Zahlbegriff",
+        "Probleme mit räumlichen Beziehungen",
+        "Oft kombiniert mit LRS"
+      ]
+    },
+    "differentialdiagnose": "LRS (F81.0), Intelligenzminderung (F70), mangelnde Schulung.",
+    "komorbiditaeten": ["F81.0 (LRS)", "F90 (ADHS)"]
+  },
+  {
+    "code": "F84.0",
+    "name": "Frühkindlicher Autismus",
+    "kategorie": "F8",
+    "seltenheit_score": 6,
+    "praevalenz_allgemein_prozent": 0.5,
+    "praevalenz_modifikatoren": { "männlich": 1.8, "weiblich": 0.3, "alter_18_30": 1.5, "alter_31_50": 0.8, "alter_51_plus": 0.3 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Qualitative Beeinträchtigungen der sozialen Interaktion",
+        "Qualitative Beeinträchtigungen der Kommunikation",
+        "Eingeschränkte, repetitive und stereotype Verhaltensweisen"
+      ],
+      "optionale_symptome": [
+        "Manifestation vor dem 3. Lebensjahr",
+        "Mangelnder Augenkontakt, fehlende gemeinsame Aufmerksamkeit",
+        "Inselbegabungen möglich"
+      ]
+    },
+    "differentialdiagnose": "Asperger-Syndrom (F84.5, keine Sprachverzögerung), atypischer Autismus (F84.1), Intelligenzminderung (F70), Selektiver Mutismus.",
+    "komorbiditaeten": ["F70 (Intelligenzminderung)", "F90 (ADHS)", "F42 (Zwang)"]
+  },
+  {
+    "code": "F84.5",
+    "name": "Asperger-Syndrom",
+    "kategorie": "F8",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 1.0,
+    "praevalenz_modifikatoren": { "männlich": 2.0, "weiblich": 0.3, "alter_18_30": 1.5, "alter_31_50": 1.2, "alter_51_plus": 0.5 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Qualitative Beeinträchtigungen der sozialen Interaktion",
+        "Eingeschränkte, repetitive und stereotype Verhaltensweisen",
+        "Keine klinisch bedeutsame allgemeine Entwicklungsverzögerung"
+      ],
+      "optionale_symptome": [
+        "Keine klinisch bedeutsame Sprachverzögerung",
+        "Ausgeprägte Spezialinteressen",
+        "Motorische Ungeschicklichkeit"
+      ]
+    },
+    "differentialdiagnose": "Frühkindlicher Autismus (F84.0, Sprachverzögerung), schizoide PS (F60.1, Erwachsenendiagnose), ADHS (F90).",
+    "komorbiditaeten": ["F90 (ADHS)", "F42 (Zwang)", "F32 (Depression)", "F40.1 (Soziale Phobie)"]
+  }
+]

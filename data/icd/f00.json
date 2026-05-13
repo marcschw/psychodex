@@ -1,0 +1,108 @@
+[
+  {
+    "code": "F00",
+    "name": "Demenz bei Alzheimer-Krankheit",
+    "kategorie": "F0",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 1.5,
+    "praevalenz_modifikatoren": { "männlich": 0.7, "weiblich": 1.3, "alter_18_30": 0.0, "alter_31_50": 0.01, "alter_51_plus": 8.0 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Abnahme des Gedächtnisses, insbesondere für neue Informationen",
+        "Abnahme anderer kognitiver Fähigkeiten (Urteilskraft, Denkvermögen)",
+        "Fehlen einer Bewusstseinstrübung"
+      ],
+      "optionale_symptome": [
+        "Aphasie (Sprachstörungen)",
+        "Apraxie (Störung von Handlungsabläufen)",
+        "Agnosie (Störung des Erkennens)",
+        "Affektveränderungen (Apathie, Reizbarkeit)"
+      ]
+    },
+    "differentialdiagnose": "Vaskuläre Demenz (schrittweiser Verlauf, Herdsymptomatik), Delir (akuter Beginn, Bewusstseinstrübung), depressive Pseudodemenz (ausgeprägte Klagsamkeit, Antriebsminderung).",
+    "komorbiditaeten": ["F32 (Depressive Episode)", "F05 (Delir)"]
+  },
+  {
+    "code": "F01",
+    "name": "Vaskuläre Demenz",
+    "kategorie": "F0",
+    "seltenheit_score": 5,
+    "praevalenz_allgemein_prozent": 0.5,
+    "praevalenz_modifikatoren": { "männlich": 1.2, "weiblich": 0.8, "alter_18_30": 0.0, "alter_31_50": 0.02, "alter_51_plus": 6.0 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Abnahme von Gedächtnis und intellektuellen Fähigkeiten",
+        "Ungleiche Verteilung der kognitiven Ausfälle (fleckförmig)",
+        "Neurologische Herdsymptome (Spastik, Reflexasymmetrien)"
+      ],
+      "optionale_symptome": [
+        "Plötzlicher Beginn und stufenhafter Verlauf",
+        "Affektinkontinenz",
+        "Kardiovaskuläre Risikofaktoren"
+      ]
+    },
+    "differentialdiagnose": "Alzheimer-Demenz (schleichender Beginn), Delir, strukturelle Hirnläsionen (Tumor).",
+    "komorbiditaeten": ["I10 (Essentielle Hypertonie)", "F32 (Depressive Episode)"]
+  },
+  {
+    "code": "F04",
+    "name": "Organisches amnestisches Syndrom",
+    "kategorie": "F0",
+    "seltenheit_score": 8,
+    "praevalenz_allgemein_prozent": 0.1,
+    "praevalenz_modifikatoren": { "männlich": 1.1, "weiblich": 0.9, "alter_18_30": 0.5, "alter_31_50": 1.0, "alter_51_plus": 1.5 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Beeinträchtigung des Kurzzeitgedächtnisses (Neugedächtnis)",
+        "Anterograde und retrograde Amnesie",
+        "Fehlen von Störungen des Immediatgedächtnisses oder Bewusstseins"
+      ],
+      "optionale_symptome": ["Konfabulationen", "Mangelnde Krankheitseinsicht", "Apathie oder emotionale Verflachung"]
+    },
+    "differentialdiagnose": "Korsakow-Syndrom durch Alkohol (F10.6), Demenz (globale Einbußen), Dissoziative Amnesie (psychogen, F44.0).",
+    "komorbiditaeten": ["F07 (Organische Persönlichkeitsstörungen)"]
+  },
+  {
+    "code": "F06.3",
+    "name": "Organische affektive Störungen",
+    "kategorie": "F0",
+    "seltenheit_score": 4,
+    "praevalenz_allgemein_prozent": 1.0,
+    "praevalenz_modifikatoren": { "männlich": 0.8, "weiblich": 1.2, "alter_18_30": 0.5, "alter_31_50": 1.0, "alter_51_plus": 2.5 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Vorliegen einer depressiven, manischen oder bipolaren Symptomatik",
+        "Nachweis einer zerebralen Krankheit oder Systemerkrankung als direkte Ursache"
+      ],
+      "optionale_symptome": [
+        "Leichte kognitive Einbußen",
+        "Neurologische Auffälligkeiten",
+        "Atypisches klinisches Bild"
+      ]
+    },
+    "differentialdiagnose": "Primäre affektive Störungen (F30-F39, keine körperliche Ursache), Anpassungsstörung (F43.2).",
+    "komorbiditaeten": ["Chronische Schmerzstörungen", "Endokrine/neurologische Grunderkrankungen"]
+  },
+  {
+    "code": "F07.0",
+    "name": "Organische Persönlichkeitsstörung",
+    "kategorie": "F0",
+    "seltenheit_score": 7,
+    "praevalenz_allgemein_prozent": 0.2,
+    "praevalenz_modifikatoren": { "männlich": 1.6, "weiblich": 0.4, "alter_18_30": 1.5, "alter_31_50": 1.0, "alter_51_plus": 0.8 },
+    "diagnose_kriterien": {
+      "pflicht_symptome": [
+        "Anamnese einer Hirnschädigung (SHT, Enzephalitis)",
+        "Deutliche Veränderung der prämorbiden Persönlichkeit",
+        "Affektlabilität, Enthemmung oder fehlende Zielgerichtetheit"
+      ],
+      "optionale_symptome": [
+        "Kognitive Störungen (eingeschränkte Planung)",
+        "Veränderung des Sexualverhaltens",
+        "Paranoide Ideen"
+      ]
+    },
+    "differentialdiagnose": "Spezifische Persönlichkeitsstörungen (F60, Beginn in Kindheit), Schizophrenie (F20), Demenz (F00-F03).",
+    "komorbiditaeten": ["F10.2 (Alkoholabhängigkeit)", "F06.3 (Organische affektive Störung)"]
+  }
+]
