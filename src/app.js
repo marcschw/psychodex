@@ -2130,5 +2130,17 @@ async function setShiftExtension(shiftId, newMinutes) {
   else if (state.currentTab === 'stats') renderStats();
 }
 
+// ─── Privacy Disclaimer ───────────────────────────────────────────────────────
+(function setupPrivacyBadge() {
+  const badge = document.getElementById('privacy-badge');
+  const close = document.getElementById('privacy-close');
+  if (!badge || !close) return;
+  if (localStorage.getItem('privacy-dismissed') === '1') badge.classList.add('dismissed');
+  close.addEventListener('click', () => {
+    badge.classList.add('dismissed');
+    localStorage.setItem('privacy-dismissed', '1');
+  });
+})();
+
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', init);
