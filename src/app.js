@@ -918,9 +918,26 @@ function setupLevelupListeners() {
 }
 
 function showLevelUpModal(rank) {
+  const numStars     = rank.level <= 6 ? 1 : rank.level <= 12 ? 2 : 3;
+  const prevNumStars = (rank.level - 1) <= 6 ? 1 : (rank.level - 1) <= 12 ? 2 : 3;
+  const isNewStar    = numStars > prevNumStars;
+
+  const imgWrap = document.getElementById('levelup-img-wrap');
+  const img     = document.getElementById('levelup-img');
+  imgWrap.style.display = '';
+  img.style.display     = '';
+  img.src               = `assets/images/ranks/${rank.title.toLowerCase()}.png`;
+  img.alt               = rank.title;
+
+  document.getElementById('levelup-stars').innerHTML = Array.from({length: numStars}, (_, i) => {
+    const isLast = i === numStars - 1;
+    const cls    = isLast ? (isNewStar ? 'star-new' : 'star-last') : 'star-old';
+    return `<span class="levelup-star ${cls}" style="animation-delay:${(.3 + i * .13).toFixed(2)}s">⭐</span>`;
+  }).join('');
+
   document.getElementById('levelup-rank-name').textContent     = rank.title;
   document.getElementById('levelup-rank-subtitle').textContent  = rank.subtitle;
-  document.getElementById('levelup-rank-level').textContent    = `Rang ${rank.level}`;
+  document.getElementById('levelup-rank-level').textContent    = `Rang ${rank.level} / 18`;
   document.getElementById('levelup-modal').classList.remove('hidden');
 }
 

@@ -688,41 +688,126 @@ img{max-width:100%;display:block}
 .levelup-modal{
   position:fixed;inset:0;z-index:600;
   display:flex;align-items:center;justify-content:center;
-  background:rgba(0,0,0,.8);backdrop-filter:blur(12px);
+  background:rgba(0,0,0,.85);backdrop-filter:blur(14px);
 }
 .levelup-modal.hidden{display:none}
 .levelup-content{
-  text-align:center;padding:40px 30px;
-  background:var(--bg-card);border:1px solid var(--border-glow);
-  border-radius:var(--r-lg);max-width:320px;width:calc(100%-32px);
+  text-align:center;padding:32px 28px 28px;
+  background:var(--bg-card);border:1px solid rgba(124,58,237,.4);
+  border-radius:var(--r-lg);max-width:320px;width:calc(100% - 32px);
   position:relative;overflow:hidden;
   animation:levelupIn .5s cubic-bezier(.4,0,.2,1);
+  box-shadow:0 0 60px rgba(124,58,237,.2),0 20px 60px rgba(0,0,0,.6);
 }
 @keyframes levelupIn{
-  from{opacity:0;transform:scale(.8) translateY(20px)}
-  to  {opacity:1;transform:scale(1) translateY(0)}
+  from{opacity:0;transform:scale(.82) translateY(24px)}
+  to  {opacity:1;transform:scale(1)   translateY(0)}
 }
 .levelup-content::before{
   content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at 50% 0%,rgba(124,58,237,.2) 0%,transparent 70%);
+  background:radial-gradient(ellipse at 50% 10%,rgba(124,58,237,.22) 0%,transparent 65%);
+  pointer-events:none;
 }
 .levelup-title{
-  font-size:13px;letter-spacing:4px;text-transform:uppercase;
+  font-size:11px;letter-spacing:4px;text-transform:uppercase;
   color:var(--accent);font-weight:700;margin-bottom:16px;
   position:relative;z-index:1;
 }
+
+/* ── Rank image in level-up ───── */
+.levelup-img-wrap{
+  width:108px;height:108px;
+  margin:0 auto 10px;
+  position:relative;z-index:1;
+  animation:levelupImgPop .55s cubic-bezier(.34,1.56,.64,1) .08s both;
+}
+.levelup-img-wrap::before{
+  content:'';position:absolute;inset:-16px;border-radius:50%;
+  background:conic-gradient(
+    from 0deg,
+    transparent 0deg 22deg,rgba(124,58,237,.18) 22deg 42deg,
+    transparent 42deg 67deg,rgba(124,58,237,.18) 67deg 87deg,
+    transparent 87deg 112deg,rgba(124,58,237,.18) 112deg 132deg,
+    transparent 132deg 157deg,rgba(124,58,237,.18) 157deg 177deg,
+    transparent 177deg 202deg,rgba(124,58,237,.18) 202deg 222deg,
+    transparent 222deg 247deg,rgba(124,58,237,.18) 247deg 267deg,
+    transparent 267deg 292deg,rgba(124,58,237,.18) 292deg 312deg,
+    transparent 312deg 337deg,rgba(124,58,237,.18) 337deg 357deg,
+    transparent 357deg 360deg
+  );
+  animation:raysRotate 5s linear infinite;
+  z-index:-1;
+}
+@keyframes raysRotate{to{transform:rotate(360deg)}}
+@keyframes levelupImgPop{
+  0%  {transform:scale(0) rotate(-18deg);opacity:0}
+  65% {transform:scale(1.1) rotate(4deg);opacity:1}
+  100%{transform:scale(1)  rotate(0);   opacity:1}
+}
+.levelup-img{
+  width:100%;height:100%;object-fit:contain;
+  filter:drop-shadow(0 0 18px rgba(124,58,237,.55));
+  animation:levelupFloat 3s ease-in-out 1.2s infinite;
+}
+@keyframes levelupFloat{
+  0%,100%{transform:translateY(0)}
+  50%    {transform:translateY(-7px)}
+}
+
+/* ── Stars in level-up ────────── */
+.levelup-stars{
+  display:flex;justify-content:center;align-items:center;
+  gap:6px;margin-bottom:12px;
+  position:relative;z-index:1;
+}
+.levelup-star{
+  font-size:26px;display:inline-block;position:relative;
+  animation:starPopIn .42s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes starPopIn{
+  0%  {transform:scale(0) rotate(-25deg);opacity:0}
+  62% {transform:scale(1.3) rotate(8deg);opacity:1}
+  100%{transform:scale(1) rotate(0);     opacity:1}
+}
+.levelup-star.star-last{
+  font-size:28px;
+  filter:drop-shadow(0 0 7px rgba(250,204,21,.8));
+}
+.levelup-star.star-new{
+  font-size:32px;
+  animation:starFlyIn .65s cubic-bezier(.34,1.56,.64,1) both;
+  filter:drop-shadow(0 0 12px rgba(250,204,21,1));
+}
+@keyframes starFlyIn{
+  0%  {transform:translateY(-72px) scale(2.6) rotate(210deg);opacity:0}
+  52% {transform:translateY(5px)   scale(1.25) rotate(-10deg);opacity:1}
+  72% {transform:translateY(-3px)  scale(1.06)}
+  100%{transform:translateY(0)     scale(1) rotate(0);opacity:1}
+}
+.levelup-star.star-new::after{
+  content:'✨';position:absolute;
+  font-size:15px;top:-12px;right:-14px;
+  animation:sparkleOut .55s ease-out .72s both;
+}
+@keyframes sparkleOut{
+  0%  {transform:scale(0) rotate(0);  opacity:0}
+  40% {transform:scale(1.5) rotate(100deg);opacity:1}
+  100%{transform:scale(0) rotate(200deg);  opacity:0}
+}
+
+/* ── Rank texts in level-up ───── */
 .levelup-rank-name{
-  font-family:var(--font-disp);font-size:36px;font-weight:600;
+  font-family:var(--font-disp);font-size:34px;font-weight:600;
   background:var(--grad-accent);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
   line-height:1.1;position:relative;z-index:1;
 }
 .levelup-rank-subtitle{
-  font-size:18px;color:var(--text-muted);margin-top:4px;
+  font-size:17px;color:var(--text-muted);margin-top:4px;
   position:relative;z-index:1;
 }
 .levelup-rank-level{
-  font-size:12px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;
-  margin-top:6px;margin-bottom:24px;position:relative;z-index:1;
+  font-size:11px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;
+  margin-top:6px;margin-bottom:22px;position:relative;z-index:1;
 }
 
 /* ── Heatmap Detail ────────────────────────────────────────────────────────── */
