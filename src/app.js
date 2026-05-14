@@ -351,18 +351,27 @@ function renderDashboard() {
   // Recent catches
   const catchEl = document.getElementById('recent-catches');
   catchEl.innerHTML = state.catches.length
-    ? state.catches.slice(0, 5).map(c => `
+    ? state.catches.slice(0, 5).map(c => {
+        const { color: rarColor } = rarityInfo(c.seltenheit_score ?? 5);
+        return `
         <div class="recent-item catch-clickable" data-code="${c.code}">
-          <div class="recent-code">${c.code}</div>
+          <div class="recent-diag-thumb-wrap">
+            <img src="assets/images/diagnoses/${c.code.toLowerCase()}.png"
+                 class="recent-diag-thumb" alt="" onerror="this.style.display='none'" loading="lazy">
+          </div>
           <div class="recent-info">
-            <div class="recent-name">${c.name}</div>
+            <div class="recent-name">
+              <span class="recent-code-badge" style="color:${rarColor}">${c.code}</span>
+              ${c.name}
+            </div>
             <div class="recent-meta">+${c.xpEarned} XP · ${fmtDate(c.caughtAt)}</div>
           </div>
-          <div style="display:flex;align-items:center;gap:6px">
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
             <div class="catch-badge">✓</div>
             <button class="btn-icon btn-delete-catch" data-id="${c.id}" title="Löschen">🗑</button>
           </div>
-        </div>`).join('')
+        </div>`;
+      }).join('')
     : '<div class="empty-state">Noch keine Diagnosen – starte deinen ersten Dienst!</div>';
 
   catchEl.querySelectorAll('.btn-delete-catch').forEach(btn => {
@@ -644,17 +653,18 @@ function renderDiagBrowseList(catCode) {
   const cards = diags.map(d => {
     const caught = caughtCodes.has(d.code);
     const { label: rarLabel, color: rarColor } = rarityInfo(d.seltenheit_score);
-    const imgPath = `assets/images/diagnoses/${d.code.toLowerCase()}.png`;
     return `
       <div class="diag-mosaic-card ${caught ? 'is-caught' : ''}" data-code="${d.code}">
-        <div class="dmc-bg" data-bg="${imgPath}" style="background-color:var(--bg-raised)"></div>
+        <div class="dmc-bg" data-bg="url('assets/images/diagnoses/${d.code.toLowerCase()}.png')"></div>
         <div class="dmc-overlay"></div>
         <div class="dmc-content">
-          <span class="dmc-code">${d.code}</span>
-          <span class="dmc-name">${d.name}</span>
-          <span class="dmc-rarity" style="color:${rarColor}">${rarLabel}</span>
+          <div class="dmc-top"><span class="dmc-code">${d.code}</span></div>
+          <div class="dmc-bottom">
+            <div class="dmc-name">${d.name}</div>
+            <div class="dmc-rarity" style="color:${rarColor}">${rarLabel}</div>
+          </div>
         </div>
-        ${caught ? '<span class="dmc-caught-badge">✓</span>' : ''}
+        ${caught ? '<div class="dmc-caught-badge">✓</div>' : ''}
       </div>`;
   }).join('');
 
@@ -676,7 +686,10 @@ function renderDiagBrowseList(catCode) {
         openDiagInfoModal(code);
       } else {
         const diag = state.icdFlat.find(d => d.code === code);
-        if (diag) showDiagnosisDetail(diag);
+        if (!diag) return;
+        // Switch to search tab so the catch button is immediately visible
+        switchDiagTab('search');
+        showDiagnosisDetail(diag);
       }
     }));
 }
@@ -1388,7 +1401,11 @@ function setupCategoryModalListeners() {
   });
   document.getElementById('modal-backdrop').addEventListener('click', closeCategoryModal);
   document.getElementById('cat-search-input').addEventListener('input', e => {
-    if (state.currentCategoryCode) renderCatMosaicGrid(state.currentCategoryCode, e.target.value);
+    if (!state.currentCategoryCode) return;
+    // Always show mosaic pane when typing (even if detail pane is open)
+    document.getElementById('cat-mosaic-pane').classList.remove('hidden');
+    document.getElementById('cat-detail-pane').classList.add('hidden');
+    renderCatMosaicGrid(state.currentCategoryCode, e.target.value);
   });
 }
 
@@ -1730,6 +1747,10 @@ function renderShiftDetailBody(shift) {
 
     p.catches.forEach(c => {
       html += `<div class="patient-diag-row">
+        <div class="pd-thumb">
+          <img src="assets/images/diagnoses/${c.code.toLowerCase()}.png" class="pd-thumb-img" alt=""
+               onerror="this.style.display='none'" loading="lazy">
+        </div>
         <span class="pd-code">${c.code}</span>
         <span class="pd-name">${c.name}</span>
         <span class="pd-xp">+${c.xpEarned} XP</span>
@@ -2283,6 +2304,20 @@ function closeDiagInfoModal() {
 }
 
 function renderLinkedChips(items, currentCode) {
+  if (typeof items === 'string') {
+    return items.trim()
+      ? items.trim().split(/,\s*(?=[A-ZÜÄÖ])/).map(chunk => {
+          const match = chunk.match(/\b(F\d{2}(?:\.\d+)?)\b/);
+          if (match) {
+            const linkedCode = match[1];
+            if (linkedCode !== currentCode && state.icdFlat.find(d => d.code === linkedCode)) {
+              return `<button class="komorbid-chip linked-chip" data-code="${linkedCode}">${chunk}</button>`;
+            }
+          }
+          return `<span class="komorbid-chip">${chunk}</span>`;
+        }).join('')
+      : '';
+  }
   return (items || []).map(item => {
     const match = item.match(/\b(F\d{2}(?:\.\d+)?)\b/);
     if (match) {

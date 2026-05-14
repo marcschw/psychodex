@@ -1707,3 +1707,28 @@ img{max-width:100%;display:block}
 .result-caught-badge{
   flex-shrink:0;font-size:13px;font-weight:800;color:var(--success);
 }
+
+/* ── Recent Catches – diagnosis image thumbnail ────────────────────────────── */
+.recent-diag-thumb-wrap{
+  width:44px;height:44px;flex-shrink:0;
+  border-radius:var(--r);overflow:hidden;
+  background:var(--bg-raised);border:1px solid var(--border);
+}
+.recent-diag-thumb{
+  width:100%;height:100%;object-fit:cover;object-position:top center;display:block;
+}
+.recent-code-badge{
+  font-family:monospace;font-size:11px;font-weight:700;
+  margin-right:4px;
+}
+
+/* ── Patient Diag Row – thumbnail ──────────────────────────────────────────── */
+.patient-diag-row{display:flex;align-items:center;gap:8px;padding:6px 0;flex-wrap:nowrap}
+.pd-thumb{
+  width:36px;height:36px;flex-shrink:0;
+  border-radius:8px;overflow:hidden;
+  background:var(--bg-raised);border:1px solid var(--border);
+}
+.pd-thumb-img{
+  width:100%;height:100%;object-fit:cover;object-position:top center;display:block;
+}
