@@ -59,26 +59,54 @@ function splitCommaOutsideParens(str) {
 }
 
 function parseSymptomItems(symptomText) {
-  // Numbered: "Header – (1) item (2) item" or starts with "(1)"
-  if (/[–\-]\s*\(\d+\)/.test(symptomText) || /^\s*\(\d+\)/.test(symptomText)) {
-    const dashIdx = symptomText.search(/\s*[–\-]\s*(?=\(\d+\))/);
-    let header = '', listPart = symptomText;
-    if (dashIdx !== -1) {
-      header = symptomText.slice(0, dashIdx).trim();
-      listPart = symptomText.slice(dashIdx).replace(/^\s*[–\-]\s*/, '');
-    }
-    const items = listPart.split(/(?=\(\d+\))/)
-      .map(s => s.replace(/^\(\d+\)\s*/, '').replace(/[;,]\s*$/, '').trim())
-      .filter(Boolean);
+  const t = symptomText.trim();
+
+  // Header-only: ends with ":" → render as section label, not a checkbox
+  if (t.endsWith(':')) return { type: 'header' };
+
+  // Helper: split a numbered-list string on (N) markers
+  const splitNumbered = str => str
+    .split(/(?=\(\d+\))/)
+    .map(s => s.replace(/^\(\d+\)\s*/, '').replace(/[;,]\s*$/, '').trim())
+    .filter(Boolean);
+
+  // Numbered list after colon: "header text: (1) item; (2) item"
+  // Use /:\s*\(1\)/ to anchor on item 1 specifically (avoids matching ranges like (1)-(4))
+  const colonNumIdx = t.search(/:\s*\(1\)\s/);
+  if (colonNumIdx !== -1) {
+    const header = t.slice(0, colonNumIdx).trim();
+    const listPart = t.slice(colonNumIdx + 1).trim();
+    const items = splitNumbered(listPart);
     if (items.length > 1) return { type: 'compound', header, items };
   }
-  // Colon+list: "Header: item1, item2, item3"
-  const colonIdx = symptomText.indexOf(': ');
+
+  // Numbered list after dash/em-dash: "header – (1) item (2) item"
+  // Require space around dash to avoid matching (1)-(4) ranges
+  const dashNumIdx = t.search(/\s[–\-]\s(?=\(\d+\))/);
+  if (dashNumIdx !== -1) {
+    const header = t.slice(0, dashNumIdx).trim();
+    const listPart = t.slice(dashNumIdx).replace(/^\s*[–\-]\s*/, '');
+    const items = splitNumbered(listPart);
+    if (items.length > 1) return { type: 'compound', header, items };
+  }
+
+  // Starts with numbered list: "(1) item (2) item"
+  if (/^\(\d+\)/.test(t)) {
+    const items = splitNumbered(t);
+    if (items.length > 1) return { type: 'compound', header: '', items };
+  }
+
+  // Simple colon+comma list: "header: item1, item2" (only when NOT a numbered list after colon)
+  const colonIdx = t.indexOf(': ');
   if (colonIdx !== -1) {
-    const header = symptomText.slice(0, colonIdx).trim();
-    const items = splitCommaOutsideParens(symptomText.slice(colonIdx + 2).trim());
-    if (items.length > 1) return { type: 'compound', header, items };
+    const rest = t.slice(colonIdx + 2).trim();
+    if (!/^\(\d+\)/.test(rest)) {
+      const header = t.slice(0, colonIdx).trim();
+      const items = splitCommaOutsideParens(rest);
+      if (items.length > 1) return { type: 'compound', header, items };
+    }
   }
+
   return { type: 'single' };
 }
 
@@ -88,6 +116,9 @@ function renderSymptomCheckboxes(symptomList, kind, savedChecked, itemClass) {
   const cls = itemClass ? ` ${itemClass}` : '';
   return symptomList.map(symptomText => {
     const parsed = parseSymptomItems(symptomText);
+    if (parsed.type === 'header') {
+      return `<li class="symptom-item symptom-section-header${cls}"><span class="sym-section-label">${symptomText}</span></li>`;
+    }
     if (parsed.type === 'compound') {
       const subHtml = parsed.items.map(item => {
         const key = `${symptomText}::${item}`;
@@ -1400,13 +1431,16 @@ function setupCategoryModalListeners() {
     e.stopPropagation(); closeCategoryModal();
   });
   document.getElementById('modal-backdrop').addEventListener('click', closeCategoryModal);
-  document.getElementById('cat-search-input').addEventListener('input', e => {
+  const handleCatSearch = () => {
     if (!state.currentCategoryCode) return;
-    // Always show mosaic pane when typing (even if detail pane is open)
+    const q = document.getElementById('cat-search-input').value;
     document.getElementById('cat-mosaic-pane').classList.remove('hidden');
     document.getElementById('cat-detail-pane').classList.add('hidden');
-    renderCatMosaicGrid(state.currentCategoryCode, e.target.value);
-  });
+    renderCatMosaicGrid(state.currentCategoryCode, q);
+  };
+  const catSearchEl = document.getElementById('cat-search-input');
+  catSearchEl.addEventListener('input', handleCatSearch);
+  catSearchEl.addEventListener('keyup', handleCatSearch);
 }
 
 function openCategoryModal(catCode) {
@@ -1440,9 +1474,10 @@ function renderCatMosaicGrid(catCode, query) {
   listEl.innerHTML = diags.map(d => {
     const caught = caughtCodes.has(d.code);
     const { label, color } = rarityInfo(d.seltenheit_score);
+    const imgUrl = `url('assets/images/diagnoses/${d.code.toLowerCase()}.png')`;
     return `
       <div class="diag-mosaic-card ${caught ? 'is-caught' : ''}" data-code="${d.code}">
-        <div class="dmc-bg" data-bg="url('assets/images/diagnoses/${d.code.toLowerCase()}.png')"></div>
+        <div class="dmc-bg" style="background-image:${imgUrl}"></div>
         <div class="dmc-overlay"></div>
         <div class="dmc-content">
           <div class="dmc-top"><span class="dmc-code">${d.code}</span></div>
@@ -1454,7 +1489,6 @@ function renderCatMosaicGrid(catCode, query) {
         ${caught ? '<div class="dmc-caught-badge">✓</div>' : ''}
       </div>`;
   }).join('');
-  lazyObserver(listEl);
   listEl.querySelectorAll('.diag-mosaic-card').forEach(item =>
     item.addEventListener('click', () => openCatDiagDetail(item.dataset.code)));
 }

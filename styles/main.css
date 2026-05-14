@@ -1536,6 +1536,12 @@ img{max-width:100%;display:block}
   display:block;margin-bottom:5px;padding-bottom:3px;
   border-bottom:1px solid var(--border);
 }
+.symptom-section-header{list-style:none;padding:6px 0 2px}
+.sym-section-label{
+  display:block;font-size:11px;font-weight:700;
+  color:var(--accent);text-transform:uppercase;letter-spacing:.5px;
+  border-bottom:1px solid var(--border-glow);padding-bottom:4px;margin-bottom:2px;
+}
 .symptom-sub-list{list-style:none;padding:0 0 0 4px;margin:4px 0 0;display:flex;flex-direction:column;gap:3px}
 .sym-sub-item{padding:3px 6px;border-radius:5px;background:rgba(0,0,0,.2)}
 
