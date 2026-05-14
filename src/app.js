@@ -26,7 +26,8 @@ const state = {
   catches: [],
   missions: [],
   unlockedAchievements: [],
-  currentCategoryCode: null
+  currentCategoryCode: null,
+  diagCatchStack: []        // [{code, checkedKeys}] for back-navigation in catch modal
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -120,12 +121,16 @@ function renderSymptomCheckboxes(symptomList, kind, savedChecked, itemClass) {
       return `<li class="symptom-item symptom-section-header${cls}"><span class="sym-section-label">${symptomText}</span></li>`;
     }
     if (parsed.type === 'compound') {
+      const minMatch = (parsed.header || '').match(/(?:mindestens|mind\.)\s*(\d+)/i);
+      const minReq = minMatch ? parseInt(minMatch[1]) : null;
       const subHtml = parsed.items.map(item => {
         const key = `${symptomText}::${item}`;
         const ck = sc.includes(key) ? ' checked' : '';
         return `<li class="sym-sub-item"><label class="sym-label${isView ? ' sym-view' : ''}"><input type="checkbox" class="sym-cb" data-key="${key.replace(/"/g, '&quot;')}"${ck}${isView ? ' disabled' : ''}><span class="sym-box"></span><span class="sym-text">${item}</span></label></li>`;
       }).join('');
-      return `<li class="symptom-item sym-compound${cls}"><span class="sym-compound-header">${parsed.header || symptomText}</span><ul class="symptom-sub-list">${subHtml}</ul></li>`;
+      const minAttr = minReq ? ` data-min-required="${minReq}"` : '';
+      const badge   = minReq ? `<span class="sym-min-badge">0/${minReq}</span>` : '';
+      return `<li class="symptom-item sym-compound${cls}"${minAttr}><div class="sym-compound-header-row"><span class="sym-compound-header">${parsed.header || symptomText}</span>${badge}</div><ul class="symptom-sub-list">${subHtml}</ul></li>`;
     }
     const ck = sc.includes(symptomText) ? ' checked' : '';
     return `<li class="symptom-item${cls}"><label class="sym-label${isView ? ' sym-view' : ''}"><input type="checkbox" class="sym-cb" data-key="${symptomText.replace(/"/g, '&quot;')}"${ck}${isView ? ' disabled' : ''}><span class="sym-box"></span><span class="sym-text">${symptomText}</span></label></li>`;
@@ -135,6 +140,27 @@ function renderSymptomCheckboxes(symptomList, kind, savedChecked, itemClass) {
 function collectCheckedSymptoms() {
   return [...document.querySelectorAll('#diag-pflicht-list .sym-cb:checked, #diag-optional-list .sym-cb:checked')]
     .map(cb => cb.dataset.key);
+}
+
+// Initialises live "X/N" counters on compound items with data-min-required.
+// interactive=true wires up change listeners; false just sets initial count.
+function initSymptomCounters(container, interactive) {
+  container.querySelectorAll('[data-min-required]').forEach(li => {
+    const minReq = parseInt(li.dataset.minRequired);
+    const badge  = li.querySelector('.sym-min-badge');
+    if (!badge) return;
+    const update = () => {
+      const n = li.querySelectorAll('.sym-cb:checked').length;
+      badge.textContent = `${n}/${minReq}`;
+      badge.classList.toggle('sym-min-ok', n >= minReq);
+      li.classList.toggle('sym-compound-ok', n >= minReq);
+    };
+    update();
+    if (interactive) {
+      li.querySelectorAll('.sym-cb').forEach(cb =>
+        cb.addEventListener('change', update));
+    }
+  });
 }
 
 // ─── Hours Helpers ────────────────────────────────────────────────────────────
@@ -729,6 +755,7 @@ function closeDiagnosisModal() {
   document.getElementById('diagnosis-modal').classList.add('hidden');
   state.searchContext = { patientIndex: null, selectedDiagnosis: null, standalone: false };
   state.addToShiftContext = null;
+  state.diagCatchStack = [];
 }
 
 function onSearch(e) {
@@ -775,31 +802,64 @@ function showDiagnosisDetail(diagnosis) {
   renderDiagnosisDetail(diagnosis);
 }
 
-function renderDiagnosisDetail(diagnosis) {
+function renderDiagnosisDetail(diagnosis, savedChecked = []) {
   const preview = previewXP(diagnosis);
+  const { label: rarLabel, color: rarColor } = rarityInfo(diagnosis.seltenheit_score);
+  const hasBack = state.diagCatchStack.length > 0;
   document.getElementById('diag-detail-header').innerHTML = `
-    <div class="diag-code-big">${diagnosis.code}</div>
-    <div class="diag-name-big">${diagnosis.name}</div>
-    <div class="xp-preview-chips">
-      <span class="xp-chip base">Basis: ${preview.base} XP</span>
-      ${preview.isFirstDiag   ? '<span class="xp-chip bonus-diag">+150 Erste Diagnose!</span>' : ''}
-      ${preview.isFirstKat    ? '<span class="xp-chip bonus-kat">+300 Erste Kategorie!</span>' : ''}
-      ${preview.komorbidBonus ? '<span class="xp-chip bonus-k">+Komorbidität 20%</span>' : ''}
+    ${hasBack ? '<button class="cat-detail-back" id="diag-catch-back-btn">← Zurück</button>' : ''}
+    <div class="cat-detail-hero">
+      <div class="cat-detail-img-wrap">
+        <img src="assets/images/diagnoses/${diagnosis.code.toLowerCase()}.png" class="cat-detail-img" alt=""
+             onerror="this.style.display='none'">
+      </div>
+      <div class="cat-detail-heading">
+        <div class="diag-code-big">${diagnosis.code}</div>
+        <div class="diag-name-big" style="font-size:14px">${diagnosis.name}</div>
+        <div class="xp-preview-chips" style="margin-top:6px">
+          <span class="xp-chip base">Basis: ${preview.base} XP</span>
+          <span style="font-size:10px;font-weight:700;color:${rarColor}">${rarLabel}</span>
+          ${preview.isFirstDiag   ? '<span class="xp-chip bonus-diag">+150</span>' : ''}
+          ${preview.isFirstKat    ? '<span class="xp-chip bonus-kat">+300 Kat!</span>' : ''}
+          ${preview.komorbidBonus ? '<span class="xp-chip bonus-k">+20%</span>' : ''}
+        </div>
+      </div>
     </div>`;
-  const pflicht = diagnosis.diagnose_kriterien?.pflicht_symptome || [];
+
+  const pflicht  = diagnosis.diagnose_kriterien?.pflicht_symptome  || [];
   const optional = diagnosis.diagnose_kriterien?.optionale_symptome || [];
-  document.getElementById('diag-pflicht-list').innerHTML =
-    renderSymptomCheckboxes(pflicht, 'catch', [], 'symptom-pflicht');
-  document.getElementById('diag-optional-list').innerHTML =
-    renderSymptomCheckboxes(optional, 'catch', [], 'symptom-optional');
+  const pflichtEl  = document.getElementById('diag-pflicht-list');
+  const optionalEl = document.getElementById('diag-optional-list');
+  pflichtEl.innerHTML  = renderSymptomCheckboxes(pflicht,  'catch', savedChecked, 'symptom-pflicht');
+  optionalEl.innerHTML = renderSymptomCheckboxes(optional, 'catch', savedChecked, 'symptom-optional');
+  initSymptomCounters(pflichtEl,  true);
+  initSymptomCounters(optionalEl, true);
+
+  document.getElementById('diag-catch-back-btn')?.addEventListener('click', () => {
+    const prev = state.diagCatchStack.pop();
+    if (!prev) return;
+    const prevDiag = state.icdFlat.find(d => d.code === prev.code);
+    if (!prevDiag) return;
+    state.searchContext.selectedDiagnosis = prevDiag;
+    renderDiagnosisDetail(prevDiag, prev.checkedKeys);
+  });
+
+  const navigateLinked = code => {
+    const target = state.icdFlat.find(d => d.code === code);
+    if (!target) return;
+    state.diagCatchStack.push({ code: diagnosis.code, checkedKeys: collectCheckedSymptoms() });
+    state.searchContext.selectedDiagnosis = target;
+    renderDiagnosisDetail(target);
+  };
+
   const chipContainer = document.getElementById('diag-komorbid-chips');
   chipContainer.innerHTML = renderLinkedChips(diagnosis.komorbiditaeten, diagnosis.code);
   chipContainer.querySelectorAll('.linked-chip').forEach(btn =>
-    btn.addEventListener('click', () => { closeDiagnosisModal(); openDiagInfoModal(btn.dataset.code); }));
+    btn.addEventListener('click', () => navigateLinked(btn.dataset.code)));
   const diffEl = document.getElementById('diag-diff-text');
   diffEl.innerHTML = renderLinkedChips(diagnosis.differentialdiagnose, diagnosis.code);
   diffEl.querySelectorAll('.linked-chip').forEach(btn =>
-    btn.addEventListener('click', () => { closeDiagnosisModal(); openDiagInfoModal(btn.dataset.code); }));
+    btn.addEventListener('click', () => navigateLinked(btn.dataset.code)));
 }
 
 function updateXPPreview() {
@@ -1540,6 +1600,7 @@ function openCatDiagDetail(code) {
     </div>
     ${!isCaught ? `<button class="btn-catch" id="cat-detail-catch-btn">🎯 Jetzt fangen!</button>` : ''}`;
 
+  initSymptomCounters(body, !isCaught);
   document.getElementById('cat-mosaic-pane').classList.add('hidden');
   document.getElementById('cat-detail-pane').classList.remove('hidden');
 
@@ -2404,6 +2465,7 @@ function renderDiagInfoBody(code) {
       <div class="komorbid-chips" id="diag-info-diff">${renderLinkedChips(diag.differentialdiagnose, code)}</div>
     </div>
     ${!isCaught ? `<button class="btn-catch" id="diag-info-catch-btn">🎯 Jetzt fangen!</button>` : ''}`;
+  initSymptomCounters(document.getElementById('diag-info-body'), false);
   document.getElementById('diag-info-back-btn')?.addEventListener('click', () => {
     const prev = state.diagInfoStack.pop();
     if (prev) renderDiagInfoBody(prev);

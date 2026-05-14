@@ -1531,11 +1531,24 @@ img{max-width:100%;display:block}
 .sym-view .sym-box{opacity:.55}
 .symptom-item:has(.sym-label),.sym-compound{padding-left:8px}
 .symptom-item:has(.sym-label)::before,.sym-compound::before{content:''}
+.sym-compound-header-row{
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  margin-bottom:5px;padding-bottom:3px;border-bottom:1px solid var(--border);
+}
 .sym-compound-header{
   font-size:11px;font-weight:600;color:var(--text-dim);
-  display:block;margin-bottom:5px;padding-bottom:3px;
-  border-bottom:1px solid var(--border);
+  display:block;
 }
+.sym-min-badge{
+  font-size:10px;font-weight:700;color:var(--text-dim);
+  background:rgba(255,255,255,.06);border:1px solid var(--border);
+  border-radius:20px;padding:1px 7px;white-space:nowrap;flex-shrink:0;
+  transition:color .2s,background .2s,border-color .2s;
+}
+.sym-min-badge.sym-min-ok{
+  color:#10b981;background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.4);
+}
+.sym-compound-ok>.sym-compound-header-row{border-color:rgba(16,185,129,.3)}
 .symptom-section-header{list-style:none;padding:6px 0 2px}
 .sym-section-label{
   display:block;font-size:11px;font-weight:700;
