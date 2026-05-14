@@ -31,6 +31,14 @@ const state = {
 // Handles old DB data where sub-categories like "F40","F41" were stored.
 const normalizeKat = k => (k && k.length > 2) ? k.slice(0, 2) : (k || '');
 
+const rarityInfo = score => {
+  if (score <= 2) return { label: 'Häufig',        color: '#9ca3af' };
+  if (score <= 4) return { label: 'Gelegentlich',  color: '#10b981' };
+  if (score <= 6) return { label: 'Ungewöhnlich',  color: '#60a5fa' };
+  if (score <= 8) return { label: 'Selten',         color: '#a78bfa' };
+  return             { label: 'Extrem selten',  color: '#f59e0b' };
+};
+
 // ─── Hours Helpers ────────────────────────────────────────────────────────────
 function calcShiftHours(shift) {
   const base = shift.type === 'full' ? 12 : shift.type === 'samstag' ? 7 : 6.5;
@@ -1111,7 +1119,7 @@ function renderPsychoDex() {
     ].filter(Boolean).join(' ');
     return `
       <div class="${cardClass}" data-cat="${cat.code}" style="--cat-color:${cat.color}">
-        <div class="cat-bg" style="background-image:url('assets/images/categories/${cat.code.toLowerCase()}.png')"></div>
+        <div class="cat-bg" style="background-image:url('assets/images/categories/mosaike/${cat.code.toLowerCase()}.png'),url('assets/images/categories/${cat.code.toLowerCase()}.png')"></div>
         <div class="cat-overlay"></div>
         <div class="cat-content">
           <div class="cat-emoji">${cat.emoji}</div>
@@ -1144,31 +1152,40 @@ function openCategoryModal(catCode) {
   document.getElementById('modal-category-title').textContent =
     catInfo ? `${catInfo.emoji} ${catInfo.label} – ${catInfo.name}` : catCode;
   const listEl = document.getElementById('modal-diagnoses-list');
-  listEl.innerHTML = diags.length
-    ? diags.map(d => {
-        const caught = caughtCodes.has(d.code);
-        const stars  = '★'.repeat(d.seltenheit_score) + '☆'.repeat(10 - d.seltenheit_score);
-        return `
-          <div class="diag-list-item ${caught ? 'is-caught' : ''}" data-code="${d.code}">
-            <div class="diag-list-left">
-              <span class="diag-list-code">${d.code}</span>
-              <div>
-                <div class="diag-list-name">${d.name}</div>
-                <div class="diag-list-rarity">${stars}</div>
-              </div>
-            </div>
-            <div class="diag-list-status">${caught ? '✓' : '🔬'}</div>
-          </div>`;
-      }).join('')
-    : '<div class="empty-state">Keine Diagnosen für diese Kategorie.</div>';
+  listEl.className = 'diag-mosaic-grid';
 
-  listEl.querySelectorAll('.diag-list-item:not(.is-caught)').forEach(item => {
+  if (!diags.length) {
+    listEl.innerHTML = '<div class="empty-state">Keine Diagnosen für diese Kategorie.</div>';
+  } else {
+    listEl.innerHTML = diags.map(d => {
+      const caught  = caughtCodes.has(d.code);
+      const img     = `assets/images/diagnoses/${d.code.toLowerCase()}.png`;
+      const { label, color } = rarityInfo(d.seltenheit_score);
+      return `
+        <div class="diag-mosaic-card ${caught ? 'is-caught' : ''}" data-code="${d.code}">
+          <div class="dmc-bg" style="background-image:url('${img}')"></div>
+          <div class="dmc-overlay"></div>
+          <div class="dmc-content">
+            <div class="dmc-top">
+              <span class="dmc-code">${d.code}</span>
+            </div>
+            <div class="dmc-bottom">
+              <div class="dmc-name">${d.name}</div>
+              <div class="dmc-rarity" style="color:${color}">${label} (${d.seltenheit_score})</div>
+            </div>
+          </div>
+          ${caught ? '<div class="dmc-caught-badge">✓</div>' : ''}
+        </div>`;
+    }).join('');
+  }
+
+  listEl.querySelectorAll('.diag-mosaic-card:not(.is-caught)').forEach(item => {
     item.addEventListener('click', () => {
       const diag = state.icdFlat.find(d => d.code === item.dataset.code);
       if (diag) { closeCategoryModal(); openStandaloneCatch(diag); }
     });
   });
-  listEl.querySelectorAll('.diag-list-item.is-caught').forEach(item =>
+  listEl.querySelectorAll('.diag-mosaic-card.is-caught').forEach(item =>
     item.addEventListener('click', () => openDiagInfoModal(item.dataset.code)));
   document.getElementById('category-modal').classList.remove('hidden');
 }

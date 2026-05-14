@@ -1410,3 +1410,106 @@ img{max-width:100%;display:block}
   transition:opacity .15s;
 }
 .extra-add-trigger:hover{opacity:.8}
+
+/* ── Diagnosis Mosaic Grid ─────────────────────────────────────────────────── */
+.diag-mosaic-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.diag-mosaic-card{
+  position:relative;
+  border-radius:var(--r);
+  overflow:hidden;
+  aspect-ratio:1/1;
+  cursor:pointer;
+  border:1px solid var(--border);
+  transition:transform .2s ease, border-color .2s;
+  -webkit-tap-highlight-color:transparent;
+}
+.diag-mosaic-card:active{transform:scale(.97)}
+
+.dmc-bg{
+  position:absolute;inset:0;
+  background-size:cover;background-position:center;
+  background-color:var(--bg-raised);
+  filter:grayscale(80%) brightness(.4);
+  transition:filter .3s ease;
+}
+.diag-mosaic-card.is-caught .dmc-bg{
+  filter:grayscale(0%) brightness(.6);
+}
+.diag-mosaic-card:hover .dmc-bg{
+  filter:grayscale(50%) brightness(.55);
+}
+.diag-mosaic-card.is-caught:hover .dmc-bg{
+  filter:grayscale(0%) brightness(.75);
+}
+
+.dmc-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(
+    to top,
+    rgba(0,0,0,.9) 0%,
+    rgba(0,0,0,.4) 55%,
+    rgba(0,0,0,.1) 100%
+  );
+}
+
+.dmc-content{
+  position:relative;z-index:1;
+  height:100%;
+  display:flex;flex-direction:column;
+  justify-content:space-between;
+  padding:8px;
+}
+
+.dmc-top{display:flex;justify-content:space-between;align-items:flex-start}
+
+.dmc-code{
+  font-family:monospace;font-size:11px;font-weight:800;
+  color:rgba(255,255,255,.9);
+  background:rgba(0,0,0,.5);
+  padding:2px 6px;border-radius:5px;
+  backdrop-filter:blur(4px);
+  line-height:1.4;
+}
+.diag-mosaic-card.is-caught .dmc-code{
+  color:var(--success);
+  background:rgba(16,185,129,.15);
+  border:1px solid rgba(16,185,129,.3);
+}
+
+.dmc-bottom{display:flex;flex-direction:column;gap:3px}
+
+.dmc-name{
+  font-size:12px;font-weight:700;color:#fff;
+  line-height:1.3;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
+  overflow:hidden;
+  text-shadow:0 1px 6px rgba(0,0,0,.9);
+}
+
+.dmc-rarity{
+  font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.05em;
+  text-shadow:0 1px 4px rgba(0,0,0,1);
+}
+
+.dmc-caught-badge{
+  position:absolute;top:7px;right:8px;z-index:2;
+  width:22px;height:22px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:900;
+  color:var(--success);
+  background:rgba(16,185,129,.2);
+  border:1.5px solid rgba(16,185,129,.6);
+  border-radius:50%;
+  box-shadow:0 0 8px rgba(16,185,129,.3);
+}
+
+.diag-mosaic-card.is-caught{
+  border-color:rgba(16,185,129,.3);
+  box-shadow:0 0 0 1px rgba(16,185,129,.15);
+}
