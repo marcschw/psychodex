@@ -33,7 +33,8 @@ const normalizeKat = k => (k && k.length > 2) ? k.slice(0, 2) : (k || '');
 
 // ─── Hours Helpers ────────────────────────────────────────────────────────────
 function calcShiftHours(shift) {
-  return (shift.type === 'full' ? 12 : 6.5) + (shift.extensionMinutes || 0) / 60;
+  const base = shift.type === 'full' ? 12 : shift.type === 'samstag' ? 7 : 6.5;
+  return base + (shift.extensionMinutes || 0) / 60;
 }
 function calcTotalHours() {
   const entries = state.profile?.extraHourEntries;
@@ -396,7 +397,7 @@ function buildPatientCard(idx, patient) {
       </select>
       <select class="demo-select" data-field="time">
         <option value="">Uhrzeit</option>
-        ${Array.from({length:24},(_,i)=>`<option value="${i}"${patient.time===i?' selected':''}>${String(i).padStart(2,'0')}:00</option>`).join('')}
+        ${Array.from({length:12},(_,i)=>`<option value="${i+8}"${patient.time===i+8?' selected':''}>${String(i+8).padStart(2,'0')}:00</option>`).join('')}
       </select>
     </div>
     <div class="patient-diagnoses" id="diagnoses-${idx}">
@@ -1047,7 +1048,9 @@ function renderMissions() {
   const activeMissions = state.missions.filter(m => !m.completedAt).sort((a, b) => a.slotIndex - b.slotIndex);
 
   if (!activeMissions.length) {
-    gridEl.innerHTML = '<div class="empty-state">Missionen werden geladen…</div>';
+    gridEl.innerHTML = db.missions
+      ? '<div class="empty-state">Missionen werden initialisiert…</div>'
+      : `<div class="empty-state" style="text-align:center">Missionen nicht verfügbar.<br><small style="color:var(--text-dim)">Bitte Seite neu laden (Strg+Shift+R)</small></div>`;
     return;
   }
 
@@ -1083,6 +1086,10 @@ function renderMissions() {
 
 // ─── PsychoDex ────────────────────────────────────────────────────────────────
 function renderPsychoDex() {
+  const hasActive = state.missions.some(m => !m.completedAt);
+  if (!hasActive && db.missions) {
+    ensureMissionSlots().then(() => renderMissions()).catch(() => {});
+  }
   renderMissions();
 
   const caughtCodes = new Set(state.catches.map(c => c.code));
@@ -1285,7 +1292,7 @@ function openEditShiftModal(shiftId) {
   document.getElementById('edit-shift-date').value = shift.date;
   document.getElementById('edit-type-selector').querySelectorAll('.type-btn').forEach(btn =>
     btn.classList.toggle('active', btn.dataset.type === shift.type ||
-      (btn.dataset.type === 'früh' && !['spät','full'].includes(shift.type))));
+      (btn.dataset.type === 'früh' && !['spät','full','samstag'].includes(shift.type))));
   document.getElementById('edit-shift-modal').classList.remove('hidden');
 }
 
@@ -1299,8 +1306,8 @@ async function saveEditShift() {
   if (!shift) return;
   const newDate = document.getElementById('edit-shift-date').value;
   const newType = document.getElementById('edit-type-selector').querySelector('.type-btn.active')?.dataset.type || shift.type;
-  const oldBase = shift.type === 'full' ? 120 : 65;
-  const newBase = newType === 'full' ? 120 : 65;
+  const oldBase = shift.type === 'full' ? 120 : shift.type === 'samstag' ? 70 : 65;
+  const newBase = newType === 'full' ? 120 : newType === 'samstag' ? 70 : 65;
   const xpDelta = newBase - oldBase;
   await db.shiftLogs.update(state.editingShiftId, { date: newDate, type: newType, xpEarned: shift.xpEarned + xpDelta, updatedAt: new Date().toISOString() });
   if (xpDelta !== 0) {
@@ -1478,18 +1485,28 @@ function togglePatientEditRow(pkey, shiftId, patientMap) {
     <select class="demo-select-sm" data-field="patientType">
       <option value="erstgespraech" ${p.patientType==='erstgespraech'?'selected':''}>Erstgesp.</option>
       <option value="interview" ${p.patientType==='interview'?'selected':''}>Interview</option>
+    </select>
+    <select class="demo-select-sm" data-field="patientTime">
+      <option value="">Uhr</option>
+      ${Array.from({length:12},(_,i)=>`<option value="${i+8}"${p.patientTime===i+8?'selected':''}>${String(i+8).padStart(2,'0')}:00</option>`).join('')}
     </select>`;
   section.querySelector('.patient-section-header').after(row);
   row.querySelectorAll('.demo-select-sm').forEach(sel => {
     sel.addEventListener('change', async () => {
       const field = sel.dataset.field;
-      const val   = sel.value;
+      const raw   = sel.value;
+      const val   = field === 'patientTime' ? (raw === '' ? null : parseInt(raw)) : raw;
       p[field] = val;
-      // Update all catches of this patient
       for (const c of p.catches) {
         await db.caughtDiagnoses.update(c.id, { [field]: val });
       }
       state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
+      // Update display in patient section header
+      const demoEl = section.querySelector('.patient-section-demo');
+      if (demoEl) {
+        const timeStr  = p.patientTime != null ? ` · ${String(p.patientTime).padStart(2,'0')}:00 Uhr` : '';
+        demoEl.textContent = `${p.ageGroup} J · ${p.gender} · ${p.patientType === 'erstgespraech' ? 'Erstgespräch' : 'Interview'}${timeStr}`;
+      }
     });
   });
 }
@@ -1917,8 +1934,8 @@ const fmtDate = iso =>
 const fmtDateShort = ds =>
   new Date(ds).toLocaleDateString('de-AT', { weekday:'short', day:'2-digit', month:'2-digit' });
 
-const shiftIcon  = t => t === 'full' ? '☀️' : t === 'spät' ? '🌇' : '🌅';
-const shiftLabel = t => t === 'full' ? 'Ganztags 12h' : t === 'spät' ? 'Spät 6,5h' : 'Früh 6,5h';
+const shiftIcon  = t => t === 'full' ? '☀️' : t === 'spät' ? '🌇' : t === 'samstag' ? '🗓️' : '🌅';
+const shiftLabel = t => t === 'full' ? 'Ganztags 12h' : t === 'spät' ? 'Spät 6,5h' : t === 'samstag' ? 'Samstag 7h' : 'Früh 6,5h';
 
 // ─── Diagnosis Info Modal ─────────────────────────────────────────────────────
 function setupDiagInfoModal() {
@@ -2145,6 +2162,7 @@ function openXPInfoModal() {
     <div class="xp-info-source">
       <div class="xp-info-source-title">⏱ Zeit-XP (pro Dienst)</div>
       <div class="xp-info-row"><span>🌅 Früh / 🌇 Spät (6,5h)</span><span class="xp-info-val">65 XP</span></div>
+      <div class="xp-info-row"><span>🗓️ Samstag (7h, 10–16 Uhr)</span><span class="xp-info-val">70 XP</span></div>
       <div class="xp-info-row"><span>☀️ Ganztags (12h)</span><span class="xp-info-val">120 XP</span></div>
     </div>
     <div class="xp-info-source">
