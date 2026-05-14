@@ -61,6 +61,32 @@ const fmtDateTime = ts => new Date(ts).toLocaleString('de-AT', {
   day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'
 });
 
+// ─── Service Worker ───────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// ─── Lazy Image Loader ────────────────────────────────────────────────────────
+// Sets background-image from data-bg only when element enters viewport.
+// Avoids fetching hundreds of diagnosis images until the user actually opens a category.
+const lazyObserver = (() => {
+  if (!('IntersectionObserver' in window)) {
+    // Fallback: apply all immediately
+    return el => el.querySelectorAll('[data-bg]').forEach(t => {
+      t.style.backgroundImage = t.dataset.bg;
+    });
+  }
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const t = entry.target;
+      t.style.backgroundImage = t.dataset.bg;
+      obs.unobserve(t);
+    });
+  }, { rootMargin: '300px' });
+  return container => container.querySelectorAll('[data-bg]').forEach(el => obs.observe(el));
+})();
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
   const showError = msg => {
@@ -1119,7 +1145,7 @@ function renderPsychoDex() {
     ].filter(Boolean).join(' ');
     return `
       <div class="${cardClass}" data-cat="${cat.code}" style="--cat-color:${cat.color}">
-        <div class="cat-bg" style="background-image:url('assets/images/categories/mosaike/${cat.code.toLowerCase()}.png'),url('assets/images/categories/${cat.code.toLowerCase()}.png')"></div>
+        <div class="cat-bg" data-bg="url('assets/images/categories/mosaike/${cat.code.toLowerCase()}.png'),url('assets/images/categories/${cat.code.toLowerCase()}.png')"></div>
         <div class="cat-overlay"></div>
         <div class="cat-content">
           <div class="cat-emoji">${cat.emoji}</div>
@@ -1132,6 +1158,7 @@ function renderPsychoDex() {
         </div>
       </div>`;
   }).join('');
+  lazyObserver(gridEl);
   gridEl.querySelectorAll('.category-card').forEach(card =>
     card.addEventListener('click', () => openCategoryModal(card.dataset.cat)));
 }
@@ -1159,11 +1186,11 @@ function openCategoryModal(catCode) {
   } else {
     listEl.innerHTML = diags.map(d => {
       const caught  = caughtCodes.has(d.code);
-      const img     = `assets/images/diagnoses/${d.code.toLowerCase()}.png`;
+      const img     = `url('assets/images/diagnoses/${d.code.toLowerCase()}.png')`;
       const { label, color } = rarityInfo(d.seltenheit_score);
       return `
         <div class="diag-mosaic-card ${caught ? 'is-caught' : ''}" data-code="${d.code}">
-          <div class="dmc-bg" style="background-image:url('${img}')"></div>
+          <div class="dmc-bg" data-bg="${img}"></div>
           <div class="dmc-overlay"></div>
           <div class="dmc-content">
             <div class="dmc-top">
@@ -1178,6 +1205,8 @@ function openCategoryModal(catCode) {
         </div>`;
     }).join('');
   }
+
+  lazyObserver(listEl);
 
   listEl.querySelectorAll('.diag-mosaic-card:not(.is-caught)').forEach(item => {
     item.addEventListener('click', () => {
