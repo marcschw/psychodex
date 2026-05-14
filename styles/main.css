@@ -855,6 +855,109 @@ img{max-width:100%;display:block}
 .streak-week-shifts{font-size:15px;letter-spacing:2px}
 .streak-week-empty{font-size:12px;color:var(--text-dim)}
 .streak-week-xp{font-size:11px;color:var(--accent);font-weight:700;white-space:nowrap}
+.streak-week-shifts{display:flex;flex-wrap:wrap;gap:4px;flex:1}
+.streak-shift-pill{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:11px;padding:3px 8px;border-radius:12px;
+  background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.2);
+  color:var(--text-muted);cursor:pointer;transition:all .15s;
+}
+.streak-shift-pill:hover{border-color:rgba(124,58,237,.45);color:var(--accent)}
+
+/* ── Hours Progress Card ───────────────────────────────────────────────────── */
+.hours-progress-card{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--r);padding:13px 16px;margin-bottom:12px;
+}
+.hp-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.hp-title{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-dim)}
+.hp-pct-text{font-size:12px;font-weight:700;color:var(--accent-cyan)}
+.hp-bar-wrap{height:7px;background:var(--bg-raised);border-radius:4px;overflow:hidden;margin-bottom:6px}
+.hp-bar-fill{height:100%;background:linear-gradient(90deg,#06b6d4,#10b981);border-radius:4px;transition:width .4s ease}
+.hp-abs{font-size:12px;color:var(--text-muted)}
+
+/* ── Hours filter ──────────────────────────────────────────────────────────── */
+.hours-filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.hours-filter-btn{
+  font-size:12px;font-weight:600;padding:6px 13px;border-radius:20px;
+  background:var(--bg-raised);border:1px solid var(--border);
+  color:var(--text-muted);cursor:pointer;transition:all .15s;
+}
+.hours-filter-btn.active{background:rgba(124,58,237,.15);border-color:rgba(124,58,237,.4);color:var(--accent)}
+
+/* ── Settings ──────────────────────────────────────────────────────────────── */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.setting-item{display:flex;flex-direction:column;gap:5px}
+.setting-label{font-size:10px;font-weight:700;color:var(--text-dim);letter-spacing:.6px;text-transform:uppercase}
+.setting-input{
+  background:var(--bg-raised);border:1px solid var(--border);
+  border-radius:var(--r);padding:10px 12px;font-size:14px;color:var(--text);
+  transition:border-color .2s;-webkit-appearance:none;
+}
+.setting-input:focus{border-color:var(--border-glow);outline:none}
+
+/* ── Rank / XP card clickable ──────────────────────────────────────────────── */
+#rank-card{cursor:pointer;transition:border-color .2s}
+#rank-card:hover{border-color:rgba(124,58,237,.3)}
+#rank-xp-container{cursor:pointer}
+#rank-xp-container:hover .xp-bar{box-shadow:0 0 6px rgba(59,130,246,.3)}
+
+/* ── XP Info Modal ─────────────────────────────────────────────────────────── */
+.xp-info-source{
+  background:var(--bg-raised);border-radius:var(--r);
+  padding:13px;margin-bottom:10px;border:1px solid var(--border);
+}
+.xp-info-source-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px}
+.xp-info-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:5px 0;font-size:12px;color:var(--text-muted);
+  border-bottom:1px solid rgba(255,255,255,.04);
+}
+.xp-info-row:last-child{border-bottom:none}
+.xp-info-val{font-weight:700;color:var(--accent);white-space:nowrap;margin-left:8px}
+
+/* ── Rank Table Modal ──────────────────────────────────────────────────────── */
+.rank-table-current-xp{
+  font-size:13px;color:var(--text-muted);margin-bottom:14px;
+  padding:10px 14px;background:var(--bg-raised);border-radius:var(--r);
+}
+.rank-table-row{
+  display:flex;align-items:center;gap:12px;
+  padding:11px 14px;border-radius:var(--r);margin-bottom:6px;
+  background:var(--bg-raised);border:1px solid var(--border);
+}
+.rank-table-row.is-current{
+  border-color:rgba(124,58,237,.5);background:rgba(124,58,237,.1);
+  box-shadow:0 0 12px rgba(124,58,237,.12);
+}
+.rank-table-row.is-unlocked{opacity:.7}
+.rank-table-row.is-locked{opacity:.38}
+.rank-table-num{font-size:11px;color:var(--text-dim);font-weight:700;min-width:18px;text-align:right}
+.rank-table-info{flex:1}
+.rank-table-name{font-size:13px;font-weight:600;color:var(--text)}
+.rank-table-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
+.rank-table-badge{font-size:10px;color:var(--accent);font-weight:700;letter-spacing:.5px}
+.rank-table-date{font-size:10px;color:var(--text-dim);white-space:nowrap}
+.rank-table-xp-needed{font-size:11px;color:var(--text-dim);white-space:nowrap}
+
+/* ── Shift timestamps + extension ─────────────────────────────────────────── */
+.shift-timestamps{
+  display:flex;gap:10px;flex-wrap:wrap;
+  font-size:10px;color:var(--text-dim);margin-top:5px;
+}
+.shift-extend-row{
+  display:flex;align-items:center;gap:8px;
+  padding:9px 13px;background:var(--bg-raised);
+  border-radius:var(--r);border:1px solid var(--border);margin-bottom:12px;
+}
+.shift-extend-label{font-size:12px;color:var(--text-muted);flex:1}
+.shift-ext-val{font-size:13px;font-weight:700;color:var(--accent-cyan);min-width:38px;text-align:center}
+.btn-extend{
+  font-size:12px;padding:5px 11px;border-radius:8px;
+  background:var(--bg-hover);border:1px solid var(--border);
+  color:var(--text-muted);cursor:pointer;transition:all .15s;
+}
+.btn-extend:hover{border-color:var(--border-glow);color:var(--accent)}
 
 /* ── Utilities ─────────────────────────────────────────────────────────────── */
 .hidden{display:none!important}

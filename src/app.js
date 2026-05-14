@@ -16,12 +16,24 @@ const state = {
   pendingStandaloneCatch: null, // { diagnosis, hasComorbidity, xpResult } while assigning
   symptomSelected: [],          // array of selected symptom strings
   catchesSort: 'chrono',        // 'chrono' | 'alpha' | 'category'
+  hoursFilter: 'all',           // 'all' | 'früh' | 'spät' | 'full'
   diagInfoStack: [],             // navigation stack for info modal back button
   diagInfoCurrentCode: null,
   profile: null,
   shifts: [],
   catches: []
 };
+
+// ─── Hours Helpers ────────────────────────────────────────────────────────────
+function calcShiftHours(shift) {
+  return (shift.type === 'full' ? 12 : 6.5) + (shift.extensionMinutes || 0) / 60;
+}
+function calcTotalHours() {
+  return state.shifts.reduce((s, sh) => s + calcShiftHours(sh), 0) + (state.profile?.extraHours || 0);
+}
+const fmtDateTime = ts => new Date(ts).toLocaleString('de-AT', {
+  day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'
+});
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
@@ -53,6 +65,10 @@ async function init() {
     setupExportImport();
     setupDiagInfoModal();
     setupStreakModal();
+    setupXPInfoModal();
+    setupRankTableModal();
+    setupSettingsInputs();
+    setupDashboardCardListeners();
     setupEscapeKey();
     setDefaultDate();
     document.getElementById('loading-screen').classList.add('fade-out');
@@ -81,6 +97,8 @@ async function loadFromDB() {
     profiles = [await db.profile.get(id)];
   }
   state.profile = profiles[0];
+  if (state.profile.targetHours == null) state.profile.targetHours = 480;
+  if (state.profile.extraHours  == null) state.profile.extraHours  = 0;
   state.shifts  = await db.shiftLogs.orderBy('date').reverse().toArray();
   state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
 }
@@ -90,6 +108,8 @@ function setupEscapeKey() {
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     const openModals = [
+      { id: 'xp-info-modal',        fn: closeXPInfoModal },
+      { id: 'rank-table-modal',     fn: closeRankTableModal },
       { id: 'diag-info-modal',      fn: closeDiagInfoModal },
       { id: 'streak-modal',         fn: closeStreakModal },
       { id: 'diagnosis-modal',      fn: closeDiagnosisModal },
@@ -174,10 +194,15 @@ function renderDashboard() {
   document.getElementById('streak-icon').textContent  = streak.frozen ? '🧊' : '🔥';
   document.getElementById('streak-value').textContent = streak.count;
 
-  // Total hours
-  const totalHours = state.shifts.reduce((s, sh) => s + (sh.type === 'full' ? 12 : 6.5), 0)
-    .toFixed(1).replace(/\.0$/, '');
-  document.getElementById('total-hours').textContent  = `${totalHours}h`;
+  // Total hours + progress
+  const totalHoursNum = calcTotalHours();
+  const totalHours    = totalHoursNum.toFixed(1).replace(/\.0$/, '');
+  const targetH       = state.profile?.targetHours || 480;
+  const hPct          = Math.min(100, Math.max(0, (totalHoursNum / targetH) * 100));
+  document.getElementById('total-hours').textContent = `${totalHours}h`;
+  document.getElementById('hp-fill').style.width     = `${hPct}%`;
+  document.getElementById('hp-pct').textContent      = `${Math.round(hPct)}%`;
+  document.getElementById('hp-abs').textContent      = `${totalHours} / ${targetH}h`;
   document.getElementById('total-catches').textContent = state.catches.length;
 
   // Stat card clicks
@@ -310,7 +335,7 @@ function showStep(id) {
 function addPatientCard() {
   if (!state.activeShift) return;
   const idx = state.activeShift.patients.length;
-  state.activeShift.patients.push({ ageGroup: '31-50', gender: 'weiblich', patientType: 'erstgespraech', diagnoses: [] });
+  state.activeShift.patients.push({ ageGroup: '31-50', gender: 'weiblich', patientType: 'erstgespraech', time: null, diagnoses: [] });
   document.getElementById('patient-list').appendChild(buildPatientCard(idx, state.activeShift.patients[idx]));
 }
 
@@ -339,6 +364,10 @@ function buildPatientCard(idx, patient) {
         <option value="erstgespraech" ${pt==='erstgespraech'?'selected':''}>Erstgespräch</option>
         <option value="interview"     ${pt==='interview'    ?'selected':''}>Interview</option>
       </select>
+      <select class="demo-select" data-field="time">
+        <option value="">Uhrzeit</option>
+        ${Array.from({length:24},(_,i)=>`<option value="${i}"${patient.time===i?' selected':''}>${String(i).padStart(2,'0')}:00</option>`).join('')}
+      </select>
     </div>
     <div class="patient-diagnoses" id="diagnoses-${idx}">
       <div class="no-diag-hint">Noch keine Diagnose</div>
@@ -351,8 +380,10 @@ function buildPatientCard(idx, patient) {
   card.querySelectorAll('.demo-select').forEach(sel => {
     sel.addEventListener('change', e => {
       if (state.activeShift?.patients[idx]) {
-        state.activeShift.patients[idx][e.target.dataset.field] = e.target.value;
-        }
+        const field = e.target.dataset.field;
+        const val   = e.target.value;
+        state.activeShift.patients[idx][field] = field === 'time' ? (val === '' ? null : parseInt(val)) : val;
+      }
     });
   });
   renderPatientDiagnoses(idx, patient);
@@ -829,6 +860,7 @@ async function finishShift() {
           ageGroup: patient.ageGroup, gender: patient.gender,
           patientType: patient.patientType || 'erstgespraech',
           patientIndex: pi,
+          patientTime: patient.time ?? null,
           hasComorbidity, xpEarned,
           caughtAt: new Date().toISOString()
         });
@@ -983,12 +1015,16 @@ function closeCategoryModal() {
 function renderStats() {
   const xp     = state.profile?.totalXP ?? 0;
   const shifts = state.shifts.length;
-  const hours  = parseFloat(state.shifts.reduce((s, sh) => s + (sh.type === 'full' ? 12 : 6.5), 0).toFixed(1));
+  const hours  = calcTotalHours();
   const avgXP  = shifts ? Math.round(xp / shifts) : 0;
   document.getElementById('stat-total-xp').textContent     = xp.toLocaleString('de-AT');
   document.getElementById('stat-total-shifts').textContent  = shifts;
   document.getElementById('stat-avg-xp').textContent        = avgXP;
-  document.getElementById('stat-hours').textContent         = `${hours}h`;
+  document.getElementById('stat-hours').textContent         = `${hours.toFixed(1).replace('.0','')}h`;
+  const ti = document.getElementById('target-hours-input');
+  const ei = document.getElementById('extra-hours-input');
+  if (ti) ti.value = state.profile?.targetHours ?? 480;
+  if (ei) ei.value = state.profile?.extraHours  ?? 0;
   renderHeatmap();
   renderCategoryChart();
 }
@@ -1108,7 +1144,7 @@ async function saveEditShift() {
   const oldBase = shift.type === 'full' ? 120 : 65;
   const newBase = newType === 'full' ? 120 : 65;
   const xpDelta = newBase - oldBase;
-  await db.shiftLogs.update(state.editingShiftId, { date: newDate, type: newType, xpEarned: shift.xpEarned + xpDelta });
+  await db.shiftLogs.update(state.editingShiftId, { date: newDate, type: newType, xpEarned: shift.xpEarned + xpDelta, updatedAt: new Date().toISOString() });
   if (xpDelta !== 0) {
     const newTotal = (state.profile.totalXP ?? 0) + xpDelta;
     await db.profile.update(state.profile.id, { totalXP: newTotal });
@@ -1149,19 +1185,33 @@ function renderShiftDetailBody(shift) {
     if (!patientMap.has(key)) {
       patientMap.set(key, {
         ageGroup: c.ageGroup || '?', gender: c.gender || '?',
-        patientType: c.patientType || 'erstgespraech', catches: [], index: key
+        patientType: c.patientType || 'erstgespraech',
+        patientTime: c.patientTime ?? null,
+        catches: [], index: key
       });
     }
     patientMap.get(key).catches.push(c);
   });
 
+  const extMins  = shift.extensionMinutes || 0;
+  const shiftH   = calcShiftHours(shift).toFixed(1).replace('.0','');
+  const extLabel = extMins > 0 ? `+${extMins}min (${shiftH}h)` : `${shiftH}h`;
   let html = `
     <div class="shift-detail-header">
       <div class="shift-detail-info">
         <div class="shift-detail-date">${shiftIcon(shift.type)} ${fmtDateShort(shift.date)} · ${shiftLabel(shift.type)}</div>
         <div class="shift-detail-meta">+${shift.xpEarned} XP · ${shift.patientCount} Patient(en)</div>
+        <div class="shift-timestamps">
+          <span>📅 ${fmtDateTime(shift.createdAt)}</span>
+          ${shift.updatedAt ? `<span>✏️ ${fmtDateTime(shift.updatedAt)}</span>` : ''}
+        </div>
       </div>
       <button class="btn-icon" id="btn-edit-this-shift" data-id="${shift.id}" title="Bearbeiten">✎</button>
+    </div>
+    <div class="shift-extend-row">
+      <span class="shift-extend-label">Gesamt: <span id="shift-ext-display" class="shift-ext-val">${extLabel}</span></span>
+      <button class="btn-extend" id="btn-ext-minus">−15min</button>
+      <button class="btn-extend" id="btn-ext-plus">+15min</button>
     </div>`;
 
   if (patientMap.size === 0) {
@@ -1170,7 +1220,8 @@ function renderShiftDetailBody(shift) {
 
   let pNum = 1;
   for (const [, p] of patientMap) {
-    const demoLabel = `${p.ageGroup} J · ${p.gender} · ${p.patientType === 'erstgespraech' ? 'Erstgespräch' : 'Interview'}`;
+    const timeStr  = p.patientTime != null ? ` · ${String(p.patientTime).padStart(2,'0')}:00 Uhr` : '';
+    const demoLabel = `${p.ageGroup} J · ${p.gender} · ${p.patientType === 'erstgespraech' ? 'Erstgespräch' : 'Interview'}${timeStr}`;
     html += `<div class="patient-section" data-pkey="${p.index}">
       <div class="patient-section-header">
         <div>
@@ -1210,6 +1261,14 @@ function renderShiftDetailBody(shift) {
     e.stopPropagation();
     closeShiftDetailModal();
     openEditShiftModal(parseInt(e.currentTarget.dataset.id));
+  });
+
+  body.querySelector('#btn-ext-plus')?.addEventListener('click', async () => {
+    await setShiftExtension(shift.id, (shift.extensionMinutes || 0) + 15);
+  });
+  body.querySelector('#btn-ext-minus')?.addEventListener('click', async () => {
+    const curr = shift.extensionMinutes || 0;
+    if (curr >= 15) await setShiftExtension(shift.id, curr - 15);
   });
 
   body.querySelectorAll('.btn-delete-shift-catch').forEach(btn => {
@@ -1548,44 +1607,56 @@ function setupHoursModalListeners() {
 }
 
 function openHoursModal() {
-  const body = document.getElementById('hours-modal-body');
-  const totalHours = state.shifts.reduce((s, sh) => s + (sh.type === 'full' ? 12 : 6.5), 0);
-  const totalFrueh = state.shifts.filter(s => s.type === 'früh').length;
-  const totalSpat  = state.shifts.filter(s => s.type === 'spät').length;
-  const totalFull  = state.shifts.filter(s => s.type === 'full').length;
+  state.hoursFilter = 'all';
+  renderHoursModalBody();
+  document.getElementById('hours-modal').classList.remove('hidden');
+}
+
+function renderHoursModalBody() {
+  const body     = document.getElementById('hours-modal-body');
+  const all      = state.shifts;
+  const filtered = state.hoursFilter === 'all' ? all : all.filter(s => s.type === state.hoursFilter);
+  const totalH   = calcTotalHours();
+  const nFr = all.filter(s => s.type === 'früh').length;
+  const nSp = all.filter(s => s.type === 'spät').length;
+  const nFu = all.filter(s => s.type === 'full').length;
+  const extra = state.profile?.extraHours || 0;
 
   body.innerHTML = `
     <div class="hours-summary">
       <div>
-        <div class="hours-total">${totalHours.toFixed(1).replace('.0','')}h</div>
-        <div class="hours-label">Gesamt</div>
+        <div class="hours-total">${totalH.toFixed(1).replace('.0','')}h</div>
+        <div class="hours-label">Gesamt${extra > 0 ? ` (+${extra}h Extra)` : ''}</div>
       </div>
-      <div style="text-align:right;font-size:12px;color:var(--text-dim);line-height:1.8">
-        <div>🌅 Früh: ${totalFrueh}× (${(totalFrueh*6.5).toFixed(1).replace('.0','')}h)</div>
-        <div>🌇 Spät: ${totalSpat}× (${(totalSpat*6.5).toFixed(1).replace('.0','')}h)</div>
-        <div>☀️ Ganztags: ${totalFull}× (${totalFull*12}h)</div>
+      <div style="text-align:right;font-size:12px;color:var(--text-dim);line-height:1.9">
+        <div>🌅 Früh: ${nFr}×</div>
+        <div>🌇 Spät: ${nSp}×</div>
+        <div>☀️ Ganztags: ${nFu}×</div>
       </div>
     </div>
+    <div class="hours-filter-row">
+      <button class="hours-filter-btn${state.hoursFilter==='all'?' active':''}" data-filter="all">Alle (${all.length})</button>
+      <button class="hours-filter-btn${state.hoursFilter==='früh'?' active':''}" data-filter="früh">🌅 Früh (${nFr})</button>
+      <button class="hours-filter-btn${state.hoursFilter==='spät'?' active':''}" data-filter="spät">🌇 Spät (${nSp})</button>
+      <button class="hours-filter-btn${state.hoursFilter==='full'?' active':''}" data-filter="full">☀️ Ganztags (${nFu})</button>
+    </div>
     <div class="hours-list">
-      ${state.shifts.map(s => `
+      ${filtered.length ? filtered.map(s => `
         <div class="hours-row" data-id="${s.id}">
           <div class="hours-row-icon">${shiftIcon(s.type)}</div>
           <div class="hours-row-info">
             <div class="hours-row-date">${fmtDateShort(s.date)}</div>
-            <div class="hours-row-meta">${shiftLabel(s.type)} · +${s.xpEarned} XP · ${s.patientCount} Pat.</div>
+            <div class="hours-row-meta">${shiftLabel(s.type)}${s.extensionMinutes ? ` +${s.extensionMinutes}min` : ''} · +${s.xpEarned} XP · ${s.patientCount} Pat.</div>
           </div>
-          <div class="hours-row-val">${s.type === 'full' ? '12h' : '6,5h'}</div>
-        </div>`).join('')}
+          <div class="hours-row-val">${calcShiftHours(s).toFixed(1).replace('.0','')}h</div>
+        </div>`).join('')
+      : '<div class="empty-state">Keine Dienste in dieser Kategorie.</div>'}
     </div>`;
 
-  body.querySelectorAll('.hours-row').forEach(row => {
-    row.addEventListener('click', () => {
-      closeHoursModal();
-      openShiftDetailModal(parseInt(row.dataset.id));
-    });
-  });
-
-  document.getElementById('hours-modal').classList.remove('hidden');
+  body.querySelectorAll('.hours-filter-btn').forEach(btn =>
+    btn.addEventListener('click', () => { state.hoursFilter = btn.dataset.filter; renderHoursModalBody(); }));
+  body.querySelectorAll('.hours-row').forEach(row =>
+    row.addEventListener('click', () => { closeHoursModal(); openShiftDetailModal(parseInt(row.dataset.id)); }));
 }
 
 function closeHoursModal() {
@@ -1838,13 +1909,15 @@ function openStreakModal() {
             <div class="streak-week-label">${weekLabel(w)}</div>
             <div class="streak-week-shifts">
               ${hasShift
-                ? shifts.map(s => `<span title="${shiftLabel(s.type)}">${shiftIcon(s.type)}</span>`).join('')
+                ? shifts.map(s => `<button class="streak-shift-pill" data-id="${s.id}" title="${shiftLabel(s.type)}">${shiftIcon(s.type)} ${fmtDateShort(s.date)}</button>`).join('')
                 : '<span class="streak-week-empty">—</span>'}
             </div>
             <div class="streak-week-xp">${hasShift ? '+' + totalXP + ' XP' : ''}</div>
           </div>`;
       }).join('')}
     </div>`;
+  document.getElementById('streak-modal-body').querySelectorAll('.streak-shift-pill').forEach(btn =>
+    btn.addEventListener('click', () => { closeStreakModal(); openShiftDetailModal(parseInt(btn.dataset.id)); }));
   document.getElementById('streak-modal').classList.remove('hidden');
 }
 
@@ -1900,6 +1973,161 @@ async function importData(e) {
     alert(`Import fehlgeschlagen: ${err.message}`);
   }
   e.target.value = '';
+}
+
+// ─── XP Info Modal ────────────────────────────────────────────────────────────
+function setupXPInfoModal() {
+  document.getElementById('xp-info-close').addEventListener('click', e => { e.stopPropagation(); closeXPInfoModal(); });
+  document.getElementById('xp-info-backdrop').addEventListener('click', closeXPInfoModal);
+}
+function closeXPInfoModal() { document.getElementById('xp-info-modal').classList.add('hidden'); }
+function openXPInfoModal() {
+  document.getElementById('xp-info-body').innerHTML = `
+    <div class="xp-info-source">
+      <div class="xp-info-source-title">⏱ Zeit-XP (pro Dienst)</div>
+      <div class="xp-info-row"><span>🌅 Früh / 🌇 Spät (6,5h)</span><span class="xp-info-val">65 XP</span></div>
+      <div class="xp-info-row"><span>☀️ Ganztags (12h)</span><span class="xp-info-val">120 XP</span></div>
+    </div>
+    <div class="xp-info-source">
+      <div class="xp-info-source-title">🔬 Diagnose-Catch</div>
+      <div class="xp-info-row"><span>Basis: 20 × Seltenheit (★1–★10)</span><span class="xp-info-val">20–200 XP</span></div>
+      <div class="xp-info-row"><span>Bsp: F32.1 Mittelschwere Depression (★6)</span><span class="xp-info-val">120 XP</span></div>
+      <div class="xp-info-row"><span>Bsp: F20.0 Paranoide Schizophrenie (★7)</span><span class="xp-info-val">140 XP</span></div>
+    </div>
+    <div class="xp-info-source">
+      <div class="xp-info-source-title">🎯 First-Catch Boni (einmalig pro Diagnose/Kategorie)</div>
+      <div class="xp-info-row"><span>Erste spezifische Diagnose (z.B. erste F32.1)</span><span class="xp-info-val">+150 XP</span></div>
+      <div class="xp-info-row"><span>Erste Diagnose einer Kategorie (z.B. erste F3x)</span><span class="xp-info-val">+300 XP</span></div>
+    </div>
+    <div class="xp-info-source">
+      <div class="xp-info-source-title">💡 Komorbidität (automatisch)</div>
+      <div class="xp-info-row"><span>Patient hat schon ≥1 Diagnose → +20% auf Catch</span><span class="xp-info-val">+20%</span></div>
+      <div class="xp-info-row"><span>Bsp: Zweite Diagnose F41.0 (★6) = 120 × 1.2</span><span class="xp-info-val">144 XP</span></div>
+    </div>
+    <div class="xp-info-source">
+      <div class="xp-info-source-title">🔥 Flame-Bonus</div>
+      <div class="xp-info-row"><span>Dienst innerhalb 24h nach Dienstende eingetragen</span><span class="xp-info-val">+25 XP</span></div>
+    </div>
+    <div class="xp-info-source">
+      <div class="xp-info-source-title">📊 Beispiel-Dienst (bester Fall)</div>
+      <div class="xp-info-row"><span>🌅 Frühdienst Basis</span><span class="xp-info-val">65 XP</span></div>
+      <div class="xp-info-row"><span>F32.1 ★6 (Erst-Diagnose + Erst-Kategorie)</span><span class="xp-info-val">120+150+300 XP</span></div>
+      <div class="xp-info-row"><span>F41.0 ★6 Komorbidität (selbe Kategorie, kein First-Kat)</span><span class="xp-info-val">120×1.2+150 = 294 XP</span></div>
+      <div class="xp-info-row"><span>Flame-Bonus (innerhalb 24h)</span><span class="xp-info-val">+25 XP</span></div>
+      <div class="xp-info-row" style="border-top:1px solid rgba(255,255,255,.1);margin-top:4px;padding-top:8px">
+        <strong>Total</strong><span class="xp-info-val" style="color:var(--success)"><strong>954 XP</strong></span>
+      </div>
+    </div>`;
+  document.getElementById('xp-info-modal').classList.remove('hidden');
+}
+
+// ─── Rank Table Modal ─────────────────────────────────────────────────────────
+function buildXPTimeline() {
+  const events = [];
+  state.shifts.forEach(s => { if (s.createdAt) events.push({ time: s.createdAt, xp: s.xpEarned || 0 }); });
+  state.catches.filter(c => !c.shiftId).forEach(c => { if (c.caughtAt) events.push({ time: c.caughtAt, xp: c.xpEarned || 0 }); });
+  events.sort((a, b) => a.time.localeCompare(b.time));
+  let running = 0;
+  return events.map(e => { running += e.xp; return { ...e, total: running }; });
+}
+
+function getRankUnlockDates() {
+  const timeline   = buildXPTimeline();
+  const unlockDates = {};
+  RANKS.forEach(rank => {
+    if (rank.xpRequired === 0) {
+      unlockDates[rank.level] = timeline.length > 0 ? timeline[0].time : null;
+    } else {
+      const ev = timeline.find(e => e.total >= rank.xpRequired);
+      if (ev) unlockDates[rank.level] = ev.time;
+    }
+  });
+  return unlockDates;
+}
+
+function setupRankTableModal() {
+  document.getElementById('rank-table-close').addEventListener('click', e => { e.stopPropagation(); closeRankTableModal(); });
+  document.getElementById('rank-table-backdrop').addEventListener('click', closeRankTableModal);
+}
+function closeRankTableModal() { document.getElementById('rank-table-modal').classList.add('hidden'); }
+function openRankTableModal() {
+  const xp          = state.profile?.totalXP ?? 0;
+  const currentRank = getRankForXP(xp);
+  const unlockDates = getRankUnlockDates();
+  const stars = l => l <= 6 ? '⭐' : l <= 12 ? '⭐⭐' : '⭐⭐⭐';
+  const fmtD  = ts => new Date(ts).toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' });
+
+  document.getElementById('rank-table-body').innerHTML = `
+    <div class="rank-table-current-xp">Aktuell: <strong>${xp.toLocaleString('de-AT')} XP</strong></div>
+    ${RANKS.map(rank => {
+      const isCurrent  = rank.level === currentRank.level;
+      const unlockDate = unlockDates[rank.level];
+      const isUnlocked = unlockDate != null;
+      const cls        = isCurrent ? 'is-current' : isUnlocked ? 'is-unlocked' : 'is-locked';
+      return `
+        <div class="rank-table-row ${cls}">
+          <div class="rank-table-num">${rank.level}</div>
+          <div class="rank-table-info">
+            <div class="rank-table-name">${rank.title} ${stars(rank.level)}</div>
+            <div class="rank-table-sub">${rank.subtitle}</div>
+          </div>
+          <div style="text-align:right;min-width:80px">
+            ${isCurrent ? '<div class="rank-table-badge">◈ AKTUELL</div>' : ''}
+            ${isUnlocked && !isCurrent ? `<div class="rank-table-date">${fmtD(unlockDate)}</div>` : ''}
+            ${isCurrent && unlockDate ? `<div class="rank-table-date">${fmtD(unlockDate)}</div>` : ''}
+            ${!isUnlocked ? `<div class="rank-table-xp-needed">${rank.xpRequired.toLocaleString('de-AT')} XP</div>` : ''}
+          </div>
+        </div>`;
+    }).join('')}`;
+  document.getElementById('rank-table-modal').classList.remove('hidden');
+}
+
+// ─── Dashboard Card Listeners ─────────────────────────────────────────────────
+function setupDashboardCardListeners() {
+  document.getElementById('rank-card').addEventListener('click', e => {
+    if (!e.target.closest('#rank-xp-container')) openRankTableModal();
+  });
+  document.getElementById('rank-xp-container').addEventListener('click', e => {
+    e.stopPropagation();
+    openXPInfoModal();
+  });
+}
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+function setupSettingsInputs() {
+  const targetInput = document.getElementById('target-hours-input');
+  const extraInput  = document.getElementById('extra-hours-input');
+  if (targetInput) {
+    targetInput.value = state.profile?.targetHours ?? 480;
+    targetInput.addEventListener('change', async () => {
+      const val = Math.max(1, Math.round(parseFloat(targetInput.value)) || 480);
+      targetInput.value = val;
+      await db.profile.update(state.profile.id, { targetHours: val });
+      state.profile.targetHours = val;
+      if (state.currentTab === 'dashboard') renderDashboard();
+    });
+  }
+  if (extraInput) {
+    extraInput.value = state.profile?.extraHours ?? 0;
+    extraInput.addEventListener('change', async () => {
+      const val = Math.max(0, parseFloat(extraInput.value) || 0);
+      extraInput.value = val;
+      await db.profile.update(state.profile.id, { extraHours: val });
+      state.profile.extraHours = val;
+      if (state.currentTab === 'dashboard') renderDashboard();
+      else if (state.currentTab === 'stats') renderStats();
+    });
+  }
+}
+
+// ─── Shift Extension ──────────────────────────────────────────────────────────
+async function setShiftExtension(shiftId, newMinutes) {
+  await db.shiftLogs.update(shiftId, { extensionMinutes: newMinutes, updatedAt: new Date().toISOString() });
+  state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+  const shift  = state.shifts.find(s => s.id === shiftId);
+  if (shift) renderShiftDetailBody(shift);
+  if (state.currentTab === 'dashboard') renderDashboard();
+  else if (state.currentTab === 'stats') renderStats();
 }
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────

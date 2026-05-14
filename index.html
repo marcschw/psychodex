@@ -57,7 +57,7 @@
               <div class="rank-level" id="rank-level">Rang 1 / 18</div>
             </div>
           </div>
-          <div class="rank-xp-container">
+          <div class="rank-xp-container" id="rank-xp-container">
             <div class="xp-label">
               <span><span id="xp-current">0</span> / <span id="xp-needed">250</span> XP</span>
               <span id="xp-pct" style="color:var(--text-dim)">0%</span>
@@ -66,6 +66,16 @@
               <div id="xp-bar-fill" class="xp-fill" style="width:0%"></div>
             </div>
           </div>
+        </div>
+
+        <!-- Hours Progress -->
+        <div class="hours-progress-card">
+          <div class="hp-top">
+            <span class="hp-title">Stunden-Fortschritt</span>
+            <span class="hp-pct-text" id="hp-pct">0%</span>
+          </div>
+          <div class="hp-bar-wrap"><div class="hp-bar-fill" id="hp-fill" style="width:0%"></div></div>
+          <div class="hp-abs" id="hp-abs">0 / 480h</div>
         </div>
 
         <!-- Stats Row -->
@@ -188,6 +198,18 @@
 
         <div class="section-header">Diagnose-Verteilung</div>
         <div id="category-chart" class="category-chart"></div>
+
+        <div class="section-header">Einstellungen</div>
+        <div class="settings-grid">
+          <div class="setting-item">
+            <label class="setting-label">Ziel-Stunden</label>
+            <input type="number" id="target-hours-input" class="setting-input" min="1" max="2000" value="480">
+          </div>
+          <div class="setting-item">
+            <label class="setting-label">Extra-Stunden</label>
+            <input type="number" id="extra-hours-input" class="setting-input" min="0" max="500" step="0.5" value="0">
+          </div>
+        </div>
 
         <div class="section-header">Daten &amp; Backup</div>
         <div class="export-import-row">
@@ -416,6 +438,32 @@
         <button class="modal-close" id="streak-modal-close" aria-label="Schließen">✕</button>
       </div>
       <div class="sheet-body" id="streak-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ── XP Info Modal ─────────────────────────────────────────────────────── -->
+  <div id="xp-info-modal" class="modal hidden">
+    <div class="modal-backdrop" id="xp-info-backdrop"></div>
+    <div class="modal-sheet modal-sheet-tall">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="modal-title">✨ XP-System erklärt</div>
+        <button class="modal-close" id="xp-info-close" aria-label="Schließen">✕</button>
+      </div>
+      <div class="sheet-body" id="xp-info-body"></div>
+    </div>
+  </div>
+
+  <!-- ── Rank Table Modal ───────────────────────────────────────────────────── -->
+  <div id="rank-table-modal" class="modal hidden">
+    <div class="modal-backdrop" id="rank-table-backdrop"></div>
+    <div class="modal-sheet modal-sheet-tall">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="modal-title">⭐ Rang-Aufstieg</div>
+        <button class="modal-close" id="rank-table-close" aria-label="Schließen">✕</button>
+      </div>
+      <div class="sheet-body" id="rank-table-body"></div>
     </div>
   </div>
 
