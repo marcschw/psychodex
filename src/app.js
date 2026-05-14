@@ -16,6 +16,8 @@ const state = {
   pendingStandaloneCatch: null, // { diagnosis, hasComorbidity, xpResult } while assigning
   symptomSelected: [],          // array of selected symptom strings
   catchesSort: 'chrono',        // 'chrono' | 'alpha' | 'category'
+  diagInfoStack: [],             // navigation stack for info modal back button
+  diagInfoCurrentCode: null,
   profile: null,
   shifts: [],
   catches: []
@@ -548,14 +550,20 @@ function renderDiagnosisDetail(diagnosis) {
       ${preview.isFirstKat    ? '<span class="xp-chip bonus-kat">+300 Erste Kategorie!</span>' : ''}
       ${preview.komorbidBonus ? '<span class="xp-chip bonus-k">+Komorbidität 20%</span>' : ''}
     </div>`;
-  const mk = l => `<li class="symptom-item">${l}</li>`;
+  const mkP = l => `<li class="symptom-item symptom-pflicht">${l}</li>`;
+  const mkO = l => `<li class="symptom-item symptom-optional">${l}</li>`;
   document.getElementById('diag-pflicht-list').innerHTML =
-    (diagnosis.diagnose_kriterien?.pflicht_symptome || []).map(mk).join('');
+    (diagnosis.diagnose_kriterien?.pflicht_symptome || []).map(mkP).join('');
   document.getElementById('diag-optional-list').innerHTML =
-    (diagnosis.diagnose_kriterien?.optionale_symptome || []).map(mk).join('');
-  document.getElementById('diag-komorbid-chips').innerHTML =
-    (diagnosis.komorbiditaeten || []).map(k => `<span class="komorbid-chip">${k}</span>`).join('');
-  document.getElementById('diag-diff-text').textContent = diagnosis.differentialdiagnose || '';
+    (diagnosis.diagnose_kriterien?.optionale_symptome || []).map(mkO).join('');
+  const chipContainer = document.getElementById('diag-komorbid-chips');
+  chipContainer.innerHTML = renderLinkedChips(diagnosis.komorbiditaeten, diagnosis.code);
+  chipContainer.querySelectorAll('.linked-chip').forEach(btn =>
+    btn.addEventListener('click', () => { closeDiagnosisModal(); openDiagInfoModal(btn.dataset.code); }));
+  const diffEl = document.getElementById('diag-diff-text');
+  diffEl.innerHTML = renderLinkedChips(diagnosis.differentialdiagnose, diagnosis.code);
+  diffEl.querySelectorAll('.linked-chip').forEach(btn =>
+    btn.addEventListener('click', () => { closeDiagnosisModal(); openDiagInfoModal(btn.dataset.code); }));
 }
 
 function updateXPPreview() {
@@ -1694,16 +1702,30 @@ function closeDiagInfoModal() {
   document.getElementById('diag-info-modal').classList.add('hidden');
 }
 
-function openDiagInfoModal(code) {
+function renderLinkedChips(items, currentCode) {
+  return (items || []).map(item => {
+    const match = item.match(/\b(F\d{2}(?:\.\d+)?)\b/);
+    if (match) {
+      const linkedCode = match[1];
+      if (linkedCode !== currentCode && state.icdFlat.find(d => d.code === linkedCode)) {
+        return `<button class="komorbid-chip linked-chip" data-code="${linkedCode}">${item}</button>`;
+      }
+    }
+    return `<span class="komorbid-chip">${item}</span>`;
+  }).join('');
+}
+
+function renderDiagInfoBody(code) {
   const diag = state.icdFlat.find(d => d.code === code);
   if (!diag) return;
-  const caughtCodes = new Set(state.catches.map(c => c.code));
-  const caughtKats  = new Set(state.catches.map(c => c.kategorie));
-  const isCaught    = caughtCodes.has(code);
-  const base        = 20 * diag.seltenheit_score;
-  const mk = l => `<li class="symptom-item">${l}</li>`;
-  document.getElementById('diag-info-title').textContent = `${diag.code}`;
+  state.diagInfoCurrentCode = code;
+  const isCaught = new Set(state.catches.map(c => c.code)).has(code);
+  const base     = 20 * diag.seltenheit_score;
+  const mkP = l => `<li class="symptom-item symptom-pflicht">${l}</li>`;
+  const mkO = l => `<li class="symptom-item symptom-optional">${l}</li>`;
+  document.getElementById('diag-info-title').textContent = diag.code;
   document.getElementById('diag-info-body').innerHTML = `
+    ${state.diagInfoStack.length > 0 ? `<button class="diag-info-back" id="diag-info-back-btn">← Zurück</button>` : ''}
     <div class="diag-detail-header">
       <div class="diag-code-big">${diag.code}</div>
       <div class="diag-name-big">${diag.name}</div>
@@ -1715,25 +1737,42 @@ function openDiagInfoModal(code) {
       </div>
     </div>
     <div class="diag-detail-section">
-      <div class="diag-detail-label">Pflicht-Symptome</div>
-      <ul class="symptom-list">${(diag.diagnose_kriterien?.pflicht_symptome || []).map(mk).join('')}</ul>
+      <div class="diag-detail-label diag-label-pflicht">🔴 Pflicht-Symptome</div>
+      <ul class="symptom-list">${(diag.diagnose_kriterien?.pflicht_symptome || []).map(mkP).join('')}</ul>
     </div>
     <div class="diag-detail-section">
-      <div class="diag-detail-label">Optionale Symptome</div>
-      <ul class="symptom-list">${(diag.diagnose_kriterien?.optionale_symptome || []).map(mk).join('')}</ul>
+      <div class="diag-detail-label diag-label-optional">💡 Optionale Symptome</div>
+      <ul class="symptom-list">${(diag.diagnose_kriterien?.optionale_symptome || []).map(mkO).join('')}</ul>
     </div>
     <div class="diag-detail-section">
       <div class="diag-detail-label">Häufige Komorbiditäten</div>
-      <div class="komorbid-chips">${(diag.komorbiditaeten || []).map(k => `<span class="komorbid-chip">${k}</span>`).join('')}</div>
+      <div class="komorbid-chips" id="diag-info-komorbid">${renderLinkedChips(diag.komorbiditaeten, code)}</div>
     </div>
     <div class="diag-detail-section">
       <div class="diag-detail-label">Differentialdiagnose</div>
-      <div class="diff-text">${(diag.differentialdiagnose || []).join(' · ')}</div>
+      <div class="komorbid-chips" id="diag-info-diff">${renderLinkedChips(diag.differentialdiagnose, code)}</div>
     </div>
     ${!isCaught ? `<button class="btn-catch" id="diag-info-catch-btn">🎯 Jetzt fangen!</button>` : ''}`;
+  document.getElementById('diag-info-back-btn')?.addEventListener('click', () => {
+    const prev = state.diagInfoStack.pop();
+    if (prev) renderDiagInfoBody(prev);
+  });
+  document.getElementById('diag-info-body').querySelectorAll('.linked-chip').forEach(btn =>
+    btn.addEventListener('click', () => navigateDiagInfoTo(btn.dataset.code)));
   document.getElementById('diag-info-catch-btn')?.addEventListener('click', () => {
     closeDiagInfoModal(); openStandaloneCatch(diag);
   });
+}
+
+function navigateDiagInfoTo(code) {
+  if (state.diagInfoCurrentCode) state.diagInfoStack.push(state.diagInfoCurrentCode);
+  renderDiagInfoBody(code);
+}
+
+function openDiagInfoModal(code) {
+  state.diagInfoStack = [];
+  state.diagInfoCurrentCode = null;
+  renderDiagInfoBody(code);
   document.getElementById('diag-info-modal').classList.remove('hidden');
 }
 
