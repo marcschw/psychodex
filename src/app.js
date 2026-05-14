@@ -26,12 +26,27 @@ const state = {
   missions: []
 };
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+// Normalize kategorie to the 2-char block code (F0-F9) used as icdData keys.
+// Handles old DB data where sub-categories like "F40","F41" were stored.
+const normalizeKat = k => (k && k.length > 2) ? k.slice(0, 2) : (k || '');
+
 // ─── Hours Helpers ────────────────────────────────────────────────────────────
 function calcShiftHours(shift) {
   return (shift.type === 'full' ? 12 : 6.5) + (shift.extensionMinutes || 0) / 60;
 }
 function calcTotalHours() {
-  return state.shifts.reduce((s, sh) => s + calcShiftHours(sh), 0) + (state.profile?.extraHours || 0);
+  const entries = state.profile?.extraHourEntries;
+  const extra = Array.isArray(entries)
+    ? entries.reduce((s, e) => s + (e.hours || 0), 0)
+    : (state.profile?.extraHours || 0);
+  return state.shifts.reduce((s, sh) => s + calcShiftHours(sh), 0) + extra;
+}
+function getExtraHoursTotal() {
+  const entries = state.profile?.extraHourEntries;
+  return Array.isArray(entries)
+    ? entries.reduce((s, e) => s + (e.hours || 0), 0)
+    : (state.profile?.extraHours || 0);
 }
 const fmtDateTime = ts => new Date(ts).toLocaleString('de-AT', {
   day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'
@@ -51,7 +66,7 @@ async function init() {
     if (typeof Dexie === 'undefined') throw new Error('Dexie nicht geladen.');
     await Promise.all([loadAllICD(state), loadICDIndex()]);
     await loadFromDB();
-    await ensureMissionSlots();
+    try { await ensureMissionSlots(); } catch (e) { console.warn('Mission init:', e); }
     clearTimeout(timeout);
     renderApp();
     setupNav();
@@ -102,9 +117,20 @@ async function loadFromDB() {
   state.profile = profiles[0];
   if (state.profile.targetHours == null) state.profile.targetHours = 480;
   if (state.profile.extraHours  == null) state.profile.extraHours  = 0;
-  state.shifts   = await db.shiftLogs.orderBy('date').reverse().toArray();
-  state.catches  = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
-  state.missions = await db.missions.toArray();
+  state.shifts  = await db.shiftLogs.orderBy('date').reverse().toArray();
+  state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
+  try {
+    state.missions = await db.missions.toArray();
+  } catch { state.missions = []; }
+
+  // Migrate old single-number extraHours to entries array
+  if (!Array.isArray(state.profile.extraHourEntries)) {
+    const legacy = state.profile.extraHours || 0;
+    state.profile.extraHourEntries = legacy > 0
+      ? [{ id: Date.now(), hours: legacy, comment: 'Übertrag (migriert)', from: null, to: null }]
+      : [];
+    await db.profile.update(state.profile.id, { extraHourEntries: state.profile.extraHourEntries });
+  }
 }
 
 // ─── Escape key closes any open modal ─────────────────────────────────────────
@@ -623,15 +649,15 @@ function getAutoComorbidity() {
 function previewXP(diagnosis) {
   const hasComorbidity = getAutoComorbidity();
   const caughtCodes = new Set(state.catches.map(c => c.code));
-  const caughtKats  = new Set(state.catches.map(c => c.kategorie));
+  const caughtKats  = new Set(state.catches.map(c => normalizeKat(c.kategorie)));
   state.activeShift?.patients.forEach(p => p.diagnoses.forEach(d => {
     caughtCodes.add(d.diagnosis.code);
-    caughtKats.add(d.diagnosis.kategorie);
+    caughtKats.add(normalizeKat(d.diagnosis.kategorie));
   }));
   const base = 20 * diagnosis.seltenheit_score;
   let total  = base;
   const isFirstDiag = !caughtCodes.has(diagnosis.code);
-  const isFirstKat  = !caughtKats.has(diagnosis.kategorie);
+  const isFirstKat  = !caughtKats.has(normalizeKat(diagnosis.kategorie));
   if (isFirstKat)  total += 300;
   if (isFirstDiag) total += 150;
   let komorbidBonus = 0;
@@ -645,14 +671,15 @@ function catchDiagnosis() {
 
   const hasComorbidity = getAutoComorbidity();
   const caughtCodes    = new Set(state.catches.map(c => c.code));
-  const caughtKats     = new Set(state.catches.map(c => c.kategorie));
+  const caughtKats     = new Set(state.catches.map(c => normalizeKat(c.kategorie)));
   if (!standalone) {
     state.activeShift?.patients.forEach(p => p.diagnoses.forEach(d => {
       caughtCodes.add(d.diagnosis.code);
-      caughtKats.add(d.diagnosis.kategorie);
+      caughtKats.add(normalizeKat(d.diagnosis.kategorie));
     }));
   }
-  const xpResult = calculateCatchXP(selectedDiagnosis, hasComorbidity, caughtCodes, caughtKats);
+  const normDiag = { ...selectedDiagnosis, kategorie: normalizeKat(selectedDiagnosis.kategorie) };
+  const xpResult = calculateCatchXP(normDiag, hasComorbidity, caughtCodes, caughtKats);
 
   // Adding to an existing shift's patient (from shift detail view)
   if (state.addToShiftContext) {
@@ -1154,9 +1181,8 @@ function renderStats() {
   document.getElementById('stat-avg-xp').textContent        = avgXP;
   document.getElementById('stat-hours').textContent         = `${hours.toFixed(1).replace('.0','')}h`;
   const ti = document.getElementById('target-hours-input');
-  const ei = document.getElementById('extra-hours-input');
   if (ti) ti.value = state.profile?.targetHours ?? 480;
-  if (ei) ei.value = state.profile?.extraHours  ?? 0;
+  renderExtraHoursSettings();
   renderHeatmap();
   renderCategoryChart();
 }
@@ -1206,7 +1232,7 @@ function renderCategoryChart() {
   const cats = Object.keys(state.icdData);
   if (!cats.length) { el.innerHTML = '<div class="empty-state">Keine Daten.</div>'; return; }
   const byKat = {};
-  state.catches.forEach(c => { byKat[c.kategorie] = (byKat[c.kategorie] || 0) + 1; });
+  state.catches.forEach(c => { const k = normalizeKat(c.kategorie); byKat[k] = (byKat[k] || 0) + 1; });
   el.innerHTML = cats.map(cat => {
     const count = byKat[cat] || 0;
     const total = (state.icdData[cat] || []).length;
@@ -1753,13 +1779,13 @@ function renderHoursModalBody() {
   const nFr = all.filter(s => s.type === 'früh').length;
   const nSp = all.filter(s => s.type === 'spät').length;
   const nFu = all.filter(s => s.type === 'full').length;
-  const extra = state.profile?.extraHours || 0;
+  const extra = getExtraHoursTotal();
 
   body.innerHTML = `
     <div class="hours-summary">
       <div>
         <div class="hours-total">${totalH.toFixed(1).replace('.0','')}h</div>
-        <div class="hours-label">Gesamt${extra > 0 ? ` (+${extra}h Extra)` : ''}</div>
+        <div class="hours-label">Gesamt${extra > 0 ? ` (+${extra.toFixed(1).replace('.0','')}h Extra)` : ''}</div>
       </div>
       <div style="text-align:right;font-size:12px;color:var(--text-dim);line-height:1.9">
         <div>🌅 Früh: ${nFr}×</div>
@@ -2226,10 +2252,91 @@ function setupDashboardCardListeners() {
   });
 }
 
+// ─── Extra Hours ──────────────────────────────────────────────────────────────
+function renderExtraHoursSettings() {
+  const el = document.getElementById('extra-hours-section');
+  if (!el) return;
+  const entries = state.profile?.extraHourEntries || [];
+  const total   = entries.reduce((s, e) => s + (e.hours || 0), 0);
+  const fmtD    = ds => new Date(ds).toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit' });
+  const rangeTxt = e => {
+    if (e.from && e.to) return `${fmtD(e.from)} – ${fmtD(e.to)}`;
+    if (e.from) return `ab ${fmtD(e.from)}`;
+    if (e.to)   return `bis ${fmtD(e.to)}`;
+    return '';
+  };
+
+  el.innerHTML = `
+    <div class="extra-total">${total.toFixed(1).replace('.0','')}h gesamt</div>
+    <div class="extra-entries-list">
+      ${entries.map(e => `
+        <div class="extra-entry">
+          <div class="extra-entry-info">
+            <span class="extra-entry-h">${e.hours}h</span>
+            ${e.comment ? `<span class="extra-entry-cmt">${e.comment}</span>` : ''}
+            ${rangeTxt(e) ? `<span class="extra-entry-rng">${rangeTxt(e)}</span>` : ''}
+          </div>
+          <button class="btn-icon btn-del-extra" data-id="${e.id}" title="Löschen">🗑</button>
+        </div>`).join('')}
+    </div>
+    <div id="extra-add-form" class="extra-add-form hidden">
+      <div class="extra-form-row">
+        <input type="number" id="eaf-hours" class="setting-input" placeholder="h" min="0.5" step="0.5" style="width:64px">
+        <input type="text" id="eaf-comment" class="setting-input" placeholder="Kommentar" style="flex:1;min-width:0">
+      </div>
+      <div class="extra-form-row">
+        <input type="date" id="eaf-from" class="setting-input" style="flex:1;min-width:0">
+        <span class="extra-form-sep">–</span>
+        <input type="date" id="eaf-to" class="setting-input" style="flex:1;min-width:0">
+      </div>
+      <div class="extra-form-btns">
+        <button id="eaf-save" class="btn-primary" style="flex:1;padding:8px 12px;position:relative;z-index:1">Speichern</button>
+        <button id="eaf-cancel" class="btn-secondary" style="padding:8px 12px">✕</button>
+      </div>
+    </div>
+    <button id="btn-add-extra" class="btn-secondary" style="width:100%;margin-top:8px;padding:8px;font-size:12px">+ Extra-Stunden hinzufügen</button>`;
+
+  el.querySelectorAll('.btn-del-extra').forEach(btn =>
+    btn.addEventListener('click', () => deleteExtraHourEntry(parseInt(btn.dataset.id))));
+
+  el.querySelector('#btn-add-extra')?.addEventListener('click', () => {
+    el.querySelector('#extra-add-form').classList.remove('hidden');
+    el.querySelector('#btn-add-extra').classList.add('hidden');
+    el.querySelector('#eaf-hours').focus();
+  });
+  el.querySelector('#eaf-cancel')?.addEventListener('click', () => {
+    el.querySelector('#extra-add-form').classList.add('hidden');
+    el.querySelector('#btn-add-extra').classList.remove('hidden');
+  });
+  el.querySelector('#eaf-save')?.addEventListener('click', saveExtraHourEntry);
+}
+
+async function saveExtraHourEntry() {
+  const hours   = parseFloat(document.getElementById('eaf-hours')?.value) || 0;
+  const comment = document.getElementById('eaf-comment')?.value?.trim() || '';
+  const from    = document.getElementById('eaf-from')?.value   || null;
+  const to      = document.getElementById('eaf-to')?.value     || null;
+  if (hours <= 0) { document.getElementById('eaf-hours')?.focus(); return; }
+
+  const entries = [...(state.profile.extraHourEntries || []),
+    { id: Date.now(), hours, comment, from: from || null, to: to || null }];
+  await db.profile.update(state.profile.id, { extraHourEntries: entries });
+  state.profile.extraHourEntries = entries;
+  renderExtraHoursSettings();
+  if (state.currentTab === 'dashboard') renderDashboard();
+}
+
+async function deleteExtraHourEntry(entryId) {
+  const entries = (state.profile.extraHourEntries || []).filter(e => e.id !== entryId);
+  await db.profile.update(state.profile.id, { extraHourEntries: entries });
+  state.profile.extraHourEntries = entries;
+  renderExtraHoursSettings();
+  if (state.currentTab === 'dashboard') renderDashboard();
+}
+
 // ─── Settings ─────────────────────────────────────────────────────────────────
 function setupSettingsInputs() {
   const targetInput = document.getElementById('target-hours-input');
-  const extraInput  = document.getElementById('extra-hours-input');
   if (targetInput) {
     targetInput.value = state.profile?.targetHours ?? 480;
     targetInput.addEventListener('change', async () => {
@@ -2238,17 +2345,6 @@ function setupSettingsInputs() {
       await db.profile.update(state.profile.id, { targetHours: val });
       state.profile.targetHours = val;
       if (state.currentTab === 'dashboard') renderDashboard();
-    });
-  }
-  if (extraInput) {
-    extraInput.value = state.profile?.extraHours ?? 0;
-    extraInput.addEventListener('change', async () => {
-      const val = Math.max(0, parseFloat(extraInput.value) || 0);
-      extraInput.value = val;
-      await db.profile.update(state.profile.id, { extraHours: val });
-      state.profile.extraHours = val;
-      if (state.currentTab === 'dashboard') renderDashboard();
-      else if (state.currentTab === 'stats') renderStats();
     });
   }
 }

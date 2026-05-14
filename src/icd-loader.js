@@ -10,7 +10,7 @@ export async function loadAllICD(state) {
         const res = await fetch(`data/icd/${file}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        data.forEach(d => { if (!d.kategorie) d.kategorie = cat; });
+        data.forEach(d => { d.kategorie = cat; });
         return [cat, data];
       } catch (e) {
         console.warn(`Could not load ICD ${cat}:`, e.message);

@@ -1330,3 +1330,83 @@ img{max-width:100%;display:block}
   font-size:10px;color:var(--accent);
   letter-spacing:.02em;
 }
+
+/* ── Extra Hours Settings ──────────────────────────────────────────────────── */
+.setting-wide{
+  grid-column:1/-1;
+  flex-direction:column;align-items:flex-start;gap:8px;
+}
+.extra-total{
+  font-size:12px;color:var(--text-muted);
+  margin-bottom:4px;
+}
+.extra-total strong{color:var(--text);font-weight:600}
+.extra-entries-list{
+  display:flex;flex-direction:column;gap:6px;
+  width:100%;margin-bottom:4px;
+}
+.extra-entry{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
+  padding:8px 10px;
+  background:var(--bg-raised);border:1px solid var(--border);
+  border-radius:var(--r);
+}
+.extra-entry-info{flex:1;min-width:0}
+.extra-entry-h{
+  display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;
+}
+.extra-entry-cmt{
+  display:block;font-size:12px;color:var(--text-muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.extra-entry-rng{
+  display:block;font-size:11px;color:var(--text-dim);margin-top:2px;
+}
+.btn-del-extra{
+  flex-shrink:0;padding:4px 8px;font-size:14px;
+  color:var(--text-dim);
+  background:none;border:none;cursor:pointer;
+  border-radius:6px;transition:color .15s,background .15s;
+  margin-top:-2px;
+}
+.btn-del-extra:hover{color:var(--danger);background:rgba(239,68,68,.08)}
+
+.extra-add-form{
+  width:100%;
+  background:var(--bg-raised);border:1px solid var(--border-glow);
+  border-radius:var(--r);padding:10px;
+  margin-bottom:4px;
+  display:flex;flex-direction:column;gap:8px;
+}
+.extra-form-row{
+  display:flex;gap:8px;align-items:center;
+}
+.extra-form-row label{
+  font-size:11px;color:var(--text-dim);
+  white-space:nowrap;min-width:60px;
+}
+.extra-form-row input{
+  flex:1;padding:6px 8px;
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:8px;font-size:13px;color:var(--text);
+  transition:border-color .15s;
+}
+.extra-form-row input:focus{border-color:var(--border-glow)}
+.extra-form-sep{
+  font-size:11px;color:var(--text-dim);white-space:nowrap;
+}
+.extra-form-btns{
+  display:flex;gap:8px;justify-content:flex-end;margin-top:2px;
+}
+.extra-form-btns .btn-primary{
+  padding:7px 16px;font-size:13px;
+}
+.extra-form-btns .btn-secondary{
+  padding:7px 14px;font-size:13px;
+}
+.extra-add-trigger{
+  font-size:12px;color:var(--accent);
+  padding:6px 0;background:none;border:none;cursor:pointer;
+  transition:opacity .15s;
+}
+.extra-add-trigger:hover{opacity:.8}
