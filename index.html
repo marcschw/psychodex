@@ -317,7 +317,15 @@
         <button class="modal-close" id="modal-close" aria-label="Schließen">✕</button>
       </div>
       <div class="sheet-body">
-        <div id="modal-diagnoses-list" class="diagnoses-list"></div>
+        <input type="search" id="cat-search-input" class="search-input"
+               placeholder="In dieser Kategorie suchen…" autocomplete="off"
+               style="margin-bottom:12px;display:block;width:100%;box-sizing:border-box">
+        <div id="cat-mosaic-pane">
+          <div id="modal-diagnoses-list" class="diagnoses-list"></div>
+        </div>
+        <div id="cat-detail-pane" class="hidden">
+          <div id="cat-detail-body"></div>
+        </div>
       </div>
     </div>
   </div>

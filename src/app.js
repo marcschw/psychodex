@@ -25,7 +25,8 @@ const state = {
   shifts: [],
   catches: [],
   missions: [],
-  unlockedAchievements: []
+  unlockedAchievements: [],
+  currentCategoryCode: null
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -639,32 +640,45 @@ function renderDiagBrowseList(catCode) {
   catsEl.classList.add('hidden');
   listEl.classList.remove('hidden');
   listEl.className = 'diag-browse-list';
+
+  const cards = diags.map(d => {
+    const caught = caughtCodes.has(d.code);
+    const { label: rarLabel, color: rarColor } = rarityInfo(d.seltenheit_score);
+    const imgPath = `assets/images/diagnoses/${d.code.toLowerCase()}.png`;
+    return `
+      <div class="diag-mosaic-card ${caught ? 'is-caught' : ''}" data-code="${d.code}">
+        <div class="dmc-bg" data-bg="${imgPath}" style="background-color:var(--bg-raised)"></div>
+        <div class="dmc-overlay"></div>
+        <div class="dmc-content">
+          <span class="dmc-code">${d.code}</span>
+          <span class="dmc-name">${d.name}</span>
+          <span class="dmc-rarity" style="color:${rarColor}">${rarLabel}</span>
+        </div>
+        ${caught ? '<span class="dmc-caught-badge">✓</span>' : ''}
+      </div>`;
+  }).join('');
+
   listEl.innerHTML = `
     <div class="diag-browse-back" id="diag-browse-back-btn">← Zurück zu Kategorien</div>
     <div class="section-header" style="margin-top:0">${catInfo?.emoji || ''} ${catInfo?.name || catCode}</div>
-    ${diags.map(d => {
-      const caught = caughtCodes.has(d.code);
-      return `
-        <div class="diag-browse-item ${caught ? 'is-caught' : ''}" data-code="${d.code}">
-          <span class="diag-list-code">${d.code}</span>
-          <div style="flex:1;min-width:0">
-            <div class="diag-list-name">${d.name}</div>
-            <div class="diag-list-rarity">${'★'.repeat(d.seltenheit_score)}${'☆'.repeat(10 - d.seltenheit_score)}</div>
-          </div>
-          <span class="diag-list-status">${caught ? '✓' : '🔬'}</span>
-        </div>`;
-    }).join('')}`;
+    <div class="diag-mosaic-grid" id="diag-browse-mosaic">${cards}</div>`;
+
+  lazyObserver(listEl.querySelector('#diag-browse-mosaic'));
+
   listEl.querySelector('#diag-browse-back-btn')?.addEventListener('click', () => {
     listEl.classList.add('hidden');
     catsEl.classList.remove('hidden');
   });
-  listEl.querySelectorAll('.diag-browse-item:not(.is-caught)').forEach(item =>
+  listEl.querySelectorAll('.diag-mosaic-card').forEach(item =>
     item.addEventListener('click', () => {
-      const diag = state.icdFlat.find(d => d.code === item.dataset.code);
-      if (diag) showDiagnosisDetail(diag);
+      const code = item.dataset.code;
+      if (caughtCodes.has(code)) {
+        openDiagInfoModal(code);
+      } else {
+        const diag = state.icdFlat.find(d => d.code === code);
+        if (diag) showDiagnosisDetail(diag);
+      }
     }));
-  listEl.querySelectorAll('.diag-browse-item.is-caught').forEach(item =>
-    item.addEventListener('click', () => openDiagInfoModal(item.dataset.code)));
 }
 
 function closeDiagnosisModal() {
@@ -683,12 +697,25 @@ function onSearch(e) {
     resultsEl.innerHTML = `<div class="no-results">Keine Treffer für „${q}"</div>`;
     return;
   }
-  resultsEl.innerHTML = results.map(d => `
-    <div class="search-result-item" data-code="${d.code}">
-      <span class="result-code">${d.code}</span>
-      <span class="result-name">${d.name}</span>
-      <span class="result-rarity" title="Seltenheit">★${d.seltenheit_score}</span>
-    </div>`).join('');
+  const caughtCodes = new Set(state.catches.map(c => c.code));
+  resultsEl.innerHTML = results.map(d => {
+    const { label: rarLabel, color: rarColor } = rarityInfo(d.seltenheit_score);
+    const caught = caughtCodes.has(d.code);
+    return `
+    <div class="search-result-item ${caught ? 'result-caught' : ''}" data-code="${d.code}">
+      <div class="result-thumb">
+        <img src="assets/images/diagnoses/${d.code.toLowerCase()}.png" alt=""
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+             loading="lazy" class="result-thumb-img">
+        <div class="result-thumb-fallback" style="display:none">${d.code.slice(0, 3)}</div>
+      </div>
+      <div class="result-info">
+        <span class="result-code">${d.code}</span>
+        <span class="result-name">${d.name}</span>
+        <span class="result-rarity" style="color:${rarColor}">${rarLabel}</span>
+      </div>
+      ${caught ? '<span class="result-caught-badge">✓</span>' : ''}
+    </div>`; }).join('');
   resultsEl.querySelectorAll('.search-result-item').forEach(item => {
     item.addEventListener('click', () => {
       const diag = state.icdFlat.find(d => d.code === item.dataset.code);
@@ -1357,57 +1384,123 @@ function renderPsychoDex() {
 // ─── Category Modal ───────────────────────────────────────────────────────────
 function setupCategoryModalListeners() {
   document.getElementById('modal-close').addEventListener('click', e => {
-    e.stopPropagation();
-    closeCategoryModal();
+    e.stopPropagation(); closeCategoryModal();
   });
   document.getElementById('modal-backdrop').addEventListener('click', closeCategoryModal);
+  document.getElementById('cat-search-input').addEventListener('input', e => {
+    if (state.currentCategoryCode) renderCatMosaicGrid(state.currentCategoryCode, e.target.value);
+  });
 }
 
 function openCategoryModal(catCode) {
-  const diags       = state.icdData[catCode] || [];
-  const caughtCodes = new Set(state.catches.map(c => c.code));
-  const catInfo     = state.icdIndex?.categories.find(c => c.code === catCode);
+  state.currentCategoryCode = catCode;
+  const catInfo = state.icdIndex?.categories.find(c => c.code === catCode);
   document.getElementById('modal-category-title').textContent =
     catInfo ? `${catInfo.emoji} ${catInfo.label} – ${catInfo.name}` : catCode;
-  const listEl = document.getElementById('modal-diagnoses-list');
-  listEl.className = 'diag-mosaic-grid';
+  document.getElementById('cat-search-input').value = '';
+  document.getElementById('cat-mosaic-pane').classList.remove('hidden');
+  document.getElementById('cat-detail-pane').classList.add('hidden');
+  renderCatMosaicGrid(catCode, '');
+  document.getElementById('category-modal').classList.remove('hidden');
+}
+
+function renderCatMosaicGrid(catCode, query) {
+  const allDiags    = state.icdData[catCode] || [];
+  const q           = query.toLowerCase().trim();
+  const diags       = q
+    ? allDiags.filter(d => d.code.toLowerCase().includes(q) || d.name.toLowerCase().includes(q))
+    : allDiags;
+  const caughtCodes = new Set(state.catches.map(c => c.code));
+  const listEl      = document.getElementById('modal-diagnoses-list');
+  listEl.className  = 'diag-mosaic-grid';
 
   if (!diags.length) {
-    listEl.innerHTML = '<div class="empty-state">Keine Diagnosen für diese Kategorie.</div>';
-  } else {
-    listEl.innerHTML = diags.map(d => {
-      const caught  = caughtCodes.has(d.code);
-      const img     = `url('assets/images/diagnoses/${d.code.toLowerCase()}.png')`;
-      const { label, color } = rarityInfo(d.seltenheit_score);
-      return `
-        <div class="diag-mosaic-card ${caught ? 'is-caught' : ''}" data-code="${d.code}">
-          <div class="dmc-bg" data-bg="${img}"></div>
-          <div class="dmc-overlay"></div>
-          <div class="dmc-content">
-            <div class="dmc-top">
-              <span class="dmc-code">${d.code}</span>
-            </div>
-            <div class="dmc-bottom">
-              <div class="dmc-name">${d.name}</div>
-              <div class="dmc-rarity" style="color:${color}">${label} (${d.seltenheit_score})</div>
-            </div>
-          </div>
-          ${caught ? '<div class="dmc-caught-badge">✓</div>' : ''}
-        </div>`;
-    }).join('');
+    listEl.innerHTML = q
+      ? `<div class="empty-state">Kein Treffer für „${q}"</div>`
+      : '<div class="empty-state">Keine Diagnosen für diese Kategorie.</div>';
+    return;
   }
-
+  listEl.innerHTML = diags.map(d => {
+    const caught = caughtCodes.has(d.code);
+    const { label, color } = rarityInfo(d.seltenheit_score);
+    return `
+      <div class="diag-mosaic-card ${caught ? 'is-caught' : ''}" data-code="${d.code}">
+        <div class="dmc-bg" data-bg="url('assets/images/diagnoses/${d.code.toLowerCase()}.png')"></div>
+        <div class="dmc-overlay"></div>
+        <div class="dmc-content">
+          <div class="dmc-top"><span class="dmc-code">${d.code}</span></div>
+          <div class="dmc-bottom">
+            <div class="dmc-name">${d.name}</div>
+            <div class="dmc-rarity" style="color:${color}">${label} (${d.seltenheit_score})</div>
+          </div>
+        </div>
+        ${caught ? '<div class="dmc-caught-badge">✓</div>' : ''}
+      </div>`;
+  }).join('');
   lazyObserver(listEl);
+  listEl.querySelectorAll('.diag-mosaic-card').forEach(item =>
+    item.addEventListener('click', () => openCatDiagDetail(item.dataset.code)));
+}
 
-  listEl.querySelectorAll('.diag-mosaic-card:not(.is-caught)').forEach(item => {
-    item.addEventListener('click', () => {
-      const diag = state.icdFlat.find(d => d.code === item.dataset.code);
-      if (diag) { closeCategoryModal(); openStandaloneCatch(diag); }
-    });
+function openCatDiagDetail(code) {
+  const diag = state.icdFlat.find(d => d.code === code);
+  if (!diag) return;
+  const isCaught     = new Set(state.catches.map(c => c.code)).has(code);
+  const lastCatch    = state.catches.find(c => c.code === code);
+  const savedChecked = lastCatch?.checkedSymptoms || [];
+  const { label: rarLabel, color: rarColor } = rarityInfo(diag.seltenheit_score);
+  const pflicht  = diag.diagnose_kriterien?.pflicht_symptome || [];
+  const optional = diag.diagnose_kriterien?.optionale_symptome || [];
+  const base     = 20 * diag.seltenheit_score;
+
+  const body = document.getElementById('cat-detail-body');
+  body.innerHTML = `
+    <button class="cat-detail-back" id="cat-back-btn">← Zurück</button>
+    <div class="cat-detail-hero">
+      <div class="cat-detail-img-wrap">
+        <img src="assets/images/diagnoses/${diag.code.toLowerCase()}.png" class="cat-detail-img" alt=""
+             onerror="this.style.display='none'">
+      </div>
+      <div class="cat-detail-heading">
+        <div class="diag-code-big">${diag.code}</div>
+        <div class="diag-name-big" style="font-size:14px">${diag.name}</div>
+        <div class="xp-preview-chips" style="margin-top:6px">
+          <span class="xp-chip base">Basis: ${base} XP</span>
+          <span style="font-size:10px;font-weight:700;color:${rarColor}">${rarLabel}</span>
+          ${isCaught ? '<span class="xp-chip" style="background:rgba(16,185,129,.15);color:var(--success);border:1px solid rgba(16,185,129,.3)">✓ Gefangen</span>' : ''}
+        </div>
+      </div>
+    </div>
+    <div class="diag-detail-section">
+      <div class="diag-detail-label diag-label-pflicht">🔴 Pflicht-Symptome</div>
+      <ul class="symptom-list">${renderSymptomCheckboxes(pflicht, 'view', savedChecked, 'symptom-pflicht')}</ul>
+    </div>
+    <div class="diag-detail-section">
+      <div class="diag-detail-label diag-label-optional">💡 Optionale Symptome</div>
+      <ul class="symptom-list">${renderSymptomCheckboxes(optional, 'view', savedChecked, 'symptom-optional')}</ul>
+    </div>
+    <div class="diag-detail-section">
+      <div class="diag-detail-label">Häufige Komorbiditäten</div>
+      <div class="komorbid-chips">${renderLinkedChips(diag.komorbiditaeten, code)}</div>
+    </div>
+    <div class="diag-detail-section">
+      <div class="diag-detail-label">Differentialdiagnose</div>
+      <div class="komorbid-chips">${renderLinkedChips(diag.differentialdiagnose, code)}</div>
+    </div>
+    ${!isCaught ? `<button class="btn-catch" id="cat-detail-catch-btn">🎯 Jetzt fangen!</button>` : ''}`;
+
+  document.getElementById('cat-mosaic-pane').classList.add('hidden');
+  document.getElementById('cat-detail-pane').classList.remove('hidden');
+
+  document.getElementById('cat-back-btn').addEventListener('click', () => {
+    document.getElementById('cat-detail-pane').classList.add('hidden');
+    document.getElementById('cat-mosaic-pane').classList.remove('hidden');
   });
-  listEl.querySelectorAll('.diag-mosaic-card.is-caught').forEach(item =>
-    item.addEventListener('click', () => openDiagInfoModal(item.dataset.code)));
-  document.getElementById('category-modal').classList.remove('hidden');
+  body.querySelectorAll('.linked-chip').forEach(btn =>
+    btn.addEventListener('click', () => openCatDiagDetail(btn.dataset.code)));
+  document.getElementById('cat-detail-catch-btn')?.addEventListener('click', () => {
+    closeCategoryModal(); openStandaloneCatch(diag);
+  });
 }
 
 function closeCategoryModal() {
@@ -2346,14 +2439,18 @@ function setupExportImport() {
 }
 
 async function exportData() {
-  const shifts  = await db.shiftLogs.toArray();
-  const catches = await db.caughtDiagnoses.toArray();
+  const shifts       = await db.shiftLogs.toArray();
+  const catches      = await db.caughtDiagnoses.toArray();
+  const missions     = await db.missions.toArray();
+  const achievements = await db.unlockedAchievements.toArray();
   const payload = {
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
-    profile:  { totalXP: state.profile?.totalXP ?? 0 },
-    shifts:   shifts.map(({ id, ...s }) => s),
-    catches:  catches.map(({ id, ...c }) => c)
+    profile:      { totalXP: state.profile?.totalXP ?? 0 },
+    shifts:       shifts.map(({ id, ...s }) => s),
+    catches:      catches.map(({ id, ...c }) => c),
+    missions:     missions.map(({ id, ...m }) => m),
+    achievements: achievements.map(({ id, ...a }) => a)
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
@@ -2374,18 +2471,27 @@ async function importData(e) {
       alert('Ungültige Backup-Datei.');
       return;
     }
-    if (!confirm(`Alle aktuellen Daten werden ersetzt.\n${data.shifts.length} Dienste, ${data.catches.length} Diagnosen werden importiert.\n\nFortfahren?`)) return;
+    const achCount = data.achievements?.length ?? 0;
+    const msnCount = data.missions?.length ?? 0;
+    if (!confirm(`Alle aktuellen Daten werden ersetzt.\n${data.shifts.length} Dienste, ${data.catches.length} Diagnosen, ${achCount} Achievements, ${msnCount} Missionen werden importiert.\n\nFortfahren?`)) return;
 
     await db.profile.clear();
     await db.shiftLogs.clear();
     await db.caughtDiagnoses.clear();
+    if (db.missions)             await db.missions.clear();
+    if (db.unlockedAchievements) await db.unlockedAchievements.clear();
+
     await db.profile.add({ totalXP: data.profile?.totalXP ?? 0, createdAt: new Date().toISOString() });
     for (const s of data.shifts)  await db.shiftLogs.add(s);
     for (const c of data.catches) await db.caughtDiagnoses.add(c);
+    if (db.missions && Array.isArray(data.missions))
+      for (const m of data.missions) await db.missions.add(m);
+    if (db.unlockedAchievements && Array.isArray(data.achievements))
+      for (const a of data.achievements) await db.unlockedAchievements.add(a);
 
     await loadFromDB();
     renderApp();
-    alert(`Import erfolgreich: ${data.shifts.length} Dienste, ${data.catches.length} Diagnosen geladen.`);
+    alert(`Import erfolgreich: ${data.shifts.length} Dienste, ${data.catches.length} Diagnosen, ${achCount} Achievements geladen.`);
     navigateTo('stats');
   } catch (err) {
     alert(`Import fehlgeschlagen: ${err.message}`);
