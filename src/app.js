@@ -49,6 +49,8 @@ async function init() {
     setupCatchesModalListeners();
     setupShiftAssignListeners();
     setupExportImport();
+    setupDiagInfoModal();
+    setupStreakModal();
     setupEscapeKey();
     setDefaultDate();
     document.getElementById('loading-screen').classList.add('fade-out');
@@ -86,6 +88,8 @@ function setupEscapeKey() {
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     const openModals = [
+      { id: 'diag-info-modal',      fn: closeDiagInfoModal },
+      { id: 'streak-modal',         fn: closeStreakModal },
       { id: 'diagnosis-modal',      fn: closeDiagnosisModal },
       { id: 'category-modal',       fn: closeCategoryModal },
       { id: 'edit-shift-modal',     fn: closeEditShiftModal },
@@ -177,14 +181,16 @@ function renderDashboard() {
   // Stat card clicks
   const hoursCard   = document.getElementById('stat-hours-card');
   const catchesCard = document.getElementById('stat-catches-card');
+  const streakCard  = document.getElementById('stat-streak-card');
   hoursCard.onclick   = openHoursModal;
   catchesCard.onclick = openCatchesModal;
+  streakCard.onclick  = openStreakModal;
 
   // Recent catches
   const catchEl = document.getElementById('recent-catches');
   catchEl.innerHTML = state.catches.length
     ? state.catches.slice(0, 5).map(c => `
-        <div class="recent-item">
+        <div class="recent-item catch-clickable" data-code="${c.code}">
           <div class="recent-code">${c.code}</div>
           <div class="recent-info">
             <div class="recent-name">${c.name}</div>
@@ -203,6 +209,8 @@ function renderDashboard() {
       deleteCatch(parseInt(btn.dataset.id));
     });
   });
+  catchEl.querySelectorAll('.catch-clickable').forEach(item =>
+    item.addEventListener('click', () => openDiagInfoModal(item.dataset.code)));
 
   // Recent shifts – clickable for detail view
   const shiftEl = document.getElementById('recent-shifts');
@@ -492,6 +500,8 @@ function renderDiagBrowseList(catCode) {
       const diag = state.icdFlat.find(d => d.code === item.dataset.code);
       if (diag) showDiagnosisDetail(diag);
     }));
+  listEl.querySelectorAll('.diag-browse-item.is-caught').forEach(item =>
+    item.addEventListener('click', () => openDiagInfoModal(item.dataset.code)));
 }
 
 function closeDiagnosisModal() {
@@ -877,8 +887,12 @@ function renderPsychoDex() {
     const catCaught = diags.filter(d => caughtCodes.has(d.code)).length;
     const catTotal  = diags.length;
     const pct       = catTotal ? Math.round((catCaught / catTotal) * 100) : 0;
+    const cardClass = ['category-card',
+      catCaught > 0 ? 'has-catches' : '',
+      pct >= 50 ? 'high-completion' : ''
+    ].filter(Boolean).join(' ');
     return `
-      <div class="category-card" data-cat="${cat.code}" style="--cat-color:${cat.color}">
+      <div class="${cardClass}" data-cat="${cat.code}" style="--cat-color:${cat.color}">
         <div class="cat-bg" style="background-image:url('assets/images/categories/${cat.code.toLowerCase()}.png')"></div>
         <div class="cat-overlay"></div>
         <div class="cat-content">
@@ -936,6 +950,8 @@ function openCategoryModal(catCode) {
       if (diag) { closeCategoryModal(); openStandaloneCatch(diag); }
     });
   });
+  listEl.querySelectorAll('.diag-list-item.is-caught').forEach(item =>
+    item.addEventListener('click', () => openDiagInfoModal(item.dataset.code)));
   document.getElementById('category-modal').classList.remove('hidden');
 }
 
@@ -1003,11 +1019,10 @@ function renderCategoryChart() {
   if (!cats.length) { el.innerHTML = '<div class="empty-state">Keine Daten.</div>'; return; }
   const byKat = {};
   state.catches.forEach(c => { byKat[c.kategorie] = (byKat[c.kategorie] || 0) + 1; });
-  const maxVal = Math.max(...Object.values(byKat), 1);
   el.innerHTML = cats.map(cat => {
     const count = byKat[cat] || 0;
     const total = (state.icdData[cat] || []).length;
-    const pct   = Math.round((count / maxVal) * 100);
+    const pct   = total > 0 ? Math.round((count / total) * 100) : 0;
     return `
       <div class="chart-row" data-cat="${cat}">
         <div class="chart-label">${cat}</div>
@@ -1573,7 +1588,7 @@ function openCatchesModal() {
 
 function renderCatchItem(c) {
   return `
-    <div class="catch-detail-item">
+    <div class="catch-detail-item catch-clickable" data-code="${c.code}">
       <div class="catch-detail-top">
         <span class="catch-detail-code">${c.code}</span>
         <span class="catch-detail-name">${c.name}</span>
@@ -1635,6 +1650,10 @@ function renderCatchesModalBody() {
       await deleteCatch(parseInt(btn.dataset.id));
       renderCatchesModalBody();
     }));
+  body.querySelectorAll('.catch-clickable').forEach(item =>
+    item.addEventListener('click', e => {
+      if (!e.target.closest('.btn-delete-catch-modal')) openDiagInfoModal(item.dataset.code);
+    }));
 }
 
 function closeCatchesModal() {
@@ -1650,6 +1669,132 @@ const fmtDateShort = ds =>
 
 const shiftIcon  = t => t === 'full' ? '☀️' : t === 'spät' ? '🌇' : '🌅';
 const shiftLabel = t => t === 'full' ? 'Ganztags 12h' : t === 'spät' ? 'Spät 6,5h' : 'Früh 6,5h';
+
+// ─── Diagnosis Info Modal ─────────────────────────────────────────────────────
+function setupDiagInfoModal() {
+  document.getElementById('diag-info-close').addEventListener('click', e => {
+    e.stopPropagation(); closeDiagInfoModal();
+  });
+  document.getElementById('diag-info-backdrop').addEventListener('click', closeDiagInfoModal);
+}
+
+function closeDiagInfoModal() {
+  document.getElementById('diag-info-modal').classList.add('hidden');
+}
+
+function openDiagInfoModal(code) {
+  const diag = state.icdFlat.find(d => d.code === code);
+  if (!diag) return;
+  const caughtCodes = new Set(state.catches.map(c => c.code));
+  const isCaught = caughtCodes.has(code);
+  const preview  = previewXP(diag, false);
+  const mk = l => `<li class="symptom-item">${l}</li>`;
+  document.getElementById('diag-info-title').textContent = `${diag.code}`;
+  document.getElementById('diag-info-body').innerHTML = `
+    <div class="diag-detail-header">
+      <div class="diag-code-big">${diag.code}</div>
+      <div class="diag-name-big">${diag.name}</div>
+      <div class="xp-preview-chips">
+        <span class="xp-chip base">Basis: ${preview.base} XP · ★${diag.seltenheit_score}/10</span>
+        ${isCaught
+          ? '<span class="xp-chip" style="background:rgba(16,185,129,.15);color:var(--success);border:1px solid rgba(16,185,129,.3)">✓ Bereits gefangen</span>'
+          : '<span class="xp-chip" style="background:rgba(124,58,237,.1);color:var(--accent);border:1px solid rgba(124,58,237,.3)">Noch nicht gefangen</span>'}
+      </div>
+    </div>
+    <div class="diag-detail-section">
+      <div class="diag-detail-label">Pflicht-Symptome</div>
+      <ul class="symptom-list">${(diag.diagnose_kriterien?.pflicht_symptome || []).map(mk).join('')}</ul>
+    </div>
+    <div class="diag-detail-section">
+      <div class="diag-detail-label">Optionale Symptome</div>
+      <ul class="symptom-list">${(diag.diagnose_kriterien?.optionale_symptome || []).map(mk).join('')}</ul>
+    </div>
+    <div class="diag-detail-section">
+      <div class="diag-detail-label">Häufige Komorbiditäten</div>
+      <div class="komorbid-chips">${(diag.komorbiditaeten || []).map(k => `<span class="komorbid-chip">${k}</span>`).join('')}</div>
+    </div>
+    <div class="diag-detail-section">
+      <div class="diag-detail-label">Differentialdiagnose</div>
+      <div class="diff-text">${(diag.differentialdiagnose || []).join(' · ')}</div>
+    </div>
+    ${!isCaught ? `<button class="btn-catch" id="diag-info-catch-btn">🎯 Jetzt fangen!</button>` : ''}`;
+  document.getElementById('diag-info-catch-btn')?.addEventListener('click', () => {
+    closeDiagInfoModal(); openStandaloneCatch(diag);
+  });
+  document.getElementById('diag-info-modal').classList.remove('hidden');
+}
+
+// ─── Streak Modal ──────────────────────────────────────────────────────────────
+function setupStreakModal() {
+  document.getElementById('streak-modal-close').addEventListener('click', e => {
+    e.stopPropagation(); closeStreakModal();
+  });
+  document.getElementById('streak-backdrop').addEventListener('click', closeStreakModal);
+}
+
+function closeStreakModal() {
+  document.getElementById('streak-modal').classList.add('hidden');
+}
+
+function openStreakModal() {
+  const isoWeek = d => {
+    const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    tmp.setUTCDate(tmp.getUTCDate() + 4 - (tmp.getUTCDay() || 7));
+    const y = tmp.getUTCFullYear();
+    const w = Math.ceil((((tmp - new Date(Date.UTC(y, 0, 1))) / 86400000) + 1) / 7);
+    return `${y}-W${String(w).padStart(2, '0')}`;
+  };
+  const weekLabel = isoW => {
+    const [year, week] = isoW.split('-W');
+    return `KW ${week} / ${year}`;
+  };
+
+  const streak = calcStreak(state.shifts);
+  const today  = new Date();
+  const weeks  = Array.from({ length: 13 }, (_, i) => {
+    const d = new Date(today); d.setDate(d.getDate() - i * 7); return isoWeek(d);
+  });
+
+  const shiftsByWeek = {};
+  state.shifts.forEach(s => {
+    const w = isoWeek(new Date(s.date));
+    if (!shiftsByWeek[w]) shiftsByWeek[w] = [];
+    shiftsByWeek[w].push(s);
+  });
+
+  const statusText = streak.frozen
+    ? 'Eingefroren – diese Woche fehlt noch ein Dienst'
+    : streak.count === 0 ? 'Noch kein Streak' : 'Aktiver Streak 🔥';
+
+  document.getElementById('streak-modal-body').innerHTML = `
+    <div class="streak-summary">
+      <div class="streak-big-icon">${streak.frozen ? '🧊' : streak.count > 0 ? '🔥' : '—'}</div>
+      <div>
+        <div class="streak-big-count">${streak.count} Woche${streak.count !== 1 ? 'n' : ''}</div>
+        <div class="streak-big-status">${statusText}</div>
+      </div>
+    </div>
+    <div class="section-header">Aktivität (letzte 13 Wochen)</div>
+    <div class="streak-weeks">
+      ${weeks.map(w => {
+        const shifts = shiftsByWeek[w] || [];
+        const hasShift = shifts.length > 0;
+        const totalXP  = shifts.reduce((a, s) => a + s.xpEarned, 0);
+        return `
+          <div class="streak-week-row ${hasShift ? 'has-shift' : ''}">
+            <div class="streak-week-dot ${hasShift ? 'dot-active' : ''}"></div>
+            <div class="streak-week-label">${weekLabel(w)}</div>
+            <div class="streak-week-shifts">
+              ${hasShift
+                ? shifts.map(s => `<span title="${shiftLabel(s.type)}">${shiftIcon(s.type)}</span>`).join('')
+                : '<span class="streak-week-empty">—</span>'}
+            </div>
+            <div class="streak-week-xp">${hasShift ? '+' + totalXP + ' XP' : ''}</div>
+          </div>`;
+      }).join('')}
+    </div>`;
+  document.getElementById('streak-modal').classList.remove('hidden');
+}
 
 // ─── Export / Import ──────────────────────────────────────────────────────────
 function setupExportImport() {

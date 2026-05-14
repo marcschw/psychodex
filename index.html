@@ -70,7 +70,7 @@
 
         <!-- Stats Row -->
         <div class="stats-row">
-          <div class="stat-card">
+          <div class="stat-card stat-clickable" id="stat-streak-card">
             <div class="stat-icon" id="streak-icon">🔥</div>
             <div class="stat-value" id="streak-value">0</div>
             <div class="stat-label">Wochen-Streak</div>
@@ -396,6 +396,32 @@
         <button class="modal-close" id="shift-assign-close" aria-label="Schließen">✕</button>
       </div>
       <div class="sheet-body" id="shift-assign-body"></div>
+    </div>
+  </div>
+
+  <!-- ── Diagnosis Info Modal ─────────────────────────────────────────────── -->
+  <div id="diag-info-modal" class="modal hidden">
+    <div class="modal-backdrop" id="diag-info-backdrop"></div>
+    <div class="modal-sheet modal-sheet-tall">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="modal-title" id="diag-info-title">Diagnose</div>
+        <button class="modal-close" id="diag-info-close" aria-label="Schließen">✕</button>
+      </div>
+      <div class="sheet-body" id="diag-info-body"></div>
+    </div>
+  </div>
+
+  <!-- ── Streak Modal ───────────────────────────────────────────────────────── -->
+  <div id="streak-modal" class="modal hidden">
+    <div class="modal-backdrop" id="streak-backdrop"></div>
+    <div class="modal-sheet modal-sheet-tall">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="modal-title">Wochen-Streak</div>
+        <button class="modal-close" id="streak-modal-close" aria-label="Schließen">✕</button>
+      </div>
+      <div class="sheet-body" id="streak-modal-body"></div>
     </div>
   </div>
 
