@@ -45,15 +45,17 @@
         <!-- Rank Card -->
         <div class="rank-card" id="rank-card">
           <div class="rank-card-bg" id="rank-card-bg"></div>
-          <div id="rank-stars" class="rank-stars"></div>
-          <div class="rank-card-center">
+          <div class="rank-card-body">
             <img id="rank-card-img" class="rank-img" src="" alt=""
                  onerror="this.style.opacity='0';this.onerror=null">
-          </div>
-          <div class="rank-card-content">
-            <div class="rank-title"   id="rank-title">Novus</div>
-            <div class="rank-subtitle" id="rank-subtitle">des Zuhörens</div>
-            <div class="rank-level"    id="rank-level">Rang 1 / 18</div>
+            <div class="rank-card-text">
+              <div class="rank-name-row">
+                <div class="rank-title" id="rank-title">Novus</div>
+                <div id="rank-stars" class="rank-stars-inline"></div>
+              </div>
+              <div class="rank-subtitle" id="rank-subtitle">des Zuhörens</div>
+              <div class="rank-level" id="rank-level">Rang 1 / 18</div>
+            </div>
           </div>
           <div class="rank-xp-container">
             <div class="xp-label">
@@ -186,6 +188,14 @@
 
         <div class="section-header">Diagnose-Verteilung</div>
         <div id="category-chart" class="category-chart"></div>
+
+        <div class="section-header">Daten &amp; Backup</div>
+        <div class="export-import-row">
+          <button id="btn-export" class="io-btn">⬇ Exportieren</button>
+          <label class="io-btn io-btn-import">⬆ Importieren
+            <input type="file" id="import-file-input" accept=".json" style="display:none">
+          </label>
+        </div>
       </section>
 
     </div><!-- /.tab-container -->
@@ -222,9 +232,19 @@
         <button class="modal-close" id="diag-modal-close" aria-label="Schließen">✕</button>
       </div>
       <div class="sheet-body">
-        <input type="search" id="diag-search-input" class="search-input"
-               placeholder="ICD-Code, Bezeichnung oder Symptom…" autocomplete="off">
-        <div id="diag-search-results" class="search-results"></div>
+        <div class="modal-tabs">
+          <button class="diag-modal-tab active" data-tab="search">🔍 Suchen</button>
+          <button class="diag-modal-tab" data-tab="browse">📂 Kategorien</button>
+        </div>
+        <div id="diag-pane-search">
+          <input type="search" id="diag-search-input" class="search-input"
+                 placeholder="ICD-Code, Bezeichnung oder Symptom…" autocomplete="off">
+          <div id="diag-search-results" class="search-results"></div>
+        </div>
+        <div id="diag-pane-browse" class="hidden">
+          <div id="diag-browse-cats" class="diag-browse-cats"></div>
+          <div id="diag-browse-list" class="hidden"></div>
+        </div>
 
         <div id="diag-detail" class="diag-detail hidden">
           <div id="diag-detail-header"></div>

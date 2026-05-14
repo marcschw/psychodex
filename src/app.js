@@ -15,6 +15,7 @@ const state = {
   addToShiftContext: null,     // { shiftId, patientIndex } when adding diag to existing shift
   pendingStandaloneCatch: null, // { diagnosis, hasComorbidity, xpResult } while assigning
   symptomSelected: [],          // array of selected symptom strings
+  catchesSort: 'chrono',        // 'chrono' | 'alpha' | 'category'
   profile: null,
   shifts: [],
   catches: []
@@ -47,6 +48,7 @@ async function init() {
     setupHoursModalListeners();
     setupCatchesModalListeners();
     setupShiftAssignListeners();
+    setupExportImport();
     setupEscapeKey();
     setDefaultDate();
     document.getElementById('loading-screen').classList.add('fade-out');
@@ -331,7 +333,7 @@ function buildPatientCard(idx, patient) {
     <div class="patient-diagnoses" id="diagnoses-${idx}">
       <div class="no-diag-hint">Noch keine Diagnose</div>
     </div>
-    <button class="btn-search-diag" style="${pt==='interview'?'display:none':''}">🔬 Diagnose suchen & fangen</button>`;
+    <button class="btn-search-diag">🔬 Diagnose suchen & fangen</button>`;
 
   card.querySelector('.btn-remove-patient').addEventListener('click', () => removePatient(idx));
   card.querySelector('.btn-search-diag').addEventListener('click', () => openDiagnosisSearch(idx));
@@ -340,9 +342,7 @@ function buildPatientCard(idx, patient) {
     sel.addEventListener('change', e => {
       if (state.activeShift?.patients[idx]) {
         state.activeShift.patients[idx][e.target.dataset.field] = e.target.value;
-        if (e.target.dataset.field === 'patientType')
-          diagBtn.style.display = e.target.value === 'interview' ? 'none' : '';
-      }
+        }
     });
   });
   renderPatientDiagnoses(idx, patient);
@@ -388,6 +388,8 @@ function setupDiagnosisModalListeners() {
   document.getElementById('komorbid-checkbox').addEventListener('change', updateXPPreview);
   document.getElementById('btn-standalone-catch').addEventListener('click', () => openStandaloneCatch());
   document.getElementById('btn-symptom-finder').addEventListener('click', openSymptomFinder);
+  document.querySelectorAll('.diag-modal-tab').forEach(tab =>
+    tab.addEventListener('click', () => switchDiagTab(tab.dataset.tab)));
 }
 
 function openDiagnosisSearch(patientIndex) {
@@ -424,6 +426,72 @@ function resetDiagSearchUI() {
   document.getElementById('diag-search-results').innerHTML = '';
   document.getElementById('diag-detail').classList.add('hidden');
   document.getElementById('komorbid-checkbox').checked = false;
+  switchDiagTab('search');
+}
+
+function switchDiagTab(tab) {
+  document.querySelectorAll('.diag-modal-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.tab === tab));
+  document.getElementById('diag-pane-search').classList.toggle('hidden', tab !== 'search');
+  document.getElementById('diag-pane-browse').classList.toggle('hidden', tab !== 'browse');
+  document.getElementById('diag-detail').classList.add('hidden');
+  if (tab === 'browse') renderDiagBrowseCats();
+}
+
+function renderDiagBrowseCats() {
+  const catsEl = document.getElementById('diag-browse-cats');
+  const listEl = document.getElementById('diag-browse-list');
+  const caughtCodes = new Set(state.catches.map(c => c.code));
+  listEl.classList.add('hidden');
+  catsEl.classList.remove('hidden');
+  catsEl.innerHTML = (state.icdIndex?.categories || []).map(cat => {
+    const diags = state.icdData[cat.code] || [];
+    const catCaught = diags.filter(d => caughtCodes.has(d.code)).length;
+    return `
+      <button class="diag-browse-cat-btn" data-cat="${cat.code}">
+        <div class="diag-browse-cat-emoji">${cat.emoji}</div>
+        <div class="diag-browse-cat-label">${cat.code}</div>
+        <div class="diag-browse-cat-name">${cat.name}</div>
+        <div class="diag-browse-cat-count">${catCaught}/${diags.length}</div>
+      </button>`;
+  }).join('');
+  catsEl.querySelectorAll('.diag-browse-cat-btn').forEach(btn =>
+    btn.addEventListener('click', () => renderDiagBrowseList(btn.dataset.cat)));
+}
+
+function renderDiagBrowseList(catCode) {
+  const catsEl = document.getElementById('diag-browse-cats');
+  const listEl = document.getElementById('diag-browse-list');
+  const diags = state.icdData[catCode] || [];
+  const caughtCodes = new Set(state.catches.map(c => c.code));
+  const catInfo = state.icdIndex?.categories.find(c => c.code === catCode);
+  catsEl.classList.add('hidden');
+  listEl.classList.remove('hidden');
+  listEl.className = 'diag-browse-list';
+  listEl.innerHTML = `
+    <div class="diag-browse-back" id="diag-browse-back-btn">← Zurück zu Kategorien</div>
+    <div class="section-header" style="margin-top:0">${catInfo?.emoji || ''} ${catInfo?.name || catCode}</div>
+    ${diags.map(d => {
+      const caught = caughtCodes.has(d.code);
+      return `
+        <div class="diag-browse-item ${caught ? 'is-caught' : ''}" data-code="${d.code}">
+          <span class="diag-list-code">${d.code}</span>
+          <div style="flex:1;min-width:0">
+            <div class="diag-list-name">${d.name}</div>
+            <div class="diag-list-rarity">${'★'.repeat(d.seltenheit_score)}${'☆'.repeat(10 - d.seltenheit_score)}</div>
+          </div>
+          <span class="diag-list-status">${caught ? '✓' : '🔬'}</span>
+        </div>`;
+    }).join('')}`;
+  listEl.querySelector('#diag-browse-back-btn')?.addEventListener('click', () => {
+    listEl.classList.add('hidden');
+    catsEl.classList.remove('hidden');
+  });
+  listEl.querySelectorAll('.diag-browse-item:not(.is-caught)').forEach(item =>
+    item.addEventListener('click', () => {
+      const diag = state.icdFlat.find(d => d.code === item.dataset.code);
+      if (diag) showDiagnosisDetail(diag);
+    }));
 }
 
 function closeDiagnosisModal() {
@@ -1503,6 +1571,25 @@ function openCatchesModal() {
   document.getElementById('catches-modal').classList.remove('hidden');
 }
 
+function renderCatchItem(c) {
+  return `
+    <div class="catch-detail-item">
+      <div class="catch-detail-top">
+        <span class="catch-detail-code">${c.code}</span>
+        <span class="catch-detail-name">${c.name}</span>
+        <span class="catch-detail-xp">+${c.xpEarned} XP</span>
+        <button class="btn-icon btn-delete-catch-modal" data-id="${c.id}" title="Löschen">🗑</button>
+      </div>
+      <div class="catch-detail-meta">
+        <span class="catch-detail-tag">${fmtDate(c.caughtAt)}</span>
+        ${c.ageGroup ? `<span class="catch-detail-tag">${c.ageGroup} J</span>` : ''}
+        ${c.gender ? `<span class="catch-detail-tag">${c.gender}</span>` : ''}
+        ${c.patientType ? `<span class="catch-detail-tag">${c.patientType === 'erstgespraech' ? 'Erstgesp.' : c.patientType}</span>` : ''}
+        ${c.hasComorbidity ? '<span class="catch-detail-tag" style="color:var(--accent-blue)">Komorbid ✓</span>' : ''}
+      </div>
+    </div>`;
+}
+
 function renderCatchesModalBody() {
   const body = document.getElementById('catches-modal-body');
   if (!state.catches.length) {
@@ -1510,36 +1597,44 @@ function renderCatchesModalBody() {
     return;
   }
 
-  body.innerHTML = `
-    <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px">
-      ${state.catches.length} Diagnosen gefangen · ${new Set(state.catches.map(c=>c.kategorie)).size} Kategorien
-    </div>
-    <div class="catches-list">
-      ${state.catches.map(c => `
-        <div class="catch-detail-item">
-          <div class="catch-detail-top">
-            <span class="catch-detail-code">${c.code}</span>
-            <span class="catch-detail-name">${c.name}</span>
-            <span class="catch-detail-xp">+${c.xpEarned} XP</span>
-            <button class="btn-icon btn-delete-catch-modal" data-id="${c.id}" title="Löschen">🗑</button>
-          </div>
-          <div class="catch-detail-meta">
-            <span class="catch-detail-tag">${fmtDate(c.caughtAt)}</span>
-            ${c.ageGroup ? `<span class="catch-detail-tag">${c.ageGroup} J</span>` : ''}
-            ${c.gender ? `<span class="catch-detail-tag">${c.gender}</span>` : ''}
-            ${c.patientType ? `<span class="catch-detail-tag">${c.patientType === 'erstgespraech' ? 'Erstgesp.' : c.patientType}</span>` : ''}
-            ${c.hasComorbidity ? '<span class="catch-detail-tag" style="color:var(--accent-blue)">Komorbid ✓</span>' : ''}
-          </div>
-        </div>`).join('')}
-    </div>`;
+  let sorted = [...state.catches];
+  if (state.catchesSort === 'alpha') {
+    sorted.sort((a, b) => a.name.localeCompare(b.name, 'de'));
+  } else if (state.catchesSort === 'category') {
+    sorted.sort((a, b) => (a.kategorie || '').localeCompare(b.kategorie || '') || a.code.localeCompare(b.code));
+  }
 
-  body.querySelectorAll('.btn-delete-catch-modal').forEach(btn => {
+  const isCatView = state.catchesSort === 'category';
+  let listHTML = '';
+  if (isCatView) {
+    const groups = {};
+    sorted.forEach(c => { const k = c.kategorie || '?'; if (!groups[k]) groups[k] = []; groups[k].push(c); });
+    listHTML = Object.entries(groups).map(([cat, catches]) =>
+      `<div class="catch-cat-header">${cat}</div>${catches.map(renderCatchItem).join('')}`
+    ).join('');
+  } else {
+    listHTML = sorted.map(renderCatchItem).join('');
+  }
+
+  body.innerHTML = `
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px">
+      ${state.catches.length} Diagnosen · ${new Set(state.catches.map(c=>c.kategorie)).size} Kategorien
+    </div>
+    <div class="sort-bar">
+      <button class="sort-btn ${state.catchesSort==='chrono'?'active':''}" data-sort="chrono">🕐 Neueste</button>
+      <button class="sort-btn ${state.catchesSort==='alpha'?'active':''}" data-sort="alpha">A–Z</button>
+      <button class="sort-btn ${state.catchesSort==='category'?'active':''}" data-sort="category">📂 Kategorie</button>
+    </div>
+    <div class="catches-list">${listHTML}</div>`;
+
+  body.querySelectorAll('.sort-btn').forEach(btn =>
+    btn.addEventListener('click', () => { state.catchesSort = btn.dataset.sort; renderCatchesModalBody(); }));
+  body.querySelectorAll('.btn-delete-catch-modal').forEach(btn =>
     btn.addEventListener('click', async e => {
       e.stopPropagation();
       await deleteCatch(parseInt(btn.dataset.id));
       renderCatchesModalBody();
-    });
-  });
+    }));
 }
 
 function closeCatchesModal() {
@@ -1555,6 +1650,60 @@ const fmtDateShort = ds =>
 
 const shiftIcon  = t => t === 'full' ? '☀️' : t === 'spät' ? '🌇' : '🌅';
 const shiftLabel = t => t === 'full' ? 'Ganztags 12h' : t === 'spät' ? 'Spät 6,5h' : 'Früh 6,5h';
+
+// ─── Export / Import ──────────────────────────────────────────────────────────
+function setupExportImport() {
+  document.getElementById('btn-export')?.addEventListener('click', exportData);
+  document.getElementById('import-file-input')?.addEventListener('change', importData);
+}
+
+async function exportData() {
+  const shifts  = await db.shiftLogs.toArray();
+  const catches = await db.caughtDiagnoses.toArray();
+  const payload = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    profile:  { totalXP: state.profile?.totalXP ?? 0 },
+    shifts:   shifts.map(({ id, ...s }) => s),
+    catches:  catches.map(({ id, ...c }) => c)
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `psychodex-backup-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (!data.version || !Array.isArray(data.shifts) || !Array.isArray(data.catches)) {
+      alert('Ungültige Backup-Datei.');
+      return;
+    }
+    if (!confirm(`Alle aktuellen Daten werden ersetzt.\n${data.shifts.length} Dienste, ${data.catches.length} Diagnosen werden importiert.\n\nFortfahren?`)) return;
+
+    await db.profile.clear();
+    await db.shiftLogs.clear();
+    await db.caughtDiagnoses.clear();
+    await db.profile.add({ totalXP: data.profile?.totalXP ?? 0, createdAt: new Date().toISOString() });
+    for (const s of data.shifts)  await db.shiftLogs.add(s);
+    for (const c of data.catches) await db.caughtDiagnoses.add(c);
+
+    await loadFromDB();
+    renderApp();
+    alert(`Import erfolgreich: ${data.shifts.length} Dienste, ${data.catches.length} Diagnosen geladen.`);
+    navigateTo('stats');
+  } catch (err) {
+    alert(`Import fehlgeschlagen: ${err.message}`);
+  }
+  e.target.value = '';
+}
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', init);
