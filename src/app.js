@@ -393,7 +393,6 @@ function setupDiagnosisModalListeners() {
   document.getElementById('diag-modal-backdrop').addEventListener('click', closeDiagnosisModal);
   document.getElementById('diag-search-input').addEventListener('input', onSearch);
   document.getElementById('btn-catch-diagnosis').addEventListener('click', catchDiagnosis);
-  document.getElementById('komorbid-checkbox').addEventListener('change', updateXPPreview);
   document.getElementById('btn-standalone-catch').addEventListener('click', () => openStandaloneCatch());
   document.getElementById('btn-symptom-finder').addEventListener('click', openSymptomFinder);
   document.querySelectorAll('.diag-modal-tab').forEach(tab =>
@@ -404,9 +403,7 @@ function openDiagnosisSearch(patientIndex) {
   state.searchContext = { patientIndex, selectedDiagnosis: null, standalone: false };
   state.addToShiftContext = null;
   const patient = state.activeShift?.patients[patientIndex];
-  const autoKomorbid = patient && patient.diagnoses.length >= 1;
   resetDiagSearchUI();
-  document.getElementById('komorbid-checkbox').checked = autoKomorbid;
   document.getElementById('diagnosis-modal').classList.remove('hidden');
   document.getElementById('diag-search-input').focus();
 }
@@ -433,7 +430,6 @@ function resetDiagSearchUI() {
   document.getElementById('diag-search-input').value = '';
   document.getElementById('diag-search-results').innerHTML = '';
   document.getElementById('diag-detail').classList.add('hidden');
-  document.getElementById('komorbid-checkbox').checked = false;
   switchDiagTab('search');
 }
 
@@ -442,7 +438,7 @@ function switchDiagTab(tab) {
     t.classList.toggle('active', t.dataset.tab === tab));
   document.getElementById('diag-pane-search').classList.toggle('hidden', tab !== 'search');
   document.getElementById('diag-pane-browse').classList.toggle('hidden', tab !== 'browse');
-  document.getElementById('diag-detail').classList.add('hidden');
+  // diag-detail intentionally NOT hidden here – persists across tab switches
   if (tab === 'browse') renderDiagBrowseCats();
 }
 
@@ -542,7 +538,7 @@ function showDiagnosisDetail(diagnosis) {
 }
 
 function renderDiagnosisDetail(diagnosis) {
-  const preview = previewXP(diagnosis, document.getElementById('komorbid-checkbox').checked);
+  const preview = previewXP(diagnosis);
   document.getElementById('diag-detail-header').innerHTML = `
     <div class="diag-code-big">${diagnosis.code}</div>
     <div class="diag-name-big">${diagnosis.name}</div>
@@ -566,7 +562,23 @@ function updateXPPreview() {
   if (state.searchContext.selectedDiagnosis) renderDiagnosisDetail(state.searchContext.selectedDiagnosis);
 }
 
-function previewXP(diagnosis, hasComorbidity) {
+function getAutoComorbidity() {
+  const { patientIndex, standalone } = state.searchContext;
+  if (standalone) return false;
+  if (state.addToShiftContext) {
+    const { shiftId, patientIndex: pkey } = state.addToShiftContext;
+    if (pkey == null) return false;
+    return state.catches.filter(c =>
+      c.shiftId === shiftId && String(c.patientIndex) === String(pkey)).length >= 1;
+  }
+  if (patientIndex !== null && state.activeShift?.patients[patientIndex]) {
+    return (state.activeShift.patients[patientIndex].diagnoses.length || 0) >= 1;
+  }
+  return false;
+}
+
+function previewXP(diagnosis) {
+  const hasComorbidity = getAutoComorbidity();
   const caughtCodes = new Set(state.catches.map(c => c.code));
   const caughtKats  = new Set(state.catches.map(c => c.kategorie));
   state.activeShift?.patients.forEach(p => p.diagnoses.forEach(d => {
@@ -588,7 +600,7 @@ function catchDiagnosis() {
   const { patientIndex, selectedDiagnosis, standalone } = state.searchContext;
   if (!selectedDiagnosis) return;
 
-  const hasComorbidity = document.getElementById('komorbid-checkbox').checked;
+  const hasComorbidity = getAutoComorbidity();
   const caughtCodes    = new Set(state.catches.map(c => c.code));
   const caughtKats     = new Set(state.catches.map(c => c.kategorie));
   if (!standalone) {
@@ -1686,8 +1698,9 @@ function openDiagInfoModal(code) {
   const diag = state.icdFlat.find(d => d.code === code);
   if (!diag) return;
   const caughtCodes = new Set(state.catches.map(c => c.code));
-  const isCaught = caughtCodes.has(code);
-  const preview  = previewXP(diag, false);
+  const caughtKats  = new Set(state.catches.map(c => c.kategorie));
+  const isCaught    = caughtCodes.has(code);
+  const base        = 20 * diag.seltenheit_score;
   const mk = l => `<li class="symptom-item">${l}</li>`;
   document.getElementById('diag-info-title').textContent = `${diag.code}`;
   document.getElementById('diag-info-body').innerHTML = `
@@ -1695,7 +1708,7 @@ function openDiagInfoModal(code) {
       <div class="diag-code-big">${diag.code}</div>
       <div class="diag-name-big">${diag.name}</div>
       <div class="xp-preview-chips">
-        <span class="xp-chip base">Basis: ${preview.base} XP · ★${diag.seltenheit_score}/10</span>
+        <span class="xp-chip base">Basis: ${base} XP · ★${diag.seltenheit_score}/10</span>
         ${isCaught
           ? '<span class="xp-chip" style="background:rgba(16,185,129,.15);color:var(--success);border:1px solid rgba(16,185,129,.3)">✓ Bereits gefangen</span>'
           : '<span class="xp-chip" style="background:rgba(124,58,237,.1);color:var(--accent);border:1px solid rgba(124,58,237,.3)">Noch nicht gefangen</span>'}
