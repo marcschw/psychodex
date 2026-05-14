@@ -13,4 +13,12 @@ db.version(2).stores({
   missions: '++id, slotIndex'
 });
 
+db.version(3).stores({
+  profile: '++id',
+  shiftLogs: '++id, date, type',
+  caughtDiagnoses: '++id, code, kategorie, shiftId, caughtAt',
+  missions: '++id, slotIndex',
+  unlockedAchievements: '++id, badgeId, tier, unlockedAt'
+});
+
 export default db;

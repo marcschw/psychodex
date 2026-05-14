@@ -1,4 +1,4 @@
-const APP_VERSION  = 'v3';
+const APP_VERSION  = 'v5';
 const APP_CACHE    = `psychodex-app-${APP_VERSION}`;
 const IMAGE_CACHE  = `psychodex-images-${APP_VERSION}`;
 
@@ -9,6 +9,7 @@ const APP_SHELL = [
   './styles/main.css',
   './src/app.js',
   './src/db.js',
+  './src/achievements.js',
   './src/icd-loader.js',
   './src/xp-engine.js',
   './src/ranks.js',

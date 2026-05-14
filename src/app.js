@@ -3,6 +3,7 @@ import { loadAllICD, searchDiagnoses } from './icd-loader.js';
 import { calculateCatchXP, calculateFlameBonus } from './xp-engine.js';
 import { RANKS, getRankForXP, getNextRank } from './ranks.js';
 import { MISSION_POOL, TIER_LABELS, calcMissionProgress, pickNewMission } from './missions.js';
+import { checkAchievements, ACHIEVEMENTS, SECRET_ACHIEVEMENTS, ACH_TIER_LABELS } from './achievements.js';
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const state = {
@@ -23,7 +24,8 @@ const state = {
   profile: null,
   shifts: [],
   catches: [],
-  missions: []
+  missions: [],
+  unlockedAchievements: []
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -38,6 +40,70 @@ const rarityInfo = score => {
   if (score <= 8) return { label: 'Selten',         color: '#a78bfa' };
   return             { label: 'Extrem selten',  color: '#f59e0b' };
 };
+
+// ─── Symptom Parsing & Checkboxes ────────────────────────────────────────────
+function splitCommaOutsideParens(str) {
+  const items = [];
+  let depth = 0, start = 0;
+  for (let i = 0; i < str.length; i++) {
+    if (str[i] === '(') depth++;
+    else if (str[i] === ')') depth--;
+    else if (str[i] === ',' && depth === 0) {
+      items.push(str.slice(start, i).trim());
+      start = i + 1;
+    }
+  }
+  items.push(str.slice(start).trim());
+  return items.filter(Boolean);
+}
+
+function parseSymptomItems(symptomText) {
+  // Numbered: "Header – (1) item (2) item" or starts with "(1)"
+  if (/[–\-]\s*\(\d+\)/.test(symptomText) || /^\s*\(\d+\)/.test(symptomText)) {
+    const dashIdx = symptomText.search(/\s*[–\-]\s*(?=\(\d+\))/);
+    let header = '', listPart = symptomText;
+    if (dashIdx !== -1) {
+      header = symptomText.slice(0, dashIdx).trim();
+      listPart = symptomText.slice(dashIdx).replace(/^\s*[–\-]\s*/, '');
+    }
+    const items = listPart.split(/(?=\(\d+\))/)
+      .map(s => s.replace(/^\(\d+\)\s*/, '').replace(/[;,]\s*$/, '').trim())
+      .filter(Boolean);
+    if (items.length > 1) return { type: 'compound', header, items };
+  }
+  // Colon+list: "Header: item1, item2, item3"
+  const colonIdx = symptomText.indexOf(': ');
+  if (colonIdx !== -1) {
+    const header = symptomText.slice(0, colonIdx).trim();
+    const items = splitCommaOutsideParens(symptomText.slice(colonIdx + 2).trim());
+    if (items.length > 1) return { type: 'compound', header, items };
+  }
+  return { type: 'single' };
+}
+
+function renderSymptomCheckboxes(symptomList, kind, savedChecked, itemClass) {
+  const isView = kind === 'view';
+  const sc = savedChecked || [];
+  const cls = itemClass ? ` ${itemClass}` : '';
+  return symptomList.map(symptomText => {
+    const parsed = parseSymptomItems(symptomText);
+    if (parsed.type === 'compound') {
+      const subHtml = parsed.items.map(item => {
+        const key = `${symptomText}::${item}`;
+        const ck = sc.includes(key) ? ' checked' : '';
+        return `<li class="sym-sub-item"><label class="sym-label${isView ? ' sym-view' : ''}"><input type="checkbox" class="sym-cb" data-key="${key.replace(/"/g, '&quot;')}"${ck}${isView ? ' disabled' : ''}><span class="sym-box"></span><span class="sym-text">${item}</span></label></li>`;
+      }).join('');
+      return `<li class="symptom-item sym-compound${cls}"><span class="sym-compound-header">${parsed.header || symptomText}</span><ul class="symptom-sub-list">${subHtml}</ul></li>`;
+    }
+    const ck = sc.includes(symptomText) ? ' checked' : '';
+    return `<li class="symptom-item${cls}"><label class="sym-label${isView ? ' sym-view' : ''}"><input type="checkbox" class="sym-cb" data-key="${symptomText.replace(/"/g, '&quot;')}"${ck}${isView ? ' disabled' : ''}><span class="sym-box"></span><span class="sym-text">${symptomText}</span></label></li>`;
+  }).join('');
+}
+
+function collectCheckedSymptoms() {
+  return [...document.querySelectorAll('#diag-pflicht-list .sym-cb:checked, #diag-optional-list .sym-cb:checked')]
+    .map(cb => cb.dataset.key);
+}
 
 // ─── Hours Helpers ────────────────────────────────────────────────────────────
 function calcShiftHours(shift) {
@@ -157,6 +223,9 @@ async function loadFromDB() {
   try {
     state.missions = await db.missions.toArray();
   } catch { state.missions = []; }
+  try {
+    state.unlockedAchievements = await db.unlockedAchievements.toArray();
+  } catch { state.unlockedAchievements = []; }
 
   // Migrate old single-number extraHours to entries array
   if (!Array.isArray(state.profile.extraHourEntries)) {
@@ -646,12 +715,12 @@ function renderDiagnosisDetail(diagnosis) {
       ${preview.isFirstKat    ? '<span class="xp-chip bonus-kat">+300 Erste Kategorie!</span>' : ''}
       ${preview.komorbidBonus ? '<span class="xp-chip bonus-k">+Komorbidität 20%</span>' : ''}
     </div>`;
-  const mkP = l => `<li class="symptom-item symptom-pflicht">${l}</li>`;
-  const mkO = l => `<li class="symptom-item symptom-optional">${l}</li>`;
+  const pflicht = diagnosis.diagnose_kriterien?.pflicht_symptome || [];
+  const optional = diagnosis.diagnose_kriterien?.optionale_symptome || [];
   document.getElementById('diag-pflicht-list').innerHTML =
-    (diagnosis.diagnose_kriterien?.pflicht_symptome || []).map(mkP).join('');
+    renderSymptomCheckboxes(pflicht, 'catch', [], 'symptom-pflicht');
   document.getElementById('diag-optional-list').innerHTML =
-    (diagnosis.diagnose_kriterien?.optionale_symptome || []).map(mkO).join('');
+    renderSymptomCheckboxes(optional, 'catch', [], 'symptom-optional');
   const chipContainer = document.getElementById('diag-komorbid-chips');
   chipContainer.innerHTML = renderLinkedChips(diagnosis.komorbiditaeten, diagnosis.code);
   chipContainer.querySelectorAll('.linked-chip').forEach(btn =>
@@ -704,6 +773,7 @@ function catchDiagnosis() {
   const { patientIndex, selectedDiagnosis, standalone } = state.searchContext;
   if (!selectedDiagnosis) return;
 
+  const checkedSymptoms = collectCheckedSymptoms();
   const hasComorbidity = getAutoComorbidity();
   const caughtCodes    = new Set(state.catches.map(c => c.code));
   const caughtKats     = new Set(state.catches.map(c => normalizeKat(c.kategorie)));
@@ -719,14 +789,14 @@ function catchDiagnosis() {
   // Adding to an existing shift's patient (from shift detail view)
   if (state.addToShiftContext) {
     saveToExistingShiftPatient(selectedDiagnosis, hasComorbidity, xpResult,
-      state.addToShiftContext.shiftId, state.addToShiftContext.patientIndex);
+      state.addToShiftContext.shiftId, state.addToShiftContext.patientIndex, checkedSymptoms);
     return;
   }
 
   // Adding within active shift form
   if (!standalone && patientIndex !== null) {
     state.activeShift.patients[patientIndex].diagnoses.push({
-      diagnosis: selectedDiagnosis, hasComorbidity, xpEarned: xpResult.total
+      diagnosis: selectedDiagnosis, hasComorbidity, xpEarned: xpResult.total, checkedSymptoms
     });
     renderPatientDiagnoses(patientIndex, state.activeShift.patients[patientIndex]);
     closeDiagnosisModal();
@@ -736,7 +806,7 @@ function catchDiagnosis() {
 
   // Standalone: offer shift assignment
   closeDiagnosisModal();
-  state.pendingStandaloneCatch = { diagnosis: selectedDiagnosis, hasComorbidity, xpResult };
+  state.pendingStandaloneCatch = { diagnosis: selectedDiagnosis, hasComorbidity, xpResult, checkedSymptoms };
   openShiftAssignModal();
 }
 
@@ -803,7 +873,7 @@ function closeShiftAssignModal() {
 }
 
 async function saveToTodayShift(pending, shiftId) {
-  const { diagnosis, hasComorbidity, xpResult } = pending;
+  const { diagnosis, hasComorbidity, xpResult, checkedSymptoms } = pending;
   const shift = state.shifts.find(s => s.id === shiftId);
   if (!shift) { await saveStandaloneCatch(pending); return; }
 
@@ -818,6 +888,7 @@ async function saveToTodayShift(pending, shiftId) {
     ageGroup: 'unbekannt', gender: 'unbekannt', patientType: 'standalone',
     patientIndex: newPIdx,
     hasComorbidity, xpEarned: xpResult.total,
+    checkedSymptoms: checkedSymptoms || [],
     caughtAt: new Date().toISOString()
   });
 
@@ -838,10 +909,11 @@ async function saveToTodayShift(pending, shiftId) {
   else if (state.currentTab === 'dex') renderPsychoDex();
   checkLevelUp(newTotal, (state.profile.totalXP ?? 0) - xpResult.total);
   refreshMissionProgress();
+  applyAchievements();
 }
 
 async function createShiftAndSaveCatch(pending, shiftType) {
-  const { diagnosis, hasComorbidity, xpResult } = pending;
+  const { diagnosis, hasComorbidity, xpResult, checkedSymptoms } = pending;
   const today = new Date().toISOString().split('T')[0];
   const xpBase = shiftType === 'full' ? 120 : 65;
   const flameBonus = calculateFlameBonus(today);
@@ -859,6 +931,7 @@ async function createShiftAndSaveCatch(pending, shiftType) {
     ageGroup: 'unbekannt', gender: 'unbekannt', patientType: 'erstgespraech',
     patientIndex: 0,
     hasComorbidity, xpEarned: xpResult.total,
+    checkedSymptoms: checkedSymptoms || [],
     caughtAt: new Date().toISOString()
   });
 
@@ -877,16 +950,18 @@ async function createShiftAndSaveCatch(pending, shiftType) {
   if (state.currentTab === 'dashboard') renderDashboard();
   checkLevelUp(newXP, oldXP);
   refreshMissionProgress();
+  applyAchievements();
 }
 
 async function saveStandaloneCatch(pending) {
-  const { diagnosis, hasComorbidity, xpResult } = pending;
+  const { diagnosis, hasComorbidity, xpResult, checkedSymptoms } = pending;
   await db.caughtDiagnoses.add({
     code: diagnosis.code, name: diagnosis.name,
     kategorie: diagnosis.kategorie, shiftId: null,
     ageGroup: null, gender: null, patientType: 'standalone',
     patientIndex: null,
     hasComorbidity, xpEarned: xpResult.total,
+    checkedSymptoms: checkedSymptoms || [],
     caughtAt: new Date().toISOString()
   });
   const oldXP  = state.profile.totalXP ?? 0;
@@ -901,6 +976,7 @@ async function saveStandaloneCatch(pending) {
   else if (state.currentTab === 'dex') renderPsychoDex();
   checkLevelUp(newXP, oldXP);
   refreshMissionProgress();
+  applyAchievements();
 }
 
 // ─── Finish Shift ─────────────────────────────────────────────────────────────
@@ -922,7 +998,7 @@ async function finishShift() {
 
     for (let pi = 0; pi < state.activeShift.patients.length; pi++) {
       const patient = state.activeShift.patients[pi];
-      for (const { diagnosis, hasComorbidity, xpEarned } of patient.diagnoses) {
+      for (const { diagnosis, hasComorbidity, xpEarned, checkedSymptoms } of patient.diagnoses) {
         await db.caughtDiagnoses.add({
           code: diagnosis.code, name: diagnosis.name,
           kategorie: diagnosis.kategorie, shiftId,
@@ -931,6 +1007,7 @@ async function finishShift() {
           patientIndex: pi,
           patientTime: patient.time ?? null,
           hasComorbidity, xpEarned,
+          checkedSymptoms: checkedSymptoms || [],
           caughtAt: new Date().toISOString()
         });
       }
@@ -953,6 +1030,7 @@ async function finishShift() {
     showXPPopup(totalXP, bonusList);
     checkLevelUp(newXP, oldXP);
     refreshMissionProgress();
+    applyAchievements();
   } finally {
     btn.disabled = false;
     btn.textContent = 'Dienst abschließen ✓';
@@ -963,6 +1041,119 @@ function checkLevelUp(newXP, oldXP) {
   const newRank = getRankForXP(newXP);
   if (getRankForXP(oldXP).level < newRank.level)
     setTimeout(() => showLevelUpModal(newRank), 1800);
+}
+
+// ─── Achievements ─────────────────────────────────────────────────────────────
+const _achToastQueue = [];
+let _achToastBusy = false;
+
+function showAchievementToasts(items) {
+  items.forEach(item => _achToastQueue.push(item));
+  _drainAchToast();
+}
+
+function _drainAchToast() {
+  if (_achToastBusy || !_achToastQueue.length) return;
+  _achToastBusy = true;
+  const item  = _achToastQueue.shift();
+  const toast = document.getElementById('achievement-toast');
+  const label = document.getElementById('ach-toast-label');
+  document.getElementById('ach-toast-icon').textContent = item.icon;
+  document.getElementById('ach-toast-name').textContent = item.name;
+  document.getElementById('ach-toast-meta').textContent =
+    item.isSecret ? `Secret · +${item.xp} XP` : `${ACH_TIER_LABELS[item.tier]} · +${item.xp} XP`;
+  if (label) label.textContent = item.isSecret ? '🔓 Secret Achievement!' : 'Badge freigeschaltet!';
+  toast.classList.toggle('ach-toast-secret', !!item.isSecret);
+  toast.style.display = 'flex';
+  toast.classList.remove('ach-toast-hide');
+  toast.classList.add('ach-toast-show');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => {
+    toast.classList.replace('ach-toast-show', 'ach-toast-hide');
+    setTimeout(() => {
+      toast.style.display = 'none';
+      _achToastBusy = false;
+      _drainAchToast();
+    }, 380);
+  }, 4200);
+}
+
+async function applyAchievements() {
+  try {
+    const newUnlocks = await checkAchievements(state, db);
+    if (!newUnlocks.length) return;
+    const bonusXP = newUnlocks.reduce((s, u) => s + u.xp, 0);
+    const oldXP   = state.profile.totalXP ?? 0;
+    const newXP   = oldXP + bonusXP;
+    await db.profile.update(state.profile.id, { totalXP: newXP });
+    state.profile.totalXP = newXP;
+    updateHeader();
+    checkLevelUp(newXP, oldXP);
+    if (state.currentTab === 'stats') renderAchievements();
+    showAchievementToasts(newUnlocks);
+  } catch (e) { console.warn('Achievement check:', e); }
+}
+
+function renderAchievements() {
+  const el = document.getElementById('achievements-section');
+  if (!el) return;
+  const maxTierMap  = {};
+  const secretsDone = new Set();
+  (state.unlockedAchievements || []).forEach(a => {
+    if (!maxTierMap[a.badgeId] || maxTierMap[a.badgeId] < a.tier)
+      maxTierMap[a.badgeId] = a.tier;
+    secretsDone.add(a.badgeId);
+  });
+
+  const regularCards = ACHIEVEMENTS.map(ach => {
+    const maxTier = maxTierMap[ach.id] || 0;
+    const dots = [1, 2, 3].map(t =>
+      `<span class="ach-dot${t <= maxTier ? ' ach-dot-earned' : ''}"></span>`
+    ).join('');
+    return `<div class="ach-card ach-tier-${maxTier}">
+      <div class="ach-img-wrap">
+        <img class="ach-img" src="assets/images/badges/${ach.id}.png"
+             onerror="this.style.display='none'" alt="">
+        <span class="ach-emoji">${ach.icon}</span>
+      </div>
+      <div class="ach-info">
+        <div class="ach-name">${ach.name}</div>
+        <div class="ach-desc">${ach.description}</div>
+        ${maxTier > 0 ? `<div class="ach-tier-label">${ACH_TIER_LABELS[maxTier]}</div>` : ''}
+      </div>
+      <div class="ach-dots">${dots}</div>
+    </div>`;
+  }).join('');
+
+  const secretCards = SECRET_ACHIEVEMENTS.map(ach => {
+    const isUnlocked = secretsDone.has(ach.id);
+    if (isUnlocked) {
+      return `<div class="ach-card ach-tier-3 ach-secret-unlocked">
+        <div class="ach-img-wrap">
+          <img class="ach-img" src="assets/images/badges/${ach.id}.png"
+               onerror="this.style.display='none'" alt="">
+          <span class="ach-emoji">${ach.icon}</span>
+        </div>
+        <div class="ach-info">
+          <div class="ach-name">${ach.name}</div>
+          <div class="ach-desc">${ach.description}</div>
+          <div class="ach-tier-label ach-secret-label">🔓 Secret · +${ach.xp} XP</div>
+        </div>
+      </div>`;
+    }
+    return `<div class="ach-card ach-tier-0 ach-secret-locked">
+      <div class="ach-img-wrap"><span class="ach-emoji" style="filter:brightness(0) invert(.15)">⬛</span></div>
+      <div class="ach-info">
+        <div class="ach-name">${ach.name}</div>
+        <div class="ach-desc">??? (Geheimnis)</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML =
+    `<div class="ach-grid">${regularCards}</div>
+     <div class="section-subheader">Secret Achievements</div>
+     <div class="ach-grid">${secretCards}</div>`;
 }
 
 // ─── XP Popup ─────────────────────────────────────────────────────────────────
@@ -1238,6 +1429,7 @@ function renderStats() {
   renderExtraHoursSettings();
   renderHeatmap();
   renderCategoryChart();
+  renderAchievements();
 }
 
 function renderHeatmap() {
@@ -1596,7 +1788,7 @@ function closeShiftDetailModal() {
   document.getElementById('shift-detail-modal').classList.add('hidden');
 }
 
-async function saveToExistingShiftPatient(diagnosis, hasComorbidity, xpResult, shiftId, patientKey) {
+async function saveToExistingShiftPatient(diagnosis, hasComorbidity, xpResult, shiftId, patientKey, checkedSymptoms) {
   const shift = state.shifts.find(s => s.id === shiftId);
   if (!shift) return;
   const shiftCatches = state.catches.filter(c => c.shiftId === shiftId);
@@ -1626,6 +1818,7 @@ async function saveToExistingShiftPatient(diagnosis, hasComorbidity, xpResult, s
     ageGroup, gender, patientType,
     patientIndex: patientIndex ?? 0,
     hasComorbidity, xpEarned: xpResult.total,
+    checkedSymptoms: checkedSymptoms || [],
     caughtAt: new Date().toISOString()
   });
 
@@ -1645,6 +1838,7 @@ async function saveToExistingShiftPatient(diagnosis, hasComorbidity, xpResult, s
   if (state.currentTab === 'dashboard') renderDashboard();
   checkLevelUp(newXP, oldXP);
   refreshMissionProgress();
+  applyAchievements();
 
   // Re-open shift detail
   const updatedShift = state.shifts.find(s => s.id === shiftId);
@@ -2014,8 +2208,10 @@ function renderDiagInfoBody(code) {
   state.diagInfoCurrentCode = code;
   const isCaught = new Set(state.catches.map(c => c.code)).has(code);
   const base     = 20 * diag.seltenheit_score;
-  const mkP = l => `<li class="symptom-item symptom-pflicht">${l}</li>`;
-  const mkO = l => `<li class="symptom-item symptom-optional">${l}</li>`;
+  const lastCatch = state.catches.find(c => c.code === code);
+  const savedChecked = lastCatch?.checkedSymptoms || [];
+  const pflicht  = diag.diagnose_kriterien?.pflicht_symptome || [];
+  const optional = diag.diagnose_kriterien?.optionale_symptome || [];
   document.getElementById('diag-info-title').textContent = diag.code;
   document.getElementById('diag-info-body').innerHTML = `
     ${state.diagInfoStack.length > 0 ? `<button class="diag-info-back" id="diag-info-back-btn">← Zurück</button>` : ''}
@@ -2031,11 +2227,11 @@ function renderDiagInfoBody(code) {
     </div>
     <div class="diag-detail-section">
       <div class="diag-detail-label diag-label-pflicht">🔴 Pflicht-Symptome</div>
-      <ul class="symptom-list">${(diag.diagnose_kriterien?.pflicht_symptome || []).map(mkP).join('')}</ul>
+      <ul class="symptom-list">${renderSymptomCheckboxes(pflicht, 'view', savedChecked, 'symptom-pflicht')}</ul>
     </div>
     <div class="diag-detail-section">
       <div class="diag-detail-label diag-label-optional">💡 Optionale Symptome</div>
-      <ul class="symptom-list">${(diag.diagnose_kriterien?.optionale_symptome || []).map(mkO).join('')}</ul>
+      <ul class="symptom-list">${renderSymptomCheckboxes(optional, 'view', savedChecked, 'symptom-optional')}</ul>
     </div>
     <div class="diag-detail-section">
       <div class="diag-detail-label">Häufige Komorbiditäten</div>
