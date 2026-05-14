@@ -2704,6 +2704,9 @@ function getRankUnlockDates() {
 function setupRankTableModal() {
   document.getElementById('rank-table-close').addEventListener('click', e => { e.stopPropagation(); closeRankTableModal(); });
   document.getElementById('rank-table-backdrop').addEventListener('click', closeRankTableModal);
+  document.getElementById('rank-table-body').addEventListener('click', e => {
+    if (e.target.id === 'recalc-xp-btn') recalculateXP();
+  });
 }
 function closeRankTableModal() { document.getElementById('rank-table-modal').classList.add('hidden'); }
 function openRankTableModal() {
@@ -2715,6 +2718,7 @@ function openRankTableModal() {
 
   document.getElementById('rank-table-body').innerHTML = `
     <div class="rank-table-current-xp">Aktuell: <strong>${xp.toLocaleString('de-AT')} XP</strong></div>
+    <button id="recalc-xp-btn" class="btn-secondary recalc-xp-btn">XP neu berechnen</button>
     ${RANKS.map(rank => {
       const isCurrent  = rank.level === currentRank.level;
       const unlockDate = unlockDates[rank.level];
@@ -2736,6 +2740,43 @@ function openRankTableModal() {
         </div>`;
     }).join('')}`;
   document.getElementById('rank-table-modal').classList.remove('hidden');
+}
+
+async function recalculateXP() {
+  if (!confirm('XP komplett neu berechnen?\n\nAlle XP werden aus gespeicherten Diensten, Diagnosen, Achievements und Missionen neu summiert.')) return;
+
+  const btn = document.getElementById('recalc-xp-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Berechne…'; }
+
+  const shifts   = await db.shiftLogs.toArray();
+  const catches  = await db.caughtDiagnoses.toArray();
+  const missions = await db.missions.toArray();
+  const unlocked = await db.unlockedAchievements.toArray();
+
+  const shiftXP  = shifts.reduce((s, sh) => s + (sh.xpEarned ?? 0), 0);
+  const catchXP  = catches.reduce((s, c)  => s + (c.xpEarned  ?? 0), 0);
+
+  const achievementXP = unlocked.reduce((sum, a) => {
+    const def = ACHIEVEMENTS.find(x => x.id === a.badgeId);
+    if (def) return sum + (def.tiers[a.tier - 1]?.xp ?? 0);
+    const sec = SECRET_ACHIEVEMENTS.find(x => x.id === a.badgeId);
+    if (sec) return sum + (sec.xp ?? 0);
+    return sum;
+  }, 0);
+
+  const missionXP = missions.reduce((sum, m) => {
+    if (!m.completedAt) return sum;
+    const def = MISSION_POOL.find(x => x.id === m.missionId);
+    return sum + (def?.reward ?? 0);
+  }, 0);
+
+  const newXP = shiftXP + catchXP + achievementXP + missionXP;
+  await db.profile.update(state.profile.id, { totalXP: newXP });
+  state.profile.totalXP = newXP;
+
+  updateHeader();
+  renderDashboard();
+  openRankTableModal();
 }
 
 // ─── Dashboard Card Listeners ─────────────────────────────────────────────────
