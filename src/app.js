@@ -2,6 +2,7 @@ import db from './db.js';
 import { loadAllICD, searchDiagnoses } from './icd-loader.js';
 import { calculateCatchXP, calculateFlameBonus } from './xp-engine.js';
 import { RANKS, getRankForXP, getNextRank } from './ranks.js';
+import { MISSION_POOL, TIER_LABELS, calcMissionProgress, pickNewMission } from './missions.js';
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const state = {
@@ -21,7 +22,8 @@ const state = {
   diagInfoCurrentCode: null,
   profile: null,
   shifts: [],
-  catches: []
+  catches: [],
+  missions: []
 };
 
 // ─── Hours Helpers ────────────────────────────────────────────────────────────
@@ -49,6 +51,7 @@ async function init() {
     if (typeof Dexie === 'undefined') throw new Error('Dexie nicht geladen.');
     await Promise.all([loadAllICD(state), loadICDIndex()]);
     await loadFromDB();
+    await ensureMissionSlots();
     clearTimeout(timeout);
     renderApp();
     setupNav();
@@ -99,8 +102,9 @@ async function loadFromDB() {
   state.profile = profiles[0];
   if (state.profile.targetHours == null) state.profile.targetHours = 480;
   if (state.profile.extraHours  == null) state.profile.extraHours  = 0;
-  state.shifts  = await db.shiftLogs.orderBy('date').reverse().toArray();
-  state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
+  state.shifts   = await db.shiftLogs.orderBy('date').reverse().toArray();
+  state.catches  = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
+  state.missions = await db.missions.toArray();
 }
 
 // ─── Escape key closes any open modal ─────────────────────────────────────────
@@ -771,6 +775,7 @@ async function saveToTodayShift(pending, shiftId) {
   if (state.currentTab === 'dashboard') renderDashboard();
   else if (state.currentTab === 'dex') renderPsychoDex();
   checkLevelUp(newTotal, (state.profile.totalXP ?? 0) - xpResult.total);
+  refreshMissionProgress();
 }
 
 async function createShiftAndSaveCatch(pending, shiftType) {
@@ -809,6 +814,7 @@ async function createShiftAndSaveCatch(pending, shiftType) {
   updateHeader();
   if (state.currentTab === 'dashboard') renderDashboard();
   checkLevelUp(newXP, oldXP);
+  refreshMissionProgress();
 }
 
 async function saveStandaloneCatch(pending) {
@@ -832,6 +838,7 @@ async function saveStandaloneCatch(pending) {
   if (state.currentTab === 'dashboard') renderDashboard();
   else if (state.currentTab === 'dex') renderPsychoDex();
   checkLevelUp(newXP, oldXP);
+  refreshMissionProgress();
 }
 
 // ─── Finish Shift ─────────────────────────────────────────────────────────────
@@ -883,6 +890,7 @@ async function finishShift() {
     if (flameBonus > 0) bonusList.push({ label: '🔥 Flame-Bonus (24h)', xp: flameBonus });
     showXPPopup(totalXP, bonusList);
     checkLevelUp(newXP, oldXP);
+    refreshMissionProgress();
   } finally {
     btn.disabled = false;
     btn.textContent = 'Dienst abschließen ✓';
@@ -900,7 +908,10 @@ function showXPPopup(xp, bonuses = []) {
   const popup = document.getElementById('xp-popup');
   const text  = document.getElementById('xp-popup-text');
   let html = `<span class="popup-main">+${xp} XP</span>`;
-  bonuses.forEach(b => { html += `<span class="popup-bonus">${b.label}: +${b.xp}</span>`; });
+  bonuses.forEach(b => {
+    html += b.xp ? `<span class="popup-bonus">${b.label}: +${b.xp}</span>`
+                 : `<span class="popup-bonus">${b.label}</span>`;
+  });
   text.innerHTML = html;
   popup.classList.remove('hidden', 'popup-hide');
   popup.classList.add('popup-show');
@@ -941,8 +952,112 @@ function showLevelUpModal(rank) {
   document.getElementById('levelup-modal').classList.remove('hidden');
 }
 
+// ─── Mission Control ─────────────────────────────────────────────────────────
+async function ensureMissionSlots() {
+  const currentLevel   = getRankForXP(state.profile?.totalXP ?? 0).level;
+  const activeMissions = state.missions.filter(m => !m.completedAt);
+  const usedSlots      = activeMissions.map(m => m.slotIndex);
+  const existingIds    = activeMissions.map(m => m.missionId);
+
+  for (let slot = 0; slot < 3; slot++) {
+    if (!usedSlots.includes(slot)) {
+      const missionId = pickNewMission(currentLevel, existingIds);
+      if (!missionId) continue;
+      const id         = await db.missions.add({ slotIndex: slot, missionId, activatedAt: new Date().toISOString(), completedAt: null });
+      const newMission = await db.missions.get(id);
+      state.missions.push(newMission);
+      existingIds.push(missionId);
+    }
+  }
+}
+
+async function refreshMissionProgress() {
+  const activeMissions = state.missions.filter(m => !m.completedAt);
+  let anyCompleted = false;
+
+  for (const mission of activeMissions) {
+    const mDef = MISSION_POOL.find(m => m.id === mission.missionId);
+    if (!mDef) continue;
+
+    const catchesSince = state.catches.filter(c => c.caughtAt >= mission.activatedAt);
+    const shiftsSince  = state.shifts.filter(s =>
+      (s.createdAt || `${s.date}T00:00:00`) >= mission.activatedAt
+    );
+
+    const { done } = calcMissionProgress(mDef, catchesSince, shiftsSince, state.icdFlat);
+
+    if (done) {
+      const now    = new Date().toISOString();
+      await db.missions.update(mission.id, { completedAt: now });
+      mission.completedAt = now;
+
+      const oldXP = state.profile.totalXP ?? 0;
+      const newXP = oldXP + mDef.reward;
+      await db.profile.update(state.profile.id, { totalXP: newXP });
+      state.profile.totalXP = newXP;
+
+      showXPPopup(mDef.reward, [{ label: `🎯 Mission: ${mDef.title}`, xp: 0 }]);
+      checkLevelUp(newXP, oldXP);
+      anyCompleted = true;
+    }
+  }
+
+  if (anyCompleted) {
+    updateHeader();
+    if (state.currentTab === 'dashboard') renderDashboard();
+    setTimeout(async () => {
+      await ensureMissionSlots();
+      if (state.currentTab === 'dex') renderMissions();
+    }, 1800);
+  }
+
+  if (state.currentTab === 'dex') renderMissions();
+}
+
+function renderMissions() {
+  const gridEl = document.getElementById('missions-grid');
+  if (!gridEl) return;
+  const activeMissions = state.missions.filter(m => !m.completedAt).sort((a, b) => a.slotIndex - b.slotIndex);
+
+  if (!activeMissions.length) {
+    gridEl.innerHTML = '<div class="empty-state">Missionen werden geladen…</div>';
+    return;
+  }
+
+  gridEl.innerHTML = activeMissions.map(am => {
+    const mDef = MISSION_POOL.find(m => m.id === am.missionId);
+    if (!mDef) return '';
+
+    const catchesSince = state.catches.filter(c => c.caughtAt >= am.activatedAt);
+    const shiftsSince  = state.shifts.filter(s =>
+      (s.createdAt || `${s.date}T00:00:00`) >= am.activatedAt
+    );
+    const { current, target } = calcMissionProgress(mDef, catchesSince, shiftsSince, state.icdFlat);
+    const pct = Math.min(100, Math.round((current / target) * 100));
+
+    return `
+      <div class="mission-card tier-${mDef.tier}">
+        <div class="mission-card-header">
+          <span class="mission-tier-badge">${TIER_LABELS[mDef.tier]}</span>
+          <span class="mission-reward">+${mDef.reward.toLocaleString('de-AT')} XP</span>
+        </div>
+        <div class="mission-title">${mDef.title}</div>
+        <div class="mission-desc">${mDef.description}</div>
+        <div class="mission-progress-row">
+          <div class="mission-prog-track">
+            <div class="mission-prog-fill" style="width:${pct}%"></div>
+          </div>
+          <span class="mission-prog-text">${current} / ${target}</span>
+        </div>
+        ${mDef.badge ? `<div class="mission-badge">${mDef.badge}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
 // ─── PsychoDex ────────────────────────────────────────────────────────────────
 function renderPsychoDex() {
+  renderMissions();
+
   const caughtCodes = new Set(state.catches.map(c => c.code));
   const total  = state.icdFlat.length;
   const caught = state.icdFlat.filter(d => caughtCodes.has(d.code)).length;
@@ -1440,6 +1555,7 @@ async function saveToExistingShiftPatient(diagnosis, hasComorbidity, xpResult, s
   updateHeader();
   if (state.currentTab === 'dashboard') renderDashboard();
   checkLevelUp(newXP, oldXP);
+  refreshMissionProgress();
 
   // Re-open shift detail
   const updatedShift = state.shifts.find(s => s.id === shiftId);

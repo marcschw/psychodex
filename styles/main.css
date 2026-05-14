@@ -1255,3 +1255,78 @@ img{max-width:100%;display:block}
   transition:color .15s;
 }
 .privacy-close:hover{color:var(--text)}
+
+/* ── Mission Control ───────────────────────────────────────────────────────── */
+.missions-grid{
+  display:flex;flex-direction:column;gap:10px;
+  margin-bottom:4px;
+}
+.mission-card{
+  position:relative;
+  padding:14px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:var(--r);
+  overflow:hidden;
+  transition:border-color .2s;
+}
+.mission-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.025) 0%,transparent 60%);
+  pointer-events:none;
+}
+.mission-card.tier-1{border-color:rgba(156,163,175,.2)}
+.mission-card.tier-2{border-color:rgba(96,165,250,.25)}
+.mission-card.tier-3{border-color:rgba(167,139,250,.3)}
+
+.mission-card-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:7px;
+}
+.mission-tier-badge{
+  font-size:9px;font-weight:700;letter-spacing:.08em;
+  padding:2px 7px;border-radius:4px;text-transform:uppercase;
+}
+.tier-1 .mission-tier-badge{background:rgba(156,163,175,.12);color:#9ca3af}
+.tier-2 .mission-tier-badge{background:rgba(96,165,250,.12);color:#60a5fa}
+.tier-3 .mission-tier-badge{background:rgba(167,139,250,.15);color:var(--accent)}
+
+.mission-reward{
+  font-size:12px;font-weight:700;
+  color:var(--success);
+}
+.tier-3 .mission-reward{color:var(--accent)}
+
+.mission-title{
+  font-size:14px;font-weight:600;color:var(--text);
+  margin-bottom:3px;
+}
+.mission-desc{
+  font-size:12px;color:var(--text-dim);
+  line-height:1.45;margin-bottom:11px;
+}
+.mission-progress-row{
+  display:flex;align-items:center;gap:8px;
+}
+.mission-prog-track{
+  flex:1;height:5px;
+  background:rgba(255,255,255,.07);
+  border-radius:3px;overflow:hidden;
+}
+.mission-prog-fill{
+  height:100%;border-radius:3px;
+  transition:width .4s ease;
+}
+.tier-1 .mission-prog-fill{background:#9ca3af}
+.tier-2 .mission-prog-fill{background:#60a5fa}
+.tier-3 .mission-prog-fill{background:var(--accent)}
+
+.mission-prog-text{
+  font-size:11px;color:var(--text-dim);
+  min-width:34px;text-align:right;font-variant-numeric:tabular-nums;
+}
+.mission-badge{
+  margin-top:7px;
+  font-size:10px;color:var(--accent);
+  letter-spacing:.02em;
+}
