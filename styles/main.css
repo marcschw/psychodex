@@ -1434,26 +1434,34 @@ img{max-width:100%;display:block}
   position:absolute;inset:0;
   background-size:cover;background-position:center;
   background-color:var(--bg-raised);
-  filter:grayscale(80%) brightness(.4);
+  filter:grayscale(100%) brightness(.3);
   transition:filter .3s ease;
 }
 .diag-mosaic-card.is-caught .dmc-bg{
-  filter:grayscale(0%) brightness(.6);
+  filter:grayscale(0%) brightness(.92);
 }
-.diag-mosaic-card:hover .dmc-bg{
-  filter:grayscale(50%) brightness(.55);
+.diag-mosaic-card:not(.is-caught):hover .dmc-bg{
+  filter:grayscale(80%) brightness(.45);
 }
 .diag-mosaic-card.is-caught:hover .dmc-bg{
-  filter:grayscale(0%) brightness(.75);
+  filter:grayscale(0%) brightness(1.05);
 }
 
 .dmc-overlay{
   position:absolute;inset:0;
   background:linear-gradient(
     to top,
-    rgba(0,0,0,.9) 0%,
-    rgba(0,0,0,.4) 55%,
-    rgba(0,0,0,.1) 100%
+    rgba(0,0,0,.88) 0%,
+    rgba(0,0,0,.3) 50%,
+    rgba(0,0,0,.05) 100%
+  );
+}
+.diag-mosaic-card.is-caught .dmc-overlay{
+  background:linear-gradient(
+    to top,
+    rgba(0,0,0,.75) 0%,
+    rgba(0,0,0,.15) 45%,
+    rgba(0,0,0,0) 100%
   );
 }
 
