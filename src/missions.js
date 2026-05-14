@@ -66,15 +66,6 @@ export const MISSION_POOL = [
     condition: { type: 'count_catches', target: 5 },
     reward: 200, minLevel: 1,
   },
-  {
-    id: 'c9_f9_x1',
-    tier: 1,
-    title: 'Kinder & Jugend',
-    description: 'Fange eine Diagnose aus dem F9-Bereich (ADHS & Verhaltensstörungen).',
-    condition: { type: 'count_in_category', target: 1, param: 'F9' },
-    reward: 175, minLevel: 1,
-  },
-
   // ─── Tier 2 – Rare ────────────────────────────────────────────────────────
   {
     id: 'r1_f3_x3',
