@@ -2762,8 +2762,9 @@ function openRankTableModal() {
     <button id="recalc-xp-btn" class="btn-secondary recalc-xp-btn">XP neu berechnen</button>
     ${RANKS.map(rank => {
       const isCurrent  = rank.level === currentRank.level;
+      const hasXP      = xp >= rank.xpRequired;
       const unlockDate = unlockDates[rank.level];
-      const isUnlocked = unlockDate != null;
+      const isUnlocked = hasXP;
       const cls        = isCurrent ? 'is-current' : isUnlocked ? 'is-unlocked' : 'is-locked';
       return `
         <div class="rank-table-row ${cls}">
@@ -2774,8 +2775,7 @@ function openRankTableModal() {
           </div>
           <div style="text-align:right;min-width:80px">
             ${isCurrent ? '<div class="rank-table-badge">◈ AKTUELL</div>' : ''}
-            ${isUnlocked && !isCurrent ? `<div class="rank-table-date">${fmtD(unlockDate)}</div>` : ''}
-            ${isCurrent && unlockDate ? `<div class="rank-table-date">${fmtD(unlockDate)}</div>` : ''}
+            ${isUnlocked && unlockDate ? `<div class="rank-table-date">${fmtD(unlockDate)}</div>` : ''}
             ${!isUnlocked ? `<div class="rank-table-xp-needed">${rank.xpRequired.toLocaleString('de-AT')} XP</div>` : ''}
           </div>
         </div>`;
