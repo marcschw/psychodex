@@ -1123,7 +1123,7 @@ async function finishShift() {
     const shiftId = await db.shiftLogs.add({
       date: state.activeShift.date, type: state.activeShift.type,
       xpEarned: totalXP,
-      patientCount: state.activeShift.patients.length,
+      patientCount: state.activeShift.patients.filter(p => p.diagnoses.length > 0).length,
       createdAt: new Date().toISOString()
     });
 
