@@ -893,8 +893,8 @@ function previewXP(diagnosis) {
   let total  = base;
   const isFirstDiag = !caughtCodes.has(diagnosis.code);
   const isFirstKat  = !caughtKats.has(normalizeKat(diagnosis.kategorie));
-  if (isFirstKat)  total += 300;
-  if (isFirstDiag) total += 150;
+  if (isFirstKat)  total += 100;
+  if (isFirstDiag) total += 50;
   let komorbidBonus = 0;
   if (hasComorbidity) { komorbidBonus = Math.round(total * 0.2); total += komorbidBonus; }
   return { base, total, isFirstDiag, isFirstKat, komorbidBonus };
