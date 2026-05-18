@@ -1,6 +1,6 @@
 export const RANKS = [
   { level: 1,  title: 'Novus',    subtitle: 'des Zuhörens',      xpRequired: 0 },
-  { level: 2,  title: 'Novus',    subtitle: 'der Wahrnehmung',   xpRequired: 500 },
+  { level: 2,  title: 'Novus',    subtitle: 'der Wahrnehmung',   xpRequired: 600 },
   { level: 3,  title: 'Novus',    subtitle: 'der Resonanz',      xpRequired: 1100 },
   { level: 4,  title: 'Lector',   subtitle: 'der Worte',         xpRequired: 1900 },
   { level: 5,  title: 'Lector',   subtitle: 'der Zeichen',       xpRequired: 2900 },

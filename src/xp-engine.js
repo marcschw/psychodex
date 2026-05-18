@@ -1,12 +1,9 @@
+export const MAX_SHIFT_XP = 550;
+
 export function calculateCatchXP(diagnosis, hasComorbidity, caughtCodes, caughtKategorien) {
-  const baseXP = 20 * diagnosis.seltenheit_score;
+  const baseXP = 15 * diagnosis.seltenheit_score;
   let total = baseXP;
   const bonuses = [];
-
-  if (!caughtKategorien.has(diagnosis.kategorie)) {
-    total += 100;
-    bonuses.push({ label: `Erste Kategorie ${diagnosis.kategorie}!`, xp: 100 });
-  }
 
   if (!caughtCodes.has(diagnosis.code)) {
     total += 50;

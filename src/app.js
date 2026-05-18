@@ -1,6 +1,6 @@
 import db from './db.js';
 import { loadAllICD, searchDiagnoses } from './icd-loader.js';
-import { calculateCatchXP, calculateShiftXP, calculateFlameBonus } from './xp-engine.js';
+import { calculateCatchXP, calculateShiftXP, calculateFlameBonus, MAX_SHIFT_XP } from './xp-engine.js';
 import { RANKS, getRankForXP, getNextRank } from './ranks.js';
 import { MISSION_POOL, TIER_LABELS, calcMissionProgress, pickNewMission } from './missions.js';
 import { checkAchievements, ACHIEVEMENTS, SECRET_ACHIEVEMENTS, ACH_TIER_LABELS } from './achievements.js';
@@ -889,11 +889,10 @@ function previewXP(diagnosis) {
     caughtCodes.add(d.diagnosis.code);
     caughtKats.add(normalizeKat(d.diagnosis.kategorie));
   }));
-  const base = 20 * diagnosis.seltenheit_score;
+  const base = 15 * diagnosis.seltenheit_score;
   let total  = base;
   const isFirstDiag = !caughtCodes.has(diagnosis.code);
   const isFirstKat  = !caughtKats.has(normalizeKat(diagnosis.kategorie));
-  if (isFirstKat)  total += 100;
   if (isFirstDiag) total += 50;
   let komorbidBonus = 0;
   if (hasComorbidity) { komorbidBonus = Math.round(total * 0.2); total += komorbidBonus; }
@@ -1118,7 +1117,7 @@ async function finishShift() {
   try {
     const flameBonus  = calculateFlameBonus(state.activeShift.date);
     const diagnosisXP = state.activeShift.patients.flatMap(p => p.diagnoses).reduce((s, d) => s + d.xpEarned, 0);
-    const totalXP     = state.activeShift.xpBase + flameBonus + diagnosisXP;
+    const totalXP     = Math.min(state.activeShift.xpBase + flameBonus + diagnosisXP, MAX_SHIFT_XP);
 
     const shiftId = await db.shiftLogs.add({
       date: state.activeShift.date, type: state.activeShift.type,
@@ -2072,18 +2071,20 @@ async function saveToExistingShiftPatient(diagnosis, hasComorbidity, xpResult, s
     caughtAt: new Date().toISOString()
   });
 
-  const newShiftXP = (shift.xpEarned || 0) + xpResult.total;
+  const maxCanAdd  = Math.max(0, MAX_SHIFT_XP - (shift.xpEarned || 0));
+  const addedXP    = Math.min(xpResult.total, maxCanAdd);
+  const newShiftXP = (shift.xpEarned || 0) + addedXP;
   const newPatCount = patientKey == null ? (shift.patientCount || 0) + 1 : shift.patientCount;
   await db.shiftLogs.update(shiftId, { xpEarned: newShiftXP, patientCount: newPatCount });
 
   const oldXP = state.profile.totalXP ?? 0;
-  const newXP = oldXP + xpResult.total;
+  const newXP = oldXP + addedXP;
   await db.profile.update(state.profile.id, { totalXP: newXP });
   state.profile.totalXP = newXP;
   state.shifts  = await db.shiftLogs.orderBy('date').reverse().toArray();
   state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
 
-  showXPPopup(xpResult.total, xpResult.bonuses);
+  showXPPopup(addedXP, xpResult.bonuses);
   updateHeader();
   if (state.currentTab === 'dashboard') renderDashboard();
   checkLevelUp(newXP, oldXP);
@@ -2846,7 +2847,7 @@ async function recalculateXP() {
     const shiftDate  = new Date(shift.date);
     const flame      = (createdAt - shiftDate) / 3600000 <= 24 ? 25 : 0;
     const catchSum   = (catchesByShift[shift.id] || []).reduce((s, c) => s + c.xpEarned, 0);
-    const newShiftXP = shiftBase + flame + catchSum;
+    const newShiftXP = Math.min(shiftBase + flame + catchSum, MAX_SHIFT_XP);
     await db.shiftLogs.update(shift.id, { xpEarned: newShiftXP });
     totalXP += newShiftXP;
   }
