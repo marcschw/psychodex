@@ -1077,6 +1077,8 @@ img{max-width:100%;display:block}
   font-size:12px;
 }
 .patient-diag-row:last-child{border-bottom:none}
+.pd-row-clickable{cursor:pointer;transition:background .15s}
+.pd-row-clickable:hover{background:rgba(255,255,255,.04)}
 .pd-code{font-family:monospace;font-weight:700;color:var(--success);min-width:52px}
 .pd-name{flex:1;color:var(--text)}
 .pd-xp{color:var(--accent);font-weight:700;white-space:nowrap}
