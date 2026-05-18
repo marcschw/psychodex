@@ -4,13 +4,13 @@ export function calculateCatchXP(diagnosis, hasComorbidity, caughtCodes, caughtK
   const bonuses = [];
 
   if (!caughtKategorien.has(diagnosis.kategorie)) {
-    total += 300;
-    bonuses.push({ label: `Erste Kategorie ${diagnosis.kategorie}!`, xp: 300 });
+    total += 100;
+    bonuses.push({ label: `Erste Kategorie ${diagnosis.kategorie}!`, xp: 100 });
   }
 
   if (!caughtCodes.has(diagnosis.code)) {
-    total += 150;
-    bonuses.push({ label: 'Erste Diagnose!', xp: 150 });
+    total += 50;
+    bonuses.push({ label: 'Erste Diagnose!', xp: 50 });
   }
 
   if (hasComorbidity) {
