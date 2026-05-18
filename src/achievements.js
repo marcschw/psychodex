@@ -102,6 +102,30 @@ export const ACHIEVEMENTS = [
       thresholds: [3, 10, 20],
     }),
   },
+  {
+    id: 'der_chronist',
+    name: 'Der Chronist',
+    description: 'Dienste mit Log versehen',
+    icon: '📝',
+    tiers: [{ tier: 1, xp: 150 }, { tier: 2, xp: 400 }, { tier: 3, xp: 800 }],
+    _check: state => ({
+      count: state.shifts.filter(s => s.note && s.note.trim().length > 0).length,
+      thresholds: [3, 10, 30],
+    }),
+  },
+  {
+    id: 'schnellschreiber',
+    name: 'Schnellschreiber',
+    description: 'Logs binnen 2h nach Dienst',
+    icon: '✍️',
+    tiers: [{ tier: 1, xp: 200 }, { tier: 2, xp: 500 }, { tier: 3, xp: 1000 }],
+    _check: state => ({
+      count: state.shifts.filter(s =>
+        s.noteAddedAt && (new Date(s.noteAddedAt) - new Date(s.date)) <= 2 * 3_600_000
+      ).length,
+      thresholds: [3, 10, 25],
+    }),
+  },
 ];
 
 // ─── Secret One-Off Achievements ──────────────────────────────────────────────
