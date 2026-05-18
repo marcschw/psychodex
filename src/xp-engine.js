@@ -1,5 +1,3 @@
-export const MAX_SHIFT_XP = 550;
-
 export function calculateCatchXP(diagnosis, hasComorbidity, caughtCodes, caughtKategorien) {
   const baseXP = 15 * diagnosis.seltenheit_score;
   let total = baseXP;
@@ -28,4 +26,9 @@ export function calculateFlameBonus(shiftDateStr) {
   const now = new Date();
   const hoursSince = (now - shiftDate) / (1000 * 60 * 60);
   return hoursSince <= 24 ? 25 : 0;
+}
+
+export function calculateNoteXP(shiftDate, noteAddedAt) {
+  const hoursAfterShift = Math.max(0, (new Date(noteAddedAt) - new Date(shiftDate)) / 3_600_000);
+  return Math.max(10, Math.round(60 * Math.exp(-hoursAfterShift / 24)));
 }

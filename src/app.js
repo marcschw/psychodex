@@ -1,6 +1,6 @@
 import db from './db.js';
 import { loadAllICD, searchDiagnoses } from './icd-loader.js';
-import { calculateCatchXP, calculateShiftXP, calculateFlameBonus, MAX_SHIFT_XP } from './xp-engine.js';
+import { calculateCatchXP, calculateShiftXP, calculateFlameBonus, calculateNoteXP } from './xp-engine.js';
 import { RANKS, getRankForXP, getNextRank } from './ranks.js';
 import { MISSION_POOL, TIER_LABELS, calcMissionProgress, pickNewMission } from './missions.js';
 import { checkAchievements, ACHIEVEMENTS, SECRET_ACHIEVEMENTS, ACH_TIER_LABELS } from './achievements.js';
@@ -450,7 +450,7 @@ function renderDashboard() {
             <div class="recent-name">${fmtDateShort(s.date)}</div>
             <div class="recent-meta">${shiftLabel(s.type)} · +${s.xpEarned} XP · ${s.patientCount} Pat.</div>
           </div>
-          <span style="font-size:12px;color:var(--text-dim)">›</span>
+          ${!s.note ? '<span class="shift-no-log-badge" title="Kein Dienst-Log — Bonus-XP verfügbar!">📝</span>' : '<span style="font-size:12px;color:var(--text-dim)">›</span>'}
         </div>`).join('')
     : '<div class="empty-state">Noch keine Dienste geloggt.</div>';
 
@@ -808,21 +808,18 @@ function renderDiagnosisDetail(diagnosis, savedChecked = []) {
   const hasBack = state.diagCatchStack.length > 0;
   document.getElementById('diag-detail-header').innerHTML = `
     ${hasBack ? '<button class="cat-detail-back" id="diag-catch-back-btn">← Zurück</button>' : ''}
-    <div class="cat-detail-hero">
-      <div class="cat-detail-img-wrap">
-        <img src="assets/images/diagnoses/${diagnosis.code.toLowerCase()}.png" class="cat-detail-img" alt=""
-             onerror="this.style.display='none'">
-      </div>
-      <div class="cat-detail-heading">
-        <div class="diag-code-big">${diagnosis.code}</div>
-        <div class="diag-name-big" style="font-size:14px">${diagnosis.name}</div>
-        <div class="xp-preview-chips" style="margin-top:6px">
-          <span class="xp-chip base">Basis: ${preview.base} XP</span>
-          <span style="font-size:10px;font-weight:700;color:${rarColor}">${rarLabel}</span>
-          ${preview.isFirstDiag   ? '<span class="xp-chip bonus-diag">+150</span>' : ''}
-          ${preview.isFirstKat    ? '<span class="xp-chip bonus-kat">+300 Kat!</span>' : ''}
-          ${preview.komorbidBonus ? '<span class="xp-chip bonus-k">+20%</span>' : ''}
-        </div>
+    <div class="cat-detail-img-banner">
+      <img src="assets/images/diagnoses/${diagnosis.code.toLowerCase()}.png" class="cat-detail-img-full" alt=""
+           onerror="this.parentElement.style.display='none'">
+    </div>
+    <div class="cat-detail-heading">
+      <div class="diag-code-big">${diagnosis.code}</div>
+      <div class="diag-name-big" style="font-size:14px">${diagnosis.name}</div>
+      <div class="xp-preview-chips" style="margin-top:6px">
+        <span class="xp-chip base">Basis: ${preview.base} XP</span>
+        <span style="font-size:10px;font-weight:700;color:${rarColor}">${rarLabel}</span>
+        ${preview.isFirstDiag   ? '<span class="xp-chip bonus-diag">+50 Erste!</span>' : ''}
+        ${preview.komorbidBonus ? '<span class="xp-chip bonus-k">+20%</span>' : ''}
       </div>
     </div>`;
 
@@ -1117,7 +1114,7 @@ async function finishShift() {
   try {
     const flameBonus  = calculateFlameBonus(state.activeShift.date);
     const diagnosisXP = state.activeShift.patients.flatMap(p => p.diagnoses).reduce((s, d) => s + d.xpEarned, 0);
-    const totalXP     = Math.min(state.activeShift.xpBase + flameBonus + diagnosisXP, MAX_SHIFT_XP);
+    const totalXP     = state.activeShift.xpBase + flameBonus + diagnosisXP;
 
     const shiftId = await db.shiftLogs.add({
       date: state.activeShift.date, type: state.activeShift.type,
@@ -1808,6 +1805,9 @@ function renderShiftDetailBody(shift) {
     db.shiftLogs.update(shift.id, { patientCount: actualPatientCount });
     shift.patientCount = actualPatientCount;
   }
+  const noteXPPreview = !shift.noteAddedAt
+    ? `+${calculateNoteXP(shift.date, new Date().toISOString())} XP jetzt`
+    : '';
   let html = `
     <div class="shift-detail-header">
       <div class="shift-detail-info">
@@ -1819,6 +1819,15 @@ function renderShiftDetailBody(shift) {
         </div>
       </div>
       <button class="btn-icon" id="btn-edit-this-shift" data-id="${shift.id}" title="Bearbeiten">✎</button>
+    </div>
+    <div class="shift-note-section">
+      <div class="shift-note-header">
+        <span class="shift-note-label">📝 Dienst-Log</span>
+        ${!shift.noteAddedAt
+          ? `<span class="shift-note-xp-hint">Noch kein Log — jetzt schreiben für <strong>${noteXPPreview}</strong></span>`
+          : `<span class="shift-note-timestamp">Geloggt: ${fmtDateTime(shift.noteAddedAt)}</span>`}
+      </div>
+      <textarea class="shift-note-textarea" id="shift-note-area" placeholder="Wie war der Dienst? Besondere Fälle, Eindrücke, Lernpunkte…" rows="4">${shift.note || ''}</textarea>
     </div>
     <div class="shift-extend-row">
       <span class="shift-extend-label">Gesamt: <span id="shift-ext-display" class="shift-ext-val">${extLabel}</span></span>
@@ -1931,6 +1940,51 @@ function renderShiftDetailBody(shift) {
       deleteShiftPatient(btn.dataset.pkey, shift);
     });
   });
+
+  const noteArea = body.querySelector('#shift-note-area');
+  if (noteArea) {
+    let noteTimer = null;
+    noteArea.addEventListener('input', () => {
+      clearTimeout(noteTimer);
+      noteTimer = setTimeout(() => saveShiftNote(shift, noteArea.value), 1200);
+    });
+    noteArea.addEventListener('blur', () => {
+      clearTimeout(noteTimer);
+      saveShiftNote(shift, noteArea.value);
+    });
+  }
+}
+
+async function saveShiftNote(shift, noteText) {
+  const hadNote = !!(shift.note && shift.note.trim().length > 0);
+  const isNew   = !hadNote && noteText.trim().length > 0;
+  const now     = new Date().toISOString();
+  const updates = { note: noteText };
+  if (isNew) updates.noteAddedAt = now;
+
+  await db.shiftLogs.update(shift.id, updates);
+  shift.note = noteText;
+
+  if (isNew) {
+    shift.noteAddedAt = now;
+    const noteXP = calculateNoteXP(shift.date, now);
+    const oldXP  = state.profile.totalXP ?? 0;
+    const newXP  = oldXP + noteXP;
+    await db.profile.update(state.profile.id, { totalXP: newXP });
+    state.profile.totalXP = newXP;
+    state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+
+    const header = document.querySelector('.shift-note-header');
+    if (header) {
+      header.innerHTML = `<span class="shift-note-label">📝 Dienst-Log</span><span class="shift-note-timestamp">Geloggt: ${fmtDateTime(now)}</span>`;
+    }
+    showXPPopup(noteXP, [{ label: 'Dienst geloggt!', xp: noteXP }]);
+    updateHeader();
+    checkLevelUp(newXP, oldXP);
+    applyAchievements();
+  } else {
+    state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+  }
 }
 
 function togglePatientEditRow(pkey, shiftId, patientMap) {
@@ -2071,20 +2125,18 @@ async function saveToExistingShiftPatient(diagnosis, hasComorbidity, xpResult, s
     caughtAt: new Date().toISOString()
   });
 
-  const maxCanAdd  = Math.max(0, MAX_SHIFT_XP - (shift.xpEarned || 0));
-  const addedXP    = Math.min(xpResult.total, maxCanAdd);
-  const newShiftXP = (shift.xpEarned || 0) + addedXP;
+  const newShiftXP = (shift.xpEarned || 0) + xpResult.total;
   const newPatCount = patientKey == null ? (shift.patientCount || 0) + 1 : shift.patientCount;
   await db.shiftLogs.update(shiftId, { xpEarned: newShiftXP, patientCount: newPatCount });
 
   const oldXP = state.profile.totalXP ?? 0;
-  const newXP = oldXP + addedXP;
+  const newXP = oldXP + xpResult.total;
   await db.profile.update(state.profile.id, { totalXP: newXP });
   state.profile.totalXP = newXP;
   state.shifts  = await db.shiftLogs.orderBy('date').reverse().toArray();
   state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
 
-  showXPPopup(addedXP, xpResult.bonuses);
+  showXPPopup(xpResult.total, xpResult.bonuses);
   updateHeader();
   if (state.currentTab === 'dashboard') renderDashboard();
   checkLevelUp(newXP, oldXP);
@@ -2480,6 +2532,10 @@ function renderDiagInfoBody(code) {
   document.getElementById('diag-info-title').textContent = diag.code;
   document.getElementById('diag-info-body').innerHTML = `
     ${state.diagInfoStack.length > 0 ? `<button class="diag-info-back" id="diag-info-back-btn">← Zurück</button>` : ''}
+    <div class="cat-detail-img-banner">
+      <img src="assets/images/diagnoses/${diag.code.toLowerCase()}.png" class="cat-detail-img-full" alt=""
+           onerror="this.parentElement.style.display='none'">
+    </div>
     <div class="diag-detail-header">
       <div class="diag-code-big">${diag.code}</div>
       <div class="diag-name-big">${diag.name}</div>
@@ -2847,7 +2903,7 @@ async function recalculateXP() {
     const shiftDate  = new Date(shift.date);
     const flame      = (createdAt - shiftDate) / 3600000 <= 24 ? 25 : 0;
     const catchSum   = (catchesByShift[shift.id] || []).reduce((s, c) => s + c.xpEarned, 0);
-    const newShiftXP = Math.min(shiftBase + flame + catchSum, MAX_SHIFT_XP);
+    const newShiftXP = shiftBase + flame + catchSum;
     await db.shiftLogs.update(shift.id, { xpEarned: newShiftXP });
     totalXP += newShiftXP;
   }
@@ -2872,6 +2928,11 @@ async function recalculateXP() {
     const def = MISSION_POOL.find(x => x.id === m.missionId);
     return sum + (def?.reward ?? 0);
   }, 0);
+
+  // Shift notes
+  totalXP += allShifts
+    .filter(s => s.noteAddedAt)
+    .reduce((sum, s) => sum + calculateNoteXP(s.date, s.noteAddedAt), 0);
 
   await db.profile.update(state.profile.id, { totalXP });
   state.profile.totalXP = totalXP;
