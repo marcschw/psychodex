@@ -1804,11 +1804,16 @@ function renderShiftDetailBody(shift) {
   const extMins  = shift.extensionMinutes || 0;
   const shiftH   = calcShiftHours(shift).toFixed(1).replace('.0','');
   const extLabel = extMins > 0 ? `+${extMins}min (${shiftH}h)` : `${shiftH}h`;
+  const actualPatientCount = patientMap.size;
+  if (shift.patientCount !== actualPatientCount) {
+    db.shiftLogs.update(shift.id, { patientCount: actualPatientCount });
+    shift.patientCount = actualPatientCount;
+  }
   let html = `
     <div class="shift-detail-header">
       <div class="shift-detail-info">
         <div class="shift-detail-date">${shiftIcon(shift.type)} ${fmtDateShort(shift.date)} · ${shiftLabel(shift.type)}</div>
-        <div class="shift-detail-meta">+${shift.xpEarned} XP · ${shift.patientCount} Patient(en)</div>
+        <div class="shift-detail-meta">+${shift.xpEarned} XP · ${actualPatientCount} Patient(en)</div>
         <div class="shift-timestamps">
           <span>📅 ${fmtDateTime(shift.createdAt)}</span>
           ${shift.updatedAt ? `<span>✏️ ${fmtDateTime(shift.updatedAt)}</span>` : ''}
@@ -1844,7 +1849,7 @@ function renderShiftDetailBody(shift) {
       <div class="patient-diags" id="pdiags-${shift.id}-${p.index}">`;
 
     p.catches.forEach(c => {
-      html += `<div class="patient-diag-row">
+      html += `<div class="patient-diag-row pd-row-clickable" data-code="${c.code}">
         <div class="pd-thumb">
           <img src="assets/images/diagnoses/${c.code.toLowerCase()}.png" class="pd-thumb-img" alt=""
                onerror="this.style.display='none'" loading="lazy">
@@ -1884,6 +1889,13 @@ function renderShiftDetailBody(shift) {
   body.querySelector('#btn-ext-minus')?.addEventListener('click', async () => {
     const curr = shift.extensionMinutes || 0;
     if (curr >= 15) await setShiftExtension(shift.id, curr - 15);
+  });
+
+  body.querySelectorAll('.pd-row-clickable').forEach(row => {
+    row.addEventListener('click', e => {
+      if (e.target.closest('.btn-delete-shift-catch')) return;
+      openDiagInfoModal(row.dataset.code);
+    });
   });
 
   body.querySelectorAll('.btn-delete-shift-catch').forEach(btn => {
