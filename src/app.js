@@ -536,7 +536,7 @@ function showStep(id) {
 function addPatientCard() {
   if (!state.activeShift) return;
   const idx = state.activeShift.patients.length;
-  state.activeShift.patients.push({ ageGroup: '31-50', gender: 'weiblich', patientType: 'erstgespraech', time: null, diagnoses: [] });
+  state.activeShift.patients.push({ ageGroup: '31-50', gender: 'weiblich', patientType: 'interview', time: null, diagnoses: [] });
   document.getElementById('patient-list').appendChild(buildPatientCard(idx, state.activeShift.patients[idx]));
 }
 
@@ -544,7 +544,7 @@ function buildPatientCard(idx, patient) {
   const card = document.createElement('div');
   card.className = 'patient-card';
   card.id = `patient-card-${idx}`;
-  const pt = patient.patientType || 'erstgespraech';
+  const pt = patient.patientType || 'interview';
   card.innerHTML = `
     <div class="patient-header">
       <span class="patient-num">Patient ${idx + 1}</span>
@@ -1836,7 +1836,10 @@ function renderShiftDetailBody(shift) {
           <div class="patient-section-label">Patient ${pNum}</div>
           <div class="patient-section-demo">${demoLabel}</div>
         </div>
-        <button class="btn-icon btn-edit-patient-demo" data-pkey="${p.index}" title="Demografik bearbeiten">✎</button>
+        <div style="display:flex;gap:4px">
+          <button class="btn-icon btn-edit-patient-demo" data-pkey="${p.index}" title="Demografik bearbeiten">✎</button>
+          <button class="btn-icon btn-delete-shift-patient" data-pkey="${p.index}" title="Patient löschen">🗑</button>
+        </div>
       </div>
       <div class="patient-diags" id="pdiags-${shift.id}-${p.index}">`;
 
@@ -1910,6 +1913,13 @@ function renderShiftDetailBody(shift) {
   body.querySelectorAll('.btn-edit-patient-demo').forEach(btn => {
     btn.addEventListener('click', () => togglePatientEditRow(btn.dataset.pkey, shift.id, patientMap));
   });
+
+  body.querySelectorAll('.btn-delete-shift-patient').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      deleteShiftPatient(btn.dataset.pkey, shift);
+    });
+  });
 }
 
 function togglePatientEditRow(pkey, shiftId, patientMap) {
@@ -1971,6 +1981,25 @@ async function deleteShiftCatch(catchId, shift) {
   state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
   updateHeader();
   // Re-render shift detail
+  const updatedShift = state.shifts.find(s => s.id === shift.id);
+  if (updatedShift) renderShiftDetailBody(updatedShift);
+}
+
+async function deleteShiftPatient(pkey, shift) {
+  const patientCatches = state.catches.filter(c => c.shiftId === shift.id &&
+    (c.patientIndex != null ? String(c.patientIndex) === String(pkey) : `${c.ageGroup}-${c.gender}-${c.patientType}` === pkey));
+  if (!confirm(`Patient mit ${patientCatches.length} Diagnose(n) wirklich löschen?`)) return;
+  const removedXP = patientCatches.reduce((s, c) => s + (c.xpEarned ?? 0), 0);
+  for (const c of patientCatches) await db.caughtDiagnoses.delete(c.id);
+  const newShiftXP = Math.max(0, (shift.xpEarned || 0) - removedXP);
+  const newPatientCount = Math.max(0, (shift.patientCount || 1) - 1);
+  await db.shiftLogs.update(shift.id, { xpEarned: newShiftXP, patientCount: newPatientCount });
+  const newTotal = Math.max(0, (state.profile.totalXP ?? 0) - removedXP);
+  await db.profile.update(state.profile.id, { totalXP: newTotal });
+  state.profile.totalXP = newTotal;
+  state.shifts  = await db.shiftLogs.orderBy('date').reverse().toArray();
+  state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
+  updateHeader();
   const updatedShift = state.shifts.find(s => s.id === shift.id);
   if (updatedShift) renderShiftDetailBody(updatedShift);
 }
