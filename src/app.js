@@ -2778,7 +2778,14 @@ function openXPInfoModal() {
 // ─── Rank Table Modal ─────────────────────────────────────────────────────────
 function buildXPTimeline() {
   const events = [];
-  state.shifts.forEach(s => { if (s.createdAt) events.push({ time: s.createdAt, xp: s.xpEarned || 0 }); });
+  // Use shift.date (actual shift day) as event time — not createdAt (logging day)
+  state.shifts.forEach(s => {
+    const time = s.date ? s.date + 'T12:00:00.000Z' : s.createdAt;
+    if (time) events.push({ time, xp: s.xpEarned || 0 });
+    if (s.noteAddedAt && s.note?.trim()) {
+      events.push({ time: s.noteAddedAt, xp: calculateNoteXP(s.date, s.noteAddedAt) });
+    }
+  });
   state.catches.filter(c => !c.shiftId).forEach(c => { if (c.caughtAt) events.push({ time: c.caughtAt, xp: c.xpEarned || 0 }); });
   (state.unlockedAchievements || []).forEach(a => {
     if (!a.unlockedAt) return;
