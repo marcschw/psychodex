@@ -2723,6 +2723,18 @@ function buildXPTimeline() {
   const events = [];
   state.shifts.forEach(s => { if (s.createdAt) events.push({ time: s.createdAt, xp: s.xpEarned || 0 }); });
   state.catches.filter(c => !c.shiftId).forEach(c => { if (c.caughtAt) events.push({ time: c.caughtAt, xp: c.xpEarned || 0 }); });
+  (state.unlockedAchievements || []).forEach(a => {
+    if (!a.unlockedAt) return;
+    const def = ACHIEVEMENTS.find(x => x.id === a.badgeId);
+    if (def) { events.push({ time: a.unlockedAt, xp: def.tiers[a.tier - 1]?.xp ?? 0 }); return; }
+    const sec = SECRET_ACHIEVEMENTS.find(x => x.id === a.badgeId);
+    if (sec) events.push({ time: a.unlockedAt, xp: sec.xp ?? 0 });
+  });
+  (state.missions || []).forEach(m => {
+    if (!m.completedAt) return;
+    const def = MISSION_POOL.find(x => x.id === m.missionId);
+    if (def) events.push({ time: m.completedAt, xp: def.reward ?? 0 });
+  });
   events.sort((a, b) => a.time.localeCompare(b.time));
   let running = 0;
   return events.map(e => { running += e.xp; return { ...e, total: running }; });
