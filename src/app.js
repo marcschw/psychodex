@@ -1,6 +1,6 @@
 import db from './db.js';
 import { loadAllICD, searchDiagnoses } from './icd-loader.js';
-import { calculateCatchXP, calculateFlameBonus } from './xp-engine.js';
+import { calculateCatchXP, calculateShiftXP, calculateFlameBonus } from './xp-engine.js';
 import { RANKS, getRankForXP, getNextRank } from './ranks.js';
 import { MISSION_POOL, TIER_LABELS, calcMissionProgress, pickNewMission } from './missions.js';
 import { checkAchievements, ACHIEVEMENTS, SECRET_ACHIEVEMENTS, ACH_TIER_LABELS } from './achievements.js';
@@ -2784,20 +2784,67 @@ function openRankTableModal() {
 }
 
 async function recalculateXP() {
-  if (!confirm('XP komplett neu berechnen?\n\nAlle XP werden aus gespeicherten Diensten, Diagnosen, Achievements und Missionen neu summiert.')) return;
+  if (!confirm('XP komplett neu berechnen?\n\nAlle Diagnosen werden mit der aktuellen Formel neu kalkuliert und gespeichert.')) return;
 
   const btn = document.getElementById('recalc-xp-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Berechne…'; }
 
-  const shifts   = await db.shiftLogs.toArray();
-  const catches  = await db.caughtDiagnoses.toArray();
-  const missions = await db.missions.toArray();
+  // All catches in chronological order to replay bonus logic correctly
+  const allCatches = await db.caughtDiagnoses.orderBy('caughtAt').toArray();
+
+  const seenCodes = new Set();
+  const seenKats  = new Set();
+  const patientCatchCount = new Map(); // "shiftId_patientIndex" → count
+
+  for (const c of allCatches) {
+    const diagDef    = state.icdFlat.find(d => d.code === c.code);
+    const seltenheit = diagDef?.seltenheit_score ?? 5;
+    const kat        = normalizeKat(c.kategorie);
+
+    const patKey        = `${c.shiftId}_${c.patientIndex}`;
+    const prevCount     = patientCatchCount.get(patKey) ?? 0;
+    const hasComorbidity = c.shiftId != null && c.patientIndex != null && prevCount >= 1;
+
+    const result = calculateCatchXP(
+      { code: c.code, seltenheit_score: seltenheit, kategorie: kat },
+      hasComorbidity, seenCodes, seenKats
+    );
+
+    await db.caughtDiagnoses.update(c.id, { xpEarned: result.total });
+    c.xpEarned = result.total;
+
+    seenCodes.add(c.code);
+    seenKats.add(kat);
+    patientCatchCount.set(patKey, prevCount + 1);
+  }
+
+  // Recalculate each shift's xpEarned = base + flame + catches
+  const allShifts = await db.shiftLogs.toArray();
+  const catchesByShift = {};
+  allCatches.forEach(c => {
+    if (c.shiftId != null) {
+      (catchesByShift[c.shiftId] = catchesByShift[c.shiftId] || []).push(c);
+    }
+  });
+
+  let totalXP = 0;
+  for (const shift of allShifts) {
+    const shiftBase  = calculateShiftXP(shift.type);
+    const createdAt  = new Date(shift.createdAt || shift.date);
+    const shiftDate  = new Date(shift.date);
+    const flame      = (createdAt - shiftDate) / 3600000 <= 24 ? 25 : 0;
+    const catchSum   = (catchesByShift[shift.id] || []).reduce((s, c) => s + c.xpEarned, 0);
+    const newShiftXP = shiftBase + flame + catchSum;
+    await db.shiftLogs.update(shift.id, { xpEarned: newShiftXP });
+    totalXP += newShiftXP;
+  }
+
+  // Standalone catches (no shift)
+  totalXP += allCatches.filter(c => c.shiftId == null).reduce((s, c) => s + c.xpEarned, 0);
+
+  // Achievements
   const unlocked = await db.unlockedAchievements.toArray();
-
-  const shiftXP  = shifts.reduce((s, sh) => s + (sh.xpEarned ?? 0), 0);
-  const catchXP  = catches.reduce((s, c)  => s + (c.xpEarned  ?? 0), 0);
-
-  const achievementXP = unlocked.reduce((sum, a) => {
+  totalXP += unlocked.reduce((sum, a) => {
     const def = ACHIEVEMENTS.find(x => x.id === a.badgeId);
     if (def) return sum + (def.tiers[a.tier - 1]?.xp ?? 0);
     const sec = SECRET_ACHIEVEMENTS.find(x => x.id === a.badgeId);
@@ -2805,15 +2852,18 @@ async function recalculateXP() {
     return sum;
   }, 0);
 
-  const missionXP = missions.reduce((sum, m) => {
+  // Missions
+  const missions = await db.missions.toArray();
+  totalXP += missions.reduce((sum, m) => {
     if (!m.completedAt) return sum;
     const def = MISSION_POOL.find(x => x.id === m.missionId);
     return sum + (def?.reward ?? 0);
   }, 0);
 
-  const newXP = shiftXP + catchXP + achievementXP + missionXP;
-  await db.profile.update(state.profile.id, { totalXP: newXP });
-  state.profile.totalXP = newXP;
+  await db.profile.update(state.profile.id, { totalXP });
+  state.profile.totalXP = totalXP;
+  state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
+  state.shifts  = await db.shiftLogs.orderBy('date').reverse().toArray();
 
   updateHeader();
   renderDashboard();
