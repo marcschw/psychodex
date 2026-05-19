@@ -1,6 +1,6 @@
 import db from './db.js';
 import { loadAllICD, searchDiagnoses } from './icd-loader.js';
-import { calculateCatchXP, calculateShiftXP, calculateFlameBonus, calculateNoteXP } from './xp-engine.js';
+import { calculateCatchXP, calculateShiftXP, calculateFlameBonus, calculateNoteXP, SLOT_TYPES, SHIFT_HOURS, MEAL_HINTS, SLOT_TIPS } from './xp-engine.js';
 import { RANKS, getRankForXP, getNextRank } from './ranks.js';
 import { MISSION_POOL, TIER_LABELS, calcMissionProgress, pickNewMission } from './missions.js';
 import { checkAchievements, ACHIEVEMENTS, SECRET_ACHIEVEMENTS, ACH_TIER_LABELS } from './achievements.js';
@@ -27,7 +27,12 @@ const state = {
   missions: [],
   unlockedAchievements: [],
   currentCategoryCode: null,
-  diagCatchStack: []        // [{code, checkedKeys}] for back-navigation in catch modal
+  diagCatchStack: [],       // [{code, checkedKeys}] for back-navigation in catch modal
+  plannerShiftId: null,     // ID of the currently open planner shift
+  plannerSlots: [],         // schedule slots for the open planner shift
+  slotAddContext: null,     // { shiftId, startH, startM, selectedType, flags:[]}
+  alarmFired: new Set(),    // set of slot IDs that already triggered alarm
+  alarmInterval: null,
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -246,6 +251,7 @@ async function init() {
     setupRankTableModal();
     setupSettingsInputs();
     setupDashboardCardListeners();
+    setupPlannerListeners();
     setupEscapeKey();
     setDefaultDate();
     document.getElementById('loading-screen').classList.add('fade-out');
@@ -335,7 +341,7 @@ function navigateTo(tab) {
   if (tabEl) tabEl.classList.add('active');
   if (btnEl) btnEl.classList.add('active');
   if (tab === 'dashboard') renderDashboard();
-  if (tab === 'log') resetShiftForm();
+  if (tab === 'log') renderPlannerTab();
   if (tab === 'dex') renderPsychoDex();
   if (tab === 'stats') renderStats();
 }
@@ -457,6 +463,24 @@ function renderDashboard() {
   shiftEl.querySelectorAll('.shift-item-clickable').forEach(item => {
     item.addEventListener('click', () => openShiftDetailModal(parseInt(item.dataset.id)));
   });
+
+  // Active planner shift banner
+  const plannerBannerEl = document.getElementById('dashboard-planner-banner');
+  if (plannerBannerEl) {
+    const openShift = state.shifts.find(s => s.plannerActive);
+    if (openShift) {
+      plannerBannerEl.innerHTML = `
+        <div class="planner-dash-banner">
+          <span>${shiftIcon(openShift.type)} <strong>${fmtDateShort(openShift.date)} · ${shiftLabel(openShift.type)}</strong> läuft</span>
+          <button class="btn-secondary" style="font-size:11px;padding:4px 10px"
+            id="btn-goto-planner">Zum Planer →</button>
+        </div>`;
+      plannerBannerEl.querySelector('#btn-goto-planner')
+        ?.addEventListener('click', () => navigateTo('log'));
+    } else {
+      plannerBannerEl.innerHTML = '';
+    }
+  }
 }
 
 // ─── Streak ───────────────────────────────────────────────────────────────────
@@ -490,31 +514,419 @@ function calcStreak(shifts) {
   return { count, frozen };
 }
 
-// ─── Shift Form ───────────────────────────────────────────────────────────────
-function setDefaultDate() {
-  const el = document.getElementById('shift-date');
-  if (el) el.value = new Date().toISOString().split('T')[0];
+// ─── Planner ──────────────────────────────────────────────────────────────────
+const padT = (h, m) => `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+const toMins = (h, m) => h * 60 + m;
+
+function shiftHours(type) { return SHIFT_HOURS[type] || SHIFT_HOURS['früh']; }
+
+async function renderPlannerTab() {
+  // Find any open planner shift
+  const openShift = state.shifts.find(s => s.plannerActive);
+  state.plannerShiftId = openShift?.id ?? null;
+
+  document.getElementById('planner-no-shift').classList.toggle('hidden', !!openShift);
+  document.getElementById('planner-active-shift').classList.toggle('hidden', !openShift);
+
+  if (!openShift) {
+    // Set default date
+    const dateEl = document.getElementById('planner-date');
+    if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
+    renderPlannerPastShifts();
+    return;
+  }
+
+  // Load slots
+  state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(openShift.id).sortBy('startHour');
+
+  // Header
+  document.getElementById('planner-shift-title').textContent =
+    `${shiftIcon(openShift.type)} ${fmtDateShort(openShift.date)} · ${shiftLabel(openShift.type)}`;
+  updatePlannerXP(openShift);
+  renderTimeline(openShift);
+  startAlarmScheduler();
 }
 
-function setupShiftListeners() {
-  document.querySelectorAll('#step-shift-info .type-btn').forEach(btn => {
+function updatePlannerXP(shift) {
+  const slotTotal = state.plannerSlots.reduce((s, sl) => s + (sl.xpEarned || 0), 0);
+  const base = calculateShiftXP(shift.type);
+  const flame = calculateFlameBonus(shift.date);
+  document.getElementById('planner-shift-xp').textContent =
+    `${base + flame} Basis-XP + ${slotTotal} Slot-XP · gesamt ${shift.xpEarned || 0} XP`;
+}
+
+function renderTimeline(shift) {
+  const { start, end } = shiftHours(shift.type);
+  const startM = toMins(...start);
+  const endM   = toMins(...end);
+  const meals  = (MEAL_HINTS[shift.type] || []).map(h => ({ ...h, mins: toMins(h.h, h.m) }));
+
+  // Build a sorted list of slot time ranges
+  const slots = [...state.plannerSlots].sort((a, b) => toMins(a.startHour, a.startMinute) - toMins(b.startHour, b.startMinute));
+
+  // Build rows: gap → slot → gap → meal hints in gaps → ...
+  const rows = [];
+  let cursor = startM;
+
+  const pushGaps = (from, to) => {
+    // Insert meal hints within the gap
+    const inRange = meals.filter(m => m.mins >= from && m.mins < to);
+    inRange.sort((a, b) => a.mins - b.mins);
+    let c = from;
+    for (const m of inRange) {
+      if (c < m.mins) rows.push({ kind:'gap', from:c, to:m.mins });
+      rows.push({ kind:'meal', ...m });
+      c = m.mins;
+    }
+    if (c < to) rows.push({ kind:'gap', from:c, to });
+  };
+
+  for (const slot of slots) {
+    const slotStart = toMins(slot.startHour, slot.startMinute);
+    const slotEnd   = toMins(slot.endHour, slot.endMinute);
+    if (cursor < slotStart) pushGaps(cursor, slotStart);
+    rows.push({ kind:'slot', slot });
+    cursor = slotEnd;
+  }
+  if (cursor < endM) pushGaps(cursor, endM);
+
+  const tl = document.getElementById('planner-timeline');
+  tl.innerHTML = rows.map(row => {
+    if (row.kind === 'meal') {
+      return `<div class="tl-meal">${row.icon} ${row.label}</div>`;
+    }
+    if (row.kind === 'gap') {
+      const label = padT(Math.floor(row.from/60), row.from%60);
+      return `<button class="tl-gap" data-startm="${row.from}" data-endm="${row.to}">
+        <span class="tl-gap-time">${label}</span>
+        <span class="tl-gap-add">＋ Eintrag</span>
+      </button>`;
+    }
+    // slot
+    const { slot } = row;
+    const def = SLOT_TYPES[slot.type] || {};
+    const flags = slot.flags?.length ? slot.flags.map(f => `<span class="slot-flag">${f.toUpperCase()}</span>`).join('') : '';
+    const commentHtml = slot.comment ? `<div class="tl-slot-comment">${slot.comment}</div>` : '';
+    return `<div class="tl-slot slot-${slot.type}" data-slot-id="${slot.id}">
+      <div class="tl-slot-main">
+        <span class="tl-slot-icon">${def.icon}</span>
+        <div class="tl-slot-info">
+          <div class="tl-slot-label">${def.label} ${flags}</div>
+          <div class="tl-slot-time">${padT(slot.startHour,slot.startMinute)}–${padT(slot.endHour,slot.endMinute)} · +${slot.xpEarned} XP</div>
+          ${commentHtml}
+        </div>
+        <button class="tl-slot-delete btn-icon" data-slot-id="${slot.id}" title="Löschen">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Wire gaps → slot add
+  tl.querySelectorAll('.tl-gap').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('#step-shift-info .type-btn').forEach(b => b.classList.remove('active'));
+      const startM2 = parseInt(btn.dataset.startm);
+      openSlotAddModal(shift.id, Math.floor(startM2/60), startM2%60);
+    });
+  });
+
+  // Wire slot clicks → tips/detail
+  tl.querySelectorAll('.tl-slot').forEach(el => {
+    el.addEventListener('click', e => {
+      if (e.target.closest('.tl-slot-delete')) return;
+      const slot = state.plannerSlots.find(s => s.id === parseInt(el.dataset.slotId));
+      if (slot) openSlotDetailModal(slot);
+    });
+  });
+
+  // Wire delete buttons
+  tl.querySelectorAll('.tl-slot-delete').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      await deleteSlot(parseInt(btn.dataset.slotId), shift);
+    });
+  });
+}
+
+function renderPlannerPastShifts() {
+  const el = document.getElementById('planner-past-shifts');
+  const recent = state.shifts.filter(s => !s.plannerActive).slice(0, 5);
+  el.innerHTML = recent.length
+    ? recent.map(s => `
+        <div class="recent-item shift-item-clickable" data-id="${s.id}" style="cursor:pointer">
+          <div class="shift-icon">${shiftIcon(s.type)}</div>
+          <div class="recent-info">
+            <div class="recent-name">${fmtDateShort(s.date)}</div>
+            <div class="recent-meta">${shiftLabel(s.type)} · +${s.xpEarned} XP</div>
+          </div>
+          <span style="font-size:12px;color:var(--text-dim)">›</span>
+        </div>`).join('')
+    : '<div class="empty-state">Noch keine Dienste geloggt.</div>';
+  el.querySelectorAll('.shift-item-clickable').forEach(item =>
+    item.addEventListener('click', () => openShiftDetailModal(parseInt(item.dataset.id))));
+}
+
+function setupPlannerListeners() {
+  // Type buttons in planner
+  document.querySelectorAll('#planner-type-selector .type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#planner-type-selector .type-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     });
   });
-  document.getElementById('btn-next-to-patients').addEventListener('click', goToPatients);
-  document.getElementById('btn-back-to-info').addEventListener('click', goBackToInfo);
-  document.getElementById('btn-add-patient').addEventListener('click', addPatientCard);
-  document.getElementById('btn-finish-shift').addEventListener('click', finishShift);
+
+  document.getElementById('btn-start-planner-shift').addEventListener('click', startPlannerShift);
+  document.getElementById('btn-close-planner-shift').addEventListener('click', closePlannerShift);
+  document.getElementById('slot-add-close').addEventListener('click', () => document.getElementById('slot-add-modal').classList.add('hidden'));
+  document.getElementById('slot-add-backdrop').addEventListener('click', () => document.getElementById('slot-add-modal').classList.add('hidden'));
+  document.getElementById('btn-save-slot').addEventListener('click', saveSlot);
+  document.getElementById('slot-detail-close').addEventListener('click', () => document.getElementById('slot-detail-modal').classList.add('hidden'));
+  document.getElementById('slot-detail-backdrop').addEventListener('click', () => document.getElementById('slot-detail-modal').classList.add('hidden'));
+
+  // Slot type buttons inside add modal
+  const grid = document.getElementById('slot-type-grid');
+  grid.innerHTML = Object.entries(SLOT_TYPES).map(([key, def]) =>
+    `<button class="slot-type-btn" data-type="${key}">
+       <span>${def.icon}</span>
+       <span>${def.label}</span>
+       <span class="slot-type-xp">+${def.xp} XP</span>
+     </button>`
+  ).join('');
+  grid.querySelectorAll('.slot-type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      grid.querySelectorAll('.slot-type-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const def = SLOT_TYPES[btn.dataset.type];
+      const flagsRow = document.getElementById('slot-flags-row');
+      flagsRow.classList.toggle('hidden', btn.dataset.type !== 'erstgespraech');
+      // Auto-set end time for fixed-duration types
+      if (def.fixed && state.slotAddContext) {
+        const endMins = toMins(state.slotAddContext.startH, state.slotAddContext.startM) + def.durationH * 60 + def.durationM;
+        document.getElementById('slot-end-time').value = padT(Math.floor(endMins/60), endMins%60);
+      }
+      if (state.slotAddContext) state.slotAddContext.selectedType = btn.dataset.type;
+    });
+  });
+
+  document.querySelectorAll('.flag-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.classList.toggle('active');
+      const flag = btn.dataset.flag;
+      if (!state.slotAddContext) return;
+      const flags = state.slotAddContext.flags;
+      if (btn.classList.contains('active')) { if (!flags.includes(flag)) flags.push(flag); }
+      else { state.slotAddContext.flags = flags.filter(f => f !== flag); }
+    });
+  });
+}
+
+async function startPlannerShift() {
+  const dateVal = document.getElementById('planner-date').value;
+  if (!dateVal) { alert('Bitte Datum auswählen.'); return; }
+  const activeBtn = document.querySelector('#planner-type-selector .type-btn.active');
+  const type = activeBtn?.dataset.type || 'früh';
+  const xpBase = parseInt(activeBtn?.dataset.xp || '65');
+  const flame  = calculateFlameBonus(dateVal);
+
+  const shiftId = await db.shiftLogs.add({
+    date: dateVal, type, xpEarned: xpBase + flame,
+    patientCount: 0, plannerActive: true, createdAt: new Date().toISOString()
+  });
+
+  const oldXP = state.profile.totalXP ?? 0;
+  const newXP = oldXP + xpBase + flame;
+  await db.profile.update(state.profile.id, { totalXP: newXP });
+  state.profile.totalXP = newXP;
+  state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+  state.plannerShiftId = shiftId;
+  state.plannerSlots = [];
+  state.alarmFired = new Set();
+
+  updateHeader();
+  showXPPopup(xpBase + flame, [{ label: `${shiftLabel(type)} gestartet`, xp: xpBase + flame }]);
+  checkLevelUp(newXP, oldXP);
+  renderPlannerTab();
+}
+
+async function closePlannerShift() {
+  if (!state.plannerShiftId) return;
+  if (!confirm('Dienst abschließen? Keine weiteren Einträge danach.')) return;
+  await db.shiftLogs.update(state.plannerShiftId, { plannerActive: false });
+  state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+  state.plannerShiftId = null;
+  state.plannerSlots   = [];
+  stopAlarmScheduler();
+  renderPlannerTab();
+  renderDashboard();
+}
+
+function openSlotAddModal(shiftId, startH, startM) {
+  state.slotAddContext = { shiftId, startH, startM, selectedType: null, flags: [] };
+
+  // Reset UI
+  document.querySelectorAll('#slot-type-grid .slot-type-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('slot-flags-row').classList.add('hidden');
+  document.getElementById('slot-comment').value = '';
+  document.getElementById('slot-start-time').value = padT(startH, startM);
+
+  // Default end = startH + 1
+  document.getElementById('slot-end-time').value = padT(startH + 1, startM);
+
+  document.getElementById('slot-add-modal').classList.remove('hidden');
+}
+
+async function saveSlot() {
+  const ctx = state.slotAddContext;
+  if (!ctx?.selectedType) { alert('Bitte Eintragstyp auswählen.'); return; }
+
+  const def = SLOT_TYPES[ctx.selectedType];
+  const [sh, sm] = document.getElementById('slot-start-time').value.split(':').map(Number);
+  const [eh, em] = document.getElementById('slot-end-time').value.split(':').map(Number);
+  if (isNaN(sh) || isNaN(eh)) { alert('Bitte Zeiten ausfüllen.'); return; }
+  if (toMins(eh, em) <= toMins(sh, sm)) { alert('Endzeit muss nach Startzeit liegen.'); return; }
+
+  const comment = document.getElementById('slot-comment').value.trim();
+  const xp = def.xp;
+
+  const slotId = await db.scheduleSlots.add({
+    shiftId: ctx.shiftId, type: ctx.selectedType,
+    startHour: sh, startMinute: sm,
+    endHour: eh,   endMinute: em,
+    flags: [...ctx.flags], comment,
+    xpEarned: xp, createdAt: new Date().toISOString()
+  });
+
+  // Award XP
+  const shift = state.shifts.find(s => s.id === ctx.shiftId);
+  const newShiftXP = (shift?.xpEarned || 0) + xp;
+  await db.shiftLogs.update(ctx.shiftId, { xpEarned: newShiftXP });
+  const oldXP = state.profile.totalXP ?? 0;
+  const newXP = oldXP + xp;
+  await db.profile.update(state.profile.id, { totalXP: newXP });
+  state.profile.totalXP = newXP;
+  state.shifts  = await db.shiftLogs.orderBy('date').reverse().toArray();
+  state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(ctx.shiftId).sortBy('startHour');
+
+  document.getElementById('slot-add-modal').classList.add('hidden');
+  showXPPopup(xp, [{ label: def.label, xp }]);
+  updateHeader();
+  checkLevelUp(newXP, oldXP);
+  applyAchievements();
+
+  const updatedShift = state.shifts.find(s => s.id === ctx.shiftId);
+  if (updatedShift) {
+    updatePlannerXP(updatedShift);
+    renderTimeline(updatedShift);
+  }
+
+  // Offer to enter diagnoses for patient-contact slots
+  if (def.patientContact) {
+    setTimeout(() => {
+      if (confirm(`${def.icon} ${def.label} gespeichert. Diagnosen jetzt eintragen?`)) {
+        openAddToShiftDiagSearch(ctx.shiftId, slotId);
+      }
+    }, 300);
+  }
+}
+
+async function deleteSlot(slotId, shift) {
+  const slot = state.plannerSlots.find(s => s.id === slotId);
+  if (!slot) return;
+  if (!confirm(`${SLOT_TYPES[slot.type]?.label || 'Eintrag'} löschen?`)) return;
+
+  await db.scheduleSlots.delete(slotId);
+  const xpBack = slot.xpEarned || 0;
+  const newShiftXP = Math.max(0, (shift.xpEarned || 0) - xpBack);
+  await db.shiftLogs.update(shift.id, { xpEarned: newShiftXP });
+  const newXP = Math.max(0, (state.profile.totalXP ?? 0) - xpBack);
+  await db.profile.update(state.profile.id, { totalXP: newXP });
+  state.profile.totalXP = newXP;
+  state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+  state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
+  updateHeader();
+  const updatedShift = state.shifts.find(s => s.id === shift.id);
+  if (updatedShift) { updatePlannerXP(updatedShift); renderTimeline(updatedShift); }
+}
+
+function openSlotDetailModal(slot) {
+  const def  = SLOT_TYPES[slot.type] || {};
+  const tips = SLOT_TIPS[slot.type]  || {};
+  const flags = slot.flags?.length ? `<div class="slot-flag-list">${slot.flags.map(f => `<span class="slot-flag">${f.toUpperCase()}</span>`).join('')}</div>` : '';
+  const demoNote = slot.flags?.includes('demo')
+    ? `<div class="slot-demo-reminder">🎓 Studierende ${slot.startHour}:${String(slot.startMinute).padStart(2,'0') } − 15 min = <strong>${padT(slot.startHour - (slot.startMinute < 15 ? 1 : 0), (slot.startMinute - 15 + 60) % 60)}</strong> im EG abholen!</div>`
+    : '';
+
+  document.getElementById('slot-detail-title').textContent = `${def.icon} ${def.label}`;
+  document.getElementById('slot-detail-body').innerHTML = `
+    <div class="slot-detail-time">${padT(slot.startHour,slot.startMinute)} – ${padT(slot.endHour,slot.endMinute)}</div>
+    ${flags}
+    ${demoNote}
+    ${slot.comment ? `<div class="slot-comment-display">${slot.comment}</div>` : ''}
+    <div class="slot-tips-header">💡 Tipps</div>
+    <ul class="slot-tips-list">${(tips.tips || []).map(t => `<li>${t}</li>`).join('')}</ul>
+    ${tips.docHint ? `<div class="slot-doc-hint">📄 ${tips.docHint}</div>` : ''}
+  `;
+  document.getElementById('slot-detail-modal').classList.remove('hidden');
+}
+
+// ─── Alarm Scheduler ──────────────────────────────────────────────────────────
+function startAlarmScheduler() {
+  stopAlarmScheduler();
+  state.alarmInterval = setInterval(checkAlarms, 60_000);
+  checkAlarms();
+}
+function stopAlarmScheduler() {
+  if (state.alarmInterval) { clearInterval(state.alarmInterval); state.alarmInterval = null; }
+}
+
+function checkAlarms() {
+  if (!state.plannerShiftId || !state.plannerSlots.length) return;
+  const now     = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+
+  // Is patient contact happening right now?
+  const patientNow = state.plannerSlots.some(s => {
+    if (!SLOT_TYPES[s.type]?.patientContact) return false;
+    return toMins(s.startHour, s.startMinute) <= nowMins && nowMins < toMins(s.endHour, s.endMinute);
+  });
+  if (patientNow) return;
+
+  // Find slots starting in 9–11 minutes
+  for (const slot of state.plannerSlots) {
+    if (state.alarmFired.has(slot.id)) continue;
+    const diff = toMins(slot.startHour, slot.startMinute) - nowMins;
+    if (diff >= 9 && diff <= 11) {
+      const def = SLOT_TYPES[slot.type] || {};
+      const banner = document.getElementById('planner-alarm-banner');
+      if (banner) {
+        banner.textContent = `⏰ In ~10 min: ${def.icon} ${def.label} um ${padT(slot.startHour, slot.startMinute)}`;
+        banner.classList.remove('hidden');
+        setTimeout(() => banner.classList.add('hidden'), 10_000);
+      }
+      state.alarmFired.add(slot.id);
+    }
+  }
+}
+
+// ─── Shift Form ───────────────────────────────────────────────────────────────
+function setDefaultDate() {
+  const today = new Date().toISOString().split('T')[0];
+  const el1 = document.getElementById('shift-date');
+  if (el1) el1.value = today;
+  const el2 = document.getElementById('planner-date');
+  if (el2 && !el2.value) el2.value = today;
+}
+
+function setupShiftListeners() {
+  // Legacy shift form elements (may not exist if replaced by planner)
+  document.getElementById('btn-next-to-patients')?.addEventListener('click', goToPatients);
+  document.getElementById('btn-back-to-info')?.addEventListener('click', goBackToInfo);
+  document.getElementById('btn-add-patient')?.addEventListener('click', addPatientCard);
+  document.getElementById('btn-finish-shift')?.addEventListener('click', finishShift);
 }
 
 function resetShiftForm() {
-  showStep('step-shift-info');
-  document.getElementById('patient-list').innerHTML = '';
+  document.getElementById('patient-list') && (document.getElementById('patient-list').innerHTML = '');
   state.activeShift = null;
-  setDefaultDate();
-  document.querySelectorAll('#step-shift-info .type-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
 }
 
 function goBackToInfo() { showStep('step-shift-info'); }
@@ -2940,6 +3352,10 @@ async function recalculateXP() {
   totalXP += allShifts
     .filter(s => s.noteAddedAt)
     .reduce((sum, s) => sum + calculateNoteXP(s.date, s.noteAddedAt), 0);
+
+  // Schedule slots
+  const allSlots = await db.scheduleSlots.toArray();
+  totalXP += allSlots.reduce((sum, sl) => sum + (sl.xpEarned || 0), 0);
 
   await db.profile.update(state.profile.id, { totalXP });
   state.profile.totalXP = totalXP;

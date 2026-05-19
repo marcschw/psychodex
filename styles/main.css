@@ -23,6 +23,13 @@
   --r-lg:        20px;
   --nav-h:       64px;
   --header-h:    52px;
+  /* Slot type colors */
+  --slot-anmeldung: #7c3aed;
+  --slot-interview: #2563eb;
+  --slot-erst:      #059669;
+  --slot-kassa:     #d97706;
+  --slot-back:      #475569;
+  --slot-fuenfter:  #374151;
 }
 
 /* ── Reset ─────────────────────────────────────────────────────────────────── */
@@ -1778,4 +1785,125 @@ img{max-width:100%;display:block}
 }
 .pd-thumb-img{
   width:100%;height:100%;object-fit:cover;object-position:top center;display:block;
+}
+
+/* ── Planner ─────────────────────────────────────────────────────────────────── */
+.planner-shift-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px;background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--r);margin-bottom:14px;gap:12px;
+}
+.planner-shift-title{font-size:15px;font-weight:700}
+.planner-shift-xp{font-size:11px;color:var(--text-dim);margin-top:3px}
+.btn-finish-planner{
+  background:rgba(16,185,129,.15);color:var(--success);
+  border:1px solid rgba(16,185,129,.3);border-radius:var(--r);
+  padding:8px 14px;font-size:12px;font-weight:600;white-space:nowrap;
+}
+.planner-alarm-banner{
+  background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.35);
+  color:#fbbf24;border-radius:var(--r);padding:10px 14px;
+  font-size:13px;font-weight:600;margin-bottom:12px;text-align:center;
+}
+
+/* ── Timeline ──────────────────────────────────────────────────────────────── */
+.planner-timeline{display:flex;flex-direction:column;gap:6px;padding-bottom:32px}
+
+.tl-gap{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg-raised);border:1px dashed rgba(255,255,255,.08);
+  border-radius:var(--r);padding:10px 14px;cursor:pointer;
+  transition:border-color .15s,background .15s;width:100%;text-align:left;
+}
+.tl-gap:hover{border-color:var(--accent);background:rgba(124,58,237,.06)}
+.tl-gap-time{font-size:12px;color:var(--text-dim);font-family:monospace}
+.tl-gap-add{font-size:13px;color:var(--accent);font-weight:600}
+
+.tl-meal{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 14px;font-size:12px;color:var(--text-dim);
+  opacity:.7;border-left:2px solid rgba(255,255,255,.1);margin-left:8px;
+}
+
+.tl-slot{
+  border-radius:var(--r);overflow:hidden;
+  border:1px solid rgba(255,255,255,.08);cursor:pointer;
+  transition:opacity .15s;
+}
+.tl-slot:hover{opacity:.9}
+.tl-slot-main{display:flex;align-items:flex-start;gap:12px;padding:12px 14px}
+.tl-slot-icon{font-size:20px;flex-shrink:0;margin-top:2px}
+.tl-slot-info{flex:1;min-width:0}
+.tl-slot-label{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tl-slot-time{font-size:11px;color:rgba(255,255,255,.55);margin-top:2px;font-family:monospace}
+.tl-slot-comment{font-size:12px;color:rgba(255,255,255,.6);margin-top:4px;font-style:italic}
+.tl-slot-delete{flex-shrink:0;opacity:.5;font-size:14px}
+.tl-slot-delete:hover{opacity:1}
+
+/* Per-type background tints */
+.slot-anmeldung{background:rgba(124,58,237,.18);border-color:rgba(124,58,237,.35)}
+.slot-interview{background:rgba(37,99,235,.18);border-color:rgba(37,99,235,.35)}
+.slot-erstgespraech{background:rgba(5,150,105,.18);border-color:rgba(5,150,105,.35)}
+.slot-kassa{background:rgba(217,119,6,.18);border-color:rgba(217,119,6,.35)}
+.slot-backoffice{background:rgba(71,85,105,.2);border-color:rgba(71,85,105,.4)}
+.slot-fuenfter{background:rgba(55,65,81,.2);border-color:rgba(55,65,81,.4)}
+
+/* ── Slot Add Modal ─────────────────────────────────────────────────────────── */
+.slot-type-grid{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;
+}
+.slot-type-btn{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:12px 8px;border-radius:var(--r);
+  border:1px solid var(--border);background:var(--bg-raised);
+  cursor:pointer;transition:border-color .15s,background .15s;
+  font-size:12px;color:var(--text);
+}
+.slot-type-btn span:first-child{font-size:22px}
+.slot-type-xp{font-size:10px;color:var(--accent);font-weight:600}
+.slot-type-btn.active{border-color:var(--accent);background:rgba(124,58,237,.12)}
+.slot-time-row{display:flex;gap:12px;margin-bottom:10px}
+.slot-time-field{flex:1}
+.slot-flags-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.flag-btn{
+  padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;
+  border:1px solid var(--border);color:var(--text-dim);
+  background:var(--bg-raised);cursor:pointer;transition:.15s;
+}
+.flag-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(124,58,237,.12)}
+.slot-flag{
+  font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;
+  background:rgba(124,58,237,.2);color:#a78bfa;letter-spacing:.5px;
+}
+
+/* ── Slot Detail Modal ──────────────────────────────────────────────────────── */
+.slot-detail-time{font-size:22px;font-weight:700;font-family:monospace;margin-bottom:10px}
+.slot-flag-list{display:flex;gap:6px;margin-bottom:10px}
+.slot-demo-reminder{
+  background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);
+  color:#fbbf24;border-radius:var(--r);padding:10px 14px;
+  font-size:13px;margin-bottom:12px;
+}
+.slot-comment-display{
+  background:var(--bg-raised);border-radius:var(--r);padding:10px 12px;
+  font-size:13px;color:var(--text-muted);font-style:italic;margin-bottom:12px;
+}
+.slot-tips-header{font-size:12px;font-weight:600;color:var(--text-dim);
+  text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.slot-tips-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.slot-tips-list li{
+  font-size:13px;padding:8px 12px;background:var(--bg-raised);
+  border-radius:var(--r);border-left:3px solid var(--accent);
+}
+.slot-doc-hint{
+  margin-top:12px;padding:10px 14px;
+  background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);
+  border-radius:var(--r);font-size:12px;color:var(--success);
+}
+
+/* ── Planner dashboard banner ───────────────────────────────────────────────── */
+.planner-dash-banner{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);
+  border-radius:var(--r);padding:10px 14px;margin-bottom:12px;font-size:13px;
 }

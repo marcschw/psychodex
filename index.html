@@ -102,57 +102,65 @@
           <div class="empty-state">Noch keine Diagnosen – starte deinen ersten Dienst!</div>
         </div>
 
+        <div id="dashboard-planner-banner"></div>
         <div class="section-header">Letzte Dienste</div>
         <div id="recent-shifts" class="recent-list">
           <div class="empty-state">Noch keine Dienste geloggt.</div>
         </div>
       </section>
 
-      <!-- ── Log Shift ──────────────────────────────────────────────────── -->
+      <!-- ── Planer ──────────────────────────────────────────────────────── -->
       <section id="tab-log" class="tab-view">
-        <div class="view-title">Dienst loggen</div>
 
-        <div id="step-shift-info" class="step-card">
-          <div class="step-number">Schritt 01 – Dienst-Info</div>
-          <div class="form-group">
-            <label class="form-label" for="shift-date">Datum</label>
-            <input type="date" id="shift-date" class="form-input">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Diensttyp</label>
-            <div class="type-selector">
-              <button class="type-btn active" data-type="früh" data-xp="65">
-                <span class="type-icon">🌅</span>
-                <span>Früh</span>
-                <span class="type-xp">65 XP · 6,5h</span>
-              </button>
-              <button class="type-btn" data-type="spät" data-xp="65">
-                <span class="type-icon">🌇</span>
-                <span>Spät</span>
-                <span class="type-xp">65 XP · 6,5h</span>
-              </button>
-              <button class="type-btn" data-type="samstag" data-xp="70">
-                <span class="type-icon">🗓️</span>
-                <span>Samstag</span>
-                <span class="type-xp">70 XP · 7h</span>
-              </button>
-              <button class="type-btn" data-type="full" data-xp="120">
-                <span class="type-icon">☀️</span>
-                <span>Ganztags</span>
-                <span class="type-xp">120 XP · 12h</span>
-              </button>
+        <!-- No active shift -->
+        <div id="planner-no-shift">
+          <div class="view-title">Planer</div>
+          <div class="step-card">
+            <div class="step-number">Neuer Dienst</div>
+            <div class="form-group">
+              <label class="form-label">Datum</label>
+              <input type="date" id="planner-date" class="form-input">
             </div>
+            <div class="form-group">
+              <label class="form-label">Diensttyp</label>
+              <div class="type-selector" id="planner-type-selector">
+                <button class="type-btn active" data-type="früh" data-xp="65">
+                  <span class="type-icon">🌅</span><span>Früh</span>
+                  <span class="type-xp">65 XP · 6,5h</span>
+                </button>
+                <button class="type-btn" data-type="spät" data-xp="65">
+                  <span class="type-icon">🌇</span><span>Spät</span>
+                  <span class="type-xp">65 XP · 6,5h</span>
+                </button>
+                <button class="type-btn" data-type="samstag" data-xp="70">
+                  <span class="type-icon">🗓️</span><span>Samstag</span>
+                  <span class="type-xp">70 XP · 7h</span>
+                </button>
+                <button class="type-btn" data-type="full" data-xp="120">
+                  <span class="type-icon">☀️</span><span>Ganztags</span>
+                  <span class="type-xp">120 XP · 12h</span>
+                </button>
+              </div>
+            </div>
+            <button id="btn-start-planner-shift" class="btn-primary">Dienst starten 🚀</button>
           </div>
-          <button id="btn-next-to-patients" class="btn-primary">Weiter →</button>
+          <div class="section-header" style="margin-top:20px">Letzte Dienste</div>
+          <div id="planner-past-shifts" class="recent-list"></div>
         </div>
 
-        <div id="step-patients" class="step-card hidden-step">
-          <div class="step-number">Schritt 02 – Patienten-Begegnungen</div>
-          <div id="patient-list"></div>
-          <button id="btn-add-patient" class="btn-secondary">+ Patient hinzufügen</button>
-          <button id="btn-finish-shift" class="btn-primary" style="margin-top:12px">Dienst abschließen ✓</button>
-          <button id="btn-back-to-info" class="btn-secondary">← Zurück</button>
+        <!-- Active shift timeline -->
+        <div id="planner-active-shift" class="hidden">
+          <div class="planner-shift-header">
+            <div>
+              <div id="planner-shift-title" class="planner-shift-title"></div>
+              <div id="planner-shift-xp" class="planner-shift-xp"></div>
+            </div>
+            <button id="btn-close-planner-shift" class="btn-finish-planner">✓ Abschließen</button>
+          </div>
+          <div id="planner-alarm-banner" class="planner-alarm-banner hidden"></div>
+          <div id="planner-timeline" class="planner-timeline"></div>
         </div>
+
       </section>
 
       <!-- ── PsychoDex ──────────────────────────────────────────────────── -->
@@ -244,8 +252,8 @@
         <span class="nav-label">Home</span>
       </button>
       <button class="nav-btn" data-tab="log">
-        <span class="nav-icon">✦</span>
-        <span class="nav-label">Loggen</span>
+        <span class="nav-icon">📅</span>
+        <span class="nav-label">Planer</span>
       </button>
       <button class="nav-btn" data-tab="dex">
         <span class="nav-icon">◉</span>
@@ -522,6 +530,53 @@
       <div id="levelup-rank-subtitle" class="levelup-rank-subtitle"></div>
       <div id="levelup-rank-level"   class="levelup-rank-level"></div>
       <button id="levelup-close" class="btn-primary">Weitermachen</button>
+    </div>
+  </div>
+
+  <!-- ── Slot Add Modal ────────────────────────────────────────────────────── -->
+  <div id="slot-add-modal" class="modal hidden">
+    <div class="modal-backdrop" id="slot-add-backdrop"></div>
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="modal-title" id="slot-add-title">Eintrag hinzufügen</div>
+        <button class="modal-close" id="slot-add-close">✕</button>
+      </div>
+      <div class="sheet-body">
+        <div class="slot-type-grid" id="slot-type-grid"></div>
+        <div class="slot-time-row">
+          <div class="slot-time-field">
+            <label class="form-label">Von</label>
+            <input type="time" id="slot-start-time" class="form-input" step="1800">
+          </div>
+          <div class="slot-time-field">
+            <label class="form-label">Bis</label>
+            <input type="time" id="slot-end-time" class="form-input" step="1800">
+          </div>
+        </div>
+        <div id="slot-flags-row" class="slot-flags-row hidden">
+          <button class="flag-btn" data-flag="demo">DEMO</button>
+          <button class="flag-btn" data-flag="international">INTERNATIONAL</button>
+        </div>
+        <div class="form-group" style="margin-top:12px">
+          <label class="form-label">Kommentar (optional)</label>
+          <textarea id="slot-comment" class="shift-note-textarea" rows="2" placeholder="Notiz zum Eintrag…"></textarea>
+        </div>
+        <button id="btn-save-slot" class="btn-primary" style="margin-top:8px">Eintrag speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Slot Detail / Tips Modal ──────────────────────────────────────────── -->
+  <div id="slot-detail-modal" class="modal hidden">
+    <div class="modal-backdrop" id="slot-detail-backdrop"></div>
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="modal-title" id="slot-detail-title">Slot Details</div>
+        <button class="modal-close" id="slot-detail-close">✕</button>
+      </div>
+      <div class="sheet-body" id="slot-detail-body"></div>
     </div>
   </div>
 
