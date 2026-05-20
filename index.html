@@ -177,7 +177,10 @@
         <div id="planner-active-shift" class="hidden">
           <div class="planner-shift-header">
             <div>
-              <div id="planner-shift-title" class="planner-shift-title"></div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div id="planner-shift-title" class="planner-shift-title"></div>
+                <button id="btn-edit-planner-shift" class="btn-icon" title="Dienst bearbeiten">✎</button>
+              </div>
               <div id="planner-shift-xp" class="planner-shift-xp"></div>
             </div>
             <button id="btn-close-planner-shift" class="btn-finish-planner">✓ Abschließen</button>
@@ -404,6 +407,27 @@
             <button class="type-btn" data-type="full" data-xp="120">
               <span class="type-icon">☀️</span><span>Ganztags</span>
               <span class="type-xp">120 XP</span>
+            </button>
+            <button class="type-btn type-btn-schulung" data-type="schulung" data-xp="40">
+              <span class="type-icon">📚</span><span>Schulung</span>
+              <span class="type-xp">40 XP</span>
+            </button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kategorie</label>
+          <div class="type-selector" id="edit-cat-selector">
+            <button class="cat-btn" data-category="training">
+              <span class="type-icon">🎓</span><span>Training</span>
+              <span class="type-xp">×0.7 XP</span>
+            </button>
+            <button class="cat-btn" data-category="regulär">
+              <span class="type-icon">💼</span><span>Regulär</span>
+              <span class="type-xp">×1.0 XP</span>
+            </button>
+            <button class="cat-btn" data-category="senior">
+              <span class="type-icon">⭐</span><span>Senior</span>
+              <span class="type-xp">×1.35 XP</span>
             </button>
           </div>
         </div>
