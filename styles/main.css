@@ -1138,7 +1138,7 @@ img{max-width:100%;display:block}
 }
 .shift-note-timestamp{font-size:11px;color:var(--text-dim)}
 .shift-note-textarea{
-  width:100%;min-height:90px;resize:vertical;
+  width:100%;min-height:135px;resize:vertical;
   background:var(--bg);border:1px solid var(--border);
   border-radius:var(--r);padding:10px 12px;
   font-size:13px;color:var(--text);font-family:inherit;
@@ -1652,6 +1652,8 @@ img{max-width:100%;display:block}
 
 /* ── Achievements Badge Grid ────────────────────────────────────────────────── */
 .ach-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+@media(min-width:600px){.ach-grid{grid-template-columns:1fr 1fr 1fr}}
+@media(min-width:900px){.ach-grid{grid-template-columns:1fr 1fr 1fr 1fr}}
 .ach-card{
   position:relative;border-radius:var(--r);overflow:hidden;
   aspect-ratio:1;background:var(--bg-card);border:1px solid var(--border);
@@ -2203,6 +2205,23 @@ img{max-width:100%;display:block}
 .home-shift-type{font-size:12px;font-weight:600;color:var(--text-dim)}
 .home-shift-xp{font-size:12px;color:var(--accent)}
 
+/* ── Home Tab: Shift Mini-Nav ───────────────────────────────────────────────── */
+.home-shift-nav{display:flex;align-items:stretch;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)}
+.home-snav-arrow{flex:1;display:flex;align-items:center;gap:6px;background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;cursor:pointer;color:var(--text);font-size:13px;-webkit-tap-highlight-color:transparent;transition:background .15s;min-width:0}
+.home-snav-arrow:disabled{opacity:.35;cursor:default}
+.home-snav-arrow:not(:disabled):active{background:rgba(255,255,255,.08)}
+.home-snav-arrow-right{flex-direction:row-reverse}
+.home-snav-arrow-icon{font-size:18px;color:var(--text-dim);flex-shrink:0}
+.home-snav-date{font-size:12px;font-weight:600;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.home-snav-cal{flex-shrink:0;background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.35);border-radius:var(--r);padding:10px 14px;cursor:pointer;color:var(--accent);font-size:13px;font-weight:600;-webkit-tap-highlight-color:transparent;white-space:nowrap;transition:background .15s}
+.home-snav-cal:active{background:rgba(124,58,237,.3)}
+
+/* ── Calendar Modal ─────────────────────────────────────────────────────────── */
+.cal-modal{position:fixed;inset:0;z-index:8000;display:flex;align-items:flex-end;justify-content:center}
+.cal-modal.hidden{display:none}
+.cal-modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px)}
+.cal-modal-content{position:relative;z-index:1;background:var(--bg-card);border-radius:20px 20px 0 0;border:1px solid var(--border);border-bottom:none;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));width:100%;max-width:500px;max-height:85vh;overflow-y:auto}
+
 /* ── Home Tab: Calendar ─────────────────────────────────────────────────────── */
 .home-cal-section{margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08)}
 .cal-nav-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
@@ -2406,13 +2425,15 @@ img{max-width:100%;display:block}
   position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;
   padding:20px 20px 28px;max-width:min(88vw,480px);gap:16px;
 }
-.badge-lb-img{width:min(72vw,320px);height:min(72vw,320px);object-fit:contain;border-radius:20px;box-shadow:0 0 60px rgba(0,0,0,.8)}
-.badge-lb-emoji{width:min(72vw,320px);height:min(72vw,320px);font-size:min(28vw,120px);display:flex;align-items:center;justify-content:center}
-.badge-lb-info{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
-.badge-lb-stars{display:flex;gap:4px;justify-content:center}
-.badge-lb-name{font-size:18px;font-weight:800;color:#fff;line-height:1.2}
-.badge-lb-desc{font-size:13px;color:rgba(255,255,255,.65);line-height:1.4}
-.badge-lb-xp{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.5px}
+.badge-lb-card{position:relative;width:min(75vw,340px);height:min(75vw,340px);border-radius:20px;overflow:hidden;box-shadow:0 0 60px rgba(0,0,0,.8)}
+.badge-lb-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:20px}
+.badge-lb-emoji{position:absolute;inset:0;font-size:min(28vw,120px);display:flex;align-items:center;justify-content:center;background:var(--bg-raised);border-radius:20px}
+.badge-lb-overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.92) 50%);padding:36px 16px 16px;border-radius:0 0 20px 20px}
+.badge-lb-info{display:flex;flex-direction:column;gap:4px;text-align:left}
+.badge-lb-stars{display:flex;gap:3px}
+.badge-lb-name{font-size:17px;font-weight:800;color:#fff;line-height:1.2}
+.badge-lb-desc{font-size:12px;color:rgba(255,255,255,.7);line-height:1.4}
+.badge-lb-xp{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.5px}
 .badge-lb-close{position:fixed;top:16px;right:16px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:var(--text);font-size:20px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
 .badge-lb-close:active{background:rgba(255,255,255,.25)}
 .ach-img-clickable{cursor:pointer;transition:transform .15s}

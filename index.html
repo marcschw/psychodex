@@ -56,17 +56,33 @@
         <div id="home-timeline" class="planner-timeline"></div>
         <button id="btn-add-home-break" class="tl-add-break-btn hidden">＋ Pause / Snack hinzufügen</button>
 
-        <!-- Month Calendar -->
-        <div class="home-cal-section">
-          <div class="cal-nav-row">
-            <button id="cal-prev" class="cal-nav-btn">‹</button>
-            <div class="cal-nav-center">
-              <div id="cal-month-label" class="cal-month-label"></div>
-              <div id="cal-month-stats" class="cal-month-stats"></div>
+        <!-- Shift mini-navigator -->
+        <div class="home-shift-nav" id="home-shift-nav">
+          <button class="home-snav-arrow" id="btn-snav-prev">
+            <span class="home-snav-arrow-icon">‹</span>
+            <span class="home-snav-date" id="snav-prev-date">—</span>
+          </button>
+          <button class="home-snav-cal" id="btn-open-cal">📅 Kalender</button>
+          <button class="home-snav-arrow home-snav-arrow-right" id="btn-snav-next">
+            <span class="home-snav-date" id="snav-next-date">—</span>
+            <span class="home-snav-arrow-icon">›</span>
+          </button>
+        </div>
+
+        <!-- Calendar Modal -->
+        <div id="cal-modal" class="cal-modal hidden">
+          <div class="cal-modal-backdrop" id="cal-modal-backdrop"></div>
+          <div class="cal-modal-content">
+            <div class="cal-nav-row">
+              <button id="cal-prev" class="cal-nav-btn">‹</button>
+              <div class="cal-nav-center">
+                <div id="cal-month-label" class="cal-month-label"></div>
+                <div id="cal-month-stats" class="cal-month-stats"></div>
+              </div>
+              <button id="cal-next" class="cal-nav-btn">›</button>
             </div>
-            <button id="cal-next" class="cal-nav-btn">›</button>
+            <div id="home-calendar" class="home-calendar"></div>
           </div>
-          <div id="home-calendar" class="home-calendar"></div>
         </div>
       </section>
 
@@ -125,8 +141,8 @@
             <span class="subtab-stat" id="sstab-overview-stat">Rang 1</span>
           </button>
           <button class="stats-subtab" data-subtab="dienste">
-            <span class="subtab-name">Dienste</span>
-            <span class="subtab-stat" id="sstab-dienste-stat">0 Dienste</span>
+            <span class="subtab-name">Missionen</span>
+            <span class="subtab-stat" id="sstab-dienste-stat">0 aktiv</span>
           </button>
           <button class="stats-subtab" data-subtab="diagnosen">
             <span class="subtab-name">Diagnosen</span>
@@ -137,7 +153,7 @@
             <span class="subtab-stat" id="sstab-badges-stat">0/25</span>
           </button>
           <button class="stats-subtab" data-subtab="einstellungen">
-            <span class="subtab-name">⚙️</span>
+            <span class="subtab-name">⚙️ Einstellungen</span>
             <span class="subtab-stat">&nbsp;</span>
           </button>
         </div>
@@ -203,20 +219,20 @@
               <div class="ps-value" id="stat-hours">0h</div>
             </div>
           </div>
-        </div>
-
-        <!-- Panel: Dienste -->
-        <div id="stats-panel-dienste" class="stats-panel stats-panel-hidden">
           <div id="hours-counters"></div>
-          <div class="section-header">🎯 Mission Control</div>
-          <div id="missions-grid" class="missions-grid">
-            <div class="empty-state">Missionen laden…</div>
-          </div>
-          <div class="section-header" id="heatmap-section-header">Dienst-Aktivität (52 Wochen)</div>
+          <div class="section-header" id="heatmap-section-header">Dienst-Aktivität</div>
           <div class="heatmap-scroll">
             <div id="heatmap" class="heatmap"></div>
           </div>
           <div id="heatmap-detail" class="heatmap-detail hidden"></div>
+        </div>
+
+        <!-- Panel: Missionen -->
+        <div id="stats-panel-dienste" class="stats-panel stats-panel-hidden">
+          <div class="section-header">🎯 Mission Control</div>
+          <div id="missions-grid" class="missions-grid">
+            <div class="empty-state">Missionen laden…</div>
+          </div>
         </div>
 
         <!-- Panel: Diagnosen -->
@@ -723,13 +739,17 @@
   <div class="badge-lb-backdrop" id="badge-lb-backdrop"></div>
   <div class="badge-lb-content">
     <button class="badge-lb-close" id="badge-lb-close">✕</button>
-    <img id="badge-lb-img" class="badge-lb-img" src="" alt="">
-    <div id="badge-lb-emoji" class="badge-lb-emoji" style="display:none"></div>
-    <div class="badge-lb-info" id="badge-lb-info">
-      <div class="badge-lb-stars" id="badge-lb-stars"></div>
-      <div class="badge-lb-name" id="badge-lb-name"></div>
-      <div class="badge-lb-desc" id="badge-lb-desc"></div>
-      <div class="badge-lb-xp" id="badge-lb-xp"></div>
+    <div class="badge-lb-card">
+      <img id="badge-lb-img" class="badge-lb-img" src="" alt="">
+      <div id="badge-lb-emoji" class="badge-lb-emoji" style="display:none"></div>
+      <div class="badge-lb-overlay">
+        <div class="badge-lb-info" id="badge-lb-info">
+          <div class="badge-lb-stars" id="badge-lb-stars"></div>
+          <div class="badge-lb-name" id="badge-lb-name"></div>
+          <div class="badge-lb-desc" id="badge-lb-desc"></div>
+          <div class="badge-lb-xp" id="badge-lb-xp"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

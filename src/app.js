@@ -700,7 +700,7 @@ async function renderHomeTab() {
         <div class="home-inline-type-row">${typeButtons}</div>
         <div class="home-inline-cat-row">${catButtons}</div>
         ${shift.type !== 'schulung' ? `
-        <textarea id="home-edit-note" class="home-note-area" rows="4"
+        <textarea id="home-edit-note" class="home-note-area" rows="6"
           placeholder="Dienst-Log / Notizen…">${shift.note || ''}</textarea>
         <div class="home-note-save-row">
           <button id="btn-save-home-note" class="home-note-save-btn">💾 Speichern</button>
@@ -755,7 +755,7 @@ async function renderHomeTab() {
   }
 
   if (!state.calMonth) state.calMonth = today.slice(0, 7);
-  renderMonthCalendar();
+  renderShiftNav();
 }
 
 function renderMonthCalendar() {
@@ -845,12 +845,59 @@ function renderMonthCalendar() {
       const ids = cell.dataset.shiftIds;
       if (ids) {
         state.homeSelectedShiftId = parseInt(ids.split(',')[0]);
+        closeCalModal();
         renderHomeTab();
       } else {
+        closeCalModal();
         openQuickCreateModal(cell.dataset.date);
       }
     });
   });
+}
+
+function renderShiftNav() {
+  const sorted = state.shifts.slice().sort((a, b) => a.date.localeCompare(b.date));
+  const selIdx = sorted.findIndex(s => s.id === state.homeSelectedShiftId);
+  const prevShift = selIdx > 0 ? sorted[selIdx - 1] : null;
+  const nextShift = selIdx >= 0 && selIdx < sorted.length - 1 ? sorted[selIdx + 1] : null;
+
+  const fmtDate = d => new Date(d + 'T12:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit' });
+
+  const prevBtn  = document.getElementById('btn-snav-prev');
+  const nextBtn  = document.getElementById('btn-snav-next');
+  const prevDate = document.getElementById('snav-prev-date');
+  const nextDate = document.getElementById('snav-next-date');
+  if (!prevBtn) return;
+
+  if (prevShift) {
+    prevDate.textContent = fmtDate(prevShift.date);
+    prevBtn.disabled = false;
+    prevBtn.onclick = () => { state.homeSelectedShiftId = prevShift.id; renderHomeTab(); };
+  } else {
+    prevDate.textContent = '—';
+    prevBtn.disabled = true;
+    prevBtn.onclick = null;
+  }
+  if (nextShift) {
+    nextDate.textContent = fmtDate(nextShift.date);
+    nextBtn.disabled = false;
+    nextBtn.onclick = () => { state.homeSelectedShiftId = nextShift.id; renderHomeTab(); };
+  } else {
+    nextDate.textContent = '—';
+    nextBtn.disabled = true;
+    nextBtn.onclick = null;
+  }
+}
+
+function openCalModal() {
+  const modal = document.getElementById('cal-modal');
+  if (!modal) return;
+  renderMonthCalendar();
+  modal.classList.remove('hidden');
+}
+
+function closeCalModal() {
+  document.getElementById('cal-modal')?.classList.add('hidden');
 }
 
 function openQuickCreateModal(dateStr) {
@@ -1375,6 +1422,10 @@ function setupPlannerListeners() {
     state.calMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     renderMonthCalendar();
   });
+
+  // Calendar modal
+  document.getElementById('btn-open-cal')?.addEventListener('click', openCalModal);
+  document.getElementById('cal-modal-backdrop')?.addEventListener('click', closeCalModal);
 
   // Quick-create shift modal
   const qcModal = document.getElementById('quick-create-modal');
@@ -3534,7 +3585,8 @@ function renderStats() {
   const totalBadges  = (ACHIEVEMENTS.length + SECRET_ACHIEVEMENTS.length);
   const el = id => document.getElementById(id);
   if (el('sstab-overview-stat'))  el('sstab-overview-stat').textContent  = `${rank.title} · Rang ${rank.level}`;
-  if (el('sstab-dienste-stat'))   el('sstab-dienste-stat').textContent   = `${shifts} Dienste · ${hours.toFixed(0)}h`;
+  const activeMissionCount = (state.missions || []).filter(m => !m.completedAt).length;
+  if (el('sstab-dienste-stat'))   el('sstab-dienste-stat').textContent   = `${activeMissionCount} aktiv`;
   if (el('sstab-diagnosen-stat')) el('sstab-diagnosen-stat').textContent = `${state.catches.length} gefangen`;
   if (el('sstab-badges-stat'))    el('sstab-badges-stat').textContent    = `${earnedBadges} / ${totalBadges}`;
 
