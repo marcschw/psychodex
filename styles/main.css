@@ -1863,12 +1863,22 @@ img{max-width:100%;display:block}
 .tl-gap{
   display:flex;align-items:center;justify-content:space-between;
   background:var(--bg-raised);border:1px dashed rgba(255,255,255,.08);
-  border-radius:var(--r);padding:10px 14px;cursor:pointer;
+  border-radius:var(--r);padding:7px 14px;cursor:pointer;
   transition:border-color .15s,background .15s;width:100%;text-align:left;
 }
 .tl-gap:hover{border-color:var(--accent);background:rgba(124,58,237,.06)}
 .tl-gap-time{font-size:12px;color:var(--text-dim);font-family:monospace}
-.tl-gap-add{font-size:13px;color:var(--accent);font-weight:600}
+.tl-gap-add{font-size:12px;color:var(--accent);font-weight:600}
+
+/* :00 / :30 time toggles in slot-add modal */
+.time-toggle-row{display:flex;gap:6px;margin-top:6px}
+.time-toggle-btn{
+  flex:1;padding:6px 0;
+  background:var(--bg-raised);border:1px solid var(--border);
+  border-radius:var(--r);font-size:12px;font-weight:700;color:var(--text-dim);
+  transition:all .15s;
+}
+.time-toggle-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(124,58,237,.1)}
 
 .tl-meal{
   display:flex;align-items:center;gap:8px;
