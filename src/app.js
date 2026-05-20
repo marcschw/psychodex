@@ -7,7 +7,7 @@ import { checkAchievements, ACHIEVEMENTS, SECRET_ACHIEVEMENTS, ACH_TIER_LABELS }
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const state = {
-  currentTab: 'dashboard',
+  currentTab: 'log',
   icdData: {},
   icdFlat: [],
   icdIndex: null,
@@ -348,7 +348,7 @@ function navigateTo(tab) {
 
 // ─── Render ───────────────────────────────────────────────────────────────────
 function renderApp() {
-  renderDashboard();
+  renderPlannerTab();
   updateHeader();
 }
 
@@ -651,40 +651,92 @@ function renderTimeline(shift) {
 }
 
 function renderPlannerPastShifts() {
-  const el = document.getElementById('planner-past-shifts');
-  const recent = state.shifts.filter(s => !s.plannerActive).slice(0, 10);
-
+  const today = new Date().toISOString().split('T')[0];
+  const nextCardEl = document.getElementById('planner-next-card');
+  const listEl = document.getElementById('planner-past-shifts');
   const isUnopened = s => s.importedFrom === 'xml' && !s.closedAt;
+  const allNonActive = state.shifts.filter(s => !s.plannerActive);
 
-  el.innerHTML = recent.length
-    ? recent.map(s => {
-        const meta = s.category ? CATEGORY_META[s.category] : null;
-        const catBadge = meta ? `<span class="cat-badge cat-badge-${s.category}">${meta.icon} ${meta.label}</span>` : '';
-        if (isUnopened(s)) {
-          return `<div class="recent-item" data-id="${s.id}">
-            <div class="shift-icon">${shiftIcon(s.type)}</div>
-            <div class="recent-info">
-              <div class="recent-name">${fmtDateShort(s.date)} ${catBadge}</div>
-              <div class="recent-meta">${shiftLabel(s.type)} · Importiert · noch kein XP</div>
-            </div>
-            <button class="btn-open-imported" data-id="${s.id}">Öffnen</button>
-          </div>`;
-        }
-        return `<div class="recent-item shift-item-clickable" data-id="${s.id}" style="cursor:pointer">
-          <div class="shift-icon">${shiftIcon(s.type)}</div>
-          <div class="recent-info">
-            <div class="recent-name">${fmtDateShort(s.date)} ${catBadge}</div>
-            <div class="recent-meta">${shiftLabel(s.type)} · +${s.xpEarned} XP</div>
+  // Upcoming: XML-imported, not yet opened, today or future — sorted ascending
+  const upcoming = allNonActive
+    .filter(s => isUnopened(s) && s.date >= today)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const next = upcoming[0] ?? null;
+  const moreUpcoming = upcoming.slice(1, 4);
+
+  // Past: completed or manually created (no importedFrom), most recent first
+  const past = allNonActive
+    .filter(s => !isUnopened(s))
+    .slice(0, 5);
+
+  // ── Next shift card ──────────────────────────────────────────────────────
+  if (nextCardEl) {
+    if (next) {
+      const meta = CATEGORY_META[next.category || 'regulär'];
+      const isToday = next.date === today;
+      nextCardEl.innerHTML = `
+        <div class="planner-next-card">
+          <div class="planner-next-label">${isToday ? '📍 Heute' : '⏭ Nächster Dienst'}</div>
+          <div class="planner-next-date">${fmtDateLong(next.date)}</div>
+          <div class="planner-next-meta">
+            ${shiftIcon(next.type)} ${shiftLabel(next.type)} ·
+            <span class="cat-badge cat-badge-${next.category || 'regulär'}">${meta.icon} ${meta.label}</span>
           </div>
-          <span style="font-size:12px;color:var(--text-dim)">›</span>
+          <button class="btn-open-next" data-id="${next.id}">Dienst öffnen →</button>
         </div>`;
-      }).join('')
-    : '<div class="empty-state">Noch keine Dienste geloggt.</div>';
+      nextCardEl.querySelector('.btn-open-next').addEventListener('click', () =>
+        openImportedShift(next.id));
+    } else {
+      nextCardEl.innerHTML = '';
+    }
+  }
 
-  el.querySelectorAll('.shift-item-clickable').forEach(item =>
-    item.addEventListener('click', () => openShiftDetailModal(parseInt(item.dataset.id))));
-  el.querySelectorAll('.btn-open-imported').forEach(btn =>
-    btn.addEventListener('click', () => openImportedShift(parseInt(btn.dataset.id))));
+  // ── List ────────────────────────────────────────────────────────────────
+  let html = '';
+
+  if (moreUpcoming.length) {
+    html += `<div class="section-header">Geplante Dienste</div>`;
+    html += moreUpcoming.map(s => {
+      const meta = CATEGORY_META[s.category || 'regulär'];
+      return `<div class="recent-item">
+        <div class="shift-icon">${shiftIcon(s.type)}</div>
+        <div class="recent-info">
+          <div class="recent-name">${fmtDateShort(s.date)}</div>
+          <div class="recent-meta">${shiftLabel(s.type)} · <span class="cat-badge cat-badge-${s.category || 'regulär'}">${meta.icon} ${meta.label}</span></div>
+        </div>
+        <button class="btn-open-imported" data-id="${s.id}">Öffnen</button>
+      </div>`;
+    }).join('');
+  }
+
+  if (past.length) {
+    html += `<div class="section-header">Letzte Dienste</div>`;
+    html += past.map(s => {
+      const meta = s.category ? CATEGORY_META[s.category] : null;
+      const catBadge = meta ? `<span class="cat-badge cat-badge-${s.category}">${meta.icon} ${meta.label}</span>` : '';
+      return `<div class="recent-item shift-item-clickable" data-id="${s.id}">
+        <div class="shift-icon">${shiftIcon(s.type)}</div>
+        <div class="recent-info">
+          <div class="recent-name">${fmtDateShort(s.date)} ${catBadge}</div>
+          <div class="recent-meta">${shiftLabel(s.type)} · +${s.xpEarned} XP</div>
+        </div>
+        <span style="font-size:12px;color:var(--text-dim)">›</span>
+      </div>`;
+    }).join('');
+  }
+
+  if (!html && !next) {
+    html = '<div class="empty-state">Noch keine Dienste. Erstelle deinen ersten Dienst unten!</div>';
+  }
+
+  if (listEl) {
+    listEl.innerHTML = html;
+    listEl.querySelectorAll('.shift-item-clickable').forEach(item =>
+      item.addEventListener('click', () => openShiftDetailModal(parseInt(item.dataset.id))));
+    listEl.querySelectorAll('.btn-open-imported').forEach(btn =>
+      btn.addEventListener('click', () => openImportedShift(parseInt(btn.dataset.id))));
+  }
 }
 
 async function openImportedShift(shiftId) {
@@ -2960,6 +3012,9 @@ const fmtDate = iso =>
 
 const fmtDateShort = ds =>
   new Date(ds).toLocaleDateString('de-AT', { weekday:'short', day:'2-digit', month:'2-digit' });
+
+const fmtDateLong = ds =>
+  new Date(ds + 'T12:00:00').toLocaleDateString('de-AT', { weekday:'long', day:'numeric', month:'long' });
 
 const shiftIcon  = t => t === 'full' ? '☀️' : t === 'spät' ? '🌇' : t === 'samstag' ? '🗓️' : '🌅';
 const shiftLabel = t => t === 'full' ? 'Ganztags 12h' : t === 'spät' ? 'Spät 6,5h' : t === 'samstag' ? 'Samstag 7h' : 'Früh 6,5h';

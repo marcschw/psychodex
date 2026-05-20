@@ -40,7 +40,7 @@
     <div class="tab-container">
 
       <!-- ── Dashboard ─────────────────────────────────────────────────── -->
-      <section id="tab-dashboard" class="tab-view active">
+      <section id="tab-dashboard" class="tab-view">
 
         <!-- Rank Card -->
         <div class="rank-card" id="rank-card">
@@ -110,12 +110,20 @@
       </section>
 
       <!-- ── Planer ──────────────────────────────────────────────────────── -->
-      <section id="tab-log" class="tab-view">
+      <section id="tab-log" class="tab-view active">
 
         <!-- No active shift -->
         <div id="planner-no-shift">
           <div class="view-title">Planer</div>
-          <div class="step-card">
+
+          <!-- Next / upcoming shift card (injected by JS) -->
+          <div id="planner-next-card"></div>
+
+          <!-- Geplante + letzte Dienste (injected by JS) -->
+          <div id="planner-past-shifts" class="recent-list"></div>
+
+          <!-- Neuer Dienst form (at bottom) -->
+          <div class="step-card planner-new-shift-form">
             <div class="step-number">Neuer Dienst</div>
             <div class="form-group">
               <label class="form-label">Datum</label>
@@ -161,8 +169,6 @@
             </div>
             <button id="btn-start-planner-shift" class="btn-primary">Dienst starten 🚀</button>
           </div>
-          <div class="section-header" style="margin-top:20px">Letzte Dienste</div>
-          <div id="planner-past-shifts" class="recent-list"></div>
         </div>
 
         <!-- Active shift timeline -->
@@ -267,11 +273,7 @@
 
     <!-- Bottom Nav -->
     <nav class="bottom-nav" id="bottom-nav">
-      <button class="nav-btn active" data-tab="dashboard">
-        <span class="nav-icon">◈</span>
-        <span class="nav-label">Home</span>
-      </button>
-      <button class="nav-btn" data-tab="log">
+      <button class="nav-btn active" data-tab="log">
         <span class="nav-icon">📅</span>
         <span class="nav-label">Planer</span>
       </button>
@@ -282,6 +284,10 @@
       <button class="nav-btn" data-tab="stats">
         <span class="nav-icon">◬</span>
         <span class="nav-label">Stats</span>
+      </button>
+      <button class="nav-btn" data-tab="dashboard">
+        <span class="nav-icon">◈</span>
+        <span class="nav-label">Home</span>
       </button>
     </nav>
 
