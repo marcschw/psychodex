@@ -18,6 +18,7 @@ export function calculateCatchXP(diagnosis, hasComorbidity, caughtCodes, caughtK
 }
 
 export function calculateShiftXP(shiftType) {
+  if (shiftType === 'schulung') return 40;
   return shiftType === 'full' ? 120 : 65;
 }
 
@@ -57,10 +58,11 @@ export const SLOT_TYPES = {
 };
 
 export const SHIFT_HOURS = {
-  früh:    { start:[8,0],   end:[14,30] },
-  spät:    { start:[13,30], end:[20,0]  },
-  samstag: { start:[9,0],   end:[16,0]  },
-  full:    { start:[8,0],   end:[20,0]  },
+  früh:     { start:[8,0],   end:[14,30] },
+  spät:     { start:[13,30], end:[20,0]  },
+  samstag:  { start:[9,0],   end:[16,0]  },
+  full:     { start:[8,0],   end:[20,0]  },
+  schulung: { start:[10,0],  end:[16,0]  },
 };
 
 export const MEAL_HINTS = {

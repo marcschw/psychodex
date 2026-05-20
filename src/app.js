@@ -169,9 +169,25 @@ function initSymptomCounters(container, interactive) {
 }
 
 // ─── Hours Helpers ────────────────────────────────────────────────────────────
+function calcCounterHours(counter) {
+  const from = counter.fromDate;
+  const shifts = from ? state.shifts.filter(s => s.date >= from) : state.shifts;
+  return shifts.reduce((s, sh) => s + calcShiftHours(sh), 0) + getExtraHoursTotal();
+}
 function calcShiftHours(shift) {
-  const base = shift.type === 'full' ? 12 : shift.type === 'samstag' ? 7 : 6.5;
+  const base = shift.type === 'full' ? 12 : shift.type === 'samstag' ? 7 : shift.type === 'schulung' ? 6 : 6.5;
   return base + (shift.extensionMinutes || 0) / 60;
+}
+function fmtShiftDuration(shift) {
+  const h = calcShiftHours(shift);
+  const whole = Math.floor(h);
+  const mins  = Math.round((h - whole) * 60);
+  return mins ? `${whole}h ${mins}min` : `${whole}h`;
+}
+function shiftLabelFull(shift) {
+  const name = shift.type === 'full' ? 'Ganztags' : shift.type === 'spät' ? 'Spät'
+    : shift.type === 'samstag' ? 'Samstag' : shift.type === 'schulung' ? 'Schulung' : 'Früh';
+  return `${name} ${fmtShiftDuration(shift)}`;
 }
 function calcTotalHours() {
   const entries = state.profile?.extraHourEntries;
@@ -299,6 +315,16 @@ async function loadFromDB() {
       : [];
     await db.profile.update(state.profile.id, { extraHourEntries: state.profile.extraHourEntries });
   }
+
+  // Migrate to named hourCounters
+  if (!Array.isArray(state.profile.hourCounters)) {
+    state.profile.hourCounters = [{
+      id: 1, name: 'Propädeutikum',
+      targetHours: state.profile.targetHours || 480,
+      fromDate: null
+    }];
+    await db.profile.update(state.profile.id, { hourCounters: state.profile.hourCounters });
+  }
 }
 
 // ─── Escape key closes any open modal ─────────────────────────────────────────
@@ -392,15 +418,11 @@ function renderDashboard() {
   document.getElementById('streak-icon').textContent  = streak.frozen ? '🧊' : '🔥';
   document.getElementById('streak-value').textContent = streak.count;
 
-  // Total hours + progress
+  // Named hours counters
+  renderHoursCounters();
+  // stat card still shows total
   const totalHoursNum = calcTotalHours();
-  const totalHours    = totalHoursNum.toFixed(1).replace(/\.0$/, '');
-  const targetH       = state.profile?.targetHours || 480;
-  const hPct          = Math.min(100, Math.max(0, (totalHoursNum / targetH) * 100));
-  document.getElementById('total-hours').textContent = `${totalHours}h`;
-  document.getElementById('hp-fill').style.width     = `${hPct}%`;
-  document.getElementById('hp-pct').textContent      = `${Math.round(hPct)}%`;
-  document.getElementById('hp-abs').textContent      = `${totalHours} / ${targetH}h`;
+  document.getElementById('total-hours').textContent = `${totalHoursNum.toFixed(1).replace(/\.0$/, '')}h`;
   document.getElementById('total-catches').textContent = state.catches.length;
 
   // Stat card clicks
@@ -454,7 +476,7 @@ function renderDashboard() {
           <div class="shift-icon">${shiftIcon(s.type)}</div>
           <div class="recent-info">
             <div class="recent-name">${fmtDateShort(s.date)}</div>
-            <div class="recent-meta">${shiftLabel(s.type)} · +${s.xpEarned} XP · ${s.patientCount} Pat.</div>
+            <div class="recent-meta">${shiftLabelFull(s)} · +${s.xpEarned} XP · ${s.patientCount} Pat.</div>
           </div>
           ${!s.note ? '<span class="shift-no-log-badge" title="Kein Dienst-Log — Bonus-XP verfügbar!">📝</span>' : '<span style="font-size:12px;color:var(--text-dim)">›</span>'}
         </div>`).join('')
@@ -481,6 +503,37 @@ function renderDashboard() {
       plannerBannerEl.innerHTML = '';
     }
   }
+}
+
+// ─── Hours Counters ───────────────────────────────────────────────────────────
+function renderHoursCounters() {
+  const el = document.getElementById('hours-counters');
+  if (!el) return;
+  const counters = state.profile?.hourCounters || [];
+  el.innerHTML = counters.map(c => {
+    const h = calcCounterHours(c);
+    const t = c.targetHours || 480;
+    const pct = Math.min(100, Math.round((h / t) * 100));
+    const fromTxt = c.fromDate
+      ? `ab ${new Date(c.fromDate + 'T12:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })}`
+      : '';
+    return `
+      <div class="hours-counter-card" data-counter-id="${c.id}">
+        <div class="hc-top">
+          <span class="hc-name">${c.name}</span>
+          <span class="hc-pct">${pct}%</span>
+        </div>
+        <div class="hc-bar-wrap"><div class="hc-bar-fill" style="width:${pct}%"></div></div>
+        <div class="hc-abs">${h.toFixed(1).replace('.0','')}h / ${t}h${fromTxt ? ` · ${fromTxt}` : ''}</div>
+      </div>`;
+  }).join('');
+  el.querySelectorAll('.hours-counter-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const cid = parseInt(card.dataset.counterId);
+      state.hoursModalCounter = cid;
+      openHoursModal();
+    });
+  });
 }
 
 // ─── Streak ───────────────────────────────────────────────────────────────────
@@ -559,7 +612,29 @@ function updatePlannerXP(shift) {
     `${catBadge} · +${base + flame} XP bei Abschluss · ${slotTotal} XP Aktivitäten`;
 }
 
+function renderSchulungTimeline(shift) {
+  const tl = document.getElementById('planner-timeline');
+  tl.innerHTML = `
+    <div class="schulung-note-wrapper">
+      <div class="schulung-hint">📚 Schulungsdienst · Keine Einträge möglich</div>
+      <textarea class="schulung-note-area" id="schulung-note-area" rows="6"
+        placeholder="Notizen zur Schulung…">${shift.note || ''}</textarea>
+      <div class="schulung-note-hint">Wird automatisch gespeichert</div>
+    </div>`;
+  let saveTimer;
+  tl.querySelector('#schulung-note-area').addEventListener('input', e => {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      db.shiftLogs.update(shift.id, { note: e.target.value });
+      const s = state.shifts.find(x => x.id === shift.id);
+      if (s) s.note = e.target.value;
+    }, 800);
+  });
+}
+
 function renderTimeline(shift) {
+  if (shift.type === 'schulung') { renderSchulungTimeline(shift); return; }
+
   const { start, end } = shiftHours(shift.type);
   const startM = toMins(...start);
   const endM   = toMins(...end);
@@ -719,7 +794,7 @@ function renderPlannerPastShifts() {
         <div class="shift-icon">${shiftIcon(s.type)}</div>
         <div class="recent-info">
           <div class="recent-name">${fmtDateShort(s.date)}</div>
-          <div class="recent-meta">${shiftLabel(s.type)} · <span class="cat-badge cat-badge-${s.category || 'regulär'}">${meta.icon} ${meta.label}</span></div>
+          <div class="recent-meta">${shiftLabelFull(s)} · <span class="cat-badge cat-badge-${s.category || 'regulär'}">${meta.icon} ${meta.label}</span></div>
         </div>
         <button class="btn-open-imported" data-id="${s.id}">Öffnen</button>
       </div>`;
@@ -735,7 +810,7 @@ function renderPlannerPastShifts() {
         <div class="shift-icon">${shiftIcon(s.type)}</div>
         <div class="recent-info">
           <div class="recent-name">${fmtDateShort(s.date)} ${catBadge}</div>
-          <div class="recent-meta">${shiftLabel(s.type)} · +${s.xpEarned} XP</div>
+          <div class="recent-meta">${shiftLabelFull(s)} · +${s.xpEarned} XP</div>
         </div>
         <span style="font-size:12px;color:var(--text-dim)">›</span>
       </div>`;
@@ -874,7 +949,7 @@ async function startPlannerShift() {
 
 async function closePlannerShift() {
   if (!state.plannerShiftId) return;
-  if (!confirm('Dienst abschließen? Keine weiteren Einträge danach.')) return;
+  if (!confirm('Dienst abschließen?')) return;
 
   const shift = state.shifts.find(s => s.id === state.plannerShiftId);
   if (!shift) return;
@@ -901,7 +976,7 @@ async function closePlannerShift() {
   stopAlarmScheduler();
 
   updateHeader();
-  const bonuses = [{ label: `${shiftLabel(shift.type)} abgeschlossen`, xp: xpBase }];
+  const bonuses = [{ label: `${shiftLabelFull(shift)} abgeschlossen`, xp: xpBase }];
   if (flame > 0) bonuses.push({ label: '⚡ Flame Bonus', xp: flame });
   showXPPopup(totalBase, bonuses);
   checkLevelUp(newXP, oldXP);
@@ -910,8 +985,8 @@ async function closePlannerShift() {
   renderDashboard();
 }
 
-function openSlotAddModal(shiftId, startH, startM) {
-  state.slotAddContext = { shiftId, startH, startM, selectedType: null, flags: [] };
+function openSlotAddModal(shiftId, startH, startM, source = 'planner') {
+  state.slotAddContext = { shiftId, startH, startM, selectedType: null, flags: [], source };
 
   // Reset UI
   document.querySelectorAll('#slot-type-grid .slot-type-btn').forEach(b => b.classList.remove('active'));
@@ -972,8 +1047,12 @@ async function saveSlot() {
 
   const updatedShift = state.shifts.find(s => s.id === ctx.shiftId);
   if (updatedShift) {
-    updatePlannerXP(updatedShift);
-    renderTimeline(updatedShift);
+    if (ctx.source === 'detail') {
+      renderShiftDetailBody(updatedShift);
+    } else {
+      updatePlannerXP(updatedShift);
+      renderTimeline(updatedShift);
+    }
   }
 
   // Offer to enter diagnoses for patient-contact slots
@@ -986,8 +1065,8 @@ async function saveSlot() {
   }
 }
 
-async function deleteSlot(slotId, shift) {
-  const slot = state.plannerSlots.find(s => s.id === slotId);
+async function deleteSlot(slotId, shift, source = 'planner') {
+  const slot = await db.scheduleSlots.get(slotId);
   if (!slot) return;
   if (!confirm(`${SLOT_TYPES[slot.type]?.label || 'Eintrag'} löschen?`)) return;
 
@@ -1002,7 +1081,13 @@ async function deleteSlot(slotId, shift) {
   state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
   updateHeader();
   const updatedShift = state.shifts.find(s => s.id === shift.id);
-  if (updatedShift) { updatePlannerXP(updatedShift); renderTimeline(updatedShift); }
+  if (!updatedShift) return;
+  if (source === 'detail') {
+    renderShiftDetailBody(updatedShift);
+  } else {
+    updatePlannerXP(updatedShift);
+    renderTimeline(updatedShift);
+  }
 }
 
 function openSlotDetailModal(slot) {
@@ -2199,8 +2284,7 @@ function renderStats() {
   document.getElementById('stat-total-shifts').textContent  = shifts;
   document.getElementById('stat-avg-xp').textContent        = avgXP;
   document.getElementById('stat-hours').textContent         = `${hours.toFixed(1).replace('.0','')}h`;
-  const ti = document.getElementById('target-hours-input');
-  if (ti) ti.value = state.profile?.targetHours ?? 480;
+  renderHourCountersSettings();
   renderExtraHoursSettings();
   renderHeatmap();
   renderCategoryChart();
@@ -2240,7 +2324,7 @@ function showHeatmapDetail(dateStr) {
   const catches = state.catches.filter(c => c.shiftId === shift.id);
   detail.innerHTML = `
     <span>${shiftIcon(shift.type)}</span>
-    <span><strong>${fmtDateShort(shift.date)}</strong> · ${shiftLabel(shift.type)} · +${shift.xpEarned} XP · ${shift.patientCount} Pat.</span>
+    <span><strong>${fmtDateShort(shift.date)}</strong> · ${shiftLabelFull(shift)} · +${shift.xpEarned} XP · ${shift.patientCount} Pat.</span>
     ${catches.length ? `<span style="color:var(--success)">${catches.length} Diagnosen: ${catches.map(c=>c.code).join(', ')}</span>` : ''}
     <span class="heatmap-detail-close" id="hd-close">✕</span>`;
   detail.classList.remove('hidden');
@@ -2352,7 +2436,7 @@ function openShiftDetailModal(shiftId) {
   document.getElementById('shift-detail-modal').classList.remove('hidden');
 }
 
-function renderShiftDetailBody(shift) {
+async function renderShiftDetailBody(shift) {
   const body = document.getElementById('shift-detail-body');
   const shiftCatches = state.catches.filter(c => c.shiftId === shift.id);
 
@@ -2385,7 +2469,7 @@ function renderShiftDetailBody(shift) {
   let html = `
     <div class="shift-detail-header">
       <div class="shift-detail-info">
-        <div class="shift-detail-date">${shiftIcon(shift.type)} ${fmtDateShort(shift.date)} · ${shiftLabel(shift.type)}</div>
+        <div class="shift-detail-date">${shiftIcon(shift.type)} ${fmtDateShort(shift.date)} · ${shiftLabelFull(shift)}</div>
         <div class="shift-detail-meta">+${shift.xpEarned} XP · ${actualPatientCount} Patient(en)</div>
         <div class="shift-timestamps">
           <span>📅 ${fmtDateTime(shift.createdAt)}</span>
@@ -2453,8 +2537,36 @@ function renderShiftDetailBody(shift) {
   html += `<button class="patient-section-add" id="btn-add-new-patient-to-shift" data-shiftid="${shift.id}"
     style="display:block;width:100%;padding:12px;border:1px dashed rgba(124,58,237,.3);border-radius:var(--r);color:var(--accent);margin-top:8px">
     + Neuer Patient & Diagnose
-  </button>
-  <button class="btn-danger" id="btn-delete-this-shift" data-id="${shift.id}">🗑 Dienst löschen</button>`;
+  </button>`;
+
+  // Planner slots section
+  if (shift.plannerShift) {
+    const shiftSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
+    if (shiftSlots.length || true) {
+      html += `<div class="detail-slots-section">
+        <div class="detail-slots-header">
+          <span class="detail-slots-title">📋 Planer-Einträge</span>
+          <button class="btn-secondary detail-add-slot-btn" id="btn-detail-add-slot">+ Eintrag</button>
+        </div>
+        <div class="detail-slots-list">
+          ${shiftSlots.length ? shiftSlots.map(sl => {
+            const def = SLOT_TYPES[sl.type] || {};
+            return `<div class="detail-slot-row" data-slot-id="${sl.id}">
+              <span class="detail-slot-icon">${def.icon || '📌'}</span>
+              <div class="detail-slot-info">
+                <span class="detail-slot-label">${def.label || sl.type}</span>
+                <span class="detail-slot-time">${padT(sl.startHour,sl.startMinute)}–${padT(sl.endHour,sl.endMinute)} · +${sl.xpEarned} XP</span>
+                ${sl.comment ? `<span class="detail-slot-comment">${sl.comment}</span>` : ''}
+              </div>
+              <button class="btn-icon detail-slot-del" data-slot-id="${sl.id}">🗑</button>
+            </div>`;
+          }).join('') : '<div class="detail-slots-empty">Keine Einträge</div>'}
+        </div>
+      </div>`;
+    }
+  }
+
+  html += `<button class="btn-danger" id="btn-delete-this-shift" data-id="${shift.id}">🗑 Dienst löschen</button>`;
 
   body.innerHTML = html;
 
@@ -2527,6 +2639,25 @@ function renderShiftDetailBody(shift) {
       saveShiftNote(shift, noteArea.value);
     });
   }
+
+  // Planner slot actions
+  body.querySelector('#btn-detail-add-slot')?.addEventListener('click', () => {
+    const { start } = shiftHours(shift.type);
+    openSlotAddModal(shift.id, start[0], start[1], 'detail');
+  });
+  body.querySelectorAll('.detail-slot-del').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      deleteSlot(parseInt(btn.dataset.slotId), shift, 'detail');
+    });
+  });
+  body.querySelectorAll('.detail-slot-row').forEach(row => {
+    row.addEventListener('click', async e => {
+      if (e.target.closest('.detail-slot-del')) return;
+      const slot = await db.scheduleSlots.get(parseInt(row.dataset.slotId));
+      if (slot) openSlotDetailModal(slot);
+    });
+  });
 }
 
 async function saveShiftNote(shift, noteText) {
@@ -2901,37 +3032,92 @@ function setupHoursModalListeners() {
 
 function openHoursModal() {
   state.hoursFilter = 'all';
+  if (state.hoursModalCounter == null) {
+    const counters = state.profile?.hourCounters || [];
+    state.hoursModalCounter = counters[0]?.id ?? null;
+  }
   renderHoursModalBody();
   document.getElementById('hours-modal').classList.remove('hidden');
 }
 
+function buildDonut(segments) {
+  // segments: [{ pct, color }]
+  const r = 40, cx = 50, cy = 50, stroke = 14;
+  const circ = 2 * Math.PI * r;
+  let offset = 0;
+  const paths = segments.map(({ pct, color }) => {
+    const len = (pct / 100) * circ;
+    const el = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}"
+      stroke-width="${stroke}" stroke-dasharray="${len} ${circ - len}"
+      stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
+    offset += len;
+    return el;
+  });
+  return `<svg width="100" height="100" viewBox="0 0 100 100">${paths.join('')}</svg>`;
+}
+
 function renderHoursModalBody() {
   const body     = document.getElementById('hours-modal-body');
-  const all      = state.shifts;
+  const counters = state.profile?.hourCounters || [];
+  const counter  = counters.find(c => c.id === state.hoursModalCounter) || counters[0];
+  const baseShifts = counter?.fromDate
+    ? state.shifts.filter(s => s.date >= counter.fromDate)
+    : state.shifts;
+  const all      = baseShifts;
   const filtered = state.hoursFilter === 'all' ? all : all.filter(s => s.type === state.hoursFilter);
-  const totalH   = calcTotalHours();
-  const nFr = all.filter(s => s.type === 'früh').length;
-  const nSp = all.filter(s => s.type === 'spät').length;
-  const nFu = all.filter(s => s.type === 'full').length;
-  const extra = getExtraHoursTotal();
+  const totalH   = counter ? calcCounterHours(counter) : calcTotalHours();
+  const targetH  = counter?.targetHours || 480;
+  const extra    = getExtraHoursTotal();
+
+  const types = ['früh','spät','full','samstag','schulung'];
+  const typeCounts = Object.fromEntries(types.map(t => [t, all.filter(s=>s.type===t)]));
+  const typeHours  = Object.fromEntries(types.map(t => [t, typeCounts[t].reduce((s,sh)=>s+calcShiftHours(sh),0)]));
+  const nFr = typeCounts['früh'].length, nSp = typeCounts['spät'].length,
+        nFu = typeCounts['full'].length, nSa = typeCounts['samstag'].length,
+        nSc = typeCounts['schulung'].length;
+
+  const shiftH = Object.values(typeHours).reduce((a,b)=>a+b, 0);
+  const donutSegments = shiftH > 0 ? [
+    { pct: (typeHours['früh']    / shiftH) * 100, color: '#3b82f6' },
+    { pct: (typeHours['spät']    / shiftH) * 100, color: '#8b5cf6' },
+    { pct: (typeHours['full']    / shiftH) * 100, color: '#f59e0b' },
+    { pct: (typeHours['samstag'] / shiftH) * 100, color: '#10b981' },
+    { pct: (typeHours['schulung']/ shiftH) * 100, color: '#6366f1' },
+  ].filter(s => s.pct > 0) : [];
+
+  const fromDate = counter?.fromDate ? all.reduce((min,s) => s.date < min ? s.date : min, counter.fromDate) : (all.length ? [...all].sort((a,b)=>a.date.localeCompare(b.date))[0]?.date : null);
+  const toDate   = all.length ? [...all].sort((a,b)=>b.date.localeCompare(a.date))[0]?.date : null;
+  const fmtD = d => d ? new Date(d+'T12:00:00').toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric'}) : '–';
+
+  const counterTabs = counters.length > 1 ? `
+    <div class="hours-counter-tabs">
+      ${counters.map(c=>`<button class="hct-btn${c.id===counter?.id?' active':''}" data-cid="${c.id}">${c.name}</button>`).join('')}
+    </div>` : '';
 
   body.innerHTML = `
+    ${counterTabs}
     <div class="hours-summary">
-      <div>
-        <div class="hours-total">${totalH.toFixed(1).replace('.0','')}h</div>
-        <div class="hours-label">Gesamt${extra > 0 ? ` (+${extra.toFixed(1).replace('.0','')}h Extra)` : ''}</div>
-      </div>
-      <div style="text-align:right;font-size:12px;color:var(--text-dim);line-height:1.9">
-        <div>🌅 Früh: ${nFr}×</div>
-        <div>🌇 Spät: ${nSp}×</div>
-        <div>☀️ Ganztags: ${nFu}×</div>
+      <div class="hours-donut">${donutSegments.length ? buildDonut(donutSegments) : '<div class="donut-empty">–</div>'}</div>
+      <div class="hours-summary-info">
+        <div class="hours-total">${totalH.toFixed(1).replace('.0','')}h <span style="font-size:14px;color:var(--text-dim)">/ ${targetH}h</span></div>
+        <div class="hours-label">${counter?.name || 'Gesamt'}</div>
+        <div class="hours-range">${fmtD(fromDate)} – ${fmtD(toDate)}</div>
+        <div class="hours-type-legend">
+          ${nFr ? `<span style="color:#3b82f6">🌅 ${nFr}×</span>` : ''}
+          ${nSp ? `<span style="color:#8b5cf6">🌇 ${nSp}×</span>` : ''}
+          ${nFu ? `<span style="color:#f59e0b">☀️ ${nFu}×</span>` : ''}
+          ${nSa ? `<span style="color:#10b981">🗓️ ${nSa}×</span>` : ''}
+          ${nSc ? `<span style="color:#6366f1">📚 ${nSc}×</span>` : ''}
+          ${extra > 0 ? `<span style="color:var(--text-dim)">+${extra.toFixed(1).replace('.0','')}h Extra</span>` : ''}
+        </div>
       </div>
     </div>
     <div class="hours-filter-row">
       <button class="hours-filter-btn${state.hoursFilter==='all'?' active':''}" data-filter="all">Alle (${all.length})</button>
-      <button class="hours-filter-btn${state.hoursFilter==='früh'?' active':''}" data-filter="früh">🌅 Früh (${nFr})</button>
-      <button class="hours-filter-btn${state.hoursFilter==='spät'?' active':''}" data-filter="spät">🌇 Spät (${nSp})</button>
-      <button class="hours-filter-btn${state.hoursFilter==='full'?' active':''}" data-filter="full">☀️ Ganztags (${nFu})</button>
+      ${nFr ? `<button class="hours-filter-btn${state.hoursFilter==='früh'?' active':''}" data-filter="früh">🌅 Früh</button>` : ''}
+      ${nSp ? `<button class="hours-filter-btn${state.hoursFilter==='spät'?' active':''}" data-filter="spät">🌇 Spät</button>` : ''}
+      ${nFu ? `<button class="hours-filter-btn${state.hoursFilter==='full'?' active':''}" data-filter="full">☀️ Ganztags</button>` : ''}
+      ${nSa ? `<button class="hours-filter-btn${state.hoursFilter==='samstag'?' active':''}" data-filter="samstag">🗓️ Samstag</button>` : ''}
     </div>
     <div class="hours-list">
       ${filtered.length ? filtered.map(s => `
@@ -2939,13 +3125,15 @@ function renderHoursModalBody() {
           <div class="hours-row-icon">${shiftIcon(s.type)}</div>
           <div class="hours-row-info">
             <div class="hours-row-date">${fmtDateShort(s.date)}</div>
-            <div class="hours-row-meta">${shiftLabel(s.type)}${s.extensionMinutes ? ` +${s.extensionMinutes}min` : ''} · +${s.xpEarned} XP · ${s.patientCount} Pat.</div>
+            <div class="hours-row-meta">${shiftLabelFull(s)} · +${s.xpEarned} XP · ${s.patientCount} Pat.</div>
           </div>
           <div class="hours-row-val">${calcShiftHours(s).toFixed(1).replace('.0','')}h</div>
         </div>`).join('')
-      : '<div class="empty-state">Keine Dienste in dieser Kategorie.</div>'}
+      : '<div class="empty-state">Keine Dienste in diesem Zeitraum.</div>'}
     </div>`;
 
+  body.querySelectorAll('.hct-btn').forEach(btn =>
+    btn.addEventListener('click', () => { state.hoursModalCounter = parseInt(btn.dataset.cid); state.hoursFilter = 'all'; renderHoursModalBody(); }));
   body.querySelectorAll('.hours-filter-btn').forEach(btn =>
     btn.addEventListener('click', () => { state.hoursFilter = btn.dataset.filter; renderHoursModalBody(); }));
   body.querySelectorAll('.hours-row').forEach(row =>
@@ -3054,8 +3242,8 @@ const fmtDateShort = ds =>
 const fmtDateLong = ds =>
   new Date(ds + 'T12:00:00').toLocaleDateString('de-AT', { weekday:'long', day:'numeric', month:'long' });
 
-const shiftIcon  = t => t === 'full' ? '☀️' : t === 'spät' ? '🌇' : t === 'samstag' ? '🗓️' : '🌅';
-const shiftLabel = t => t === 'full' ? 'Ganztags 12h' : t === 'spät' ? 'Spät 6,5h' : t === 'samstag' ? 'Samstag 7h' : 'Früh 6,5h';
+const shiftIcon  = t => t === 'full' ? '☀️' : t === 'spät' ? '🌇' : t === 'samstag' ? '🗓️' : t === 'schulung' ? '📚' : '🌅';
+const shiftLabel = t => t === 'full' ? 'Ganztags 12h' : t === 'spät' ? 'Spät 6,5h' : t === 'samstag' ? 'Samstag 7h' : t === 'schulung' ? 'Schulung 6h' : 'Früh 6,5h';
 
 // ─── Diagnosis Info Modal ─────────────────────────────────────────────────────
 function setupDiagInfoModal() {
@@ -3627,6 +3815,66 @@ function setupDashboardCardListeners() {
   });
 }
 
+// ─── Hour Counters Settings ───────────────────────────────────────────────────
+function renderHourCountersSettings() {
+  const el = document.getElementById('hour-counters-settings');
+  if (!el) return;
+  const counters = state.profile?.hourCounters || [];
+  el.innerHTML = counters.map((c, i) => `
+    <div class="hcs-item" data-id="${c.id}">
+      <div class="hcs-row">
+        <input class="setting-input hcs-name" type="text" value="${c.name}" placeholder="Name" data-id="${c.id}">
+        ${counters.length > 1 ? `<button class="btn-icon hcs-del" data-id="${c.id}" title="Löschen">🗑</button>` : ''}
+      </div>
+      <div class="hcs-row">
+        <label class="hcs-sub">Ziel</label>
+        <input class="setting-input hcs-target" type="number" value="${c.targetHours}" min="1" max="5000" style="width:80px" data-id="${c.id}">
+        <span class="hcs-sub">h</span>
+        <label class="hcs-sub" style="margin-left:8px">Ab</label>
+        <input class="setting-input hcs-from" type="date" value="${c.fromDate || ''}" data-id="${c.id}" style="flex:1;min-width:0">
+      </div>
+    </div>`).join('') +
+    (counters.length < 2 ? `<button id="btn-add-counter" class="btn-secondary" style="width:100%;margin-top:8px;padding:8px;font-size:12px">+ Zweiten Zähler hinzufügen</button>` : '');
+
+  el.querySelectorAll('.hcs-name').forEach(inp => inp.addEventListener('change', async e => {
+    await updateCounter(parseInt(e.target.dataset.id), { name: e.target.value.trim() || 'Zähler' });
+  }));
+  el.querySelectorAll('.hcs-target').forEach(inp => inp.addEventListener('change', async e => {
+    const val = parseInt(e.target.value);
+    if (val > 0) await updateCounter(parseInt(e.target.dataset.id), { targetHours: val });
+  }));
+  el.querySelectorAll('.hcs-from').forEach(inp => inp.addEventListener('change', async e => {
+    await updateCounter(parseInt(e.target.dataset.id), { fromDate: e.target.value || null });
+  }));
+  el.querySelectorAll('.hcs-del').forEach(btn => btn.addEventListener('click', async () => {
+    const id = parseInt(btn.dataset.id);
+    const updated = (state.profile.hourCounters || []).filter(c => c.id !== id);
+    await saveCounters(updated);
+    renderHourCountersSettings();
+    renderHoursCounters();
+  }));
+  const addBtn = el.querySelector('#btn-add-counter');
+  if (addBtn) addBtn.addEventListener('click', async () => {
+    const newId = Date.now();
+    const updated = [...(state.profile.hourCounters || []),
+      { id: newId, name: 'Zähler 2', targetHours: 480, fromDate: null }];
+    await saveCounters(updated);
+    renderHourCountersSettings();
+    renderHoursCounters();
+  });
+}
+
+async function saveCounters(counters) {
+  await db.profile.update(state.profile.id, { hourCounters: counters });
+  state.profile.hourCounters = counters;
+}
+
+async function updateCounter(id, patch) {
+  const counters = (state.profile.hourCounters || []).map(c => c.id === id ? { ...c, ...patch } : c);
+  await saveCounters(counters);
+  renderHoursCounters();
+}
+
 // ─── Extra Hours ──────────────────────────────────────────────────────────────
 function renderExtraHoursSettings() {
   const el = document.getElementById('extra-hours-section');
@@ -3711,17 +3959,7 @@ async function deleteExtraHourEntry(entryId) {
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
 function setupSettingsInputs() {
-  const targetInput = document.getElementById('target-hours-input');
-  if (targetInput) {
-    targetInput.value = state.profile?.targetHours ?? 480;
-    targetInput.addEventListener('change', async () => {
-      const val = Math.max(1, Math.round(parseFloat(targetInput.value)) || 480);
-      targetInput.value = val;
-      await db.profile.update(state.profile.id, { targetHours: val });
-      state.profile.targetHours = val;
-      if (state.currentTab === 'dashboard') renderDashboard();
-    });
-  }
+  // counter settings are wired in renderHourCountersSettings
 }
 
 // ─── Shift Extension ──────────────────────────────────────────────────────────
