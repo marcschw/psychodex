@@ -1014,9 +1014,8 @@ function renderTimeline(shift) {
         .sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999));
       const diagCards = slotCatches.map(c =>
         `<div class="tl-diag-card" data-catch-id="${c.id}">
-          <img class="tl-diag-img" src="assets/images/diagnoses/${c.code}.png"
-               onerror="this.style.display='none'" alt="">
-          <div class="tl-diag-info">
+          <div class="tl-diag-imgbg" style="background-image:url('assets/images/diagnoses/${c.code}.png')"></div>
+          <div class="tl-diag-content">
             <span class="tl-diag-code">${c.code}</span>
             <span class="tl-diag-name">${c.name}</span>
           </div>
@@ -2801,50 +2800,52 @@ function renderAchievements() {
     secretsDone.add(a.badgeId);
   });
 
-  const achImgHtml = (id, icon, unlocked = false) =>
-    `<div class="ach-img-wrap${unlocked ? ' ach-img-clickable' : ''}" data-badge-id="${id}" data-badge-icon="${icon}">
+  const starRow = (earned, total, color = '#7c3aed') =>
+    Array.from({length: total}, (_, i) => i < earned
+      ? `<span class="ach-star ach-star-on" style="color:${color}">★</span>`
+      : `<span class="ach-star ach-star-off">☆</span>`
+    ).join('');
+
+  const secretStarCount = xp => xp <= 400 ? 1 : xp <= 700 ? 2 : 3;
+
+  const badgeCard = ({ id, icon, name, desc, stars, tierClass, clickable, locked }) =>
+    `<div class="ach-card ${tierClass}${clickable ? ' ach-img-clickable' : ''}"
+          data-badge-id="${id}" data-badge-icon="${icon}">
       <img class="ach-img" src="assets/images/badges/${id}.png"
            onload="this.nextElementSibling.style.display='none'"
            onerror="this.style.display='none'" alt="">
-      <span class="ach-emoji">${icon}</span>
+      <div class="ach-emoji-bg">${locked ? '🔒' : icon}</div>
+      <div class="ach-card-gradient">
+        <div class="ach-card-stars">${stars}</div>
+        <div class="ach-name">${name}</div>
+        <div class="ach-desc">${locked ? '??? (Geheimnis)' : desc}</div>
+      </div>
     </div>`;
 
   const regularCards = ACHIEVEMENTS.map(ach => {
     const maxTier = maxTierMap[ach.id] || 0;
     const unlocked = maxTier > 0;
-    const dots = [1, 2, 3].map(t =>
-      `<span class="ach-dot${t <= maxTier ? ' ach-dot-earned' : ''}"></span>`
-    ).join('');
-    return `<div class="ach-card ach-tier-${maxTier}">
-      ${achImgHtml(ach.id, ach.icon, unlocked)}
-      <div class="ach-info">
-        <div class="ach-name">${ach.name}</div>
-        <div class="ach-desc">${ach.description}</div>
-        ${unlocked ? `<div class="ach-tier-label">${ACH_TIER_LABELS[maxTier]}</div>` : ''}
-      </div>
-      <div class="ach-dots">${dots}</div>
-    </div>`;
+    const color = maxTier === 3 ? '#f59e0b' : '#7c3aed';
+    return badgeCard({
+      id: ach.id, icon: ach.icon, name: ach.name, desc: ach.description,
+      stars: starRow(maxTier, 3, color),
+      tierClass: `ach-tier-${maxTier}`,
+      clickable: unlocked, locked: false,
+    });
   }).join('');
 
   const secretCards = SECRET_ACHIEVEMENTS.map(ach => {
     const isUnlocked = secretsDone.has(ach.id);
-    if (isUnlocked) {
-      return `<div class="ach-card ach-tier-3 ach-secret-unlocked">
-        ${achImgHtml(ach.id, ach.icon, true)}
-        <div class="ach-info">
-          <div class="ach-name">${ach.name}</div>
-          <div class="ach-desc">${ach.description}</div>
-          <div class="ach-tier-label ach-secret-label">🔓 Secret · +${ach.xp} XP</div>
-        </div>
-      </div>`;
-    }
-    return `<div class="ach-card ach-tier-0 ach-secret-locked">
-      <div class="ach-img-wrap ach-img-locked"><span class="ach-emoji">🔒</span></div>
-      <div class="ach-info">
-        <div class="ach-name">${ach.name}</div>
-        <div class="ach-desc">??? (Geheimnis)</div>
-      </div>
-    </div>`;
+    const starCount = secretStarCount(ach.xp);
+    const stars = isUnlocked
+      ? starRow(starCount, 3, '#f59e0b')
+      : starRow(0, starCount, '#f59e0b');
+    return badgeCard({
+      id: ach.id, icon: ach.icon, name: ach.name, desc: ach.description,
+      stars,
+      tierClass: isUnlocked ? 'ach-tier-3 ach-secret-unlocked' : 'ach-tier-0 ach-secret-locked',
+      clickable: isUnlocked, locked: !isUnlocked,
+    });
   }).join('');
 
   el.innerHTML =
@@ -2857,9 +2858,8 @@ function renderAchievements() {
 
   el.querySelector('#btn-recalc-achievements')?.addEventListener('click', recalculateAchievements);
 
-  // Badge lightbox — click unlocked badges for fullscreen view
-  el.querySelectorAll('.ach-img-clickable').forEach(wrap => {
-    wrap.addEventListener('click', () => openBadgeLightbox(wrap.dataset.badgeId, wrap.dataset.badgeIcon));
+  el.querySelectorAll('.ach-img-clickable').forEach(card => {
+    card.addEventListener('click', () => openBadgeLightbox(card.dataset.badgeId, card.dataset.badgeIcon));
   });
 }
 
