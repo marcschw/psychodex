@@ -322,14 +322,22 @@ async function loadFromDB() {
     await db.profile.update(state.profile.id, { extraHourEntries: state.profile.extraHourEntries });
   }
 
-  // Migrate to named hourCounters
-  if (!Array.isArray(state.profile.hourCounters)) {
-    state.profile.hourCounters = [{
-      id: 1, name: 'Propädeutikum',
-      targetHours: state.profile.targetHours || 480,
-      fromDate: null
-    }];
-    await db.profile.update(state.profile.id, { hourCounters: state.profile.hourCounters });
+  // Auto-close any plannerActive shifts whose date has already passed
+  const todayStr = new Date().toISOString().split('T')[0];
+  const overdueActive = state.shifts.filter(s => s.plannerActive && s.date < todayStr);
+  if (overdueActive.length) {
+    for (const shift of overdueActive) {
+      const upd = { plannerActive: false, closedAt: shift.date + 'T23:59:59.000Z' };
+      if (!shift.baseXPAwarded) {
+        const modifier = CATEGORY_XP_MODIFIER[shift.category || 'regulär'];
+        const xpBase = Math.round(calculateShiftXP(shift.type) * modifier);
+        upd.xpEarned = (shift.xpEarned || 0) + xpBase;
+        state.profile.totalXP = (state.profile.totalXP ?? 0) + xpBase;
+        await db.profile.update(state.profile.id, { totalXP: state.profile.totalXP });
+      }
+      await db.shiftLogs.update(shift.id, upd);
+    }
+    state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
   }
 }
 
@@ -682,11 +690,21 @@ async function renderPlannerTab() {
 
   // Header
   const catMeta = CATEGORY_META[openShift.category || 'regulär'];
+  const todayForBtn = new Date().toISOString().split('T')[0];
+  const isFutureShift = openShift.date > todayForBtn;
   document.getElementById('planner-shift-title').innerHTML =
     `${shiftIcon(openShift.type)} ${fmtDateShort(openShift.date)} · ${shiftLabel(openShift.type)} <span class="cat-badge cat-badge-${openShift.category || 'regulär'}">${catMeta.icon} ${catMeta.label}</span>`;
+  const closeBtn = document.getElementById('btn-close-planner-shift');
+  if (isFutureShift) {
+    closeBtn.textContent = '← Zurück';
+    closeBtn.className = 'btn-suspend-planner';
+  } else {
+    closeBtn.textContent = '✓ Abschließen';
+    closeBtn.className = 'btn-finish-planner';
+  }
   updatePlannerXP(openShift);
   renderTimeline(openShift);
-  startAlarmScheduler();
+  if (!isFutureShift) startAlarmScheduler();
 }
 
 function updatePlannerXP(shift) {
@@ -696,8 +714,10 @@ function updatePlannerXP(shift) {
   const base = Math.round(calculateShiftXP(shift.type) * modifier);
   const flame = calculateFlameBonus(shift.date);
   const catBadge = `<span class="cat-badge cat-badge-${shift.category || 'regulär'}">${meta.icon} ${meta.label}</span>`;
-  document.getElementById('planner-shift-xp').innerHTML =
-    `${catBadge} · +${base + flame} XP bei Abschluss · ${slotTotal} XP Aktivitäten`;
+  const xpLabel = shift.baseXPAwarded
+    ? `Basis-XP ✓ · ${slotTotal} XP Einträge`
+    : `+${base + flame} XP bei Abschluss · ${slotTotal} XP Aktivitäten`;
+  document.getElementById('planner-shift-xp').innerHTML = `${catBadge} · ${xpLabel}`;
 }
 
 function renderSchulungTimeline(shift) {
@@ -960,17 +980,52 @@ function renderPlannerPastShifts() {
 }
 
 async function openImportedShift(shiftId) {
-  if (state.shifts.find(s => s.plannerActive)) {
-    alert('Bitte zuerst den aktiven Dienst abschließen.');
+  const existingActive = state.shifts.find(s => s.plannerActive);
+  if (existingActive) {
+    const today = new Date().toISOString().split('T')[0];
+    alert(existingActive.date > today
+      ? 'Bitte zuerst den aktuellen Dienst verlassen (← Zurück).'
+      : 'Bitte zuerst den aktiven Dienst abschließen.');
     return;
   }
-  await db.shiftLogs.update(shiftId, { plannerActive: true });
+  const shift = state.shifts.find(s => s.id === shiftId);
+  if (!shift) return;
+  const today = new Date().toISOString().split('T')[0];
+  const isFuture = shift.date > today;
+  const updates = { plannerActive: true };
+
+  // Future shifts get base XP immediately (no manual close needed)
+  if (isFuture && !shift.baseXPAwarded) {
+    const modifier = CATEGORY_XP_MODIFIER[shift.category || 'regulär'];
+    const xpBase = Math.round(calculateShiftXP(shift.type) * modifier);
+    updates.xpEarned = (shift.xpEarned || 0) + xpBase;
+    updates.baseXPAwarded = true;
+    const oldXP = state.profile.totalXP ?? 0;
+    const newXP = oldXP + xpBase;
+    await db.profile.update(state.profile.id, { totalXP: newXP });
+    state.profile.totalXP = newXP;
+    updateHeader();
+    showXPPopup(xpBase, [{ label: `${shiftLabelFull(shift)} geplant`, xp: xpBase }]);
+    checkLevelUp(newXP, oldXP);
+  }
+
+  await db.shiftLogs.update(shiftId, updates);
   state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
   state.plannerShiftId = shiftId;
   state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shiftId).sortBy('startHour');
   state.alarmFired = new Set();
   renderPlannerTab();
-  startAlarmScheduler();
+  if (!isFuture) startAlarmScheduler();
+}
+
+async function suspendPlannerShift() {
+  if (!state.plannerShiftId) return;
+  await db.shiftLogs.update(state.plannerShiftId, { plannerActive: false });
+  state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+  state.plannerShiftId = null;
+  state.plannerSlots = [];
+  stopAlarmScheduler();
+  renderPlannerTab();
 }
 
 function setupPlannerListeners() {
@@ -991,7 +1046,12 @@ function setupPlannerListeners() {
   });
 
   document.getElementById('btn-start-planner-shift').addEventListener('click', startPlannerShift);
-  document.getElementById('btn-close-planner-shift').addEventListener('click', closePlannerShift);
+  document.getElementById('btn-close-planner-shift').addEventListener('click', () => {
+    const openShift = state.shifts.find(s => s.plannerActive);
+    const today = new Date().toISOString().split('T')[0];
+    if (openShift && openShift.date > today) suspendPlannerShift();
+    else closePlannerShift();
+  });
   document.getElementById('btn-edit-planner-shift').addEventListener('click', () => {
     if (state.plannerShiftId) openEditShiftModal(state.plannerShiftId);
   });
@@ -1132,8 +1192,9 @@ async function closePlannerShift() {
   if (!shift) return;
 
   const modifier = CATEGORY_XP_MODIFIER[shift.category || 'regulär'];
-  const xpBase = Math.round(calculateShiftXP(shift.type) * modifier);
-  const flame  = calculateFlameBonus(shift.date);
+  // Skip base XP if already awarded (opened as future shift)
+  const xpBase = shift.baseXPAwarded ? 0 : Math.round(calculateShiftXP(shift.type) * modifier);
+  const flame  = shift.baseXPAwarded ? 0 : calculateFlameBonus(shift.date);
   const totalBase = xpBase + flame;
 
   await db.shiftLogs.update(state.plannerShiftId, {
@@ -1144,8 +1205,10 @@ async function closePlannerShift() {
 
   const oldXP = state.profile.totalXP ?? 0;
   const newXP = oldXP + totalBase;
-  await db.profile.update(state.profile.id, { totalXP: newXP });
-  state.profile.totalXP = newXP;
+  if (totalBase > 0) {
+    await db.profile.update(state.profile.id, { totalXP: newXP });
+    state.profile.totalXP = newXP;
+  }
 
   state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
   state.plannerShiftId = null;
@@ -1153,10 +1216,12 @@ async function closePlannerShift() {
   stopAlarmScheduler();
 
   updateHeader();
-  const bonuses = [{ label: `${shiftLabelFull(shift)} abgeschlossen`, xp: xpBase }];
-  if (flame > 0) bonuses.push({ label: '⚡ Flame Bonus', xp: flame });
-  showXPPopup(totalBase, bonuses);
-  checkLevelUp(newXP, oldXP);
+  if (totalBase > 0) {
+    const bonuses = [{ label: `${shiftLabelFull(shift)} abgeschlossen`, xp: xpBase }];
+    if (flame > 0) bonuses.push({ label: '⚡ Flame Bonus', xp: flame });
+    showXPPopup(totalBase, bonuses);
+    checkLevelUp(newXP, oldXP);
+  }
 
   renderPlannerTab();
   renderDashboard();
@@ -3063,8 +3128,8 @@ async function saveEditShift() {
 
   const updates = { date: newDate, type: newType, category: newCat, updatedAt: new Date().toISOString() };
 
-  // Only adjust XP for closed shifts (plannerActive shifts haven't earned base XP yet)
-  if (!shift.plannerActive) {
+  // Only adjust XP for shifts where base XP is already earned
+  if (!shift.plannerActive || shift.baseXPAwarded) {
     const oldShiftXP = Math.round(_baseShiftXP(shift.type) * (CATEGORY_XP_MODIFIER[shift.category || 'regulär'] ?? 1));
     const newShiftXP = Math.round(_baseShiftXP(newType) * (CATEGORY_XP_MODIFIER[newCat] ?? 1));
     const xpDelta = newShiftXP - oldShiftXP;
@@ -3125,6 +3190,9 @@ async function renderShiftDetailBody(shift) {
     }
     patientMap.get(key).catches.push(c);
   });
+  // Sort patients chronologically by time, unknown time last
+  const sortedPatients = [...patientMap.entries()]
+    .sort(([, a], [, b]) => (a.patientTime ?? 9999) - (b.patientTime ?? 9999));
 
   const extMins  = shift.extensionMinutes || 0;
   const shiftH   = calcShiftHours(shift).toFixed(1).replace('.0','');
@@ -3141,7 +3209,7 @@ async function renderShiftDetailBody(shift) {
     <div class="shift-detail-header">
       <div class="shift-detail-info">
         <div class="shift-detail-date">${shiftIcon(shift.type)} ${fmtDateShort(shift.date)} · ${shiftLabelFull(shift)}</div>
-        <div class="shift-detail-meta">+${shift.xpEarned} XP · ${actualPatientCount} Patient(en)</div>
+        <div class="shift-detail-meta">+${shift.xpEarned} XP · ${actualPatientCount} Termin(e)</div>
         <div class="shift-timestamps">
           <span>📅 ${fmtDateTime(shift.createdAt)}</span>
           ${shift.updatedAt ? `<span>✏️ ${fmtDateTime(shift.updatedAt)}</span>` : ''}
@@ -3169,18 +3237,23 @@ async function renderShiftDetailBody(shift) {
   }
 
   let pNum = 1;
-  for (const [, p] of patientMap) {
-    const timeStr  = p.patientTime != null ? ` · ${String(p.patientTime).padStart(2,'0')}:00 Uhr` : '';
-    const demoLabel = `${p.ageGroup} J · ${p.gender} · ${p.patientType === 'erstgespraech' ? 'Erstgespräch' : 'Interview'}${timeStr}`;
+  for (const [, p] of sortedPatients) {
+    const timeStr  = p.patientTime != null ? `${String(p.patientTime).padStart(2,'0')}:00 Uhr · ` : '';
+    const typeLabel = p.patientType === 'erstgespraech' ? 'Erstgespräch' : 'Interview';
+    const termLabel = p.patientTime != null
+      ? `Termin ${String(p.patientTime).padStart(2,'0')}:00`
+      : `Termin ${pNum}`;
+    const demoLabel = `${timeStr}${p.ageGroup} J · ${p.gender} · ${typeLabel}`;
     html += `<div class="patient-section" data-pkey="${p.index}">
       <div class="patient-section-header">
         <div>
-          <div class="patient-section-label">Patient ${pNum}</div>
+          <div class="patient-section-label">${termLabel}</div>
           <div class="patient-section-demo">${demoLabel}</div>
         </div>
         <div style="display:flex;gap:4px">
+          <button class="btn-icon btn-move-patient" data-pkey="${p.index}" title="Termin verschieben">↗</button>
           <button class="btn-icon btn-edit-patient-demo" data-pkey="${p.index}" title="Demografik bearbeiten">✎</button>
-          <button class="btn-icon btn-delete-shift-patient" data-pkey="${p.index}" title="Patient löschen">🗑</button>
+          <button class="btn-icon btn-delete-shift-patient" data-pkey="${p.index}" title="Termin löschen">🗑</button>
         </div>
       </div>
       <div class="patient-diags" id="pdiags-${shift.id}-${p.index}">`;
@@ -3205,10 +3278,10 @@ async function renderShiftDetailBody(shift) {
     pNum++;
   }
 
-  // Add new patient section
+  // Add new appointment section
   html += `<button class="patient-section-add" id="btn-add-new-patient-to-shift" data-shiftid="${shift.id}"
     style="display:block;width:100%;padding:12px;border:1px dashed rgba(124,58,237,.3);border-radius:var(--r);color:var(--accent);margin-top:8px">
-    + Neuer Patient & Diagnose
+    + Neuer Termin & Diagnose
   </button>`;
 
   // Planner slots section — always show for any shift that has slots or plannerShift flag
@@ -3296,10 +3369,10 @@ async function renderShiftDetailBody(shift) {
         const opt = document.createElement('button');
         opt.className = 'move-diag-option';
         if (String(pkey) === String(currentPkey)) {
-          opt.textContent = `Patient ${pNum} (aktuell)`;
+          opt.textContent = `Termin ${pNum} (aktuell)`;
           opt.disabled = true;
         } else {
-          opt.textContent = `→ Patient ${pNum}`;
+          opt.textContent = `→ Termin ${pNum}`;
           opt.addEventListener('click', async () => {
             await db.caughtDiagnoses.update(catchId, { patientIndex: pkey });
             state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
@@ -3322,6 +3395,35 @@ async function renderShiftDetailBody(shift) {
     deleteShift(parseInt(body.querySelector('#btn-delete-this-shift').dataset.id)));
 
   // Patient demo edit buttons
+  body.querySelectorAll('.btn-move-patient').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      body.querySelectorAll('.move-patient-menu').forEach(m => m.remove());
+      const pkey = btn.dataset.pkey;
+      const candidates = state.shifts
+        .filter(s => s.id !== shift.id && !s.plannerActive)
+        .slice(0, 10);
+      if (!candidates.length) { alert('Keine anderen Dienste vorhanden.'); return; }
+      const menu = document.createElement('div');
+      menu.className = 'move-patient-menu';
+      const title = document.createElement('div');
+      title.className = 'move-patient-title';
+      title.textContent = 'Termin verschieben in:';
+      menu.appendChild(title);
+      candidates.forEach(s => {
+        const opt = document.createElement('button');
+        opt.className = 'move-diag-option';
+        opt.textContent = `→ ${fmtDateShort(s.date)} ${shiftIcon(s.type)} ${shiftLabel(s.type)}`;
+        opt.addEventListener('click', async () => {
+          menu.remove();
+          await movePatientToShift(pkey, shift, s.id, patientMap);
+        });
+        menu.appendChild(opt);
+      });
+      btn.closest('.patient-section-header').after(menu);
+    });
+  });
+
   body.querySelectorAll('.btn-edit-patient-demo').forEach(btn => {
     btn.addEventListener('click', () => togglePatientEditRow(btn.dataset.pkey, shift.id, patientMap));
   });
@@ -3407,6 +3509,31 @@ async function saveShiftNote(shift, noteText) {
   } else {
     state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
   }
+}
+
+async function movePatientToShift(pkey, sourceShift, targetShiftId, patientMap) {
+  const keyVal = isNaN(pkey) ? pkey : parseInt(pkey);
+  const p = patientMap.get(keyVal);
+  if (!p || !p.catches.length) return;
+
+  // Next available patientIndex in target shift
+  const targetCatches = state.catches.filter(c => c.shiftId === targetShiftId);
+  const newPIdx = targetCatches.reduce((m, c) => Math.max(m, c.patientIndex ?? -1), -1) + 1;
+
+  for (const c of p.catches) {
+    await db.caughtDiagnoses.update(c.id, { shiftId: targetShiftId, patientIndex: newPIdx });
+  }
+
+  // Refresh patientCount on both shifts
+  state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
+  const srcCount = new Set(state.catches.filter(c => c.shiftId === sourceShift.id && c.patientIndex != null).map(c => c.patientIndex)).size;
+  const tgtCount = new Set(state.catches.filter(c => c.shiftId === targetShiftId && c.patientIndex != null).map(c => c.patientIndex)).size;
+  await db.shiftLogs.update(sourceShift.id, { patientCount: srcCount });
+  await db.shiftLogs.update(targetShiftId, { patientCount: tgtCount });
+  state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+
+  const updatedShift = state.shifts.find(s => s.id === sourceShift.id);
+  if (updatedShift) renderShiftDetailBody(updatedShift);
 }
 
 function togglePatientEditRow(pkey, shiftId, patientMap) {
@@ -4418,7 +4545,7 @@ async function openXPBreakdownModal() {
   const noteXP = state.shifts.filter(sh => sh.noteAddedAt).reduce((s, sh) =>
     s + calculateNoteXP(sh.date, sh.noteAddedAt), 0);
   const shiftBaseXP = state.shifts.reduce((s, sh) => {
-    if (sh.plannerActive) return s; // not yet earned
+    if (sh.plannerActive && !sh.baseXPAwarded) return s; // not yet earned
     const base = sh.plannerShift
       ? Math.round(_baseShiftXP(sh.type) * (CATEGORY_XP_MODIFIER[sh.category || 'regulär'] ?? 1))
       : _baseShiftXP(sh.type);
@@ -4593,9 +4720,10 @@ async function recalculateXP() {
     if (shift.plannerShift) {
       // Planner shift: category-modified base + flame only when closed; slots counted separately
       const modifier = CATEGORY_XP_MODIFIER[shift.category || 'regulär'];
-      const base  = shift.plannerActive ? 0 : Math.round(calculateShiftXP(shift.type) * modifier);
+      const baseIsEarned = shift.baseXPAwarded || !shift.plannerActive;
+      const base  = baseIsEarned ? Math.round(calculateShiftXP(shift.type) * modifier) : 0;
       const closedRef = new Date(shift.closedAt || shift.createdAt || shift.date);
-      const flame = (!shift.plannerActive && (closedRef - new Date(shift.date)) / 3600000 <= 24) ? 25 : 0;
+      const flame = (!shift.plannerActive && !shift.baseXPAwarded && (closedRef - new Date(shift.date)) / 3600000 <= 24) ? 25 : 0;
       const catchSum = (catchesByShift[shift.id] || []).reduce((s, c) => s + c.xpEarned, 0);
       const slotSum  = (slotsByShift[shift.id]  || []).reduce((s, sl) => s + (sl.xpEarned || 0), 0);
       newShiftXP = base + flame + catchSum + slotSum;
