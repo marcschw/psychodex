@@ -73,6 +73,15 @@ export const MEAL_HINTS = {
             { h:16, m:0,  icon:'🥤', label:'Proteinshake' }, { h:17, m:30, icon:'🍽️', label:'Abendessen'  }],
 };
 
+export const BREAK_PRESETS = [
+  { icon: '🥤', label: 'Proteinshake' },
+  { icon: '🍽️', label: 'Mittagessen' },
+  { icon: '🍽️', label: 'Abendessen' },
+  { icon: '🍎', label: 'Snack' },
+  { icon: '☕', label: 'Pause' },
+  { icon: '🚬', label: 'Rauchpause' },
+];
+
 export const SLOT_TIPS = {
   anmeldung: {
     sections: [
