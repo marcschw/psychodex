@@ -978,6 +978,9 @@ function setupPlannerListeners() {
 
   document.getElementById('btn-start-planner-shift').addEventListener('click', startPlannerShift);
   document.getElementById('btn-close-planner-shift').addEventListener('click', closePlannerShift);
+  document.getElementById('btn-edit-planner-shift').addEventListener('click', () => {
+    if (state.plannerShiftId) openEditShiftModal(state.plannerShiftId);
+  });
   document.getElementById('slot-add-close').addEventListener('click', () => document.getElementById('slot-add-modal').classList.add('hidden'));
   document.getElementById('slot-add-backdrop').addEventListener('click', () => document.getElementById('slot-add-modal').classList.add('hidden'));
   document.getElementById('btn-save-slot').addEventListener('click', saveSlot);
@@ -2866,6 +2869,12 @@ function setupEditShiftListeners() {
       btn.classList.add('active');
     });
   });
+  document.getElementById('edit-cat-selector').querySelectorAll('.cat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('edit-cat-selector').querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
   document.getElementById('btn-save-edit-shift').addEventListener('click', saveEditShift);
 }
 
@@ -2876,7 +2885,10 @@ function openEditShiftModal(shiftId) {
   document.getElementById('edit-shift-date').value = shift.date;
   document.getElementById('edit-type-selector').querySelectorAll('.type-btn').forEach(btn =>
     btn.classList.toggle('active', btn.dataset.type === shift.type ||
-      (btn.dataset.type === 'früh' && !['spät','full','samstag'].includes(shift.type))));
+      (btn.dataset.type === 'früh' && !['spät','full','samstag','schulung'].includes(shift.type))));
+  const shiftCat = shift.category || 'regulär';
+  document.getElementById('edit-cat-selector').querySelectorAll('.cat-btn').forEach(btn =>
+    btn.classList.toggle('active', btn.dataset.category === shiftCat));
   document.getElementById('edit-shift-modal').classList.remove('hidden');
 }
 
@@ -2885,22 +2897,44 @@ function closeEditShiftModal() {
   state.editingShiftId = null;
 }
 
+function _baseShiftXP(type) {
+  if (type === 'full') return 120;
+  if (type === 'samstag') return 70;
+  if (type === 'schulung') return 40;
+  return 65;
+}
+
 async function saveEditShift() {
   const shift = state.shifts.find(s => s.id === state.editingShiftId);
   if (!shift) return;
   const newDate = document.getElementById('edit-shift-date').value;
   const newType = document.getElementById('edit-type-selector').querySelector('.type-btn.active')?.dataset.type || shift.type;
-  const oldBase = shift.type === 'full' ? 120 : shift.type === 'samstag' ? 70 : 65;
-  const newBase = newType === 'full' ? 120 : newType === 'samstag' ? 70 : 65;
-  const xpDelta = newBase - oldBase;
-  await db.shiftLogs.update(state.editingShiftId, { date: newDate, type: newType, xpEarned: shift.xpEarned + xpDelta, updatedAt: new Date().toISOString() });
-  if (xpDelta !== 0) {
-    const newTotal = (state.profile.totalXP ?? 0) + xpDelta;
-    await db.profile.update(state.profile.id, { totalXP: newTotal });
-    state.profile.totalXP = newTotal;
+  const newCat  = document.getElementById('edit-cat-selector').querySelector('.cat-btn.active')?.dataset.category || shift.category || 'regulär';
+
+  const updates = { date: newDate, type: newType, category: newCat, updatedAt: new Date().toISOString() };
+
+  // Only adjust XP for closed shifts (plannerActive shifts haven't earned base XP yet)
+  if (!shift.plannerActive) {
+    const oldShiftXP = Math.round(_baseShiftXP(shift.type) * (CATEGORY_XP_MODIFIER[shift.category || 'regulär'] ?? 1));
+    const newShiftXP = Math.round(_baseShiftXP(newType) * (CATEGORY_XP_MODIFIER[newCat] ?? 1));
+    const xpDelta = newShiftXP - oldShiftXP;
+    updates.xpEarned = (shift.xpEarned || 0) + xpDelta;
+    if (xpDelta !== 0) {
+      const newTotal = (state.profile.totalXP ?? 0) + xpDelta;
+      await db.profile.update(state.profile.id, { totalXP: newTotal });
+      state.profile.totalXP = newTotal;
+    }
   }
+
+  await db.shiftLogs.update(state.editingShiftId, updates);
   state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
   closeEditShiftModal();
+
+  // Re-render planner header if this is the currently open planner shift
+  if (shift.plannerActive && state.plannerShiftId === shift.id) {
+    renderPlannerTab();
+  }
+
   renderDashboard();
   updateHeader();
 }
@@ -3002,7 +3036,7 @@ async function renderShiftDetailBody(shift) {
       <div class="patient-diags" id="pdiags-${shift.id}-${p.index}">`;
 
     p.catches.forEach(c => {
-      html += `<div class="patient-diag-row pd-row-clickable" data-code="${c.code}">
+      html += `<div class="patient-diag-row pd-row-clickable" data-code="${c.code}" data-catch-id="${c.id}">
         <div class="pd-thumb">
           <img src="assets/images/diagnoses/${c.code.toLowerCase()}.png" class="pd-thumb-img" alt=""
                onerror="this.style.display='none'" loading="lazy">
@@ -3010,6 +3044,7 @@ async function renderShiftDetailBody(shift) {
         <span class="pd-code">${c.code}</span>
         <span class="pd-name">${c.name}</span>
         <span class="pd-xp">+${c.xpEarned} XP</span>
+        ${patientMap.size > 1 ? `<button class="btn-icon btn-move-diag" data-id="${c.id}" data-pkey="${p.index}" title="Patient wechseln">↗</button>` : ''}
         <button class="btn-icon btn-delete-shift-catch" data-id="${c.id}" title="Diagnose löschen">🗑</button>
       </div>`;
     });
@@ -3077,7 +3112,8 @@ async function renderShiftDetailBody(shift) {
 
   body.querySelectorAll('.pd-row-clickable').forEach(row => {
     row.addEventListener('click', e => {
-      if (e.target.closest('.btn-delete-shift-catch')) return;
+      if (e.target.closest('.btn-delete-shift-catch') || e.target.closest('.btn-move-diag')) return;
+      body.querySelectorAll('.move-diag-menu').forEach(m => m.remove());
       openDiagInfoModal(row.dataset.code);
     });
   });
@@ -3094,6 +3130,36 @@ async function renderShiftDetailBody(shift) {
       const pkey = btn.dataset.pkey;
       closeShiftDetailModal();
       openAddToShiftDiagSearch(shift.id, pkey);
+    });
+  });
+
+  body.querySelectorAll('.btn-move-diag').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      body.querySelectorAll('.move-diag-menu').forEach(m => m.remove());
+      const catchId = parseInt(btn.dataset.id);
+      const currentPkey = btn.dataset.pkey;
+      const menu = document.createElement('div');
+      menu.className = 'move-diag-menu';
+      let pNum = 1;
+      for (const [pkey] of patientMap) {
+        const opt = document.createElement('button');
+        opt.className = 'move-diag-option';
+        if (String(pkey) === String(currentPkey)) {
+          opt.textContent = `Patient ${pNum} (aktuell)`;
+          opt.disabled = true;
+        } else {
+          opt.textContent = `→ Patient ${pNum}`;
+          opt.addEventListener('click', async () => {
+            await db.caughtDiagnoses.update(catchId, { patientIndex: pkey });
+            state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
+            renderShiftDetailBody(shift);
+          });
+        }
+        menu.appendChild(opt);
+        pNum++;
+      }
+      btn.closest('.patient-diag-row').after(menu);
     });
   });
 
