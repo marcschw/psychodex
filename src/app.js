@@ -949,7 +949,7 @@ async function startPlannerShift() {
 
 async function closePlannerShift() {
   if (!state.plannerShiftId) return;
-  if (!confirm('Dienst abschließen? Keine weiteren Einträge danach.')) return;
+  if (!confirm('Dienst abschließen?')) return;
 
   const shift = state.shifts.find(s => s.id === state.plannerShiftId);
   if (!shift) return;
@@ -985,8 +985,8 @@ async function closePlannerShift() {
   renderDashboard();
 }
 
-function openSlotAddModal(shiftId, startH, startM) {
-  state.slotAddContext = { shiftId, startH, startM, selectedType: null, flags: [] };
+function openSlotAddModal(shiftId, startH, startM, source = 'planner') {
+  state.slotAddContext = { shiftId, startH, startM, selectedType: null, flags: [], source };
 
   // Reset UI
   document.querySelectorAll('#slot-type-grid .slot-type-btn').forEach(b => b.classList.remove('active'));
@@ -1047,8 +1047,12 @@ async function saveSlot() {
 
   const updatedShift = state.shifts.find(s => s.id === ctx.shiftId);
   if (updatedShift) {
-    updatePlannerXP(updatedShift);
-    renderTimeline(updatedShift);
+    if (ctx.source === 'detail') {
+      renderShiftDetailBody(updatedShift);
+    } else {
+      updatePlannerXP(updatedShift);
+      renderTimeline(updatedShift);
+    }
   }
 
   // Offer to enter diagnoses for patient-contact slots
@@ -1061,8 +1065,8 @@ async function saveSlot() {
   }
 }
 
-async function deleteSlot(slotId, shift) {
-  const slot = state.plannerSlots.find(s => s.id === slotId);
+async function deleteSlot(slotId, shift, source = 'planner') {
+  const slot = await db.scheduleSlots.get(slotId);
   if (!slot) return;
   if (!confirm(`${SLOT_TYPES[slot.type]?.label || 'Eintrag'} löschen?`)) return;
 
@@ -1077,7 +1081,13 @@ async function deleteSlot(slotId, shift) {
   state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
   updateHeader();
   const updatedShift = state.shifts.find(s => s.id === shift.id);
-  if (updatedShift) { updatePlannerXP(updatedShift); renderTimeline(updatedShift); }
+  if (!updatedShift) return;
+  if (source === 'detail') {
+    renderShiftDetailBody(updatedShift);
+  } else {
+    updatePlannerXP(updatedShift);
+    renderTimeline(updatedShift);
+  }
 }
 
 function openSlotDetailModal(slot) {
@@ -2426,7 +2436,7 @@ function openShiftDetailModal(shiftId) {
   document.getElementById('shift-detail-modal').classList.remove('hidden');
 }
 
-function renderShiftDetailBody(shift) {
+async function renderShiftDetailBody(shift) {
   const body = document.getElementById('shift-detail-body');
   const shiftCatches = state.catches.filter(c => c.shiftId === shift.id);
 
@@ -2527,8 +2537,36 @@ function renderShiftDetailBody(shift) {
   html += `<button class="patient-section-add" id="btn-add-new-patient-to-shift" data-shiftid="${shift.id}"
     style="display:block;width:100%;padding:12px;border:1px dashed rgba(124,58,237,.3);border-radius:var(--r);color:var(--accent);margin-top:8px">
     + Neuer Patient & Diagnose
-  </button>
-  <button class="btn-danger" id="btn-delete-this-shift" data-id="${shift.id}">🗑 Dienst löschen</button>`;
+  </button>`;
+
+  // Planner slots section
+  if (shift.plannerShift) {
+    const shiftSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
+    if (shiftSlots.length || true) {
+      html += `<div class="detail-slots-section">
+        <div class="detail-slots-header">
+          <span class="detail-slots-title">📋 Planer-Einträge</span>
+          <button class="btn-secondary detail-add-slot-btn" id="btn-detail-add-slot">+ Eintrag</button>
+        </div>
+        <div class="detail-slots-list">
+          ${shiftSlots.length ? shiftSlots.map(sl => {
+            const def = SLOT_TYPES[sl.type] || {};
+            return `<div class="detail-slot-row" data-slot-id="${sl.id}">
+              <span class="detail-slot-icon">${def.icon || '📌'}</span>
+              <div class="detail-slot-info">
+                <span class="detail-slot-label">${def.label || sl.type}</span>
+                <span class="detail-slot-time">${padT(sl.startHour,sl.startMinute)}–${padT(sl.endHour,sl.endMinute)} · +${sl.xpEarned} XP</span>
+                ${sl.comment ? `<span class="detail-slot-comment">${sl.comment}</span>` : ''}
+              </div>
+              <button class="btn-icon detail-slot-del" data-slot-id="${sl.id}">🗑</button>
+            </div>`;
+          }).join('') : '<div class="detail-slots-empty">Keine Einträge</div>'}
+        </div>
+      </div>`;
+    }
+  }
+
+  html += `<button class="btn-danger" id="btn-delete-this-shift" data-id="${shift.id}">🗑 Dienst löschen</button>`;
 
   body.innerHTML = html;
 
@@ -2601,6 +2639,25 @@ function renderShiftDetailBody(shift) {
       saveShiftNote(shift, noteArea.value);
     });
   }
+
+  // Planner slot actions
+  body.querySelector('#btn-detail-add-slot')?.addEventListener('click', () => {
+    const { start } = shiftHours(shift.type);
+    openSlotAddModal(shift.id, start[0], start[1], 'detail');
+  });
+  body.querySelectorAll('.detail-slot-del').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      deleteSlot(parseInt(btn.dataset.slotId), shift, 'detail');
+    });
+  });
+  body.querySelectorAll('.detail-slot-row').forEach(row => {
+    row.addEventListener('click', async e => {
+      if (e.target.closest('.detail-slot-del')) return;
+      const slot = await db.scheduleSlots.get(parseInt(row.dataset.slotId));
+      if (slot) openSlotDetailModal(slot);
+    });
+  });
 }
 
 async function saveShiftNote(shift, noteText) {
