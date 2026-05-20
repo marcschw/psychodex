@@ -1817,6 +1817,28 @@ img{max-width:100%;display:block}
 }
 
 /* ── Planner ─────────────────────────────────────────────────────────────────── */
+
+/* Next-shift card (landing) */
+.planner-next-card{
+  background:linear-gradient(135deg,rgba(124,58,237,.13),rgba(59,130,246,.08));
+  border:1px solid rgba(124,58,237,.3);
+  border-radius:var(--r);padding:20px;margin-bottom:10px;
+}
+.planner-next-label{
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+  color:var(--accent);margin-bottom:6px;
+}
+.planner-next-date{font-size:22px;font-weight:800;margin-bottom:4px}
+.planner-next-meta{font-size:13px;color:var(--text-dim);margin-bottom:16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.btn-open-next{
+  width:100%;padding:14px;
+  background:var(--grad-accent);color:#fff;
+  border-radius:var(--r);font-size:15px;font-weight:700;letter-spacing:.3px;
+}
+
+/* New-shift form (at bottom of no-shift view) */
+.planner-new-shift-form{margin-top:12px}
+
 .planner-shift-header{
   display:flex;align-items:center;justify-content:space-between;
   padding:14px;background:var(--bg-card);border:1px solid var(--border);
