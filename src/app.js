@@ -3881,6 +3881,16 @@ function renderHoursModalBody() {
           ${nSc ? `<span style="color:#6366f1">📚 ${nSc}×</span>` : ''}
           ${extra > 0 ? `<span style="color:var(--text-dim)">+${extra.toFixed(1).replace('.0','')}h Extra</span>` : ''}
         </div>
+        ${(() => {
+          const catGroups = {};
+          all.forEach(s => { const cat = s.category || 'regulär'; catGroups[cat] = (catGroups[cat] || 0) + 1; });
+          const cats = Object.entries(catGroups);
+          if (cats.length <= 1) return '';
+          return `<div class="hours-type-legend" style="margin-top:4px">${cats.map(([cat, cnt]) => {
+            const meta = CATEGORY_META[cat] || { label: cat, icon: '💼', color: '#3b82f6' };
+            return `<span style="color:${meta.color}">${meta.icon} ${meta.label}: ${cnt}×</span>`;
+          }).join(' ')}</div>`;
+        })()}
       </div>
     </div>
     <div class="hours-filter-row">
