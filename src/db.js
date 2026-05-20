@@ -44,4 +44,13 @@ db.version(5).stores({
   });
 });
 
+db.version(6).stores({
+  profile: '++id',
+  shiftLogs: '++id, date, type, category',
+  caughtDiagnoses: '++id, code, kategorie, shiftId, slotId, caughtAt',
+  missions: '++id, slotIndex',
+  unlockedAchievements: '++id, badgeId, tier, unlockedAt',
+  scheduleSlots: '++id, shiftId, type, startHour'
+});
+
 export default db;
