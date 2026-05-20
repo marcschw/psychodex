@@ -1,6 +1,6 @@
 import db from './db.js';
 import { loadAllICD, searchDiagnoses } from './icd-loader.js';
-import { calculateCatchXP, calculateShiftXP, calculateFlameBonus, calculateNoteXP, SLOT_TYPES, SHIFT_HOURS, MEAL_HINTS, SLOT_TIPS } from './xp-engine.js';
+import { calculateCatchXP, calculateShiftXP, calculateFlameBonus, calculateNoteXP, SLOT_TYPES, SHIFT_HOURS, MEAL_HINTS, SLOT_TIPS, CATEGORY_XP_MODIFIER, CATEGORY_META } from './xp-engine.js';
 import { RANKS, getRankForXP, getNextRank } from './ranks.js';
 import { MISSION_POOL, TIER_LABELS, calcMissionProgress, pickNewMission } from './missions.js';
 import { checkAchievements, ACHIEVEMENTS, SECRET_ACHIEVEMENTS, ACH_TIER_LABELS } from './achievements.js';
@@ -540,8 +540,9 @@ async function renderPlannerTab() {
   state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(openShift.id).sortBy('startHour');
 
   // Header
-  document.getElementById('planner-shift-title').textContent =
-    `${shiftIcon(openShift.type)} ${fmtDateShort(openShift.date)} · ${shiftLabel(openShift.type)}`;
+  const catMeta = CATEGORY_META[openShift.category || 'regulär'];
+  document.getElementById('planner-shift-title').innerHTML =
+    `${shiftIcon(openShift.type)} ${fmtDateShort(openShift.date)} · ${shiftLabel(openShift.type)} <span class="cat-badge cat-badge-${openShift.category || 'regulär'}">${catMeta.icon} ${catMeta.label}</span>`;
   updatePlannerXP(openShift);
   renderTimeline(openShift);
   startAlarmScheduler();
@@ -549,10 +550,13 @@ async function renderPlannerTab() {
 
 function updatePlannerXP(shift) {
   const slotTotal = state.plannerSlots.reduce((s, sl) => s + (sl.xpEarned || 0), 0);
-  const base = calculateShiftXP(shift.type);
+  const modifier = CATEGORY_XP_MODIFIER[shift.category || 'regulär'];
+  const meta = CATEGORY_META[shift.category || 'regulär'];
+  const base = Math.round(calculateShiftXP(shift.type) * modifier);
   const flame = calculateFlameBonus(shift.date);
-  document.getElementById('planner-shift-xp').textContent =
-    `${base + flame} Basis-XP + ${slotTotal} Slot-XP · gesamt ${shift.xpEarned || 0} XP`;
+  const catBadge = `<span class="cat-badge cat-badge-${shift.category || 'regulär'}">${meta.icon} ${meta.label}</span>`;
+  document.getElementById('planner-shift-xp').innerHTML =
+    `${catBadge} · +${base + flame} XP bei Abschluss · ${slotTotal} XP Aktivitäten`;
 }
 
 function renderTimeline(shift) {
@@ -648,20 +652,53 @@ function renderTimeline(shift) {
 
 function renderPlannerPastShifts() {
   const el = document.getElementById('planner-past-shifts');
-  const recent = state.shifts.filter(s => !s.plannerActive).slice(0, 5);
+  const recent = state.shifts.filter(s => !s.plannerActive).slice(0, 10);
+
+  const isUnopened = s => s.importedFrom === 'xml' && !s.closedAt;
+
   el.innerHTML = recent.length
-    ? recent.map(s => `
-        <div class="recent-item shift-item-clickable" data-id="${s.id}" style="cursor:pointer">
+    ? recent.map(s => {
+        const meta = s.category ? CATEGORY_META[s.category] : null;
+        const catBadge = meta ? `<span class="cat-badge cat-badge-${s.category}">${meta.icon} ${meta.label}</span>` : '';
+        if (isUnopened(s)) {
+          return `<div class="recent-item" data-id="${s.id}">
+            <div class="shift-icon">${shiftIcon(s.type)}</div>
+            <div class="recent-info">
+              <div class="recent-name">${fmtDateShort(s.date)} ${catBadge}</div>
+              <div class="recent-meta">${shiftLabel(s.type)} · Importiert · noch kein XP</div>
+            </div>
+            <button class="btn-open-imported" data-id="${s.id}">Öffnen</button>
+          </div>`;
+        }
+        return `<div class="recent-item shift-item-clickable" data-id="${s.id}" style="cursor:pointer">
           <div class="shift-icon">${shiftIcon(s.type)}</div>
           <div class="recent-info">
-            <div class="recent-name">${fmtDateShort(s.date)}</div>
+            <div class="recent-name">${fmtDateShort(s.date)} ${catBadge}</div>
             <div class="recent-meta">${shiftLabel(s.type)} · +${s.xpEarned} XP</div>
           </div>
           <span style="font-size:12px;color:var(--text-dim)">›</span>
-        </div>`).join('')
+        </div>`;
+      }).join('')
     : '<div class="empty-state">Noch keine Dienste geloggt.</div>';
+
   el.querySelectorAll('.shift-item-clickable').forEach(item =>
     item.addEventListener('click', () => openShiftDetailModal(parseInt(item.dataset.id))));
+  el.querySelectorAll('.btn-open-imported').forEach(btn =>
+    btn.addEventListener('click', () => openImportedShift(parseInt(btn.dataset.id))));
+}
+
+async function openImportedShift(shiftId) {
+  if (state.shifts.find(s => s.plannerActive)) {
+    alert('Bitte zuerst den aktiven Dienst abschließen.');
+    return;
+  }
+  await db.shiftLogs.update(shiftId, { plannerActive: true });
+  state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+  state.plannerShiftId = shiftId;
+  state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shiftId).sortBy('startHour');
+  state.alarmFired = new Set();
+  renderPlannerTab();
+  startAlarmScheduler();
 }
 
 function setupPlannerListeners() {
@@ -669,6 +706,14 @@ function setupPlannerListeners() {
   document.querySelectorAll('#planner-type-selector .type-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('#planner-type-selector .type-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  // Category buttons in planner
+  document.querySelectorAll('#planner-category-selector .cat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#planner-category-selector .cat-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     });
   });
@@ -723,37 +768,58 @@ async function startPlannerShift() {
   if (!dateVal) { alert('Bitte Datum auswählen.'); return; }
   const activeBtn = document.querySelector('#planner-type-selector .type-btn.active');
   const type = activeBtn?.dataset.type || 'früh';
-  const xpBase = parseInt(activeBtn?.dataset.xp || '65');
-  const flame  = calculateFlameBonus(dateVal);
+  const catBtn = document.querySelector('#planner-category-selector .cat-btn.active');
+  const category = catBtn?.dataset.category || 'regulär';
 
   const shiftId = await db.shiftLogs.add({
-    date: dateVal, type, xpEarned: xpBase + flame,
-    patientCount: 0, plannerActive: true, createdAt: new Date().toISOString()
+    date: dateVal, type, category,
+    xpEarned: 0, patientCount: 0,
+    plannerShift: true, plannerActive: true,
+    createdAt: new Date().toISOString()
   });
 
-  const oldXP = state.profile.totalXP ?? 0;
-  const newXP = oldXP + xpBase + flame;
-  await db.profile.update(state.profile.id, { totalXP: newXP });
-  state.profile.totalXP = newXP;
   state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
   state.plannerShiftId = shiftId;
   state.plannerSlots = [];
   state.alarmFired = new Set();
 
-  updateHeader();
-  showXPPopup(xpBase + flame, [{ label: `${shiftLabel(type)} gestartet`, xp: xpBase + flame }]);
-  checkLevelUp(newXP, oldXP);
   renderPlannerTab();
 }
 
 async function closePlannerShift() {
   if (!state.plannerShiftId) return;
   if (!confirm('Dienst abschließen? Keine weiteren Einträge danach.')) return;
-  await db.shiftLogs.update(state.plannerShiftId, { plannerActive: false });
+
+  const shift = state.shifts.find(s => s.id === state.plannerShiftId);
+  if (!shift) return;
+
+  const modifier = CATEGORY_XP_MODIFIER[shift.category || 'regulär'];
+  const xpBase = Math.round(calculateShiftXP(shift.type) * modifier);
+  const flame  = calculateFlameBonus(shift.date);
+  const totalBase = xpBase + flame;
+
+  await db.shiftLogs.update(state.plannerShiftId, {
+    plannerActive: false,
+    xpEarned: (shift.xpEarned || 0) + totalBase,
+    closedAt: new Date().toISOString()
+  });
+
+  const oldXP = state.profile.totalXP ?? 0;
+  const newXP = oldXP + totalBase;
+  await db.profile.update(state.profile.id, { totalXP: newXP });
+  state.profile.totalXP = newXP;
+
   state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
   state.plannerShiftId = null;
   state.plannerSlots   = [];
   stopAlarmScheduler();
+
+  updateHeader();
+  const bonuses = [{ label: `${shiftLabel(shift.type)} abgeschlossen`, xp: xpBase }];
+  if (flame > 0) bonuses.push({ label: '⚡ Flame Bonus', xp: flame });
+  showXPPopup(totalBase, bonuses);
+  checkLevelUp(newXP, oldXP);
+
   renderPlannerTab();
   renderDashboard();
 }
@@ -785,7 +851,10 @@ async function saveSlot() {
   if (toMins(eh, em) <= toMins(sh, sm)) { alert('Endzeit muss nach Startzeit liegen.'); return; }
 
   const comment = document.getElementById('slot-comment').value.trim();
-  const xp = def.xp;
+
+  const shift = state.shifts.find(s => s.id === ctx.shiftId);
+  const modifier = CATEGORY_XP_MODIFIER[shift?.category || 'regulär'];
+  const xp = Math.round(def.xp * modifier);
 
   const slotId = await db.scheduleSlots.add({
     shiftId: ctx.shiftId, type: ctx.selectedType,
@@ -796,7 +865,6 @@ async function saveSlot() {
   });
 
   // Award XP
-  const shift = state.shifts.find(s => s.id === ctx.shiftId);
   const newShiftXP = (shift?.xpEarned || 0) + xp;
   await db.shiftLogs.update(ctx.shiftId, { xpEarned: newShiftXP });
   const oldXP = state.profile.totalXP ?? 0;
@@ -3077,6 +3145,13 @@ function openStreakModal() {
 function setupExportImport() {
   document.getElementById('btn-export')?.addEventListener('click', exportData);
   document.getElementById('import-file-input')?.addEventListener('change', importData);
+  document.getElementById('xml-import-input')?.addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const text = await file.text();
+    await importShiftsFromXML(text);
+    e.target.value = '';
+  });
 }
 
 async function exportData() {
@@ -3138,6 +3213,59 @@ async function importData(e) {
     alert(`Import fehlgeschlagen: ${err.message}`);
   }
   e.target.value = '';
+}
+
+async function importShiftsFromXML(xmlText) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlText, 'application/xml');
+  const parseErr = doc.querySelector('parsererror');
+  if (parseErr) { alert('XML-Fehler: Datei konnte nicht gelesen werden.'); return; }
+
+  const dienste = Array.from(doc.querySelectorAll('dienst'));
+  if (!dienste.length) { alert('Keine Dienste in der XML-Datei gefunden.'); return; }
+
+  const halbtagToType = { AM: 'früh', PM: 'spät', SAT: 'samstag', FULL: 'full' };
+
+  const getCategory = (typ, spalte) => {
+    if (typ === 'training') return 'training';
+    if ((spalte || '').toLowerCase().includes('senior')) return 'senior';
+    return 'regulär';
+  };
+
+  const existingShifts = await db.shiftLogs.toArray();
+  const existingKeys = new Set(existingShifts.map(s => `${s.date}_${s.type}`));
+
+  let imported = 0, skipped = 0;
+
+  for (const el of dienste) {
+    const datum   = el.getAttribute('datum');
+    const halbtag = el.getAttribute('halbtag');
+    const typ     = el.getAttribute('typ') || '';
+    const spalte  = el.getAttribute('spalte') || '';
+
+    if (!datum || !halbtag) { skipped++; continue; }
+
+    const type = halbtagToType[halbtag] || 'spät';
+    const category = getCategory(typ, spalte);
+    const key = `${datum}_${type}`;
+
+    if (existingKeys.has(key)) { skipped++; continue; }
+
+    await db.shiftLogs.add({
+      date: datum, type, category,
+      xpEarned: 0, patientCount: 0,
+      plannerShift: true, plannerActive: false,
+      importedFrom: 'xml',
+      createdAt: new Date().toISOString()
+    });
+    existingKeys.add(key);
+    imported++;
+  }
+
+  state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+  renderPlannerTab();
+  renderDashboard();
+  alert(`XML importiert: ${imported} neue Dienste angelegt, ${skipped} übersprungen.`);
 }
 
 // ─── XP Info Modal ────────────────────────────────────────────────────────────
@@ -3306,29 +3434,51 @@ async function recalculateXP() {
     patientCatchCount.set(patKey, prevCount + 1);
   }
 
-  // Recalculate each shift's xpEarned = base + flame + catches
+  // Build lookup tables
   const allShifts = await db.shiftLogs.toArray();
+  const allSlots  = await db.scheduleSlots.toArray();
+
   const catchesByShift = {};
   allCatches.forEach(c => {
     if (c.shiftId != null) {
       (catchesByShift[c.shiftId] = catchesByShift[c.shiftId] || []).push(c);
     }
   });
+  const slotsByShift = {};
+  allSlots.forEach(sl => {
+    (slotsByShift[sl.shiftId] = slotsByShift[sl.shiftId] || []).push(sl);
+  });
 
   let totalXP = 0;
   for (const shift of allShifts) {
-    const shiftBase  = calculateShiftXP(shift.type);
-    const createdAt  = new Date(shift.createdAt || shift.date);
-    const shiftDate  = new Date(shift.date);
-    const flame      = (createdAt - shiftDate) / 3600000 <= 24 ? 25 : 0;
-    const catchSum   = (catchesByShift[shift.id] || []).reduce((s, c) => s + c.xpEarned, 0);
-    const newShiftXP = shiftBase + flame + catchSum;
+    let newShiftXP;
+    if (shift.plannerShift) {
+      // Planner shift: category-modified base + flame only when closed; slots counted separately
+      const modifier = CATEGORY_XP_MODIFIER[shift.category || 'regulär'];
+      const base  = shift.plannerActive ? 0 : Math.round(calculateShiftXP(shift.type) * modifier);
+      const closedRef = new Date(shift.closedAt || shift.createdAt || shift.date);
+      const flame = (!shift.plannerActive && (closedRef - new Date(shift.date)) / 3600000 <= 24) ? 25 : 0;
+      const catchSum = (catchesByShift[shift.id] || []).reduce((s, c) => s + c.xpEarned, 0);
+      const slotSum  = (slotsByShift[shift.id]  || []).reduce((s, sl) => s + (sl.xpEarned || 0), 0);
+      newShiftXP = base + flame + catchSum + slotSum;
+    } else {
+      const shiftBase = calculateShiftXP(shift.type);
+      const createdAt = new Date(shift.createdAt || shift.date);
+      const flame = (createdAt - new Date(shift.date)) / 3600000 <= 24 ? 25 : 0;
+      const catchSum = (catchesByShift[shift.id] || []).reduce((s, c) => s + c.xpEarned, 0);
+      newShiftXP = shiftBase + flame + catchSum;
+    }
     await db.shiftLogs.update(shift.id, { xpEarned: newShiftXP });
     totalXP += newShiftXP;
   }
 
   // Standalone catches (no shift)
   totalXP += allCatches.filter(c => c.shiftId == null).reduce((s, c) => s + c.xpEarned, 0);
+
+  // Non-planner slot XP (safety: should be 0, all slots belong to planner shifts)
+  totalXP += allSlots
+    .filter(sl => !allShifts.find(s => s.id === sl.shiftId && s.plannerShift))
+    .reduce((sum, sl) => sum + (sl.xpEarned || 0), 0);
 
   // Achievements
   const unlocked = await db.unlockedAchievements.toArray();
@@ -3352,10 +3502,6 @@ async function recalculateXP() {
   totalXP += allShifts
     .filter(s => s.noteAddedAt)
     .reduce((sum, s) => sum + calculateNoteXP(s.date, s.noteAddedAt), 0);
-
-  // Schedule slots
-  const allSlots = await db.scheduleSlots.toArray();
-  totalXP += allSlots.reduce((sum, sl) => sum + (sl.xpEarned || 0), 0);
 
   await db.profile.update(state.profile.id, { totalXP });
   state.profile.totalXP = totalXP;
