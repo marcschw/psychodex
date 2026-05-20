@@ -2051,6 +2051,19 @@ img{max-width:100%;display:block}
   background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);
   border-radius:var(--r);font-size:12px;color:var(--success);
 }
+.slot-detail-actions{
+  display:flex;gap:10px;margin-top:20px;padding-top:16px;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.slot-detail-actions .btn-secondary,.slot-detail-actions .btn-danger{flex:1}
+.btn-danger{
+  padding:12px;border-radius:var(--r);font-size:14px;font-weight:600;cursor:pointer;
+  background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);
+  color:#f87171;transition:background .15s;
+}
+.btn-danger:active{background:rgba(239,68,68,.22)}
+.slot-edit-btns{display:flex;gap:10px;margin-top:16px}
+.slot-edit-btns .btn-primary,.slot-edit-btns .btn-secondary{flex:1}
 
 /* ── Planner dashboard banner ───────────────────────────────────────────────── */
 .planner-dash-banner{
