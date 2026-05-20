@@ -2427,9 +2427,108 @@ function renderAchievements() {
   }).join('');
 
   el.innerHTML =
-    `<div class="ach-grid">${regularCards}</div>
+    `<div class="ach-actions-row">
+       <button id="btn-recalc-achievements" class="btn-secondary" style="font-size:12px;padding:7px 14px">🔄 Neu bewerten</button>
+     </div>
+     <div class="ach-grid">${regularCards}</div>
      <div class="section-subheader">Secret Achievements</div>
      <div class="ach-grid">${secretCards}</div>`;
+  el.querySelector('#btn-recalc-achievements')?.addEventListener('click', recalculateAchievements);
+}
+
+// ─── Recalculate Achievements ─────────────────────────────────────────────────
+async function recalculateAchievements() {
+  const btn = document.getElementById('btn-recalc-achievements');
+  if (btn) { btn.disabled = true; btn.textContent = 'Berechne…'; }
+
+  try {
+    // Reload latest state from DB
+    state.unlockedAchievements = await db.unlockedAchievements.toArray();
+
+    // Re-evaluate regular tiered achievements
+    for (const ach of ACHIEVEMENTS) {
+      const { count, thresholds } = ach._check(state);
+      for (let i = 0; i < thresholds.length; i++) {
+        const tier = i + 1;
+        const shouldBeUnlocked = count >= thresholds[i];
+        const existing = state.unlockedAchievements.find(a => a.badgeId === ach.id && a.tier === tier);
+        if (!shouldBeUnlocked && existing) {
+          // Remove invalid entry from DB
+          await db.unlockedAchievements.delete(existing.id);
+        } else if (shouldBeUnlocked && !existing) {
+          // Add missing entry
+          const entry = { badgeId: ach.id, tier, unlockedAt: new Date().toISOString() };
+          entry.id = await db.unlockedAchievements.add(entry);
+        }
+      }
+    }
+
+    // Re-evaluate secret achievements
+    for (const ach of SECRET_ACHIEVEMENTS) {
+      const { triggered } = ach._check(state);
+      const existing = state.unlockedAchievements.find(a => a.badgeId === ach.id && a.tier === 1);
+      if (!triggered && existing) {
+        await db.unlockedAchievements.delete(existing.id);
+      } else if (triggered && !existing) {
+        const entry = { badgeId: ach.id, tier: 1, unlockedAt: new Date().toISOString() };
+        entry.id = await db.unlockedAchievements.add(entry);
+      }
+    }
+
+    // Reload updated achievements into state
+    state.unlockedAchievements = await db.unlockedAchievements.toArray();
+
+    // Recompute totalXP from all sources (without confirm dialog, without recalculating catch XP)
+    const allShifts = await db.shiftLogs.toArray();
+    const allCatches = await db.caughtDiagnoses.toArray();
+    const allSlots = await db.scheduleSlots.toArray();
+    const allMissions = await db.missions.toArray();
+
+    let newTotal = 0;
+
+    // Shifts (already stored xpEarned)
+    newTotal += allShifts.reduce((s, sh) => s + (sh.xpEarned || 0), 0);
+
+    // Standalone catches (no shift)
+    newTotal += allCatches.filter(c => c.shiftId == null).reduce((s, c) => s + (c.xpEarned || 0), 0);
+
+    // Non-planner slot XP
+    const plannerShiftIds = new Set(allShifts.filter(s => s.plannerShift).map(s => s.id));
+    newTotal += allSlots
+      .filter(sl => !plannerShiftIds.has(sl.shiftId))
+      .reduce((s, sl) => s + (sl.xpEarned || 0), 0);
+
+    // Achievements XP
+    newTotal += state.unlockedAchievements.reduce((sum, a) => {
+      const def = ACHIEVEMENTS.find(x => x.id === a.badgeId);
+      if (def) return sum + (def.tiers[a.tier - 1]?.xp ?? 0);
+      const sec = SECRET_ACHIEVEMENTS.find(x => x.id === a.badgeId);
+      if (sec) return sum + (sec.xp ?? 0);
+      return sum;
+    }, 0);
+
+    // Missions XP
+    newTotal += allMissions.reduce((sum, m) => {
+      if (!m.completedAt) return sum;
+      const def = MISSION_POOL.find(x => x.id === m.missionId);
+      return sum + (def?.reward ?? 0);
+    }, 0);
+
+    // Shift notes XP
+    newTotal += allShifts
+      .filter(s => s.noteAddedAt)
+      .reduce((sum, s) => sum + calculateNoteXP(s.date, s.noteAddedAt), 0);
+
+    await db.profile.update(state.profile.id, { totalXP: newTotal });
+    state.profile.totalXP = newTotal;
+
+    renderAchievements();
+    updateHeader();
+    renderDashboard();
+  } catch (e) {
+    console.warn('recalculateAchievements:', e);
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 Neu bewerten'; }
+  }
 }
 
 // ─── XP Popup ─────────────────────────────────────────────────────────────────
@@ -2776,19 +2875,54 @@ function renderStats() {
   document.getElementById('stat-hours').textContent         = `${hours.toFixed(1).replace('.0','')}h`;
   renderHourCountersSettings();
   renderExtraHoursSettings();
-  renderHeatmap();
+  const heatmapStart = renderHeatmap();
+  const heatmapHeader = document.getElementById('heatmap-section-header');
+  if (heatmapHeader && heatmapStart) {
+    const startLabel = new Date(heatmapStart + 'T12:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    heatmapHeader.textContent = `Dienst-Aktivität (seit ${startLabel})`;
+  }
   renderCategoryChart();
   renderAchievements();
+  // Use onclick to avoid accumulating listeners on re-render
+  const xpCard = document.getElementById('stat-xp-card');
+  const shiftsCard = document.getElementById('stat-shifts-card');
+  if (xpCard) xpCard.onclick = openXPBreakdownModal;
+  if (shiftsCard) shiftsCard.onclick = openHoursModal;
 }
 
 function renderHeatmap() {
   const el    = document.getElementById('heatmap');
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
-  const WEEKS = 52;
   const shiftSet = new Set(state.shifts.map(s => s.date));
-  const start = new Date(today);
-  start.setDate(start.getDate() - WEEKS * 7 + 1);
+
+  // Find earliest shift date
+  const firstShiftDate = state.shifts.length
+    ? state.shifts.slice().sort((a, b) => a.date.localeCompare(b.date))[0].date
+    : null;
+
+  // Determine start: Monday of first shift week, or 52 weeks back
+  let start;
+  if (firstShiftDate) {
+    start = new Date(firstShiftDate + 'T12:00:00');
+    const dow = start.getDay() || 7; // 1=Mon..7=Sun
+    start.setDate(start.getDate() - (dow - 1)); // rewind to Monday
+  } else {
+    start = new Date(today);
+    start.setDate(start.getDate() - 52 * 7 + 1);
+  }
+
+  // Clamp start to at most 104 weeks back
+  const maxStart = new Date(today);
+  maxStart.setDate(maxStart.getDate() - 104 * 7);
+  if (start < maxStart) start = maxStart;
+
+  const startStr = start.toISOString().split('T')[0];
+
+  // Compute dynamic week count
+  const msPerWeek = 7 * 24 * 3600 * 1000;
+  const WEEKS = Math.min(104, Math.ceil((today - start) / msPerWeek) + 2);
+
   let html = '';
   for (let w = 0; w < WEEKS; w++) {
     html += '<div class="heatmap-col">';
@@ -2805,6 +2939,8 @@ function renderHeatmap() {
   el.innerHTML = html;
   el.querySelectorAll('.heatmap-cell.hm-active').forEach(cell =>
     cell.addEventListener('click', () => showHeatmapDetail(cell.title)));
+
+  return startStr; // return for header label
 }
 
 function showHeatmapDetail(dateStr) {
@@ -3646,6 +3782,51 @@ function buildDonut(segments) {
   return `<svg width="100" height="100" viewBox="0 0 100 100">${paths.join('')}</svg>`;
 }
 
+function _isoMondayKey(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  const dow = d.getDay() || 7;
+  d.setDate(d.getDate() - (dow - 1));
+  return d.toISOString().split('T')[0];
+}
+
+function _isoWeekNum(mondayStr) {
+  const d = new Date(mondayStr + 'T12:00:00');
+  const jan4 = new Date(d.getFullYear(), 0, 4);
+  const startOfWeek1 = new Date(jan4);
+  startOfWeek1.setDate(jan4.getDate() - ((jan4.getDay() || 7) - 1));
+  return Math.round((d - startOfWeek1) / (7 * 86400000)) + 1;
+}
+
+function buildWeeklyHistogram(shifts) {
+  if (!shifts.length) return '';
+  const today = new Date().toISOString().split('T')[0];
+  const weekMap = new Map();
+  shifts.forEach(sh => {
+    const key = _isoMondayKey(sh.date);
+    if (!weekMap.has(key)) weekMap.set(key, { hours: 0, hasPast: false, hasFuture: false });
+    const entry = weekMap.get(key);
+    entry.hours += calcShiftHours(sh);
+    if (sh.date <= today) entry.hasPast = true; else entry.hasFuture = true;
+  });
+  const weeks = [...weekMap.entries()].sort(([a], [b]) => a.localeCompare(b));
+  const maxH = Math.max(...weeks.map(([, v]) => v.hours), 1);
+  const currentWeek = _isoMondayKey(today);
+  const bars = weeks.map(([key, { hours, hasPast, hasFuture }]) => {
+    const pct = Math.max(Math.round((hours / maxH) * 100), 3);
+    const isCurrent = key === currentWeek;
+    const isFuture = !hasPast && hasFuture;
+    const cls = isCurrent ? 'hh-bar hh-bar-current' : isFuture ? 'hh-bar hh-bar-future' : 'hh-bar';
+    const val = hours >= 10 ? `${Math.round(hours)}` : `${hours.toFixed(1)}`;
+    return `<div class="hh-col" title="KW${_isoWeekNum(key)} · ${hours.toFixed(1)}h">
+      <div class="hh-val">${val}</div>
+      <div class="hh-bar-wrap"><div class="${cls}" style="height:${pct}%"></div></div>
+      <div class="hh-label">KW${_isoWeekNum(key)}</div>
+    </div>`;
+  }).join('');
+  return `<div class="hours-histogram-title">Wöchentliche Entwicklung</div>
+    <div class="hours-histogram-wrap"><div class="hours-histogram">${bars}</div></div>`;
+}
+
 function renderHoursModalBody() {
   const body     = document.getElementById('hours-modal-body');
   const counters = state.profile?.hourCounters || [];
@@ -3709,6 +3890,7 @@ function renderHoursModalBody() {
       ${nFu ? `<button class="hours-filter-btn${state.hoursFilter==='full'?' active':''}" data-filter="full">☀️ Ganztags</button>` : ''}
       ${nSa ? `<button class="hours-filter-btn${state.hoursFilter==='samstag'?' active':''}" data-filter="samstag">🗓️ Samstag</button>` : ''}
     </div>
+    ${buildWeeklyHistogram(all)}
     <div class="hours-list">
       ${filtered.length ? filtered.map(s => `
         <div class="hours-row" data-id="${s.id}">
@@ -4194,6 +4376,57 @@ function openXPInfoModal() {
       </div>
     </div>`;
   document.getElementById('xp-info-modal').classList.remove('hidden');
+}
+
+async function openXPBreakdownModal() {
+  // Compute XP breakdown from current state
+  const catchXP = state.catches.reduce((s, c) => s + (c.xpEarned || 0), 0);
+  const achXP = (state.unlockedAchievements || []).reduce((s, a) => {
+    const def = ACHIEVEMENTS.find(x => x.id === a.badgeId);
+    if (def) return s + (def.tiers[a.tier - 1]?.xp ?? 0);
+    const sec = SECRET_ACHIEVEMENTS.find(x => x.id === a.badgeId);
+    return s + (sec?.xp ?? 0);
+  }, 0);
+  const missionXP = (state.missions || []).filter(m => m.completedAt).reduce((s, m) => {
+    const def = MISSION_POOL.find(x => x.id === m.missionId);
+    return s + (def?.reward ?? 0);
+  }, 0);
+  const noteXP = state.shifts.filter(sh => sh.noteAddedAt).reduce((s, sh) =>
+    s + calculateNoteXP(sh.date, sh.noteAddedAt), 0);
+  const shiftBaseXP = state.shifts.reduce((s, sh) => {
+    if (sh.plannerActive) return s; // not yet earned
+    const base = sh.plannerShift
+      ? Math.round(_baseShiftXP(sh.type) * (CATEGORY_XP_MODIFIER[sh.category || 'regulär'] ?? 1))
+      : _baseShiftXP(sh.type);
+    const refDate = sh.plannerShift ? (sh.closedAt || sh.createdAt) : (sh.createdAt || sh.date);
+    const flame = ((new Date(refDate) - new Date(sh.date)) / 3600000) <= 24 ? 25 : 0;
+    return s + base + flame;
+  }, 0);
+  const total = state.profile?.totalXP ?? 0;
+
+  document.getElementById('xp-info-body').innerHTML = `
+    <div class="xp-breakdown-title">Gesamt: ${total.toLocaleString('de-AT')} XP</div>
+    ${[
+      ['⏱ Dienst-Basis', shiftBaseXP],
+      ['🔬 Diagnosen', catchXP],
+      ['🏅 Achievements', achXP],
+      ['🎯 Missionen', missionXP],
+      ['📝 Dienst-Logs', noteXP],
+    ].map(([label, xp]) => `
+      <div class="xp-info-row">
+        <span>${label}</span>
+        <span class="xp-info-val">+${xp.toLocaleString('de-AT')} XP</span>
+      </div>`).join('')}
+    <div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)">
+      <button id="btn-recalc-xp-modal" class="btn-secondary" style="width:100%;padding:10px;font-size:13px">
+        🔄 XP neu berechnen
+      </button>
+    </div>`;
+  document.getElementById('xp-info-modal').classList.remove('hidden');
+  document.getElementById('btn-recalc-xp-modal')?.addEventListener('click', async () => {
+    closeXPInfoModal();
+    await recalculateXP();
+  });
 }
 
 // ─── Rank Table Modal ─────────────────────────────────────────────────────────
