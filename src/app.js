@@ -910,6 +910,8 @@ function setupPlannerListeners() {
   document.getElementById('btn-save-slot').addEventListener('click', saveSlot);
   document.getElementById('slot-detail-close').addEventListener('click', () => document.getElementById('slot-detail-modal').classList.add('hidden'));
   document.getElementById('slot-detail-backdrop').addEventListener('click', () => document.getElementById('slot-detail-modal').classList.add('hidden'));
+  document.getElementById('slot-tips-close').addEventListener('click', () => document.getElementById('slot-tips-modal').classList.add('hidden'));
+  document.getElementById('slot-tips-backdrop').addEventListener('click', () => document.getElementById('slot-tips-modal').classList.add('hidden'));
 
   // Slot type buttons inside add modal
   const grid = document.getElementById('slot-type-grid');
@@ -1178,25 +1180,40 @@ async function deleteSlot(slotId, shift, source = 'planner') {
 function openSlotDetailModal(slot, source = 'planner') {
   const def  = SLOT_TYPES[slot.type] || {};
   const tips = SLOT_TIPS[slot.type]  || {};
-  const flags = slot.flags?.length ? `<div class="slot-flag-list">${slot.flags.map(f => `<span class="slot-flag">${f.toUpperCase()}</span>`).join('')}</div>` : '';
-  const demoNote = slot.flags?.includes('demo')
-    ? `<div class="slot-demo-reminder">🎓 Studierende ${slot.startHour}:${String(slot.startMinute).padStart(2,'0') } − 15 min = <strong>${padT(slot.startHour - (slot.startMinute < 15 ? 1 : 0), (slot.startMinute - 15 + 60) % 60)}</strong> im EG abholen!</div>`
+  const hasTips = !!(tips.sections?.length || tips.tips?.length || tips.docHint);
+  const isPatient = !!def.patientContact;
+
+  const flagsHtml = slot.flags?.length
+    ? `<div class="slot-flag-list">${slot.flags.map(f => `<span class="slot-flag">${f.toUpperCase()}</span>`).join('')}</div>`
     : '';
+  const demoNote = slot.flags?.includes('demo')
+    ? `<div class="slot-demo-reminder">🎓 Studierende ${slot.startHour}:${String(slot.startMinute).padStart(2,'0')} − 15 min = <strong>${padT(slot.startHour - (slot.startMinute < 15 ? 1 : 0), (slot.startMinute - 15 + 60) % 60)}</strong> im EG abholen!</div>`
+    : '';
+
+  const slotCatches = state.catches.filter(c => c.slotId === slot.id);
+  const diagHtml = isPatient ? `
+    <div class="slot-diag-section">
+      <div class="slot-diag-header">Diagnosen</div>
+      ${slotCatches.length
+        ? slotCatches.map(c => `
+            <div class="slot-diag-row">
+              <span class="slot-diag-code">${c.code}</span>
+              <span class="slot-diag-name">${c.name}</span>
+              <button class="slot-diag-del btn-icon" data-catch-id="${c.id}" title="Entfernen">🗑</button>
+            </div>`).join('')
+        : '<div class="slot-diag-empty">Noch keine Diagnosen erfasst.</div>'}
+      <button class="slot-diag-add" id="btn-slot-add-diag">＋ Diagnose hinzufügen</button>
+    </div>` : '';
 
   document.getElementById('slot-detail-title').textContent = `${def.icon} ${def.label}`;
   document.getElementById('slot-detail-body').innerHTML = `
     <div class="slot-detail-time">${padT(slot.startHour,slot.startMinute)} – ${padT(slot.endHour,slot.endMinute)}</div>
-    ${flags}
+    ${flagsHtml}
     ${demoNote}
     ${slot.comment ? `<div class="slot-comment-display">${slot.comment}</div>` : ''}
-    ${tips.sections
-      ? tips.sections.map(sec => `
-          <div class="slot-tips-header">${sec.label}</div>
-          <ul class="slot-tips-list">${sec.items.map(t => `<li>${t}</li>`).join('')}</ul>`).join('')
-      : `<div class="slot-tips-header">💡 Tipps</div>
-         <ul class="slot-tips-list">${(tips.tips || []).map(t => `<li>${t}</li>`).join('')}</ul>`}
-    ${tips.docHint ? `<div class="slot-doc-hint">📄 ${tips.docHint}</div>` : ''}
+    ${diagHtml}
     <div class="slot-detail-actions">
+      ${hasTips ? `<button class="btn-secondary" id="btn-slot-tips">ℹ️ Tipps</button>` : ''}
       <button class="btn-secondary" id="btn-slot-detail-edit">✏️ Bearbeiten</button>
       <button class="btn-danger"    id="btn-slot-detail-delete">🗑 Löschen</button>
     </div>
@@ -1204,15 +1221,63 @@ function openSlotDetailModal(slot, source = 'planner') {
 
   const shift = state.shifts.find(s => s.id === slot.shiftId);
 
-  document.getElementById('btn-slot-detail-edit').addEventListener('click', () =>
-    openSlotEditForm(slot, source));
-
+  document.getElementById('btn-slot-tips')?.addEventListener('click', () => openSlotTipsModal(slot));
+  document.getElementById('btn-slot-detail-edit').addEventListener('click', () => openSlotEditForm(slot, source));
   document.getElementById('btn-slot-detail-delete').addEventListener('click', async () => {
     document.getElementById('slot-detail-modal').classList.add('hidden');
     if (shift) await deleteSlot(slot.id, shift, source);
   });
 
+  if (isPatient) {
+    document.getElementById('btn-slot-add-diag').addEventListener('click', () =>
+      openSlotDiagCatch(slot, source));
+    document.querySelectorAll('.slot-diag-del').forEach(btn =>
+      btn.addEventListener('click', () =>
+        deleteSlotCatch(parseInt(btn.dataset.catchId), slot, source)));
+  }
+
   document.getElementById('slot-detail-modal').classList.remove('hidden');
+}
+
+function openSlotTipsModal(slot) {
+  const def  = SLOT_TYPES[slot.type] || {};
+  const tips = SLOT_TIPS[slot.type]  || {};
+  document.getElementById('slot-tips-title').textContent = `${def.icon} ${def.label} – Tipps`;
+  document.getElementById('slot-tips-body').innerHTML = `
+    ${tips.sections
+      ? tips.sections.map(sec => `
+          <div class="slot-tips-header">${sec.label}</div>
+          <ul class="slot-tips-list">${sec.items.map(t => `<li>${t}</li>`).join('')}</ul>`).join('')
+      : `<ul class="slot-tips-list">${(tips.tips || []).map(t => `<li>${t}</li>`).join('')}</ul>`}
+    ${tips.docHint ? `<div class="slot-doc-hint">📄 ${tips.docHint}</div>` : ''}
+  `;
+  document.getElementById('slot-tips-modal').classList.remove('hidden');
+}
+
+function openSlotDiagCatch(slot, source) {
+  state.addToShiftContext = { shiftId: slot.shiftId, patientIndex: null, slotId: slot.id, slotSource: source };
+  resetDiagSearchUI();
+  document.getElementById('diagnosis-modal').classList.remove('hidden');
+  document.getElementById('diag-search-input').focus();
+}
+
+async function deleteSlotCatch(catchId, slot, source) {
+  const c = state.catches.find(x => x.id === catchId);
+  if (!c) return;
+  if (!confirm(`"${c.code}" aus diesem Termin entfernen?\n−${c.xpEarned} XP werden abgezogen.`)) return;
+  await db.caughtDiagnoses.delete(catchId);
+  const newTotal = Math.max(0, (state.profile.totalXP ?? 0) - (c.xpEarned || 0));
+  await db.profile.update(state.profile.id, { totalXP: newTotal });
+  state.profile.totalXP = newTotal;
+  const shift = state.shifts.find(s => s.id === slot.shiftId);
+  if (shift) {
+    await db.shiftLogs.update(shift.id, { xpEarned: Math.max(0, (shift.xpEarned || 0) - (c.xpEarned || 0)) });
+  }
+  state.shifts  = await db.shiftLogs.orderBy('date').reverse().toArray();
+  state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
+  updateHeader();
+  const freshSlot = await db.scheduleSlots.get(slot.id);
+  if (freshSlot) openSlotDetailModal(freshSlot, source);
 }
 
 function openSlotEditForm(slot, source) {
@@ -3076,6 +3141,9 @@ async function saveToExistingShiftPatient(diagnosis, hasComorbidity, xpResult, s
     patientIndex = maxPIdx + 1;
   }
 
+  const fromSlotId  = state.addToShiftContext?.slotId   ?? null;
+  const fromSlotSrc = state.addToShiftContext?.slotSource ?? 'planner';
+
   await db.caughtDiagnoses.add({
     code: diagnosis.code, name: diagnosis.name,
     kategorie: diagnosis.kategorie, shiftId,
@@ -3083,7 +3151,8 @@ async function saveToExistingShiftPatient(diagnosis, hasComorbidity, xpResult, s
     patientIndex: patientIndex ?? 0,
     hasComorbidity, xpEarned: xpResult.total,
     checkedSymptoms: checkedSymptoms || [],
-    caughtAt: new Date().toISOString()
+    caughtAt: new Date().toISOString(),
+    slotId: fromSlotId,
   });
 
   const newShiftXP = (shift.xpEarned || 0) + xpResult.total;
@@ -3104,9 +3173,12 @@ async function saveToExistingShiftPatient(diagnosis, hasComorbidity, xpResult, s
   refreshMissionProgress();
   applyAchievements();
 
-  // Re-open shift detail
-  const updatedShift = state.shifts.find(s => s.id === shiftId);
-  if (updatedShift) openShiftDetailModal(shiftId);
+  if (fromSlotId) {
+    const freshSlot = await db.scheduleSlots.get(fromSlotId);
+    if (freshSlot) openSlotDetailModal(freshSlot, fromSlotSrc);
+  } else {
+    openShiftDetailModal(shiftId);
+  }
 }
 
 // ─── Symptom Finder ───────────────────────────────────────────────────────────

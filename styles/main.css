@@ -2051,8 +2051,35 @@ img{max-width:100%;display:block}
   background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);
   border-radius:var(--r);font-size:12px;color:var(--success);
 }
+.slot-diag-section{
+  margin-top:16px;padding-top:14px;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.slot-diag-header{
+  font-size:11px;font-weight:700;color:var(--text-dim);
+  text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;
+}
+.slot-diag-row{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);
+}
+.slot-diag-row:last-of-type{border-bottom:none}
+.slot-diag-code{font-family:monospace;font-size:12px;font-weight:700;color:var(--accent-blue);flex-shrink:0}
+.slot-diag-name{flex:1;font-size:13px;color:var(--text)}
+.slot-diag-del{flex-shrink:0;opacity:.5;font-size:14px;padding:4px 6px}
+.slot-diag-del:active{opacity:1}
+.slot-diag-empty{font-size:13px;color:var(--text-dim);padding:6px 0}
+.slot-diag-add{
+  display:flex;align-items:center;justify-content:center;
+  width:100%;margin-top:10px;padding:9px;
+  background:none;border:1px dashed rgba(255,255,255,.15);
+  border-radius:var(--r);color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;
+  transition:border-color .15s,background .15s;
+}
+.slot-diag-add:active{background:rgba(124,58,237,.1)}
+
 .slot-detail-actions{
-  display:flex;gap:10px;margin-top:20px;padding-top:16px;
+  display:flex;gap:8px;margin-top:20px;padding-top:16px;
   border-top:1px solid rgba(255,255,255,.07);
 }
 .slot-detail-actions .btn-secondary,.slot-detail-actions .btn-danger{flex:1}
