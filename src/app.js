@@ -707,10 +707,7 @@ function renderTimeline(shift) {
         <span class="tl-meal-time">${padT(row.h, row.m)}</span>
         <span class="tl-meal-icon">${row.icon}</span>
         <span class="tl-meal-label">${row.label}</span>
-        <span class="tl-meal-actions">
-          <button class="tl-meal-edit btn-icon" data-meal-id="${row.id}" title="Bearbeiten">✏️</button>
-          <button class="tl-meal-del btn-icon" data-meal-id="${row.id}" title="Löschen">🗑</button>
-        </span>
+        <button class="tl-meal-del" data-meal-id="${row.id}" title="Löschen">🗑</button>
       </div>`;
     }
     if (row.kind === 'gap') {
@@ -764,6 +761,16 @@ function renderTimeline(shift) {
   });
 
   // Wire meal hint edit / delete
+  // Tap row → edit; tap delete button → delete
+  tl.querySelectorAll('.tl-meal').forEach(row => {
+    row.addEventListener('click', e => {
+      if (e.target.closest('.tl-meal-del')) return;
+      const id = parseInt(row.dataset.mealId);
+      const hint = getMealHints(shift).find(h => h.id === id);
+      openMealModal(shift, hint);
+    });
+  });
+
   tl.querySelectorAll('.tl-meal-del').forEach(btn => {
     btn.addEventListener('click', async e => {
       e.stopPropagation();
@@ -772,15 +779,6 @@ function renderTimeline(shift) {
       await db.shiftLogs.update(shift.id, { mealHints: updated });
       state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
       renderTimeline({ ...shift, mealHints: updated });
-    });
-  });
-
-  tl.querySelectorAll('.tl-meal-edit').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      const id = parseInt(btn.dataset.mealId);
-      const hint = getMealHints(shift).find(h => h.id === id);
-      openMealModal(shift, hint);
     });
   });
 }
