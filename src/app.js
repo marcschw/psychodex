@@ -1207,8 +1207,9 @@ function openSlotDetailModal(slot, source = 'planner') {
       ${slotCatches.length
         ? slotCatches.map(c => `
             <div class="slot-diag-row">
+              <button class="slot-diag-check ${c.documented ? 'slot-diag-check-done' : ''}" data-catch-id="${c.id}" title="Dokumentiert">${c.documented ? '✓' : ''}</button>
               <span class="slot-diag-code">${c.code}</span>
-              <span class="slot-diag-name">${c.name}</span>
+              <span class="slot-diag-name ${c.documented ? 'slot-diag-done' : ''}">${c.name}</span>
               <button class="slot-diag-del btn-icon" data-catch-id="${c.id}" title="Entfernen">🗑</button>
             </div>`).join('')
         : '<div class="slot-diag-empty">Noch keine Diagnosen erfasst.</div>'}
@@ -1245,6 +1246,19 @@ function openSlotDetailModal(slot, source = 'planner') {
     document.querySelectorAll('.slot-diag-del').forEach(btn =>
       btn.addEventListener('click', () =>
         deleteSlotCatch(parseInt(btn.dataset.catchId), slot, source)));
+    document.querySelectorAll('.slot-diag-check').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const catchId = parseInt(btn.dataset.catchId);
+        const c = state.catches.find(x => x.id === catchId);
+        if (!c) return;
+        c.documented = !c.documented;
+        await db.caughtDiagnoses.update(catchId, { documented: c.documented });
+        btn.classList.toggle('slot-diag-check-done', c.documented);
+        btn.textContent = c.documented ? '✓' : '';
+        btn.closest('.slot-diag-row').querySelector('.slot-diag-name')
+          .classList.toggle('slot-diag-done', c.documented);
+      });
+    });
   }
 
   document.getElementById('slot-detail-modal').classList.remove('hidden');
@@ -1306,10 +1320,13 @@ function openSlotTipsModal(slot) {
       // Persist
       await db.scheduleSlots.update(slot.id, { checkedTips: newChecked });
 
-      // Update progress
+      // Update progress in tips modal
       const done = newChecked.length;
       document.getElementById('tip-progress-bar').style.width = `${total ? Math.round(done/total*100) : 0}%`;
       document.getElementById('tip-progress-label').textContent = `${done} / ${total} erledigt`;
+      // Update counter badge on the button in slot detail modal (behind this modal)
+      const badge = document.querySelector('#btn-slot-tips .tip-btn-count');
+      if (badge) badge.textContent = `${done}/${total}`;
     });
   });
 
