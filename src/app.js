@@ -3252,18 +3252,20 @@ function setupExportImport() {
 }
 
 async function exportData() {
-  const shifts       = await db.shiftLogs.toArray();
-  const catches      = await db.caughtDiagnoses.toArray();
-  const missions     = await db.missions.toArray();
+  const shifts   = await db.shiftLogs.toArray();
+  const catches  = await db.caughtDiagnoses.toArray();
+  const missions = await db.missions.toArray();
   const achievements = await db.unlockedAchievements.toArray();
+  const slots    = await db.scheduleSlots.toArray();
   const payload = {
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     profile:      { totalXP: state.profile?.totalXP ?? 0 },
     shifts:       shifts.map(({ id, ...s }) => s),
     catches:      catches.map(({ id, ...c }) => c),
     missions:     missions.map(({ id, ...m }) => m),
-    achievements: achievements.map(({ id, ...a }) => a)
+    achievements: achievements.map(({ id, ...a }) => a),
+    slots:        slots.map(({ id, ...sl }) => sl),
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
@@ -3284,15 +3286,17 @@ async function importData(e) {
       alert('Ungültige Backup-Datei.');
       return;
     }
-    const achCount = data.achievements?.length ?? 0;
-    const msnCount = data.missions?.length ?? 0;
-    if (!confirm(`Alle aktuellen Daten werden ersetzt.\n${data.shifts.length} Dienste, ${data.catches.length} Diagnosen, ${achCount} Achievements, ${msnCount} Missionen werden importiert.\n\nFortfahren?`)) return;
+    const achCount  = data.achievements?.length ?? 0;
+    const msnCount  = data.missions?.length ?? 0;
+    const slotCount = data.slots?.length ?? 0;
+    if (!confirm(`Alle aktuellen Daten werden ersetzt.\n${data.shifts.length} Dienste, ${data.catches.length} Diagnosen, ${slotCount} Planer-Einträge, ${achCount} Achievements, ${msnCount} Missionen werden importiert.\n\nFortfahren?`)) return;
 
     await db.profile.clear();
     await db.shiftLogs.clear();
     await db.caughtDiagnoses.clear();
     if (db.missions)             await db.missions.clear();
     if (db.unlockedAchievements) await db.unlockedAchievements.clear();
+    if (db.scheduleSlots)        await db.scheduleSlots.clear();
 
     await db.profile.add({ totalXP: data.profile?.totalXP ?? 0, createdAt: new Date().toISOString() });
     for (const s of data.shifts)  await db.shiftLogs.add(s);
@@ -3301,10 +3305,12 @@ async function importData(e) {
       for (const m of data.missions) await db.missions.add(m);
     if (db.unlockedAchievements && Array.isArray(data.achievements))
       for (const a of data.achievements) await db.unlockedAchievements.add(a);
+    if (db.scheduleSlots && Array.isArray(data.slots))
+      for (const sl of data.slots) await db.scheduleSlots.add(sl);
 
     await loadFromDB();
     renderApp();
-    alert(`Import erfolgreich: ${data.shifts.length} Dienste, ${data.catches.length} Diagnosen, ${achCount} Achievements geladen.`);
+    alert(`Import erfolgreich: ${data.shifts.length} Dienste, ${data.catches.length} Diagnosen, ${slotCount} Planer-Einträge, ${achCount} Achievements geladen.`);
     navigateTo('stats');
   } catch (err) {
     alert(`Import fehlgeschlagen: ${err.message}`);
