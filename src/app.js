@@ -1200,7 +1200,10 @@ function openSlotDetailModal(slot, source = 'planner') {
   const slotCatches = state.catches.filter(c => c.slotId === slot.id);
   const diagHtml = isPatient ? `
     <div class="slot-diag-section">
-      <div class="slot-diag-header">Diagnosen</div>
+      <div class="slot-diag-header">
+        Diagnosen
+        <button class="slot-diag-add-inline" id="btn-slot-add-diag">＋</button>
+      </div>
       ${slotCatches.length
         ? slotCatches.map(c => `
             <div class="slot-diag-row">
@@ -1209,7 +1212,6 @@ function openSlotDetailModal(slot, source = 'planner') {
               <button class="slot-diag-del btn-icon" data-catch-id="${c.id}" title="Entfernen">🗑</button>
             </div>`).join('')
         : '<div class="slot-diag-empty">Noch keine Diagnosen erfasst.</div>'}
-      <button class="slot-diag-add" id="btn-slot-add-diag">＋ Diagnose hinzufügen</button>
     </div>` : '';
 
   document.getElementById('slot-detail-title').textContent = `${def.icon} ${def.label}`;
@@ -1220,9 +1222,10 @@ function openSlotDetailModal(slot, source = 'planner') {
     ${slot.comment ? `<div class="slot-comment-display">${slot.comment}</div>` : ''}
     ${diagHtml}
     <div class="slot-detail-actions">
+      ${isPatient ? `<button class="btn-primary" id="btn-slot-add-diag-bar">＋ Diagnose</button>` : ''}
       ${hasTips ? `<button class="btn-secondary" id="btn-slot-tips">☑️ Checkliste${tipTotal ? ` <span class="tip-btn-count">${tipDone}/${tipTotal}</span>` : ''}</button>` : ''}
-      <button class="btn-secondary" id="btn-slot-detail-edit">✏️ Bearbeiten</button>
-      <button class="btn-danger"    id="btn-slot-detail-delete">🗑 Löschen</button>
+      <button class="btn-secondary" id="btn-slot-detail-edit">✏️</button>
+      <button class="btn-danger"    id="btn-slot-detail-delete">🗑</button>
     </div>
   `;
 
@@ -1236,8 +1239,9 @@ function openSlotDetailModal(slot, source = 'planner') {
   });
 
   if (isPatient) {
-    document.getElementById('btn-slot-add-diag').addEventListener('click', () =>
-      openSlotDiagCatch(slot, source));
+    const openDiag = () => openSlotDiagCatch(slot, source);
+    document.getElementById('btn-slot-add-diag')?.addEventListener('click', openDiag);
+    document.getElementById('btn-slot-add-diag-bar')?.addEventListener('click', openDiag);
     document.querySelectorAll('.slot-diag-del').forEach(btn =>
       btn.addEventListener('click', () =>
         deleteSlotCatch(parseInt(btn.dataset.catchId), slot, source)));
@@ -1314,6 +1318,8 @@ function openSlotTipsModal(slot) {
 
 function openSlotDiagCatch(slot, source) {
   state.addToShiftContext = { shiftId: slot.shiftId, patientIndex: null, slotId: slot.id, slotSource: source };
+  state.searchContext = { patientIndex: null, selectedDiagnosis: null, standalone: true };
+  document.getElementById('slot-detail-modal').classList.add('hidden');
   resetDiagSearchUI();
   document.getElementById('diagnosis-modal').classList.remove('hidden');
   document.getElementById('diag-search-input').focus();
