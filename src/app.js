@@ -991,6 +991,7 @@ function renderTimeline(shift) {
       ${isPatient ? '<button class="tl-inline-btn tl-inline-add-diag">＋ Diagnose</button>' : ''}
       ${hasTips ? '<button class="tl-inline-btn tl-inline-tips">☑️ Checkliste</button>' : ''}
       <button class="tl-inline-btn tl-inline-edit">✏️ Bearbeiten</button>
+      <button class="tl-inline-btn tl-inline-move">⤴ Verschieben</button>
       <button class="tl-inline-btn tl-inline-del btn-danger-sm">🗑 Löschen</button>
     </div>`;
 
@@ -1044,6 +1045,9 @@ function renderTimeline(shift) {
     });
     el.querySelector('.tl-inline-edit')?.addEventListener('click', e => {
       e.stopPropagation(); openSlotEditForm(slot, 'planner');
+    });
+    el.querySelector('.tl-inline-move')?.addEventListener('click', e => {
+      e.stopPropagation(); openMoveSlotModal(slot, shift);
     });
     el.querySelector('.tl-inline-del')?.addEventListener('click', async e => {
       e.stopPropagation();
@@ -1750,11 +1754,18 @@ function openSlotEditForm(slot, source) {
       e.currentTarget.classList.toggle('active'));
   }
 
-  document.getElementById('btn-slot-edit-cancel').addEventListener('click', () =>
-    openSlotDetailModal(slot, source));
+  document.getElementById('btn-slot-edit-cancel').addEventListener('click', () => {
+    if (source === 'planner') {
+      document.getElementById('slot-detail-modal').classList.add('hidden');
+    } else {
+      openSlotDetailModal(slot, source);
+    }
+  });
 
   document.getElementById('btn-slot-edit-save').addEventListener('click', () =>
     saveSlotEdit(slot, source));
+
+  document.getElementById('slot-detail-modal').classList.remove('hidden');
 }
 
 async function saveSlotEdit(slot, source) {
@@ -1788,6 +1799,63 @@ async function saveSlotEdit(slot, source) {
   } else {
     renderTimeline(shift);
   }
+}
+
+function openMoveSlotModal(slot, currentShift) {
+  const def = SLOT_TYPES[slot.type] || {};
+  const otherShifts = state.shifts
+    .filter(s => s.id !== currentShift.id)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  document.getElementById('slot-detail-title').textContent = `⤴ ${def.icon} ${def.label} verschieben`;
+  document.getElementById('slot-detail-body').innerHTML = otherShifts.length === 0
+    ? `<div style="color:var(--text-dim);font-size:14px;padding:8px 0">Keine anderen Dienste vorhanden.</div>
+       <div class="slot-edit-btns"><button class="btn-secondary" id="btn-move-slot-cancel">Schließen</button></div>`
+    : `<div class="form-row">
+        <label class="form-label">Ziel-Dienst</label>
+        <select id="move-slot-target" class="form-input">
+          ${otherShifts.map(s =>
+            `<option value="${s.id}">${s.date} · ${shiftIcon(s.type)} ${shiftLabel(s.type)}</option>`
+          ).join('')}
+        </select>
+      </div>
+      <div class="slot-edit-btns">
+        <button class="btn-primary"   id="btn-move-slot-confirm">Verschieben</button>
+        <button class="btn-secondary" id="btn-move-slot-cancel">Abbrechen</button>
+      </div>`;
+
+  document.getElementById('btn-move-slot-cancel').addEventListener('click', () =>
+    document.getElementById('slot-detail-modal').classList.add('hidden'));
+
+  if (otherShifts.length > 0) {
+    document.getElementById('btn-move-slot-confirm').addEventListener('click', async () => {
+      const targetId = parseInt(document.getElementById('move-slot-target').value);
+      await moveSlotToShift(slot, currentShift, targetId);
+    });
+  }
+
+  document.getElementById('slot-detail-modal').classList.remove('hidden');
+}
+
+async function moveSlotToShift(slot, fromShift, toShiftId) {
+  const toShift = state.shifts.find(s => s.id === toShiftId);
+  if (!toShift) return;
+
+  await db.scheduleSlots.update(slot.id, { shiftId: toShiftId });
+
+  // Adjust XP on both shifts
+  const xp = slot.xpEarned || 0;
+  await db.shiftLogs.update(fromShift.id, { xpEarned: Math.max(0, (fromShift.xpEarned || 0) - xp) });
+  await db.shiftLogs.update(toShiftId,    { xpEarned: (toShift.xpEarned || 0) + xp });
+
+  state.shifts      = await db.shiftLogs.orderBy('date').reverse().toArray();
+  state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(fromShift.id).sortBy('startHour');
+
+  document.getElementById('slot-detail-modal').classList.add('hidden');
+
+  const freshShift = state.shifts.find(s => s.id === fromShift.id);
+  if (freshShift) renderTimeline(freshShift);
+  updatePlannerXP(freshShift || fromShift);
 }
 
 // ─── Notifications ────────────────────────────────────────────────────────────
