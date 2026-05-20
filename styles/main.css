@@ -1931,7 +1931,6 @@ img{max-width:100%;display:block}
 .detail-slot-time{font-size:11px;color:var(--text-muted)}
 .detail-slot-comment{font-size:11px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .detail-slots-empty{padding:12px 14px;font-size:12px;color:var(--text-dim)}
-
 .schulung-note-wrapper{padding:12px}
 .schulung-hint{font-size:12px;color:var(--text-dim);margin-bottom:10px;text-align:center}
 .schulung-note-area{
