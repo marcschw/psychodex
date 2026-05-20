@@ -1220,7 +1220,7 @@ img{max-width:100%;display:block}
 }
 .symptom-diag-suggestions{display:flex;flex-direction:column;gap:6px}
 .symptom-diag-item{
-  display:flex;align-items:center;gap:10px;
+  display:flex;align-items:flex-start;gap:10px;
   padding:10px 12px;background:var(--bg-raised);
   border:1px solid var(--border);border-radius:var(--r);
   cursor:pointer;transition:all .15s;
@@ -1234,7 +1234,7 @@ img{max-width:100%;display:block}
 .symptom-diag-score-pct{font-size:10px;color:var(--text-dim);min-width:28px;text-align:right}
 .symptom-diag-info{flex:1;min-width:0}
 .symptom-diag-code{font-family:monospace;font-size:11px;color:var(--text-dim)}
-.symptom-diag-name{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.symptom-diag-name{font-size:13px;font-weight:500;white-space:normal;word-break:break-word}
 .symptom-diag-catch{
   flex-shrink:0;padding:5px 10px;border-radius:6px;
   background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.3);
@@ -1774,7 +1774,7 @@ img{max-width:100%;display:block}
 
 /* ── Search Result Thumbnails ──────────────────────────────────────────────── */
 .search-result-item{
-  display:flex;align-items:center;gap:10px;
+  display:flex;align-items:flex-start;gap:10px;
   padding:8px 10px;border-radius:var(--r);
   cursor:pointer;transition:background .15s;
 }
@@ -1806,7 +1806,7 @@ img{max-width:100%;display:block}
 }
 .result-info .result-name{
   font-size:13px;font-weight:500;color:var(--text);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  white-space:normal;word-break:break-word;
 }
 .result-info .result-rarity{font-size:10px;font-weight:600}
 .result-caught-badge{
