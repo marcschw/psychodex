@@ -118,119 +118,143 @@
       <!-- ── Stats ──────────────────────────────────────────────────────────── -->
       <section id="tab-stats" class="tab-view">
 
-        <!-- Rank Card -->
-        <div class="rank-card" id="rank-card">
-          <div class="rank-card-bg" id="rank-card-bg"></div>
-          <div class="rank-card-body">
-            <img id="rank-card-img" class="rank-img" src="" alt=""
-                 onerror="this.style.opacity='0';this.onerror=null">
-            <div class="rank-card-text">
-              <div class="rank-name-row">
-                <div class="rank-title" id="rank-title">Novus</div>
-                <div id="rank-stars" class="rank-stars-inline"></div>
+        <!-- Sub-tab chips -->
+        <div class="stats-subtabs" id="stats-subtab-bar">
+          <button class="stats-subtab active" data-subtab="overview">
+            <span class="subtab-name">Übersicht</span>
+            <span class="subtab-stat" id="sstab-overview-stat">Rang 1</span>
+          </button>
+          <button class="stats-subtab" data-subtab="dienste">
+            <span class="subtab-name">Dienste</span>
+            <span class="subtab-stat" id="sstab-dienste-stat">0 Dienste</span>
+          </button>
+          <button class="stats-subtab" data-subtab="diagnosen">
+            <span class="subtab-name">Diagnosen</span>
+            <span class="subtab-stat" id="sstab-diagnosen-stat">0</span>
+          </button>
+          <button class="stats-subtab" data-subtab="badges">
+            <span class="subtab-name">Badges</span>
+            <span class="subtab-stat" id="sstab-badges-stat">0/25</span>
+          </button>
+          <button class="stats-subtab" data-subtab="einstellungen">
+            <span class="subtab-name">⚙️</span>
+            <span class="subtab-stat">&nbsp;</span>
+          </button>
+        </div>
+
+        <!-- Panel: Übersicht -->
+        <div id="stats-panel-overview" class="stats-panel">
+          <div class="rank-card" id="rank-card">
+            <div class="rank-card-bg" id="rank-card-bg"></div>
+            <div class="rank-card-body">
+              <img id="rank-card-img" class="rank-img" src="" alt=""
+                   onerror="this.style.opacity='0';this.onerror=null">
+              <div class="rank-card-text">
+                <div class="rank-name-row">
+                  <div class="rank-title" id="rank-title">Novus</div>
+                  <div id="rank-stars" class="rank-stars-inline"></div>
+                </div>
+                <div class="rank-subtitle" id="rank-subtitle">des Zuhörens</div>
+                <div class="rank-level" id="rank-level">Rang 1 / 18</div>
               </div>
-              <div class="rank-subtitle" id="rank-subtitle">des Zuhörens</div>
-              <div class="rank-level" id="rank-level">Rang 1 / 18</div>
+            </div>
+            <div class="rank-xp-container" id="rank-xp-container">
+              <div class="xp-label">
+                <span><span id="xp-current">0</span> / <span id="xp-needed">250</span> XP</span>
+                <span id="xp-pct" style="color:var(--text-dim)">0%</span>
+              </div>
+              <div class="xp-bar">
+                <div id="xp-bar-fill" class="xp-fill" style="width:0%"></div>
+              </div>
             </div>
           </div>
-          <div class="rank-xp-container" id="rank-xp-container">
-            <div class="xp-label">
-              <span><span id="xp-current">0</span> / <span id="xp-needed">250</span> XP</span>
-              <span id="xp-pct" style="color:var(--text-dim)">0%</span>
+          <div class="stats-row">
+            <div class="stat-card stat-clickable" id="stat-streak-card">
+              <div class="stat-icon" id="streak-icon">🔥</div>
+              <div class="stat-value" id="streak-value">0</div>
+              <div class="stat-label">Wochen-Streak</div>
             </div>
-            <div class="xp-bar">
-              <div id="xp-bar-fill" class="xp-fill" style="width:0%"></div>
+            <div class="stat-card stat-clickable" id="stat-hours-card">
+              <div class="stat-icon">⏱️</div>
+              <div class="stat-value" id="total-hours">0h</div>
+              <div class="stat-label">Stunden</div>
+            </div>
+            <div class="stat-card stat-clickable" id="stat-catches-card">
+              <div class="stat-icon">🔬</div>
+              <div class="stat-value" id="total-catches">0</div>
+              <div class="stat-label">Diagnosen</div>
+            </div>
+          </div>
+          <div class="progress-stats">
+            <div class="progress-stat" id="stat-xp-card">
+              <div class="ps-label">Gesamt XP</div>
+              <div class="ps-value" id="stat-total-xp">0</div>
+            </div>
+            <div class="progress-stat" id="stat-shifts-card">
+              <div class="ps-label">Dienste</div>
+              <div class="ps-value" id="stat-total-shifts">0</div>
+            </div>
+            <div class="progress-stat">
+              <div class="ps-label">Ø XP / Dienst</div>
+              <div class="ps-value" id="stat-avg-xp">0</div>
+            </div>
+            <div class="progress-stat">
+              <div class="ps-label">Stunden</div>
+              <div class="ps-value" id="stat-hours">0h</div>
             </div>
           </div>
         </div>
 
-        <!-- Hours counters -->
-        <div id="hours-counters"></div>
+        <!-- Panel: Dienste -->
+        <div id="stats-panel-dienste" class="stats-panel stats-panel-hidden">
+          <div id="hours-counters"></div>
+          <div class="section-header">🎯 Mission Control</div>
+          <div id="missions-grid" class="missions-grid">
+            <div class="empty-state">Missionen laden…</div>
+          </div>
+          <div class="section-header" id="heatmap-section-header">Dienst-Aktivität (52 Wochen)</div>
+          <div class="heatmap-scroll">
+            <div id="heatmap" class="heatmap"></div>
+          </div>
+          <div id="heatmap-detail" class="heatmap-detail hidden"></div>
+        </div>
 
-        <!-- Stat row: streak / hours / diagnosen -->
-        <div class="stats-row">
-          <div class="stat-card stat-clickable" id="stat-streak-card">
-            <div class="stat-icon" id="streak-icon">🔥</div>
-            <div class="stat-value" id="streak-value">0</div>
-            <div class="stat-label">Wochen-Streak</div>
+        <!-- Panel: Diagnosen -->
+        <div id="stats-panel-diagnosen" class="stats-panel stats-panel-hidden">
+          <div class="section-header">Diagnose-Verteilung</div>
+          <div id="category-chart" class="category-chart"></div>
+        </div>
+
+        <!-- Panel: Badges -->
+        <div id="stats-panel-badges" class="stats-panel stats-panel-hidden">
+          <div id="achievements-section"></div>
+        </div>
+
+        <!-- Panel: Einstellungen -->
+        <div id="stats-panel-einstellungen" class="stats-panel stats-panel-hidden">
+          <div class="section-header">Einstellungen</div>
+          <div class="settings-grid">
+            <div class="setting-item setting-wide">
+              <label class="setting-label">Stunden-Zähler</label>
+              <div id="hour-counters-settings"></div>
+            </div>
+            <div class="setting-item setting-wide">
+              <label class="setting-label">Extra-Stunden</label>
+              <div id="extra-hours-section"></div>
+            </div>
           </div>
-          <div class="stat-card stat-clickable" id="stat-hours-card">
-            <div class="stat-icon">⏱️</div>
-            <div class="stat-value" id="total-hours">0h</div>
-            <div class="stat-label">Stunden</div>
-          </div>
-          <div class="stat-card stat-clickable" id="stat-catches-card">
-            <div class="stat-icon">🔬</div>
-            <div class="stat-value" id="total-catches">0</div>
-            <div class="stat-label">Diagnosen</div>
+          <div class="section-header">Daten &amp; Backup</div>
+          <div class="export-import-row">
+            <button id="btn-export" class="io-btn">⬇ Exportieren</button>
+            <label class="io-btn io-btn-import">⬆ Importieren
+              <input type="file" id="import-file-input" accept=".json" style="display:none">
+            </label>
+            <label class="io-btn io-btn-import">📅 Dienstplan XML
+              <input type="file" id="xml-import-input" accept=".xml" style="display:none">
+            </label>
           </div>
         </div>
 
-        <!-- XP / Dienste stats -->
-        <div class="progress-stats">
-          <div class="progress-stat" id="stat-xp-card">
-            <div class="ps-label">Gesamt XP</div>
-            <div class="ps-value" id="stat-total-xp">0</div>
-          </div>
-          <div class="progress-stat" id="stat-shifts-card">
-            <div class="ps-label">Dienste</div>
-            <div class="ps-value" id="stat-total-shifts">0</div>
-          </div>
-          <div class="progress-stat">
-            <div class="ps-label">Ø XP / Dienst</div>
-            <div class="ps-value" id="stat-avg-xp">0</div>
-          </div>
-          <div class="progress-stat">
-            <div class="ps-label">Stunden</div>
-            <div class="ps-value" id="stat-hours">0h</div>
-          </div>
-        </div>
-
-        <!-- Missions -->
-        <div class="section-header">🎯 Mission Control</div>
-        <div id="missions-grid" class="missions-grid">
-          <div class="empty-state">Missionen laden…</div>
-        </div>
-
-        <!-- Heatmap -->
-        <div class="section-header" id="heatmap-section-header">Dienst-Aktivität (52 Wochen)</div>
-        <div class="heatmap-scroll">
-          <div id="heatmap" class="heatmap"></div>
-        </div>
-        <div id="heatmap-detail" class="heatmap-detail hidden"></div>
-
-        <!-- Category chart -->
-        <div class="section-header">Diagnose-Verteilung</div>
-        <div id="category-chart" class="category-chart"></div>
-
-        <!-- Achievements -->
-        <div class="section-header">Badges &amp; Achievements</div>
-        <div id="achievements-section"></div>
-
-        <!-- Settings -->
-        <div class="section-header">Einstellungen</div>
-        <div class="settings-grid">
-          <div class="setting-item setting-wide">
-            <label class="setting-label">Stunden-Zähler</label>
-            <div id="hour-counters-settings"></div>
-          </div>
-          <div class="setting-item setting-wide">
-            <label class="setting-label">Extra-Stunden</label>
-            <div id="extra-hours-section"></div>
-          </div>
-        </div>
-
-        <!-- Export / Import -->
-        <div class="section-header">Daten &amp; Backup</div>
-        <div class="export-import-row">
-          <button id="btn-export" class="io-btn">⬇ Exportieren</button>
-          <label class="io-btn io-btn-import">⬆ Importieren
-            <input type="file" id="import-file-input" accept=".json" style="display:none">
-          </label>
-          <label class="io-btn io-btn-import">📅 Dienstplan XML
-            <input type="file" id="xml-import-input" accept=".xml" style="display:none">
-          </label>
-        </div>
       </section>
 
     </div><!-- /.tab-container -->
@@ -701,6 +725,12 @@
     <button class="badge-lb-close" id="badge-lb-close">✕</button>
     <img id="badge-lb-img" class="badge-lb-img" src="" alt="">
     <div id="badge-lb-emoji" class="badge-lb-emoji" style="display:none"></div>
+    <div class="badge-lb-info" id="badge-lb-info">
+      <div class="badge-lb-stars" id="badge-lb-stars"></div>
+      <div class="badge-lb-name" id="badge-lb-name"></div>
+      <div class="badge-lb-desc" id="badge-lb-desc"></div>
+      <div class="badge-lb-xp" id="badge-lb-xp"></div>
+    </div>
   </div>
 </div>
 </body>

@@ -40,6 +40,7 @@ const state = {
   alarmInterval: null,
   mealModalContext: null,   // { shift, hint } for meal add/edit modal
   mealModalIcon: '☕',
+  statsSubTab: 'overview',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -377,6 +378,17 @@ function setupNav() {
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => navigateTo(btn.dataset.tab));
   });
+  document.querySelectorAll('.stats-subtab').forEach(btn => {
+    btn.addEventListener('click', () => switchStatsSubTab(btn.dataset.subtab));
+  });
+}
+
+function switchStatsSubTab(name) {
+  state.statsSubTab = name;
+  document.querySelectorAll('.stats-subtab').forEach(b =>
+    b.classList.toggle('active', b.dataset.subtab === name));
+  document.querySelectorAll('.stats-panel').forEach(p =>
+    p.classList.toggle('stats-panel-hidden', p.id !== `stats-panel-${name}`));
 }
 
 function navigateTo(tab) {
@@ -2864,14 +2876,49 @@ function renderAchievements() {
 }
 
 function openBadgeLightbox(id, icon) {
-  const lb = document.getElementById('badge-lightbox');
-  const img = document.getElementById('badge-lb-img');
+  const lb    = document.getElementById('badge-lightbox');
+  const img   = document.getElementById('badge-lb-img');
   const emoji = document.getElementById('badge-lb-emoji');
+
   img.src = `assets/images/badges/large/${id}.jpg`;
   img.onload  = () => { emoji.style.display = 'none'; };
   img.onerror = () => { img.style.display = 'none'; emoji.textContent = icon; emoji.style.display = 'flex'; };
   emoji.style.display = 'none';
   img.style.display = 'block';
+
+  // Populate badge info below the image
+  const reg = ACHIEVEMENTS.find(a => a.id === id);
+  const sec = SECRET_ACHIEVEMENTS.find(a => a.id === id);
+  const ach = reg || sec;
+  const maxTier = (state.unlockedAchievements || [])
+    .filter(a => a.badgeId === id)
+    .reduce((m, a) => Math.max(m, a.tier), 0);
+
+  const starFn = (earned, total, color) =>
+    Array.from({length: total}, (_, i) =>
+      `<span style="font-size:20px;color:${i < earned ? color : 'rgba(255,255,255,.2)'}">${i < earned ? '★' : '☆'}</span>`
+    ).join('');
+
+  let starsHtml = '', xpText = '';
+  if (reg) {
+    const color = maxTier === 3 ? '#f59e0b' : '#7c3aed';
+    starsHtml = starFn(maxTier, 3, color);
+    if (maxTier > 0) xpText = `+${reg.tiers[maxTier - 1].xp} XP`;
+  } else if (sec) {
+    const count = sec.xp <= 400 ? 1 : sec.xp <= 700 ? 2 : 3;
+    starsHtml = starFn(count, 3, '#f59e0b');
+    xpText = `+${sec.xp} XP · Secret`;
+  }
+
+  const nameEl = document.getElementById('badge-lb-name');
+  const descEl = document.getElementById('badge-lb-desc');
+  const starsEl = document.getElementById('badge-lb-stars');
+  const xpEl   = document.getElementById('badge-lb-xp');
+  if (nameEl)  nameEl.textContent  = ach?.name || '';
+  if (descEl)  descEl.textContent  = ach?.description || '';
+  if (starsEl) starsEl.innerHTML   = starsHtml;
+  if (xpEl)    xpEl.textContent    = xpText;
+
   lb.classList.remove('hidden');
 }
 
@@ -3436,10 +3483,8 @@ function closeCategoryModal() {
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
 function renderStats() {
-  // Render rank card (was dashboard)
   renderDashboard();
 
-  // Missions (moved from ICD-F)
   const hasActive = state.missions.some(m => !m.completedAt);
   if (!hasActive && db.missions) ensureMissionSlots().then(() => renderMissions()).catch(() => {});
   renderMissions();
@@ -3448,16 +3493,16 @@ function renderStats() {
   const shifts = state.shifts.length;
   const hours  = calcTotalHours();
   const avgXP  = shifts ? Math.round(xp / shifts) : 0;
-  document.getElementById('stat-total-xp').textContent     = xp.toLocaleString('de-AT');
-  document.getElementById('stat-total-shifts').textContent  = shifts;
-  document.getElementById('stat-avg-xp').textContent        = avgXP;
-  document.getElementById('stat-hours').textContent         = `${hours.toFixed(1).replace('.0','')}h`;
+  document.getElementById('stat-total-xp').textContent    = xp.toLocaleString('de-AT');
+  document.getElementById('stat-total-shifts').textContent = shifts;
+  document.getElementById('stat-avg-xp').textContent       = avgXP;
+  document.getElementById('stat-hours').textContent        = `${hours.toFixed(1).replace('.0','')}h`;
   renderHourCountersSettings();
   renderExtraHoursSettings();
   const heatmapStart = renderHeatmap();
   const heatmapHeader = document.getElementById('heatmap-section-header');
   if (heatmapHeader && heatmapStart) {
-    const startLabel = new Date(heatmapStart + 'T12:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const startLabel = new Date(heatmapStart + 'T12:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' });
     heatmapHeader.textContent = `Dienst-Aktivität (seit ${startLabel})`;
   }
   renderCategoryChart();
@@ -3466,6 +3511,19 @@ function renderStats() {
   const shiftsCard = document.getElementById('stat-shifts-card');
   if (xpCard) xpCard.onclick = openXPBreakdownModal;
   if (shiftsCard) shiftsCard.onclick = openHoursModal;
+
+  // Update sub-tab summary chips
+  const rank = getRankForXP(xp);
+  const earnedBadges = new Set((state.unlockedAchievements || []).map(a => a.badgeId)).size;
+  const totalBadges  = (ACHIEVEMENTS.length + SECRET_ACHIEVEMENTS.length);
+  const el = id => document.getElementById(id);
+  if (el('sstab-overview-stat'))  el('sstab-overview-stat').textContent  = `${rank.title} · Rang ${rank.level}`;
+  if (el('sstab-dienste-stat'))   el('sstab-dienste-stat').textContent   = `${shifts} Dienste · ${hours.toFixed(0)}h`;
+  if (el('sstab-diagnosen-stat')) el('sstab-diagnosen-stat').textContent = `${state.catches.length} gefangen`;
+  if (el('sstab-badges-stat'))    el('sstab-badges-stat').textContent    = `${earnedBadges} / ${totalBadges}`;
+
+  // Apply current sub-tab visibility
+  switchStatsSubTab(state.statsSubTab);
 }
 
 function renderHeatmap() {

@@ -2376,12 +2376,43 @@ img{max-width:100%;display:block}
 .tl-inline-btn:active{background:rgba(255,255,255,.15)}
 .tl-inline-btn.btn-danger-sm{background:rgba(220,38,38,.12);border-color:rgba(220,38,38,.3);color:#f87171}
 
+/* ── Stats Sub-tabs ──────────────────────────────────────────────────────────── */
+.stats-subtabs{
+  display:flex;gap:8px;overflow-x:auto;padding:12px 0 4px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;flex-shrink:0;
+}
+.stats-subtabs::-webkit-scrollbar{display:none}
+.stats-subtab{
+  display:flex;flex-direction:column;align-items:center;gap:1px;
+  padding:8px 14px;border-radius:12px;flex-shrink:0;cursor:pointer;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  -webkit-tap-highlight-color:transparent;transition:all .15s;
+}
+.stats-subtab.active{
+  background:rgba(124,58,237,.18);border-color:var(--accent);
+  box-shadow:0 0 0 1px var(--accent);
+}
+.subtab-name{font-size:12px;font-weight:700;color:var(--text);line-height:1.2}
+.subtab-stat{font-size:10px;color:var(--text-dim);white-space:nowrap;line-height:1.2}
+.stats-subtab.active .subtab-name{color:var(--accent)}
+.stats-subtab.active .subtab-stat{color:rgba(167,139,250,.7)}
+.stats-panel{padding-top:8px}
+.stats-panel-hidden{display:none}
+
 /* ── Badge Lightbox ──────────────────────────────────────────────────────────── */
 .badge-lightbox{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center}
-.badge-lb-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(6px)}
-.badge-lb-content{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;padding:20px;max-width:min(90vw,90vh);max-height:min(90vw,90vh)}
-.badge-lb-img{width:min(80vw,80vh);height:min(80vw,80vh);object-fit:contain;border-radius:20px;box-shadow:0 0 60px rgba(0,0,0,.8)}
-.badge-lb-emoji{width:min(80vw,80vh);height:min(80vw,80vh);font-size:min(30vw,30vh);align-items:center;justify-content:center}
+.badge-lb-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.9);backdrop-filter:blur(8px)}
+.badge-lb-content{
+  position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;
+  padding:20px 20px 28px;max-width:min(88vw,480px);gap:16px;
+}
+.badge-lb-img{width:min(72vw,320px);height:min(72vw,320px);object-fit:contain;border-radius:20px;box-shadow:0 0 60px rgba(0,0,0,.8)}
+.badge-lb-emoji{width:min(72vw,320px);height:min(72vw,320px);font-size:min(28vw,120px);display:flex;align-items:center;justify-content:center}
+.badge-lb-info{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.badge-lb-stars{display:flex;gap:4px;justify-content:center}
+.badge-lb-name{font-size:18px;font-weight:800;color:#fff;line-height:1.2}
+.badge-lb-desc{font-size:13px;color:rgba(255,255,255,.65);line-height:1.4}
+.badge-lb-xp{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.5px}
 .badge-lb-close{position:fixed;top:16px;right:16px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:var(--text);font-size:20px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
 .badge-lb-close:active{background:rgba(255,255,255,.25)}
 .ach-img-clickable{cursor:pointer;transition:transform .15s}
