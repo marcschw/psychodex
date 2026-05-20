@@ -748,7 +748,7 @@ function renderTimeline(shift) {
     el.addEventListener('click', e => {
       if (e.target.closest('.tl-slot-delete')) return;
       const slot = state.plannerSlots.find(s => s.id === parseInt(el.dataset.slotId));
-      if (slot) openSlotDetailModal(slot);
+      if (slot) openSlotDetailModal(slot, 'planner');
     });
   });
 
@@ -1175,7 +1175,7 @@ async function deleteSlot(slotId, shift, source = 'planner') {
   }
 }
 
-function openSlotDetailModal(slot) {
+function openSlotDetailModal(slot, source = 'planner') {
   const def  = SLOT_TYPES[slot.type] || {};
   const tips = SLOT_TIPS[slot.type]  || {};
   const flags = slot.flags?.length ? `<div class="slot-flag-list">${slot.flags.map(f => `<span class="slot-flag">${f.toUpperCase()}</span>`).join('')}</div>` : '';
@@ -1196,8 +1196,97 @@ function openSlotDetailModal(slot) {
       : `<div class="slot-tips-header">💡 Tipps</div>
          <ul class="slot-tips-list">${(tips.tips || []).map(t => `<li>${t}</li>`).join('')}</ul>`}
     ${tips.docHint ? `<div class="slot-doc-hint">📄 ${tips.docHint}</div>` : ''}
+    <div class="slot-detail-actions">
+      <button class="btn-secondary" id="btn-slot-detail-edit">✏️ Bearbeiten</button>
+      <button class="btn-danger"    id="btn-slot-detail-delete">🗑 Löschen</button>
+    </div>
   `;
+
+  const shift = state.shifts.find(s => s.id === slot.shiftId);
+
+  document.getElementById('btn-slot-detail-edit').addEventListener('click', () =>
+    openSlotEditForm(slot, source));
+
+  document.getElementById('btn-slot-detail-delete').addEventListener('click', async () => {
+    document.getElementById('slot-detail-modal').classList.add('hidden');
+    if (shift) await deleteSlot(slot.id, shift, source);
+  });
+
   document.getElementById('slot-detail-modal').classList.remove('hidden');
+}
+
+function openSlotEditForm(slot, source) {
+  const def = SLOT_TYPES[slot.type] || {};
+  document.getElementById('slot-detail-title').textContent = `✏️ ${def.icon} ${def.label}`;
+  const hasDemo = slot.type === 'erstgespraech';
+
+  document.getElementById('slot-detail-body').innerHTML = `
+    <div class="form-row">
+      <label class="form-label">Von</label>
+      <input type="time" id="slot-edit-start" class="form-input" value="${padT(slot.startHour, slot.startMinute)}">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Bis</label>
+      <input type="time" id="slot-edit-end" class="form-input" value="${padT(slot.endHour, slot.endMinute)}">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Kommentar</label>
+      <textarea id="slot-edit-comment" class="form-input" rows="3" placeholder="Notiz…">${slot.comment || ''}</textarea>
+    </div>
+    ${hasDemo ? `
+    <div class="form-row">
+      <label class="form-label">Flags</label>
+      <button class="flag-btn${slot.flags?.includes('demo') ? ' active' : ''}" id="slot-edit-flag-demo" data-flag="demo">🎓 Demo</button>
+    </div>` : ''}
+    <div class="slot-edit-btns">
+      <button class="btn-primary"   id="btn-slot-edit-save">Speichern</button>
+      <button class="btn-secondary" id="btn-slot-edit-cancel">Abbrechen</button>
+    </div>
+  `;
+
+  if (hasDemo) {
+    document.getElementById('slot-edit-flag-demo').addEventListener('click', e =>
+      e.currentTarget.classList.toggle('active'));
+  }
+
+  document.getElementById('btn-slot-edit-cancel').addEventListener('click', () =>
+    openSlotDetailModal(slot, source));
+
+  document.getElementById('btn-slot-edit-save').addEventListener('click', () =>
+    saveSlotEdit(slot, source));
+}
+
+async function saveSlotEdit(slot, source) {
+  const startVal = document.getElementById('slot-edit-start').value;
+  const endVal   = document.getElementById('slot-edit-end').value;
+  const comment  = document.getElementById('slot-edit-comment').value.trim();
+  if (!startVal || !endVal) { alert('Bitte Start- und Endzeit angeben.'); return; }
+
+  const [sh, sm] = startVal.split(':').map(Number);
+  const [eh, em] = endVal.split(':').map(Number);
+
+  const flags = [];
+  const demoBtn = document.getElementById('slot-edit-flag-demo');
+  if (demoBtn?.classList.contains('active')) flags.push('demo');
+
+  await db.scheduleSlots.update(slot.id, {
+    startHour: sh, startMinute: sm,
+    endHour: eh,   endMinute: em,
+    comment: comment || null,
+    flags,
+  });
+
+  document.getElementById('slot-detail-modal').classList.add('hidden');
+
+  const shift = state.shifts.find(s => s.id === slot.shiftId);
+  if (!shift) return;
+
+  state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
+  if (source === 'detail') {
+    renderShiftDetailBody(shift);
+  } else {
+    renderTimeline(shift);
+  }
 }
 
 // ─── Notifications ────────────────────────────────────────────────────────────
@@ -2822,7 +2911,7 @@ async function renderShiftDetailBody(shift) {
     row.addEventListener('click', async e => {
       if (e.target.closest('.detail-slot-del')) return;
       const slot = await db.scheduleSlots.get(parseInt(row.dataset.slotId));
-      if (slot) openSlotDetailModal(slot);
+      if (slot) openSlotDetailModal(slot, 'detail');
     });
   });
 }
