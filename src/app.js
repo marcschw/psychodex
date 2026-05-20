@@ -2039,7 +2039,31 @@ function checkAlarms() {
   });
   if (patientNow) return;
 
-  // Find slots starting in 9–11 minutes
+  // ── Kassensturz: every hour at x:30 while a kassa slot is active ──────────
+  const nowMin = now.getMinutes();
+  if (nowMin >= 29 && nowMin <= 31) {
+    const kassaActive = state.plannerSlots.some(s =>
+      SLOT_TYPES[s.type]?.halfHour &&
+      toMins(s.startHour, s.startMinute) <= nowMins &&
+      nowMins < toMins(s.endHour, s.endMinute)
+    );
+    if (kassaActive) {
+      const alarmKey = `kassa-${now.getHours()}:30`;
+      if (!state.alarmFired.has(alarmKey)) {
+        const timeStr = `${now.getHours()}:30`;
+        const banner = document.getElementById('planner-alarm-banner');
+        if (banner) {
+          banner.textContent = `💰 Kassensturz um ${timeStr}`;
+          banner.classList.remove('hidden');
+          setTimeout(() => banner.classList.add('hidden'), 15_000);
+        }
+        showSystemNotification('💰 Kassensturz', `Kassensturz um ${timeStr} fällig`, `kassa-${timeStr}`);
+        state.alarmFired.add(alarmKey);
+      }
+    }
+  }
+
+  // ── Slot start alarm: 9–11 minutes before ─────────────────────────────────
   for (const slot of state.plannerSlots) {
     if (state.alarmFired.has(slot.id)) continue;
     const diff = toMins(slot.startHour, slot.startMinute) - nowMins;
@@ -2048,21 +2072,13 @@ function checkAlarms() {
       const time = padT(slot.startHour, slot.startMinute);
       const msg  = `${def.icon || '⏰'} ${def.label} um ${time}`;
 
-      // In-app banner
       const banner = document.getElementById('planner-alarm-banner');
       if (banner) {
         banner.textContent = `⏰ In ~10 min: ${msg}`;
         banner.classList.remove('hidden');
         setTimeout(() => banner.classList.add('hidden'), 10_000);
       }
-
-      // System notification (Android / iOS 16.4+ installed PWA)
-      showSystemNotification(
-        `⏰ In ~10 Minuten`,
-        msg,
-        `alarm-slot-${slot.id}`
-      );
-
+      showSystemNotification(`⏰ In ~10 Minuten`, msg, `alarm-slot-${slot.id}`);
       state.alarmFired.add(slot.id);
     }
   }
