@@ -7,7 +7,10 @@ import { checkAchievements, ACHIEVEMENTS, SECRET_ACHIEVEMENTS, ACH_TIER_LABELS }
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const state = {
-  currentTab: 'log',
+  currentTab: 'home',
+  homeSelectedShiftId: null,
+  calMonth: null,
+  icdfCollection: { symptoms: [], diagnoses: [] },
   icdData: {},
   icdFlat: [],
   icdIndex: null,
@@ -270,8 +273,8 @@ async function init() {
     setupSettingsInputs();
     setupDashboardCardListeners();
     setupPlannerListeners();
+    setupICDFCollectionListeners();
     setupEscapeKey();
-    setDefaultDate();
     document.getElementById('loading-screen').classList.add('fade-out');
     setTimeout(() => {
       document.getElementById('loading-screen').style.display = 'none';
@@ -380,15 +383,15 @@ function navigateTo(tab) {
   const btnEl = document.querySelector(`.nav-btn[data-tab="${tab}"]`);
   if (tabEl) tabEl.classList.add('active');
   if (btnEl) btnEl.classList.add('active');
-  if (tab === 'dashboard') renderDashboard();
-  if (tab === 'log') renderPlannerTab();
-  if (tab === 'dex') renderPsychoDex();
+  if (tab === 'home') renderHomeTab();
+  if (tab === 'icdf') renderICDFTab();
   if (tab === 'stats') renderStats();
 }
 
 // ─── Render ───────────────────────────────────────────────────────────────────
 function renderApp() {
-  renderPlannerTab();
+  loadICDFCollection();
+  renderHomeTab();
   updateHeader();
 }
 
@@ -402,7 +405,7 @@ function updateHeader() {
   document.getElementById('header-xp-fill').style.width = `${Math.min(100, pct)}%`;
 }
 
-// ─── Dashboard ────────────────────────────────────────────────────────────────
+// ─── Game stats (rank card + streak + recent — now rendered in Stats tab) ─────
 function renderDashboard() {
   const xp   = state.profile?.totalXP ?? 0;
   const rank = getRankForXP(xp);
@@ -446,77 +449,6 @@ function renderDashboard() {
   hoursCard.onclick   = openHoursModal;
   catchesCard.onclick = openCatchesModal;
   streakCard.onclick  = openStreakModal;
-
-  // Recent catches
-  const catchEl = document.getElementById('recent-catches');
-  catchEl.innerHTML = state.catches.length
-    ? state.catches.slice(0, 5).map(c => {
-        const { color: rarColor } = rarityInfo(c.seltenheit_score ?? 5);
-        return `
-        <div class="recent-item catch-clickable" data-code="${c.code}">
-          <div class="recent-diag-thumb-wrap">
-            <img src="assets/images/diagnoses/${c.code.toLowerCase()}.png"
-                 class="recent-diag-thumb" alt="" onerror="this.style.display='none'" loading="lazy">
-          </div>
-          <div class="recent-info">
-            <div class="recent-name">
-              <span class="recent-code-badge" style="color:${rarColor}">${c.code}</span>
-              ${c.name}
-            </div>
-            <div class="recent-meta">+${c.xpEarned} XP · ${fmtDate(c.caughtAt)}</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-            <div class="catch-badge">✓</div>
-            <button class="btn-icon btn-delete-catch" data-id="${c.id}" title="Löschen">🗑</button>
-          </div>
-        </div>`;
-      }).join('')
-    : '<div class="empty-state">Noch keine Diagnosen – starte deinen ersten Dienst!</div>';
-
-  catchEl.querySelectorAll('.btn-delete-catch').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      deleteCatch(parseInt(btn.dataset.id));
-    });
-  });
-  catchEl.querySelectorAll('.catch-clickable').forEach(item =>
-    item.addEventListener('click', () => openDiagInfoModal(item.dataset.code)));
-
-  // Recent shifts – clickable for detail view
-  const shiftEl = document.getElementById('recent-shifts');
-  shiftEl.innerHTML = state.shifts.length
-    ? state.shifts.slice(0, 5).map(s => `
-        <div class="recent-item shift-item-clickable" data-id="${s.id}" style="cursor:pointer">
-          <div class="shift-icon">${shiftIcon(s.type)}</div>
-          <div class="recent-info">
-            <div class="recent-name">${fmtDateShort(s.date)}</div>
-            <div class="recent-meta">${shiftLabelFull(s)} · +${s.xpEarned} XP · ${s.patientCount} Pat.</div>
-          </div>
-          ${!s.note ? '<span class="shift-no-log-badge" title="Kein Dienst-Log — Bonus-XP verfügbar!">📝</span>' : '<span style="font-size:12px;color:var(--text-dim)">›</span>'}
-        </div>`).join('')
-    : '<div class="empty-state">Noch keine Dienste geloggt.</div>';
-
-  shiftEl.querySelectorAll('.shift-item-clickable').forEach(item => {
-    item.addEventListener('click', () => openShiftDetailModal(parseInt(item.dataset.id)));
-  });
-
-  // Active planner shift banner
-  const plannerBannerEl = document.getElementById('dashboard-planner-banner');
-  if (plannerBannerEl) {
-    const openShift = state.shifts.find(s => s.plannerActive);
-    if (openShift) {
-      plannerBannerEl.innerHTML = `
-        <div class="planner-dash-banner">
-          <span>${shiftIcon(openShift.type)} <strong>${fmtDateShort(openShift.date)} · ${shiftLabel(openShift.type)}</strong> läuft</span>
-          <button class="btn-secondary" style="font-size:11px;padding:4px 10px"
-            id="btn-goto-planner">Zum Planer →</button>
-        </div>`;
-      plannerBannerEl.querySelector('#btn-goto-planner')
-        ?.addEventListener('click', () => navigateTo('log'));
-    } else {
-      plannerBannerEl.innerHTML = '';
-    }
-  }
 }
 
 // ─── Hours Counters ───────────────────────────────────────────────────────────
@@ -650,7 +582,7 @@ function makeSortable(list, onSort) {
   list.addEventListener('mousedown', start);
 }
 
-// ─── Planner ──────────────────────────────────────────────────────────────────
+// ─── Home Tab ─────────────────────────────────────────────────────────────────
 const padT = (h, m) => `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
 const toMins = (h, m) => h * 60 + m;
 
@@ -661,67 +593,208 @@ function getMealHints(shift) {
   return (MEAL_HINTS[shift.type] || []).map((h, i) => ({ ...h, id: i + 1 }));
 }
 
-async function renderPlannerTab() {
-  // Find any open planner shift
-  const openShift = state.shifts.find(s => s.plannerActive);
-  state.plannerShiftId = openShift?.id ?? null;
+async function renderHomeTab() {
+  const today = new Date().toISOString().split('T')[0];
 
-  document.getElementById('planner-no-shift').classList.toggle('hidden', !!openShift);
-  document.getElementById('planner-active-shift').classList.toggle('hidden', !openShift);
-
-  if (!openShift) {
-    // Set default date
-    const dateEl = document.getElementById('planner-date');
-    if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
-    renderPlannerPastShifts();
-    return;
+  // Pick nearest shift if none selected or selection is stale
+  if (!state.homeSelectedShiftId || !state.shifts.find(s => s.id === state.homeSelectedShiftId)) {
+    const upcoming = state.shifts.filter(s => s.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+    const past     = state.shifts.filter(s => s.date <  today).sort((a, b) => b.date.localeCompare(a.date));
+    state.homeSelectedShiftId = (upcoming[0] ?? past[0])?.id ?? null;
   }
 
-  // Load slots
-  state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(openShift.id).sortBy('startHour');
+  const shift   = state.shifts.find(s => s.id === state.homeSelectedShiftId) ?? null;
+  const panel   = document.getElementById('home-shift-panel');
+  const tlEl    = document.getElementById('home-timeline');
+  const breakBtn= document.getElementById('btn-add-home-break');
+  const alarmBn = document.getElementById('planner-alarm-banner');
 
-  // Show notification permission banner if not yet granted/dismissed
-  const notifBanner = document.getElementById('notif-prompt-banner');
-  if (notifBanner && 'Notification' in window) {
-    const dismissed = localStorage.getItem('notif-banner-dismissed');
-    const shouldShow = Notification.permission === 'default' && !dismissed;
-    notifBanner.classList.toggle('hidden', !shouldShow);
-  }
-
-  // Header
-  const catMeta = CATEGORY_META[openShift.category || 'regulär'];
-  const todayForBtn = new Date().toISOString().split('T')[0];
-  const isFutureShift = openShift.date > todayForBtn;
-  document.getElementById('planner-shift-title').innerHTML =
-    `${shiftIcon(openShift.type)} ${fmtDateShort(openShift.date)} · ${shiftLabel(openShift.type)} <span class="cat-badge cat-badge-${openShift.category || 'regulär'}">${catMeta.icon} ${catMeta.label}</span>`;
-  const closeBtn = document.getElementById('btn-close-planner-shift');
-  if (isFutureShift) {
-    closeBtn.textContent = '← Zurück';
-    closeBtn.className = 'btn-suspend-planner';
+  if (!shift) {
+    panel.innerHTML = `<div class="home-no-shift">
+      <div style="font-size:32px;margin-bottom:8px">📅</div>
+      <div>Noch keine Dienste</div>
+      <div style="font-size:13px;color:var(--text-dim);margin-top:6px">Tippe auf einen Kalendertag um einen Dienst zu erstellen</div>
+    </div>`;
+    tlEl.innerHTML = '';
+    breakBtn.classList.add('hidden');
+    if (alarmBn) alarmBn.classList.add('hidden');
+    const notifBanner = document.getElementById('notif-prompt-banner');
+    if (notifBanner) notifBanner.classList.add('hidden');
   } else {
-    closeBtn.textContent = '✓ Abschließen';
-    closeBtn.className = 'btn-finish-planner';
+    state.plannerShiftId = shift.id;
+    state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
+
+    const catMeta   = CATEGORY_META[shift.category || 'regulär'];
+    const slotTotal = state.plannerSlots.reduce((s, sl) => s + (sl.xpEarned || 0), 0);
+    const modifier  = CATEGORY_XP_MODIFIER[shift.category || 'regulär'];
+    const base      = Math.round(calculateShiftXP(shift.type) * modifier);
+    const xpLabel   = shift.baseXPAwarded
+      ? `Basis-XP ✓ · ${slotTotal} XP aus Einträgen`
+      : `+${base} XP · ${slotTotal} XP aus Einträgen`;
+
+    panel.innerHTML = `
+      <div class="home-shift-header">
+        <div class="home-shift-title-row">
+          <span class="home-shift-date-icon">${shiftIcon(shift.type)}</span>
+          <span class="home-shift-date">${fmtDateLong(shift.date)}</span>
+          <span class="cat-badge cat-badge-${shift.category || 'regulär'}">${catMeta.icon} ${catMeta.label}</span>
+          <button id="btn-edit-home-shift" class="btn-icon" title="Dienst bearbeiten">✎</button>
+        </div>
+        <div class="home-shift-meta-row">
+          <span class="home-shift-type">${shiftLabel(shift.type)}</span>
+          <span class="home-shift-xp">${xpLabel}</span>
+        </div>
+      </div>`;
+
+    document.getElementById('btn-edit-home-shift').addEventListener('click', () => openEditShiftModal(shift.id));
+
+    // Notification banner (only for today's shift)
+    const notifBanner = document.getElementById('notif-prompt-banner');
+    if (notifBanner && 'Notification' in window) {
+      const dismissed = localStorage.getItem('notif-banner-dismissed');
+      const showNotif = shift.date === today && Notification.permission === 'default' && !dismissed;
+      notifBanner.classList.toggle('hidden', !showNotif);
+    }
+
+    renderTimeline(shift);
+    breakBtn.classList.remove('hidden');
+    if (shift.date === today) startAlarmScheduler();
   }
-  updatePlannerXP(openShift);
-  renderTimeline(openShift);
-  if (!isFutureShift) startAlarmScheduler();
+
+  if (!state.calMonth) state.calMonth = today.slice(0, 7);
+  renderMonthCalendar();
 }
 
-function updatePlannerXP(shift) {
-  const slotTotal = state.plannerSlots.reduce((s, sl) => s + (sl.xpEarned || 0), 0);
-  const modifier = CATEGORY_XP_MODIFIER[shift.category || 'regulär'];
-  const meta = CATEGORY_META[shift.category || 'regulär'];
-  const base = Math.round(calculateShiftXP(shift.type) * modifier);
-  const flame = calculateFlameBonus(shift.date);
-  const catBadge = `<span class="cat-badge cat-badge-${shift.category || 'regulär'}">${meta.icon} ${meta.label}</span>`;
-  const xpLabel = shift.baseXPAwarded
-    ? `Basis-XP ✓ · ${slotTotal} XP Einträge`
-    : `+${base + flame} XP bei Abschluss · ${slotTotal} XP Aktivitäten`;
-  document.getElementById('planner-shift-xp').innerHTML = `${catBadge} · ${xpLabel}`;
+function renderMonthCalendar() {
+  const calEl = document.getElementById('home-calendar');
+  if (!calEl) return;
+
+  const [year, month] = state.calMonth.split('-').map(Number);
+  const today = new Date().toISOString().split('T')[0];
+
+  const monthLabel = new Date(year, month - 1, 1)
+    .toLocaleDateString('de-AT', { month: 'long', year: 'numeric' });
+  const lbl = document.getElementById('cal-month-label');
+  if (lbl) lbl.textContent = monthLabel;
+
+  const monthShifts = state.shifts.filter(s => s.date.startsWith(state.calMonth));
+  const past    = monthShifts.filter(s => s.date <= today);
+  const future  = monthShifts.filter(s => s.date >  today);
+  const pastH   = past.reduce((s, sh)   => s + calcShiftHours(sh), 0);
+  const futureH = future.reduce((s, sh) => s + calcShiftHours(sh), 0);
+
+  const curMon = today.slice(0, 7);
+  let statsText = '';
+  if (state.calMonth === curMon) {
+    statsText = `${past.length}/${monthShifts.length} Dienste · ${pastH.toFixed(1).replace('.0','')}/${(pastH+futureH).toFixed(1).replace('.0','')}h`;
+  } else if (state.calMonth < curMon) {
+    statsText = `${past.length} Dienste · ${pastH.toFixed(1).replace('.0','')}h`;
+  } else {
+    statsText = `${future.length} Dienste geplant · ${futureH.toFixed(1).replace('.0','')}h`;
+  }
+  const statsEl = document.getElementById('cal-month-stats');
+  if (statsEl) statsEl.textContent = statsText;
+
+  const shiftByDay = {};
+  monthShifts.forEach(s => {
+    const d = parseInt(s.date.slice(8));
+    if (!shiftByDay[d]) shiftByDay[d] = [];
+    shiftByDay[d].push(s);
+  });
+
+  const firstDow  = (new Date(year, month - 1, 1).getDay() + 6) % 7; // 0=Mon
+  const daysInMon = new Date(year, month, 0).getDate();
+
+  let html = `<div class="cal-weekdays"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span class="cal-weekend">Sa</span><span class="cal-weekend">So</span></div><div class="cal-grid">`;
+  for (let i = 0; i < firstDow; i++) html += '<div class="cal-cell cal-empty"></div>';
+
+  for (let d = 1; d <= daysInMon; d++) {
+    const ds  = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dsh = shiftByDay[d] || [];
+    const isToday    = ds === today;
+    const isPast     = ds < today;
+    const isSelected = dsh.some(s => s.id === state.homeSelectedShiftId);
+
+    const dots = dsh.map(s => {
+      const color = s.category === 'training' ? '#a78bfa' : s.category === 'senior' ? '#f59e0b' : '#60a5fa';
+      const op    = s.date < today ? '.45' : '1';
+      const icon  = shiftIcon(s.type);
+      return `<span class="cal-dot-icon" style="opacity:${op}" title="${shiftLabel(s.type)}">${icon}</span>`;
+    }).join('');
+
+    const cls = ['cal-cell',
+      isToday    ? 'cal-today'     : '',
+      isPast     ? 'cal-past'      : '',
+      isSelected ? 'cal-selected'  : '',
+      dsh.length ? 'cal-has-shift' : '',
+    ].filter(Boolean).join(' ');
+
+    const ids = dsh.map(s => s.id).join(',');
+    html += `<div class="${cls}" data-date="${ds}" data-shift-ids="${ids}">
+      <span class="cal-day-num">${d}</span>
+      ${dots ? `<div class="cal-dots">${dots}</div>` : ''}
+    </div>`;
+  }
+  html += '</div>';
+  calEl.innerHTML = html;
+
+  calEl.querySelectorAll('.cal-cell:not(.cal-empty)').forEach(cell => {
+    cell.addEventListener('click', async () => {
+      const ids = cell.dataset.shiftIds;
+      if (ids) {
+        state.homeSelectedShiftId = parseInt(ids.split(',')[0]);
+        renderHomeTab();
+      } else {
+        openQuickCreateModal(cell.dataset.date);
+      }
+    });
+  });
+}
+
+function openQuickCreateModal(dateStr) {
+  const modal = document.getElementById('quick-create-modal');
+  if (!modal) return;
+  document.getElementById('quick-create-title').textContent =
+    `Neuer Dienst · ${new Date(dateStr + 'T12:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit' })}`;
+  modal._pendingDate = dateStr;
+  // Reset selectors
+  modal.querySelectorAll('#qc-type-selector .type-btn').forEach(b => b.classList.remove('active'));
+  modal.querySelector('#qc-type-selector [data-type="früh"]')?.classList.add('active');
+  modal.querySelectorAll('#qc-cat-selector .cat-btn').forEach(b => b.classList.remove('active'));
+  modal.querySelector('#qc-cat-selector [data-category="regulär"]')?.classList.add('active');
+  modal.classList.remove('hidden');
+}
+
+async function quickCreateShift(dateStr, type, category) {
+  const today = new Date().toISOString().split('T')[0];
+  const shiftId = await db.shiftLogs.add({
+    date: dateStr, type, category,
+    xpEarned: 0, patientCount: 0,
+    plannerShift: true,
+    plannerActive: dateStr === today,
+    createdAt: new Date().toISOString(),
+    mealHints: (MEAL_HINTS[type] || []).map((h, i) => ({ ...h, id: i + 1 })),
+  });
+
+  if (dateStr > today) {
+    const xpBase = Math.round(calculateShiftXP(type) * CATEGORY_XP_MODIFIER[category]);
+    await db.shiftLogs.update(shiftId, { xpEarned: xpBase, baseXPAwarded: true });
+    const oldXP = state.profile.totalXP ?? 0;
+    const newXP = oldXP + xpBase;
+    await db.profile.update(state.profile.id, { totalXP: newXP });
+    state.profile.totalXP = newXP;
+    updateHeader();
+    showXPPopup(xpBase, [{ label: `${shiftLabel(type)} geplant`, xp: xpBase }]);
+    checkLevelUp(newXP, oldXP);
+  }
+
+  state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+  state.homeSelectedShiftId = shiftId;
+  renderHomeTab();
 }
 
 function renderSchulungTimeline(shift) {
-  const tl = document.getElementById('planner-timeline');
+  const tl = document.getElementById('home-timeline');
   tl.innerHTML = `
     <div class="schulung-note-wrapper">
       <div class="schulung-hint">📚 Schulungsdienst · Keine Einträge möglich</div>
@@ -793,7 +866,7 @@ function renderTimeline(shift) {
   }
   if (cursor < endM) pushGaps(cursor, endM);
 
-  const tl = document.getElementById('planner-timeline');
+  const tl = document.getElementById('home-timeline');
   tl.innerHTML = rows.map(row => {
     if (row.kind === 'meal') {
       return `<div class="tl-meal" data-meal-id="${row.id}">
@@ -876,118 +949,7 @@ function renderTimeline(shift) {
   });
 }
 
-function renderPlannerPastShifts() {
-  const today = new Date().toISOString().split('T')[0];
-  const nextCardEl = document.getElementById('planner-next-card');
-  const listEl = document.getElementById('planner-past-shifts');
-  const isUnopened = s => s.importedFrom === 'xml' && !s.closedAt;
-  const allNonActive = state.shifts.filter(s => !s.plannerActive);
-
-  // Upcoming: XML-imported, not yet opened, today or future — sorted ascending
-  const upcoming = allNonActive
-    .filter(s => isUnopened(s) && s.date >= today)
-    .sort((a, b) => a.date.localeCompare(b.date));
-
-  const next = upcoming[0] ?? null;
-  const moreUpcoming = upcoming.slice(1); // show all, not just 3
-
-  // Past: completed or manually created (no importedFrom), most recent first
-  const past = allNonActive
-    .filter(s => !isUnopened(s))
-    .slice(0, 5);
-
-  // ── Next shift card ──────────────────────────────────────────────────────
-  if (nextCardEl) {
-    if (next) {
-      const meta = CATEGORY_META[next.category || 'regulär'];
-      const isToday = next.date === today;
-      nextCardEl.innerHTML = `
-        <div class="planner-next-card planner-next-card-clickable" data-id="${next.id}">
-          <div class="planner-next-label">${isToday ? '📍 Heute' : '⏭ Nächster Dienst'}</div>
-          <div class="planner-next-date">${fmtDateLong(next.date)}</div>
-          <div class="planner-next-meta">
-            ${shiftIcon(next.type)} ${shiftLabel(next.type)} ·
-            <span class="cat-badge cat-badge-${next.category || 'regulär'}">${meta.icon} ${meta.label}</span>
-          </div>
-          <button class="btn-open-next" data-id="${next.id}">▶ Jetzt starten</button>
-        </div>`;
-      nextCardEl.querySelector('.planner-next-card-clickable').addEventListener('click', e => {
-        if (e.target.closest('.btn-open-next')) return;
-        openShiftDetailModal(next.id);
-      });
-      nextCardEl.querySelector('.btn-open-next').addEventListener('click', e => {
-        e.stopPropagation();
-        openImportedShift(next.id);
-      });
-    } else {
-      nextCardEl.innerHTML = '';
-    }
-  }
-
-  // ── List ────────────────────────────────────────────────────────────────
-  let html = '';
-
-  if (moreUpcoming.length) {
-    html += `<div class="section-header">Geplante Dienste</div>`;
-    html += moreUpcoming.map(s => {
-      const meta = CATEGORY_META[s.category || 'regulär'];
-      return `<div class="recent-item shift-item-clickable" data-id="${s.id}" data-upcoming="1">
-        <div class="shift-icon">${shiftIcon(s.type)}</div>
-        <div class="recent-info">
-          <div class="recent-name">${fmtDateShort(s.date)}</div>
-          <div class="recent-meta">${shiftLabelFull(s)} · <span class="cat-badge cat-badge-${s.category || 'regulär'}">${meta.icon} ${meta.label}</span></div>
-        </div>
-        <button class="btn-open-imported" data-id="${s.id}" title="Jetzt starten">▶</button>
-      </div>`;
-    }).join('');
-  }
-
-  if (past.length) {
-    html += `<div class="section-header">Letzte Dienste</div>`;
-    html += past.map(s => {
-      const meta = s.category ? CATEGORY_META[s.category] : null;
-      const catBadge = meta ? `<span class="cat-badge cat-badge-${s.category}">${meta.icon} ${meta.label}</span>` : '';
-      return `<div class="recent-item shift-item-clickable" data-id="${s.id}">
-        <div class="shift-icon">${shiftIcon(s.type)}</div>
-        <div class="recent-info">
-          <div class="recent-name">${fmtDateShort(s.date)} ${catBadge}</div>
-          <div class="recent-meta">${shiftLabelFull(s)} · +${s.xpEarned} XP</div>
-        </div>
-        <span style="font-size:12px;color:var(--text-dim)">›</span>
-      </div>`;
-    }).join('');
-  }
-
-  if (!html && !next) {
-    html = '<div class="empty-state">Noch keine Dienste. Erstelle deinen ersten Dienst unten!</div>';
-  }
-
-  if (listEl) {
-    listEl.innerHTML = html;
-    listEl.querySelectorAll('.shift-item-clickable').forEach(item => {
-      item.addEventListener('click', e => {
-        if (e.target.closest('.btn-open-imported')) return;
-        openShiftDetailModal(parseInt(item.dataset.id));
-      });
-    });
-    listEl.querySelectorAll('.btn-open-imported').forEach(btn => {
-      btn.addEventListener('click', e => {
-        e.stopPropagation();
-        openImportedShift(parseInt(btn.dataset.id));
-      });
-    });
-  }
-}
-
 async function openImportedShift(shiftId) {
-  const existingActive = state.shifts.find(s => s.plannerActive);
-  if (existingActive) {
-    const today = new Date().toISOString().split('T')[0];
-    alert(existingActive.date > today
-      ? 'Bitte zuerst den aktuellen Dienst verlassen (← Zurück).'
-      : 'Bitte zuerst den aktiven Dienst abschließen.');
-    return;
-  }
   const shift = state.shifts.find(s => s.id === shiftId);
   if (!shift) return;
   const today = new Date().toISOString().split('T')[0];
@@ -1014,47 +976,12 @@ async function openImportedShift(shiftId) {
   state.plannerShiftId = shiftId;
   state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shiftId).sortBy('startHour');
   state.alarmFired = new Set();
-  renderPlannerTab();
+  state.homeSelectedShiftId = shiftId;
+  renderHomeTab();
   if (!isFuture) startAlarmScheduler();
 }
 
-async function suspendPlannerShift() {
-  if (!state.plannerShiftId) return;
-  await db.shiftLogs.update(state.plannerShiftId, { plannerActive: false });
-  state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
-  state.plannerShiftId = null;
-  state.plannerSlots = [];
-  stopAlarmScheduler();
-  renderPlannerTab();
-}
-
 function setupPlannerListeners() {
-  // Type buttons in planner
-  document.querySelectorAll('#planner-type-selector .type-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#planner-type-selector .type-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    });
-  });
-
-  // Category buttons in planner
-  document.querySelectorAll('#planner-category-selector .cat-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#planner-category-selector .cat-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    });
-  });
-
-  document.getElementById('btn-start-planner-shift').addEventListener('click', startPlannerShift);
-  document.getElementById('btn-close-planner-shift').addEventListener('click', () => {
-    const openShift = state.shifts.find(s => s.plannerActive);
-    const today = new Date().toISOString().split('T')[0];
-    if (openShift && openShift.date > today) suspendPlannerShift();
-    else closePlannerShift();
-  });
-  document.getElementById('btn-edit-planner-shift').addEventListener('click', () => {
-    if (state.plannerShiftId) openEditShiftModal(state.plannerShiftId);
-  });
   document.getElementById('slot-add-close').addEventListener('click', () => document.getElementById('slot-add-modal').classList.add('hidden'));
   document.getElementById('slot-add-backdrop').addEventListener('click', () => document.getElementById('slot-add-modal').classList.add('hidden'));
   document.getElementById('btn-save-slot').addEventListener('click', saveSlot);
@@ -1135,9 +1062,9 @@ function setupPlannerListeners() {
   document.getElementById('meal-hint-backdrop').addEventListener('click', () =>
     document.getElementById('meal-hint-modal').classList.add('hidden'));
   document.getElementById('btn-save-meal-hint').addEventListener('click', saveMealHint);
-  document.getElementById('btn-add-meal-hint').addEventListener('click', () => {
-    const openShift = state.shifts.find(s => s.plannerActive);
-    if (openShift) openMealModal(openShift);
+  document.getElementById('btn-add-home-break').addEventListener('click', () => {
+    const shift = state.shifts.find(s => s.id === state.homeSelectedShiftId);
+    if (shift) openMealModal(shift);
   });
 
   // Meal preset buttons
@@ -1149,6 +1076,46 @@ function setupPlannerListeners() {
       document.querySelectorAll('.meal-preset-btn').forEach(b =>
         b.classList.toggle('active', b === btn));
     });
+  });
+
+  // Calendar navigation
+  document.getElementById('cal-prev')?.addEventListener('click', () => {
+    const [y, m] = state.calMonth.split('-').map(Number);
+    const d = new Date(y, m - 2, 1);
+    state.calMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    renderMonthCalendar();
+  });
+  document.getElementById('cal-next')?.addEventListener('click', () => {
+    const [y, m] = state.calMonth.split('-').map(Number);
+    const d = new Date(y, m, 1);
+    state.calMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    renderMonthCalendar();
+  });
+
+  // Quick-create shift modal
+  const qcModal = document.getElementById('quick-create-modal');
+  document.getElementById('quick-create-close')?.addEventListener('click', () => qcModal?.classList.add('hidden'));
+  document.getElementById('quick-create-backdrop')?.addEventListener('click', () => qcModal?.classList.add('hidden'));
+  document.querySelectorAll('#qc-type-selector .type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#qc-type-selector .type-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+  document.querySelectorAll('#qc-cat-selector .cat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#qc-cat-selector .cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+  document.getElementById('btn-save-quick-create')?.addEventListener('click', async () => {
+    const modal = document.getElementById('quick-create-modal');
+    const dateStr = modal?._pendingDate;
+    if (!dateStr) return;
+    const type = modal.querySelector('#qc-type-selector .type-btn.active')?.dataset.type || 'früh';
+    const cat  = modal.querySelector('#qc-cat-selector .cat-btn.active')?.dataset.category || 'regulär';
+    modal.classList.add('hidden');
+    await quickCreateShift(dateStr, type, cat);
   });
 }
 
@@ -1181,7 +1148,8 @@ async function startPlannerShift() {
   // Request notification permission once per session (non-blocking)
   requestNotificationPermission();
 
-  renderPlannerTab();
+  state.homeSelectedShiftId = shiftId;
+  renderHomeTab();
 }
 
 async function closePlannerShift() {
@@ -1223,7 +1191,7 @@ async function closePlannerShift() {
     checkLevelUp(newXP, oldXP);
   }
 
-  renderPlannerTab();
+  renderHomeTab();
   renderDashboard();
 }
 
@@ -2260,8 +2228,8 @@ async function saveToTodayShift(pending, shiftId) {
 
   showXPPopup(xpResult.total, xpResult.bonuses);
   updateHeader();
-  if (state.currentTab === 'dashboard') renderDashboard();
-  else if (state.currentTab === 'dex') renderPsychoDex();
+  if (state.currentTab === 'stats') renderDashboard();
+  else if (state.currentTab === 'icdf') renderPsychoDex();
   checkLevelUp(newTotal, (state.profile.totalXP ?? 0) - xpResult.total);
   refreshMissionProgress();
   applyAchievements();
@@ -2302,7 +2270,7 @@ async function createShiftAndSaveCatch(pending, shiftType) {
   bonusList.push(...xpResult.bonuses);
   showXPPopup(shiftXP, bonusList);
   updateHeader();
-  if (state.currentTab === 'dashboard') renderDashboard();
+  if (state.currentTab === 'stats') renderDashboard();
   checkLevelUp(newXP, oldXP);
   refreshMissionProgress();
   applyAchievements();
@@ -2327,8 +2295,8 @@ async function saveStandaloneCatch(pending) {
 
   showXPPopup(xpResult.total, xpResult.bonuses);
   updateHeader();
-  if (state.currentTab === 'dashboard') renderDashboard();
-  else if (state.currentTab === 'dex') renderPsychoDex();
+  if (state.currentTab === 'stats') renderDashboard();
+  else if (state.currentTab === 'icdf') renderPsychoDex();
   checkLevelUp(newXP, oldXP);
   refreshMissionProgress();
   applyAchievements();
@@ -2377,7 +2345,7 @@ async function finishShift() {
 
     state.activeShift = null;
     resetShiftForm();
-    navigateTo('dashboard');
+    navigateTo('stats');
     updateHeader();
 
     const bonusList = [];
@@ -2711,14 +2679,14 @@ async function refreshMissionProgress() {
 
   if (anyCompleted) {
     updateHeader();
-    if (state.currentTab === 'dashboard') renderDashboard();
+    if (state.currentTab === 'stats') renderDashboard();
     setTimeout(async () => {
       await ensureMissionSlots();
-      if (state.currentTab === 'dex') renderMissions();
+      if (state.currentTab === 'stats') renderMissions();
     }, 1800);
   }
 
-  if (state.currentTab === 'dex') renderMissions();
+  if (state.currentTab === 'stats') renderMissions();
 }
 
 function renderMissions() {
@@ -2763,14 +2731,134 @@ function renderMissions() {
   }).join('');
 }
 
+// ─── ICD-F Tab ────────────────────────────────────────────────────────────────
+function renderICDFTab() {
+  renderICDFCollectionPanel();
+  renderPsychoDex();
+}
+
+function loadICDFCollection() {
+  try {
+    const stored = localStorage.getItem('icdf-collection');
+    if (stored) state.icdfCollection = JSON.parse(stored);
+  } catch { state.icdfCollection = { symptoms: [], diagnoses: [] }; }
+}
+
+function saveICDFCollection() {
+  localStorage.setItem('icdf-collection', JSON.stringify(state.icdfCollection));
+}
+
+function addToICDFCollection(type, item) {
+  if (!state.icdfCollection) state.icdfCollection = { symptoms: [], diagnoses: [] };
+  if (type === 'symptom') {
+    if (!state.icdfCollection.symptoms.includes(item)) {
+      state.icdfCollection.symptoms.push(item);
+      saveICDFCollection();
+      renderICDFCollectionPanel();
+    }
+  } else if (type === 'diagnosis') {
+    if (!state.icdfCollection.diagnoses.find(d => d.code === item.code)) {
+      state.icdfCollection.diagnoses.push({ code: item.code, name: item.name });
+      saveICDFCollection();
+      renderICDFCollectionPanel();
+    }
+  }
+}
+
+function renderICDFCollectionPanel() {
+  const panel   = document.getElementById('icdf-collection-panel');
+  const toggle  = document.getElementById('btn-toggle-icdf-collection');
+  if (!panel || !toggle) return;
+
+  const col = state.icdfCollection || { symptoms: [], diagnoses: [] };
+  const hasContent = col.symptoms.length || col.diagnoses.length;
+
+  if (!hasContent) {
+    panel.classList.add('hidden');
+    toggle.classList.add('hidden');
+    return;
+  }
+
+  toggle.classList.remove('hidden');
+  toggle.textContent = panel.classList.contains('hidden')
+    ? `🧩 Sammlung (${col.symptoms.length + col.diagnoses.length})`
+    : '🧩 Sammlung schließen';
+
+  if (!panel.classList.contains('hidden')) {
+    // Symptoms
+    const chipsEl = document.getElementById('icdf-symptom-chips');
+    if (chipsEl) {
+      chipsEl.innerHTML = col.symptoms.map(s =>
+        `<span class="icdf-chip">${s}<button class="icdf-chip-del" data-symptom="${s.replace(/"/g, '&quot;')}">✕</button></span>`
+      ).join('') || '<span style="color:var(--text-dim);font-size:12px">Keine Symptome gesammelt</span>';
+      chipsEl.querySelectorAll('.icdf-chip-del').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.icdfCollection.symptoms = state.icdfCollection.symptoms.filter(s => s !== btn.dataset.symptom);
+          saveICDFCollection();
+          renderICDFCollectionPanel();
+        });
+      });
+    }
+
+    // Diagnoses
+    const diagEl = document.getElementById('icdf-diag-chips');
+    if (diagEl) {
+      diagEl.innerHTML = col.diagnoses.map(d =>
+        `<span class="icdf-chip icdf-chip-diag" data-code="${d.code}">
+          <span class="icdf-chip-code">${d.code}</span> ${d.name}
+          <button class="icdf-chip-del" data-code="${d.code}">✕</button>
+        </span>`
+      ).join('') || '<span style="color:var(--text-dim);font-size:12px">Keine Diagnosen gesammelt</span>';
+      diagEl.querySelectorAll('.icdf-chip-diag').forEach(chip => {
+        chip.addEventListener('click', e => {
+          if (e.target.closest('.icdf-chip-del')) return;
+          openDiagInfoModal(chip.dataset.code);
+        });
+      });
+      diagEl.querySelectorAll('.icdf-chip-del').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          state.icdfCollection.diagnoses = state.icdfCollection.diagnoses.filter(d => d.code !== btn.dataset.code);
+          saveICDFCollection();
+          renderICDFCollectionPanel();
+        });
+      });
+    }
+  }
+}
+
+function setupICDFCollectionListeners() {
+  document.getElementById('btn-toggle-icdf-collection')?.addEventListener('click', () => {
+    const panel = document.getElementById('icdf-collection-panel');
+    panel?.classList.toggle('hidden');
+    renderICDFCollectionPanel();
+  });
+  document.getElementById('btn-icdf-clear-symptoms')?.addEventListener('click', () => {
+    state.icdfCollection.symptoms = [];
+    saveICDFCollection();
+    renderICDFCollectionPanel();
+  });
+  document.getElementById('btn-icdf-clear-diags')?.addEventListener('click', () => {
+    state.icdfCollection.diagnoses = [];
+    saveICDFCollection();
+    renderICDFCollectionPanel();
+  });
+  document.getElementById('btn-icdf-add-symptom')?.addEventListener('click', () => {
+    const inp = document.getElementById('icdf-symptom-add');
+    const val = inp?.value.trim();
+    if (val) { addToICDFCollection('symptom', val); inp.value = ''; }
+  });
+  document.getElementById('icdf-symptom-add')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const val = e.target.value.trim();
+      if (val) { addToICDFCollection('symptom', val); e.target.value = ''; }
+    }
+  });
+  document.getElementById('icdf-caught-bar')?.addEventListener('click', openCatchesModal);
+}
+
 // ─── PsychoDex ────────────────────────────────────────────────────────────────
 function renderPsychoDex() {
-  const hasActive = state.missions.some(m => !m.completedAt);
-  if (!hasActive && db.missions) {
-    ensureMissionSlots().then(() => renderMissions()).catch(() => {});
-  }
-  renderMissions();
-
   const caughtCodes = new Set(state.catches.map(c => c.code));
   const total  = state.icdFlat.length;
   const caught = state.icdFlat.filter(d => caughtCodes.has(d.code)).length;
@@ -2921,7 +3009,10 @@ function openCatDiagDetail(code) {
       <div class="diag-detail-label">Differentialdiagnose</div>
       <div class="komorbid-chips">${renderLinkedChips(diag.differentialdiagnose, code)}</div>
     </div>
-    ${!isCaught ? `<button class="btn-catch" id="cat-detail-catch-btn">🎯 Jetzt fangen!</button>` : ''}`;
+    <div class="cat-detail-action-row">
+      ${!isCaught ? `<button class="btn-catch" id="cat-detail-catch-btn">🎯 Jetzt fangen!</button>` : ''}
+      <button class="btn-secondary icdf-collect-btn" id="cat-detail-collect-btn" style="font-size:13px;padding:8px 14px">🧩 Sammeln</button>
+    </div>`;
 
   initSymptomCounters(body, !isCaught);
   document.getElementById('cat-mosaic-pane').classList.add('hidden');
@@ -2936,6 +3027,11 @@ function openCatDiagDetail(code) {
   document.getElementById('cat-detail-catch-btn')?.addEventListener('click', () => {
     closeCategoryModal(); openStandaloneCatch(diag);
   });
+  document.getElementById('cat-detail-collect-btn')?.addEventListener('click', () => {
+    addToICDFCollection('diagnosis', diag);
+    const btn = document.getElementById('cat-detail-collect-btn');
+    if (btn) { btn.textContent = '✓ Gesammelt'; btn.disabled = true; }
+  });
 }
 
 function closeCategoryModal() {
@@ -2944,6 +3040,14 @@ function closeCategoryModal() {
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
 function renderStats() {
+  // Render rank card (was dashboard)
+  renderDashboard();
+
+  // Missions (moved from ICD-F)
+  const hasActive = state.missions.some(m => !m.completedAt);
+  if (!hasActive && db.missions) ensureMissionSlots().then(() => renderMissions()).catch(() => {});
+  renderMissions();
+
   const xp     = state.profile?.totalXP ?? 0;
   const shifts = state.shifts.length;
   const hours  = calcTotalHours();
@@ -2962,7 +3066,6 @@ function renderStats() {
   }
   renderCategoryChart();
   renderAchievements();
-  // Use onclick to avoid accumulating listeners on re-render
   const xpCard = document.getElementById('stat-xp-card');
   const shiftsCard = document.getElementById('stat-shifts-card');
   if (xpCard) xpCard.onclick = openXPBreakdownModal;
@@ -3145,9 +3248,9 @@ async function saveEditShift() {
   state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
   closeEditShiftModal();
 
-  // Re-render planner header if this is the currently open planner shift
-  if (shift.plannerActive && state.plannerShiftId === shift.id) {
-    renderPlannerTab();
+  // Refresh home tab if this is the currently displayed shift
+  if (state.homeSelectedShiftId === shift.id) {
+    renderHomeTab();
   }
 
   renderDashboard();
@@ -3707,7 +3810,7 @@ async function saveToExistingShiftPatient(diagnosis, hasComorbidity, xpResult, s
 
   showXPPopup(xpResult.total, xpResult.bonuses);
   updateHeader();
-  if (state.currentTab === 'dashboard') renderDashboard();
+  if (state.currentTab === 'stats') renderDashboard();
   checkLevelUp(newXP, oldXP);
   refreshMissionProgress();
   applyAchievements();
@@ -4477,7 +4580,7 @@ async function importShiftsFromXML(xmlText) {
   }
 
   state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
-  renderPlannerTab();
+  renderHomeTab();
   renderDashboard();
   alert(`XML importiert: ${imported} neue Dienste angelegt, ${skipped} übersprungen.`);
 }
@@ -4921,7 +5024,7 @@ async function saveExtraHourEntry() {
   await db.profile.update(state.profile.id, { extraHourEntries: entries });
   state.profile.extraHourEntries = entries;
   renderExtraHoursSettings();
-  if (state.currentTab === 'dashboard') renderDashboard();
+  if (state.currentTab === 'stats') renderDashboard();
 }
 
 async function deleteExtraHourEntry(entryId) {
@@ -4929,7 +5032,7 @@ async function deleteExtraHourEntry(entryId) {
   await db.profile.update(state.profile.id, { extraHourEntries: entries });
   state.profile.extraHourEntries = entries;
   renderExtraHoursSettings();
-  if (state.currentTab === 'dashboard') renderDashboard();
+  if (state.currentTab === 'stats') renderDashboard();
 }
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
@@ -4943,7 +5046,7 @@ async function setShiftExtension(shiftId, newMinutes) {
   state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
   const shift  = state.shifts.find(s => s.id === shiftId);
   if (shift) renderShiftDetailBody(shift);
-  if (state.currentTab === 'dashboard') renderDashboard();
+  if (state.currentTab === 'stats') renderDashboard();
   else if (state.currentTab === 'stats') renderStats();
 }
 

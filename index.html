@@ -44,8 +44,85 @@
     <!-- Tab Container -->
     <div class="tab-container">
 
-      <!-- ── Dashboard ─────────────────────────────────────────────────── -->
-      <section id="tab-dashboard" class="tab-view">
+      <!-- ── Home ──────────────────────────────────────────────────────────── -->
+      <section id="tab-home" class="tab-view active">
+
+        <!-- Inline shift panel (filled by JS) -->
+        <div id="home-shift-panel"></div>
+
+        <!-- Banners -->
+        <div id="planner-alarm-banner" class="planner-alarm-banner hidden"></div>
+        <div id="notif-prompt-banner" class="notif-prompt-banner hidden">
+          🔔 <span>Erinnerungen auch im Hintergrund?</span>
+          <button id="btn-enable-notif" class="notif-prompt-btn">Erlauben</button>
+          <button id="btn-dismiss-notif" class="notif-dismiss-btn">✕</button>
+        </div>
+
+        <!-- Timeline -->
+        <div id="home-timeline" class="planner-timeline"></div>
+        <button id="btn-add-home-break" class="tl-add-break-btn hidden">＋ Pause / Snack hinzufügen</button>
+
+        <!-- Month Calendar -->
+        <div class="home-cal-section">
+          <div class="cal-nav-row">
+            <button id="cal-prev" class="cal-nav-btn">‹</button>
+            <div class="cal-nav-center">
+              <div id="cal-month-label" class="cal-month-label"></div>
+              <div id="cal-month-stats" class="cal-month-stats"></div>
+            </div>
+            <button id="cal-next" class="cal-nav-btn">›</button>
+          </div>
+          <div id="home-calendar" class="home-calendar"></div>
+        </div>
+      </section>
+
+      <!-- ── ICD-F ──────────────────────────────────────────────────────────── -->
+      <section id="tab-icdf" class="tab-view">
+
+        <!-- Collection panel (hidden until collection is non-empty) -->
+        <div id="icdf-collection-panel" class="icdf-collection hidden">
+          <div class="icdf-col-section">
+            <div class="icdf-col-header-row">
+              <span class="icdf-col-label">🧩 Gesammelte Symptome</span>
+              <button id="btn-icdf-clear-symptoms" class="icdf-clear-btn">Alle löschen</button>
+            </div>
+            <div id="icdf-symptom-chips" class="icdf-chips"></div>
+            <div class="icdf-search-row">
+              <input type="search" id="icdf-symptom-add" class="icdf-symptom-input"
+                     placeholder="Symptom manuell hinzufügen…" autocomplete="off">
+              <button id="btn-icdf-add-symptom" class="icdf-add-btn">＋</button>
+            </div>
+          </div>
+          <div class="icdf-col-section" id="icdf-diag-col-section">
+            <div class="icdf-col-header-row">
+              <span class="icdf-col-label">📋 Gesammelte Diagnosen</span>
+              <button id="btn-icdf-clear-diags" class="icdf-clear-btn">Alle löschen</button>
+            </div>
+            <div id="icdf-diag-chips" class="icdf-chips"></div>
+          </div>
+        </div>
+        <button id="btn-toggle-icdf-collection" class="icdf-collection-toggle hidden">🧩 Sammlung</button>
+
+        <!-- Caught progress bar -->
+        <div class="dex-progress-bar icdf-caught-clickable" id="icdf-caught-bar">
+          <span id="dex-caught-count">0</span> / <span id="dex-total-count">0</span> Diagnosen gefangen
+          <div class="dex-progress-track">
+            <div id="dex-progress-fill" class="dex-fill" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div style="display:flex;gap:6px;margin-bottom:12px">
+          <button id="btn-symptom-finder" class="btn-search-diag" style="flex:1;padding:8px 12px;font-size:12px">🧩 Symptom-Finder</button>
+          <button id="btn-standalone-catch" class="btn-search-diag" style="flex:1;padding:8px 12px;font-size:12px">🔬 Fangen</button>
+        </div>
+
+        <!-- Category grid -->
+        <div id="category-grid" class="category-grid"></div>
+      </section>
+
+      <!-- ── Stats ──────────────────────────────────────────────────────────── -->
+      <section id="tab-stats" class="tab-view">
 
         <!-- Rank Card -->
         <div class="rank-card" id="rank-card">
@@ -73,10 +150,10 @@
           </div>
         </div>
 
-        <!-- Hours Progress -->
+        <!-- Hours counters -->
         <div id="hours-counters"></div>
 
-        <!-- Stats Row -->
+        <!-- Stat row: streak / hours / diagnosen -->
         <div class="stats-row">
           <div class="stat-card stat-clickable" id="stat-streak-card">
             <div class="stat-icon" id="streak-icon">🔥</div>
@@ -95,136 +172,7 @@
           </div>
         </div>
 
-        <div class="section-header">Zuletzt gefangen</div>
-        <div id="recent-catches" class="recent-list">
-          <div class="empty-state">Noch keine Diagnosen – starte deinen ersten Dienst!</div>
-        </div>
-
-        <div id="dashboard-planner-banner"></div>
-        <div class="section-header">Letzte Dienste</div>
-        <div id="recent-shifts" class="recent-list">
-          <div class="empty-state">Noch keine Dienste geloggt.</div>
-        </div>
-      </section>
-
-      <!-- ── Planer ──────────────────────────────────────────────────────── -->
-      <section id="tab-log" class="tab-view active">
-
-        <!-- No active shift -->
-        <div id="planner-no-shift">
-          <div class="view-title">Planer</div>
-
-          <!-- Next / upcoming shift card (injected by JS) -->
-          <div id="planner-next-card"></div>
-
-          <!-- Geplante + letzte Dienste (injected by JS) -->
-          <div id="planner-past-shifts" class="recent-list"></div>
-
-          <!-- Neuer Dienst form (at bottom) -->
-          <div class="step-card planner-new-shift-form">
-            <div class="step-number">Neuer Dienst</div>
-            <div class="form-group">
-              <label class="form-label">Datum</label>
-              <input type="date" id="planner-date" class="form-input">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Diensttyp</label>
-              <div class="type-selector" id="planner-type-selector">
-                <button class="type-btn active" data-type="früh" data-xp="65">
-                  <span class="type-icon">🌅</span><span>Früh</span>
-                  <span class="type-xp">65 XP · 6,5h</span>
-                </button>
-                <button class="type-btn" data-type="spät" data-xp="65">
-                  <span class="type-icon">🌇</span><span>Spät</span>
-                  <span class="type-xp">65 XP · 6,5h</span>
-                </button>
-                <button class="type-btn" data-type="samstag" data-xp="70">
-                  <span class="type-icon">🗓️</span><span>Samstag</span>
-                  <span class="type-xp">70 XP · 7h</span>
-                </button>
-                <button class="type-btn" data-type="full" data-xp="120">
-                  <span class="type-icon">☀️</span><span>Ganztags</span>
-                  <span class="type-xp">120 XP · 12h</span>
-                </button>
-                <button class="type-btn type-btn-schulung" data-type="schulung" data-xp="40">
-                  <span class="type-icon">📚</span><span>Schulung</span>
-                  <span class="type-xp">40 XP · 6h</span>
-                </button>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Kategorie</label>
-              <div class="type-selector" id="planner-category-selector">
-                <button class="cat-btn" data-category="training">
-                  <span class="type-icon">🎓</span><span>Training</span>
-                  <span class="type-xp">×0.7 XP</span>
-                </button>
-                <button class="cat-btn active" data-category="regulär">
-                  <span class="type-icon">💼</span><span>Regulär</span>
-                  <span class="type-xp">×1.0 XP</span>
-                </button>
-                <button class="cat-btn" data-category="senior">
-                  <span class="type-icon">⭐</span><span>Senior</span>
-                  <span class="type-xp">×1.35 XP</span>
-                </button>
-              </div>
-            </div>
-            <button id="btn-start-planner-shift" class="btn-primary">Dienst starten 🚀</button>
-          </div>
-        </div>
-
-        <!-- Active shift timeline -->
-        <div id="planner-active-shift" class="hidden">
-          <div class="planner-shift-header">
-            <div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <div id="planner-shift-title" class="planner-shift-title"></div>
-                <button id="btn-edit-planner-shift" class="btn-icon" title="Dienst bearbeiten">✎</button>
-              </div>
-              <div id="planner-shift-xp" class="planner-shift-xp"></div>
-            </div>
-            <button id="btn-close-planner-shift" class="btn-finish-planner">✓ Abschließen</button>
-          </div>
-          <div id="planner-alarm-banner" class="planner-alarm-banner hidden"></div>
-          <div id="notif-prompt-banner" class="notif-prompt-banner hidden">
-            🔔 <span>Erinnerungen auch im Hintergrund?</span>
-            <button id="btn-enable-notif" class="notif-prompt-btn">Erlauben</button>
-            <button id="btn-dismiss-notif" class="notif-dismiss-btn">✕</button>
-          </div>
-          <div id="planner-timeline" class="planner-timeline"></div>
-          <button id="btn-add-meal-hint" class="tl-add-break-btn">＋ Pause / Snack hinzufügen</button>
-        </div>
-
-      </section>
-
-      <!-- ── PsychoDex ──────────────────────────────────────────────────── -->
-      <section id="tab-dex" class="tab-view">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:8px">
-          <div class="view-title" style="margin-bottom:0">PsychoDex</div>
-          <div style="display:flex;gap:6px;flex-shrink:0">
-            <button id="btn-symptom-finder" class="btn-search-diag" style="width:auto;padding:8px 12px;font-size:12px">🧩 Symptom-Finder</button>
-            <button id="btn-standalone-catch" class="btn-search-diag" style="width:auto;padding:8px 12px;font-size:12px">🔬 Fangen</button>
-          </div>
-        </div>
-        <div class="dex-progress-bar">
-          <span id="dex-caught-count">0</span> / <span id="dex-total-count">0</span> Diagnosen gefangen
-          <div class="dex-progress-track">
-            <div id="dex-progress-fill" class="dex-fill" style="width:0%"></div>
-          </div>
-        </div>
-
-        <div class="section-header">🎯 Mission Control</div>
-        <div id="missions-grid" class="missions-grid">
-          <div class="empty-state">Missionen laden…</div>
-        </div>
-
-        <div class="section-header">Kategorien</div>
-        <div id="category-grid" class="category-grid"></div>
-      </section>
-
-      <!-- ── Stats ─────────────────────────────────────────────────────── -->
-      <section id="tab-stats" class="tab-view">
-        <div class="view-title">Statistiken</div>
+        <!-- XP / Dienste stats -->
         <div class="progress-stats">
           <div class="progress-stat" id="stat-xp-card">
             <div class="ps-label">Gesamt XP</div>
@@ -244,18 +192,28 @@
           </div>
         </div>
 
+        <!-- Missions -->
+        <div class="section-header">🎯 Mission Control</div>
+        <div id="missions-grid" class="missions-grid">
+          <div class="empty-state">Missionen laden…</div>
+        </div>
+
+        <!-- Heatmap -->
         <div class="section-header" id="heatmap-section-header">Dienst-Aktivität (52 Wochen)</div>
         <div class="heatmap-scroll">
           <div id="heatmap" class="heatmap"></div>
         </div>
         <div id="heatmap-detail" class="heatmap-detail hidden"></div>
 
+        <!-- Category chart -->
         <div class="section-header">Diagnose-Verteilung</div>
         <div id="category-chart" class="category-chart"></div>
 
+        <!-- Achievements -->
         <div class="section-header">Badges &amp; Achievements</div>
         <div id="achievements-section"></div>
 
+        <!-- Settings -->
         <div class="section-header">Einstellungen</div>
         <div class="settings-grid">
           <div class="setting-item setting-wide">
@@ -268,6 +226,7 @@
           </div>
         </div>
 
+        <!-- Export / Import -->
         <div class="section-header">Daten &amp; Backup</div>
         <div class="export-import-row">
           <button id="btn-export" class="io-btn">⬇ Exportieren</button>
@@ -284,21 +243,17 @@
 
     <!-- Bottom Nav -->
     <nav class="bottom-nav" id="bottom-nav">
-      <button class="nav-btn active" data-tab="log">
+      <button class="nav-btn active" data-tab="home">
         <span class="nav-icon">📅</span>
-        <span class="nav-label">Planer</span>
+        <span class="nav-label">Home</span>
       </button>
-      <button class="nav-btn" data-tab="dex">
+      <button class="nav-btn" data-tab="icdf">
         <span class="nav-icon">◉</span>
-        <span class="nav-label">PsychoDex</span>
+        <span class="nav-label">ICD-F</span>
       </button>
       <button class="nav-btn" data-tab="stats">
         <span class="nav-icon">◬</span>
         <span class="nav-label">Stats</span>
-      </button>
-      <button class="nav-btn" data-tab="dashboard">
-        <span class="nav-icon">◈</span>
-        <span class="nav-label">Home</span>
       </button>
     </nav>
 
@@ -693,6 +648,39 @@
     </div>
   </div>
 
+  <!-- ── Quick Create Shift Modal ─────────────────────────────────────────── -->
+  <div id="quick-create-modal" class="modal hidden">
+    <div class="modal-backdrop" id="quick-create-backdrop"></div>
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="modal-title" id="quick-create-title">Neuer Dienst</div>
+        <button class="modal-close" id="quick-create-close">✕</button>
+      </div>
+      <div class="sheet-body">
+        <div class="form-group">
+          <label class="form-label">Diensttyp</label>
+          <div class="type-selector" id="qc-type-selector">
+            <button class="type-btn active" data-type="früh"><span class="type-icon">🌅</span><span>Früh</span><span class="type-xp">65 XP</span></button>
+            <button class="type-btn" data-type="spät"><span class="type-icon">🌇</span><span>Spät</span><span class="type-xp">65 XP</span></button>
+            <button class="type-btn" data-type="samstag"><span class="type-icon">🗓️</span><span>Samstag</span><span class="type-xp">70 XP</span></button>
+            <button class="type-btn" data-type="full"><span class="type-icon">☀️</span><span>Ganztags</span><span class="type-xp">120 XP</span></button>
+            <button class="type-btn type-btn-schulung" data-type="schulung"><span class="type-icon">📚</span><span>Schulung</span><span class="type-xp">40 XP</span></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kategorie</label>
+          <div class="type-selector" id="qc-cat-selector">
+            <button class="cat-btn" data-category="training"><span class="type-icon">🎓</span><span>Training</span><span class="type-xp">×0.7</span></button>
+            <button class="cat-btn active" data-category="regulär"><span class="type-icon">💼</span><span>Regulär</span><span class="type-xp">×1.0</span></button>
+            <button class="cat-btn" data-category="senior"><span class="type-icon">⭐</span><span>Senior</span><span class="type-xp">×1.35</span></button>
+          </div>
+        </div>
+        <button id="btn-save-quick-create" class="btn-primary" style="margin-top:8px">Dienst anlegen ＋</button>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /#app -->
 
 <script src="src/vendor/dexie.js"></script>
@@ -702,7 +690,7 @@
 <div class="privacy-badge" id="privacy-badge" role="note" aria-label="Datenschutz-Hinweis">
   <span class="privacy-icon">🔒</span>
   <div class="privacy-text">
-    <strong>100% lokal & DSGVO-konform</strong><br>
+    <strong>100% lokal &amp; DSGVO-konform</strong><br>
     Alle Daten verbleiben ausschließlich auf diesem Gerät (IndexedDB). Es werden
     keine Patientenbezogenen Daten übertragen, gespeichert oder verarbeitet –
     die App funktioniert vollständig offline ohne Server-Verbindung.
