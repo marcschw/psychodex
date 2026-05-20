@@ -189,6 +189,7 @@
             <button id="btn-dismiss-notif" class="notif-dismiss-btn">✕</button>
           </div>
           <div id="planner-timeline" class="planner-timeline"></div>
+          <button id="btn-add-meal-hint" class="tl-add-break-btn">＋ Pause / Snack hinzufügen</button>
         </div>
 
       </section>
@@ -618,6 +619,40 @@
         <button class="modal-close" id="slot-detail-close">✕</button>
       </div>
       <div class="sheet-body" id="slot-detail-body"></div>
+    </div>
+  </div>
+
+  <!-- ── Meal Hint Add/Edit Modal ─────────────────────────────────────────── -->
+  <div id="meal-hint-modal" class="modal hidden">
+    <div class="modal-backdrop" id="meal-hint-backdrop"></div>
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="modal-title">Pause / Snack</div>
+        <button class="modal-close" id="meal-hint-close">✕</button>
+      </div>
+      <div class="sheet-body">
+        <div class="form-row">
+          <label class="form-label">Uhrzeit</label>
+          <input type="time" id="meal-time" class="form-input">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Schnellauswahl</label>
+          <div class="meal-preset-grid">
+            <button class="meal-preset-btn" data-icon="🥤" data-label="Proteinshake">🥤 Proteinshake</button>
+            <button class="meal-preset-btn" data-icon="🍽️" data-label="Mittagessen">🍽️ Mittagessen</button>
+            <button class="meal-preset-btn" data-icon="🍽️" data-label="Abendessen">🍽️ Abendessen</button>
+            <button class="meal-preset-btn" data-icon="🍎" data-label="Snack">🍎 Snack</button>
+            <button class="meal-preset-btn" data-icon="☕" data-label="Pause">☕ Pause</button>
+            <button class="meal-preset-btn" data-icon="🚬" data-label="Rauchpause">🚬 Rauchpause</button>
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Bezeichnung</label>
+          <input type="text" id="meal-label" class="form-input" placeholder="z.B. Mittagessen">
+        </div>
+        <button id="btn-save-meal-hint" class="btn-primary" style="margin-top:8px">Speichern</button>
+      </div>
     </div>
   </div>
 
