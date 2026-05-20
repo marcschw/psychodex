@@ -322,14 +322,22 @@ async function loadFromDB() {
     await db.profile.update(state.profile.id, { extraHourEntries: state.profile.extraHourEntries });
   }
 
-  // Migrate to named hourCounters
-  if (!Array.isArray(state.profile.hourCounters)) {
-    state.profile.hourCounters = [{
-      id: 1, name: 'Propädeutikum',
-      targetHours: state.profile.targetHours || 480,
-      fromDate: null
-    }];
-    await db.profile.update(state.profile.id, { hourCounters: state.profile.hourCounters });
+  // Auto-close any plannerActive shifts whose date has already passed
+  const todayStr = new Date().toISOString().split('T')[0];
+  const overdueActive = state.shifts.filter(s => s.plannerActive && s.date < todayStr);
+  if (overdueActive.length) {
+    for (const shift of overdueActive) {
+      const upd = { plannerActive: false, closedAt: shift.date + 'T23:59:59.000Z' };
+      if (!shift.baseXPAwarded) {
+        const modifier = CATEGORY_XP_MODIFIER[shift.category || 'regulär'];
+        const xpBase = Math.round(calculateShiftXP(shift.type) * modifier);
+        upd.xpEarned = (shift.xpEarned || 0) + xpBase;
+        state.profile.totalXP = (state.profile.totalXP ?? 0) + xpBase;
+        await db.profile.update(state.profile.id, { totalXP: state.profile.totalXP });
+      }
+      await db.shiftLogs.update(shift.id, upd);
+    }
+    state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
   }
 }
 
@@ -682,11 +690,21 @@ async function renderPlannerTab() {
 
   // Header
   const catMeta = CATEGORY_META[openShift.category || 'regulär'];
+  const todayForBtn = new Date().toISOString().split('T')[0];
+  const isFutureShift = openShift.date > todayForBtn;
   document.getElementById('planner-shift-title').innerHTML =
     `${shiftIcon(openShift.type)} ${fmtDateShort(openShift.date)} · ${shiftLabel(openShift.type)} <span class="cat-badge cat-badge-${openShift.category || 'regulär'}">${catMeta.icon} ${catMeta.label}</span>`;
+  const closeBtn = document.getElementById('btn-close-planner-shift');
+  if (isFutureShift) {
+    closeBtn.textContent = '← Zurück';
+    closeBtn.className = 'btn-suspend-planner';
+  } else {
+    closeBtn.textContent = '✓ Abschließen';
+    closeBtn.className = 'btn-finish-planner';
+  }
   updatePlannerXP(openShift);
   renderTimeline(openShift);
-  startAlarmScheduler();
+  if (!isFutureShift) startAlarmScheduler();
 }
 
 function updatePlannerXP(shift) {
@@ -696,8 +714,10 @@ function updatePlannerXP(shift) {
   const base = Math.round(calculateShiftXP(shift.type) * modifier);
   const flame = calculateFlameBonus(shift.date);
   const catBadge = `<span class="cat-badge cat-badge-${shift.category || 'regulär'}">${meta.icon} ${meta.label}</span>`;
-  document.getElementById('planner-shift-xp').innerHTML =
-    `${catBadge} · +${base + flame} XP bei Abschluss · ${slotTotal} XP Aktivitäten`;
+  const xpLabel = shift.baseXPAwarded
+    ? `Basis-XP ✓ · ${slotTotal} XP Einträge`
+    : `+${base + flame} XP bei Abschluss · ${slotTotal} XP Aktivitäten`;
+  document.getElementById('planner-shift-xp').innerHTML = `${catBadge} · ${xpLabel}`;
 }
 
 function renderSchulungTimeline(shift) {
@@ -960,17 +980,52 @@ function renderPlannerPastShifts() {
 }
 
 async function openImportedShift(shiftId) {
-  if (state.shifts.find(s => s.plannerActive)) {
-    alert('Bitte zuerst den aktiven Dienst abschließen.');
+  const existingActive = state.shifts.find(s => s.plannerActive);
+  if (existingActive) {
+    const today = new Date().toISOString().split('T')[0];
+    alert(existingActive.date > today
+      ? 'Bitte zuerst den aktuellen Dienst verlassen (← Zurück).'
+      : 'Bitte zuerst den aktiven Dienst abschließen.');
     return;
   }
-  await db.shiftLogs.update(shiftId, { plannerActive: true });
+  const shift = state.shifts.find(s => s.id === shiftId);
+  if (!shift) return;
+  const today = new Date().toISOString().split('T')[0];
+  const isFuture = shift.date > today;
+  const updates = { plannerActive: true };
+
+  // Future shifts get base XP immediately (no manual close needed)
+  if (isFuture && !shift.baseXPAwarded) {
+    const modifier = CATEGORY_XP_MODIFIER[shift.category || 'regulär'];
+    const xpBase = Math.round(calculateShiftXP(shift.type) * modifier);
+    updates.xpEarned = (shift.xpEarned || 0) + xpBase;
+    updates.baseXPAwarded = true;
+    const oldXP = state.profile.totalXP ?? 0;
+    const newXP = oldXP + xpBase;
+    await db.profile.update(state.profile.id, { totalXP: newXP });
+    state.profile.totalXP = newXP;
+    updateHeader();
+    showXPPopup(xpBase, [{ label: `${shiftLabelFull(shift)} geplant`, xp: xpBase }]);
+    checkLevelUp(newXP, oldXP);
+  }
+
+  await db.shiftLogs.update(shiftId, updates);
   state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
   state.plannerShiftId = shiftId;
   state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shiftId).sortBy('startHour');
   state.alarmFired = new Set();
   renderPlannerTab();
-  startAlarmScheduler();
+  if (!isFuture) startAlarmScheduler();
+}
+
+async function suspendPlannerShift() {
+  if (!state.plannerShiftId) return;
+  await db.shiftLogs.update(state.plannerShiftId, { plannerActive: false });
+  state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+  state.plannerShiftId = null;
+  state.plannerSlots = [];
+  stopAlarmScheduler();
+  renderPlannerTab();
 }
 
 function setupPlannerListeners() {
@@ -991,7 +1046,12 @@ function setupPlannerListeners() {
   });
 
   document.getElementById('btn-start-planner-shift').addEventListener('click', startPlannerShift);
-  document.getElementById('btn-close-planner-shift').addEventListener('click', closePlannerShift);
+  document.getElementById('btn-close-planner-shift').addEventListener('click', () => {
+    const openShift = state.shifts.find(s => s.plannerActive);
+    const today = new Date().toISOString().split('T')[0];
+    if (openShift && openShift.date > today) suspendPlannerShift();
+    else closePlannerShift();
+  });
   document.getElementById('btn-edit-planner-shift').addEventListener('click', () => {
     if (state.plannerShiftId) openEditShiftModal(state.plannerShiftId);
   });
@@ -1132,8 +1192,9 @@ async function closePlannerShift() {
   if (!shift) return;
 
   const modifier = CATEGORY_XP_MODIFIER[shift.category || 'regulär'];
-  const xpBase = Math.round(calculateShiftXP(shift.type) * modifier);
-  const flame  = calculateFlameBonus(shift.date);
+  // Skip base XP if already awarded (opened as future shift)
+  const xpBase = shift.baseXPAwarded ? 0 : Math.round(calculateShiftXP(shift.type) * modifier);
+  const flame  = shift.baseXPAwarded ? 0 : calculateFlameBonus(shift.date);
   const totalBase = xpBase + flame;
 
   await db.shiftLogs.update(state.plannerShiftId, {
@@ -1144,8 +1205,10 @@ async function closePlannerShift() {
 
   const oldXP = state.profile.totalXP ?? 0;
   const newXP = oldXP + totalBase;
-  await db.profile.update(state.profile.id, { totalXP: newXP });
-  state.profile.totalXP = newXP;
+  if (totalBase > 0) {
+    await db.profile.update(state.profile.id, { totalXP: newXP });
+    state.profile.totalXP = newXP;
+  }
 
   state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
   state.plannerShiftId = null;
@@ -1153,10 +1216,12 @@ async function closePlannerShift() {
   stopAlarmScheduler();
 
   updateHeader();
-  const bonuses = [{ label: `${shiftLabelFull(shift)} abgeschlossen`, xp: xpBase }];
-  if (flame > 0) bonuses.push({ label: '⚡ Flame Bonus', xp: flame });
-  showXPPopup(totalBase, bonuses);
-  checkLevelUp(newXP, oldXP);
+  if (totalBase > 0) {
+    const bonuses = [{ label: `${shiftLabelFull(shift)} abgeschlossen`, xp: xpBase }];
+    if (flame > 0) bonuses.push({ label: '⚡ Flame Bonus', xp: flame });
+    showXPPopup(totalBase, bonuses);
+    checkLevelUp(newXP, oldXP);
+  }
 
   renderPlannerTab();
   renderDashboard();
@@ -3063,8 +3128,8 @@ async function saveEditShift() {
 
   const updates = { date: newDate, type: newType, category: newCat, updatedAt: new Date().toISOString() };
 
-  // Only adjust XP for closed shifts (plannerActive shifts haven't earned base XP yet)
-  if (!shift.plannerActive) {
+  // Only adjust XP for shifts where base XP is already earned
+  if (!shift.plannerActive || shift.baseXPAwarded) {
     const oldShiftXP = Math.round(_baseShiftXP(shift.type) * (CATEGORY_XP_MODIFIER[shift.category || 'regulär'] ?? 1));
     const newShiftXP = Math.round(_baseShiftXP(newType) * (CATEGORY_XP_MODIFIER[newCat] ?? 1));
     const xpDelta = newShiftXP - oldShiftXP;
@@ -4418,7 +4483,7 @@ async function openXPBreakdownModal() {
   const noteXP = state.shifts.filter(sh => sh.noteAddedAt).reduce((s, sh) =>
     s + calculateNoteXP(sh.date, sh.noteAddedAt), 0);
   const shiftBaseXP = state.shifts.reduce((s, sh) => {
-    if (sh.plannerActive) return s; // not yet earned
+    if (sh.plannerActive && !sh.baseXPAwarded) return s; // not yet earned
     const base = sh.plannerShift
       ? Math.round(_baseShiftXP(sh.type) * (CATEGORY_XP_MODIFIER[sh.category || 'regulär'] ?? 1))
       : _baseShiftXP(sh.type);
@@ -4593,9 +4658,10 @@ async function recalculateXP() {
     if (shift.plannerShift) {
       // Planner shift: category-modified base + flame only when closed; slots counted separately
       const modifier = CATEGORY_XP_MODIFIER[shift.category || 'regulär'];
-      const base  = shift.plannerActive ? 0 : Math.round(calculateShiftXP(shift.type) * modifier);
+      const baseIsEarned = shift.baseXPAwarded || !shift.plannerActive;
+      const base  = baseIsEarned ? Math.round(calculateShiftXP(shift.type) * modifier) : 0;
       const closedRef = new Date(shift.closedAt || shift.createdAt || shift.date);
-      const flame = (!shift.plannerActive && (closedRef - new Date(shift.date)) / 3600000 <= 24) ? 25 : 0;
+      const flame = (!shift.plannerActive && !shift.baseXPAwarded && (closedRef - new Date(shift.date)) / 3600000 <= 24) ? 25 : 0;
       const catchSum = (catchesByShift[shift.id] || []).reduce((s, c) => s + c.xpEarned, 0);
       const slotSum  = (slotsByShift[shift.id]  || []).reduce((s, sl) => s + (sl.xpEarned || 0), 0);
       newShiftXP = base + flame + catchSum + slotSum;

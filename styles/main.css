@@ -2190,6 +2190,15 @@ img{max-width:100%;display:block}
 }
 .btn-open-imported:active{background:rgba(124,58,237,.3)}
 
+/* ── Suspend-planner button (← Zurück for future shifts) ───────────────────── */
+.btn-suspend-planner{
+  padding:8px 14px;border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);
+  color:var(--text);transition:background .15s;-webkit-tap-highlight-color:transparent;
+  white-space:nowrap;
+}
+.btn-suspend-planner:active{background:rgba(255,255,255,.15)}
+
 /* ── Stats tab clickable cards ──────────────────────────────────────────────── */
 #stat-xp-card,#stat-shifts-card{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s}
 #stat-xp-card:active,#stat-shifts-card:active{opacity:.7}
