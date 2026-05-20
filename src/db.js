@@ -53,4 +53,20 @@ db.version(6).stores({
   scheduleSlots: '++id, shiftId, type, startHour'
 });
 
+// v7: remove slotId from index (stored on records but filtered in-memory)
+db.version(7).stores({
+  profile: '++id',
+  shiftLogs: '++id, date, type, category',
+  caughtDiagnoses: '++id, code, kategorie, shiftId, caughtAt',
+  missions: '++id, slotIndex',
+  unlockedAchievements: '++id, badgeId, tier, unlockedAt',
+  scheduleSlots: '++id, shiftId, type, startHour'
+});
+
+// Auto-reload when another tab upgrades the DB to avoid blocking
+db.on('versionchange', () => {
+  db.close();
+  location.reload();
+});
+
 export default db;
