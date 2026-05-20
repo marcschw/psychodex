@@ -30,4 +30,18 @@ db.version(4).stores({
   scheduleSlots: '++id, shiftId, type, startHour'
 });
 
+db.version(5).stores({
+  profile: '++id',
+  shiftLogs: '++id, date, type, category',
+  caughtDiagnoses: '++id, code, kategorie, shiftId, caughtAt',
+  missions: '++id, slotIndex',
+  unlockedAchievements: '++id, badgeId, tier, unlockedAt',
+  scheduleSlots: '++id, shiftId, type, startHour'
+}).upgrade(async tx => {
+  // Default any shift without a category to 'training'
+  await tx.table('shiftLogs').toCollection().modify(s => {
+    if (!s.category) s.category = 'training';
+  });
+});
+
 export default db;

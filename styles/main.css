@@ -307,6 +307,35 @@ img{max-width:100%;display:block}
 .type-icon{font-size:24px}
 .type-xp{font-size:11px;color:var(--accent);font-weight:700}
 
+/* Category selector (3-col variant) */
+#planner-category-selector{grid-template-columns:repeat(3,1fr)}
+.cat-btn{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:14px 10px;
+  background:var(--bg-raised);border:2px solid var(--border);
+  border-radius:var(--r);transition:all .2s;
+}
+.cat-btn.active{border-color:var(--accent);background:rgba(124,58,237,.1)}
+
+/* Category badges */
+.cat-badge{
+  display:inline-flex;align-items:center;gap:3px;
+  font-size:10px;font-weight:700;
+  padding:2px 7px;border-radius:10px;
+  vertical-align:middle;
+}
+.cat-badge-training{background:rgba(100,116,139,.2);color:#94a3b8}
+.cat-badge-regulär{background:rgba(59,130,246,.2);color:#60a5fa}
+.cat-badge-senior{background:rgba(245,158,11,.2);color:#fbbf24}
+
+/* Open-imported button */
+.btn-open-imported{
+  background:rgba(124,58,237,.15);color:var(--accent);
+  border:1px solid rgba(124,58,237,.3);border-radius:var(--r);
+  padding:6px 12px;font-size:12px;font-weight:600;white-space:nowrap;
+  flex-shrink:0;
+}
+
 /* Buttons */
 .btn-primary{
   width:100%;padding:14px;border-radius:var(--r);

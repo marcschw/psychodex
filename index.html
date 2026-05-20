@@ -142,6 +142,23 @@
                 </button>
               </div>
             </div>
+            <div class="form-group">
+              <label class="form-label">Kategorie</label>
+              <div class="type-selector" id="planner-category-selector">
+                <button class="cat-btn" data-category="training">
+                  <span class="type-icon">🎓</span><span>Training</span>
+                  <span class="type-xp">×0.7 XP</span>
+                </button>
+                <button class="cat-btn active" data-category="regulär">
+                  <span class="type-icon">💼</span><span>Regulär</span>
+                  <span class="type-xp">×1.0 XP</span>
+                </button>
+                <button class="cat-btn" data-category="senior">
+                  <span class="type-icon">⭐</span><span>Senior</span>
+                  <span class="type-xp">×1.35 XP</span>
+                </button>
+              </div>
+            </div>
             <button id="btn-start-planner-shift" class="btn-primary">Dienst starten 🚀</button>
           </div>
           <div class="section-header" style="margin-top:20px">Letzte Dienste</div>
@@ -239,6 +256,9 @@
           <button id="btn-export" class="io-btn">⬇ Exportieren</button>
           <label class="io-btn io-btn-import">⬆ Importieren
             <input type="file" id="import-file-input" accept=".json" style="display:none">
+          </label>
+          <label class="io-btn io-btn-import">📅 Dienstplan XML
+            <input type="file" id="xml-import-input" accept=".xml" style="display:none">
           </label>
         </div>
       </section>

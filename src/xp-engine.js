@@ -35,6 +35,18 @@ export function calculateNoteXP(shiftDate, noteAddedAt) {
 
 // ─── Planner Constants ────────────────────────────────────────────────────────
 
+export const CATEGORY_XP_MODIFIER = {
+  training: 0.7,
+  regulär:  1.0,
+  senior:   1.35,
+};
+
+export const CATEGORY_META = {
+  training: { label:'Training',  icon:'🎓', color:'#64748b' },
+  regulär:  { label:'Regulär',   icon:'💼', color:'#3b82f6' },
+  senior:   { label:'Senior',    icon:'⭐', color:'#f59e0b' },
+};
+
 export const SLOT_TYPES = {
   anmeldung:     { label:'Anmeldung',    icon:'📋', colorVar:'--slot-anmeldung', xp:35, durationH:1, durationM:0, fixed:true,  patientContact:true,  halfHour:false },
   interview:     { label:'Interview',    icon:'🎙️',  colorVar:'--slot-interview', xp:20, durationH:2, durationM:0, fixed:true,  patientContact:true,  halfHour:false },
