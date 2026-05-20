@@ -2205,6 +2205,7 @@ img{max-width:100%;display:block}
   background:rgba(255,255,255,.03);border-radius:var(--r);margin-bottom:4px;
 }
 .move-patient-title{font-size:11px;color:var(--text-dim);font-weight:600;padding:2px 0 4px;}
+
 /* ── Stats tab clickable cards ──────────────────────────────────────────────── */
 #stat-xp-card,#stat-shifts-card{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s}
 #stat-xp-card:active,#stat-shifts-card:active{opacity:.7}
