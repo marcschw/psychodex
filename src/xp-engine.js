@@ -73,40 +73,145 @@ export const MEAL_HINTS = {
 
 export const SLOT_TIPS = {
   anmeldung: {
-    tips: [
-      '📅 Freie Interview-Slots prüfen und dem Patienten anbieten',
-      '🪪 Ausweis scannen / kopieren (nicht digital speichern!)',
-      '📋 Substanzen-Fragebogen und ggf. Suizid-Fragebogen',
-      '🤝 Ggf. Koordination / Einschluss mit Kolleg:innen',
+    sections: [
+      {
+        label: '💬 Gespräch',
+        items: [
+          'Informationsbroschüre 2× mitgeben (1× zum Behalten, 1× unterschreiben lassen)',
+          'Anmeldebogen von Patientin ausfüllen lassen',
+          'Einwilligungserklärung unterschreiben + Terminzettel mitgeben',
+          '📅 Freie Testungs-Slots prüfen und anbieten',
+          '🪪 Ausweis scannen / kopieren (Original für PA – nicht digital speichern!)',
+          'Substanzen-Fragebogen + ggf. Suizid-Fragebogen (bei JA-Antworten)',
+          'Krisenintervention? → Absprache mit Koordination / Führungskräfte',
+        ],
+      },
+      {
+        label: '🖥️ System',
+        items: [
+          'CORE-OM eingeben + Anamnese im System eingetragen',
+          'Anmeldebogen scannen und unter „Anmeldebogen" hochladen',
+          'Testungstermin im System einstellen',
+        ],
+      },
+      {
+        label: '📁 Akte',
+        items: [
+          'Akte beschriften (Name, Geburtsdatum, Anmeldedatum)',
+          'Post-It mit Testungsdatum und Uhrzeit aufkleben',
+          'Akte in Testungslade einsortieren',
+        ],
+      },
     ],
     docHint: '~45 min Doku danach einplanen (Backoffice oder 5. Stock)',
   },
   interview: {
-    tips: [
-      '💡 Demo-Möglichkeit ansprechen → schnellerer Termin für Patient',
-      '💶 80 € einsammeln BEVOR Erstgespräch-Termin vereinbart wird',
-      '📝 Diagnosen nicht vergessen einzutragen!',
+    sections: [
+      {
+        label: '💬 Gespräch',
+        items: [
+          'Mini-DIPS als Interview ausfüllen',
+          'BDI kassieren und in Kuvert geben',
+          '2× Kopieren (Original für PA, 1× ins Kuvert) + SFU-Stempel',
+          'Letzte Seite in Mini-DIPS ausfüllen',
+          '💡 Demo-Möglichkeit ansprechen → schnellerer Termin für Patient',
+          '💶 80 € einsammeln BEVOR Erstgespräch-Termin vereinbart wird',
+        ],
+      },
+      {
+        label: '🖥️ System',
+        items: [
+          'Therapeutin im System suchen + EG-Termin einstellen (4 Augenpaare)',
+          'E-Mail an Therapeutin mit EG-Termin und Uhrzeit (Vorlage verwenden)',
+          '📝 Diagnosen eintragen!',
+        ],
+      },
+      {
+        label: '📁 Akte',
+        items: [
+          'Akte beschriften (Testungsinfo)',
+          'Post-It mit EG-Termin und Uhrzeit aufkleben',
+          'Akte in Erstgesprächslade einsortieren',
+        ],
+      },
     ],
     docHint: null,
   },
   erstgespraech: {
-    tips: [
-      '🎓 Bei DEMO: Studierende 15 min vorher im EG abholen!',
-      '📖 Studierende über Regeln aufklären (Beobachterrolle, kein Handeln)',
-      '📝 Diagnosen unbedingt eintragen!',
+    sections: [
+      {
+        label: '💬 Gespräch',
+        items: [
+          'EG protokollieren (Vorlage oder eigenes Papier mit Clipboard)',
+          'Letzte Seite des EG-Protokolls ausfüllen (mit Therapeutin besprechen)',
+          '🎓 Bei DEMO: Studierende 15 min vorher im EG abholen!',
+          '📖 Studierende über Regeln aufklären (Beobachterrolle, kein Handeln)',
+        ],
+      },
+      {
+        label: '🖥️ System',
+        items: [
+          'Protokoll in System eingeben',
+          '📝 Diagnose in System eingeben',
+          'Dokument scannen und unter „Erstgesprächsprotokoll" hochladen',
+        ],
+      },
+      {
+        label: '📁 Akte',
+        items: [
+          'Akte beschriften (EG-Infos)',
+          'Akt in Therapielade ODER in Kriseninterventionslade (wenn Krisenfall)',
+        ],
+      },
     ],
     docHint: '~45 min Doku danach einplanen (Backoffice oder 5. Stock)',
   },
   kassa: {
-    tips: ['✅ Offene Zahlungen prüfen', '📄 Kurz-Doku möglich bei wenig Unterbrechungen'],
+    sections: [
+      {
+        label: '💡 Tipps',
+        items: [
+          '✅ Offene Zahlungen prüfen',
+          '📄 Kurz-Doku möglich bei wenig Unterbrechungen',
+        ],
+      },
+    ],
     docHint: null,
   },
   backoffice: {
-    tips: ['📑 Ideal für 45 min Dokumentation nach Anmeldung / Erstgespräch', '🔇 Ruhige Zone für Berichte'],
+    sections: [
+      {
+        label: '📑 Doku & Büro',
+        items: [
+          'Ideal für 45 min Dokumentation nach Anmeldung / Erstgespräch',
+          '🔇 Ruhige Zone für Berichte und Schreibarbeit',
+        ],
+      },
+      {
+        label: '📦 Archivieren (wenn nötig)',
+        items: [
+          'OGK-Bogen, Abmeldeformular und Entlassbrief vollständig?',
+          'E-Mail an Therapeutin mit Info was fehlt / wo sich Akt befindet',
+          'Kontozustand auf 0 € setzen; CORE-OM & WHO5 für Abmeldung eintragen',
+          'Akt aus Folien nehmen + alle Klammern entfernen',
+          'Alle Dokumente 2× kopieren → Stapel → scannen → unter „ganzer Akt" hochladen → Stapel retour in Akt',
+          'Im System archivieren: Reiter „Therapie" → „Patientin archivieren" (Grund + Datum)',
+          'Akt in Lade „Archivierte Akten" geben',
+        ],
+      },
+    ],
     docHint: null,
   },
   fuenfter: {
-    tips: ['☕ Freizeit / Pause – entspann dich!', '📚 Kann für Selbststudium genutzt werden'],
+    sections: [
+      {
+        label: '💡 Tipps',
+        items: [
+          '☕ Freizeit / Pause – entspann dich!',
+          '📚 Kann für Selbststudium oder Vor-/Nachbereitung genutzt werden',
+        ],
+      },
+    ],
     docHint: null,
   },
 };

@@ -929,8 +929,12 @@ function openSlotDetailModal(slot) {
     ${flags}
     ${demoNote}
     ${slot.comment ? `<div class="slot-comment-display">${slot.comment}</div>` : ''}
-    <div class="slot-tips-header">💡 Tipps</div>
-    <ul class="slot-tips-list">${(tips.tips || []).map(t => `<li>${t}</li>`).join('')}</ul>
+    ${tips.sections
+      ? tips.sections.map(sec => `
+          <div class="slot-tips-header">${sec.label}</div>
+          <ul class="slot-tips-list">${sec.items.map(t => `<li>${t}</li>`).join('')}</ul>`).join('')
+      : `<div class="slot-tips-header">💡 Tipps</div>
+         <ul class="slot-tips-list">${(tips.tips || []).map(t => `<li>${t}</li>`).join('')}</ul>`}
     ${tips.docHint ? `<div class="slot-doc-hint">📄 ${tips.docHint}</div>` : ''}
   `;
   document.getElementById('slot-detail-modal').classList.remove('hidden');
