@@ -574,10 +574,18 @@
           <div class="slot-time-field">
             <label class="form-label">Von</label>
             <input type="time" id="slot-start-time" class="form-input" step="1800">
+            <div class="time-toggle-row">
+              <button class="time-toggle-btn" data-field="start" data-mins="0">:00</button>
+              <button class="time-toggle-btn" data-field="start" data-mins="30">:30</button>
+            </div>
           </div>
           <div class="slot-time-field">
             <label class="form-label">Bis</label>
             <input type="time" id="slot-end-time" class="form-input" step="1800">
+            <div class="time-toggle-row">
+              <button class="time-toggle-btn" data-field="end" data-mins="0">:00</button>
+              <button class="time-toggle-btn" data-field="end" data-mins="30">:30</button>
+            </div>
           </div>
         </div>
         <div id="slot-flags-row" class="slot-flags-row hidden">

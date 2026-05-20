@@ -572,17 +572,33 @@ function renderTimeline(shift) {
   const rows = [];
   let cursor = startM;
 
+  const pushHourTicks = (from, to) => {
+    if (from >= to) return;
+    let c = from;
+    // If gap starts at :30, push one button from :30 to next full hour first
+    if (c % 60 !== 0) {
+      const nextHour = Math.ceil(c / 60) * 60;
+      rows.push({ kind: 'gap', from: c, to: Math.min(nextHour, to) });
+      c = nextHour;
+    }
+    // One button per full hour
+    while (c < to) {
+      rows.push({ kind: 'gap', from: c, to: Math.min(c + 60, to) });
+      c += 60;
+    }
+  };
+
   const pushGaps = (from, to) => {
     // Insert meal hints within the gap
     const inRange = meals.filter(m => m.mins >= from && m.mins < to);
     inRange.sort((a, b) => a.mins - b.mins);
     let c = from;
     for (const m of inRange) {
-      if (c < m.mins) rows.push({ kind:'gap', from:c, to:m.mins });
+      if (c < m.mins) pushHourTicks(c, m.mins);
       rows.push({ kind:'meal', ...m });
       c = m.mins;
     }
-    if (c < to) rows.push({ kind:'gap', from:c, to });
+    if (c < to) pushHourTicks(c, to);
   };
 
   for (const slot of slots) {
@@ -798,6 +814,7 @@ function setupPlannerListeners() {
       if (def.fixed && state.slotAddContext) {
         const endMins = toMins(state.slotAddContext.startH, state.slotAddContext.startM) + def.durationH * 60 + def.durationM;
         document.getElementById('slot-end-time').value = padT(Math.floor(endMins/60), endMins%60);
+        setTimeToggleActive('end', endMins % 60);
       }
       if (state.slotAddContext) state.slotAddContext.selectedType = btn.dataset.type;
     });
@@ -813,6 +830,23 @@ function setupPlannerListeners() {
       else { state.slotAddContext.flags = flags.filter(f => f !== flag); }
     });
   });
+
+  // :00 / :30 time toggles
+  document.querySelectorAll('.time-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const field = btn.dataset.field === 'start' ? 'slot-start-time' : 'slot-end-time';
+      const input = document.getElementById(field);
+      const [h] = (input.value || '00:00').split(':').map(Number);
+      const mins = parseInt(btn.dataset.mins);
+      input.value = padT(h, mins);
+      setTimeToggleActive(btn.dataset.field, mins);
+    });
+  });
+}
+
+function setTimeToggleActive(field, mins) {
+  document.querySelectorAll(`.time-toggle-btn[data-field="${field}"]`).forEach(b =>
+    b.classList.toggle('active', parseInt(b.dataset.mins) === mins));
 }
 
 async function startPlannerShift() {
@@ -888,6 +922,10 @@ function openSlotAddModal(shiftId, startH, startM) {
 
   // Default end = startH + 1
   document.getElementById('slot-end-time').value = padT(startH + 1, startM);
+
+  // Activate toggle buttons matching the initial minutes
+  setTimeToggleActive('start', startM);
+  setTimeToggleActive('end', startM);
 
   document.getElementById('slot-add-modal').classList.remove('hidden');
 }
