@@ -869,7 +869,7 @@ function renderPlannerPastShifts() {
     .sort((a, b) => a.date.localeCompare(b.date));
 
   const next = upcoming[0] ?? null;
-  const moreUpcoming = upcoming.slice(1, 4);
+  const moreUpcoming = upcoming.slice(1); // show all, not just 3
 
   // Past: completed or manually created (no importedFrom), most recent first
   const past = allNonActive
@@ -882,17 +882,23 @@ function renderPlannerPastShifts() {
       const meta = CATEGORY_META[next.category || 'regulär'];
       const isToday = next.date === today;
       nextCardEl.innerHTML = `
-        <div class="planner-next-card">
+        <div class="planner-next-card planner-next-card-clickable" data-id="${next.id}">
           <div class="planner-next-label">${isToday ? '📍 Heute' : '⏭ Nächster Dienst'}</div>
           <div class="planner-next-date">${fmtDateLong(next.date)}</div>
           <div class="planner-next-meta">
             ${shiftIcon(next.type)} ${shiftLabel(next.type)} ·
             <span class="cat-badge cat-badge-${next.category || 'regulär'}">${meta.icon} ${meta.label}</span>
           </div>
-          <button class="btn-open-next" data-id="${next.id}">Dienst öffnen →</button>
+          <button class="btn-open-next" data-id="${next.id}">▶ Jetzt starten</button>
         </div>`;
-      nextCardEl.querySelector('.btn-open-next').addEventListener('click', () =>
-        openImportedShift(next.id));
+      nextCardEl.querySelector('.planner-next-card-clickable').addEventListener('click', e => {
+        if (e.target.closest('.btn-open-next')) return;
+        openShiftDetailModal(next.id);
+      });
+      nextCardEl.querySelector('.btn-open-next').addEventListener('click', e => {
+        e.stopPropagation();
+        openImportedShift(next.id);
+      });
     } else {
       nextCardEl.innerHTML = '';
     }
@@ -905,13 +911,13 @@ function renderPlannerPastShifts() {
     html += `<div class="section-header">Geplante Dienste</div>`;
     html += moreUpcoming.map(s => {
       const meta = CATEGORY_META[s.category || 'regulär'];
-      return `<div class="recent-item">
+      return `<div class="recent-item shift-item-clickable" data-id="${s.id}" data-upcoming="1">
         <div class="shift-icon">${shiftIcon(s.type)}</div>
         <div class="recent-info">
           <div class="recent-name">${fmtDateShort(s.date)}</div>
           <div class="recent-meta">${shiftLabelFull(s)} · <span class="cat-badge cat-badge-${s.category || 'regulär'}">${meta.icon} ${meta.label}</span></div>
         </div>
-        <button class="btn-open-imported" data-id="${s.id}">Öffnen</button>
+        <button class="btn-open-imported" data-id="${s.id}" title="Jetzt starten">▶</button>
       </div>`;
     }).join('');
   }
@@ -938,10 +944,18 @@ function renderPlannerPastShifts() {
 
   if (listEl) {
     listEl.innerHTML = html;
-    listEl.querySelectorAll('.shift-item-clickable').forEach(item =>
-      item.addEventListener('click', () => openShiftDetailModal(parseInt(item.dataset.id))));
-    listEl.querySelectorAll('.btn-open-imported').forEach(btn =>
-      btn.addEventListener('click', () => openImportedShift(parseInt(btn.dataset.id))));
+    listEl.querySelectorAll('.shift-item-clickable').forEach(item => {
+      item.addEventListener('click', e => {
+        if (e.target.closest('.btn-open-imported')) return;
+        openShiftDetailModal(parseInt(item.dataset.id));
+      });
+    });
+    listEl.querySelectorAll('.btn-open-imported').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        openImportedShift(parseInt(btn.dataset.id));
+      });
+    });
   }
 }
 

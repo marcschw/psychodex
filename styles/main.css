@@ -2180,6 +2180,16 @@ img{max-width:100%;display:block}
 }
 .move-diag-option:not(:disabled):active{background:rgba(96,165,250,.25)}
 
+/* ── Planner upcoming shift cards ───────────────────────────────────────────── */
+.planner-next-card-clickable{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.btn-open-imported{
+  flex-shrink:0;padding:6px 10px;border-radius:var(--r);font-size:13px;font-weight:700;
+  background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.3);
+  color:var(--accent);cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:background .15s;
+}
+.btn-open-imported:active{background:rgba(124,58,237,.3)}
+
 /* ── Stats tab clickable cards ──────────────────────────────────────────────── */
 #stat-xp-card,#stat-shifts-card{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s}
 #stat-xp-card:active,#stat-shifts-card:active{opacity:.7}
