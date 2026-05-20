@@ -1,0 +1,281 @@
+PSYCHODEX — IMAGE GENERATION PROMPTS
+======================================
+Einheitlicher Stil (gilt für alle Bilder):
+  Dark, near-black background (#08080f), moody cinematic atmosphere,
+  hyper-detailed photorealistic render, dramatic chiaroscuro lighting,
+  deep golden and teal/cyan bioluminescent accents, ultra-sharp 4K,
+  surreal yet grounded, no text, no watermarks, no borders.
+
+  Abweichungen vom Stil sind bei jedem Bild explizit vermerkt.
+
+
+══════════════════════════════════════════════════════════════════
+1. ACHIEVEMENT BADGES  →  assets/images/badges/
+══════════════════════════════════════════════════════════════════
+Format: 512 × 512 px, PNG mit Transparenz (oder schwarzem Hintergrund)
+Rahmen: App-Icon-Stil — leicht abgerundete Ecken, kompakte Komposition,
+        kein freier Rand, Motiv füllt das Bild aus.
+
+Alle Badges teilen diesen Basis-Stil-Suffix:
+  "…, dark app icon composition, rounded square framing, cinematic render,
+  golden glow particles, no text, 4K ultra-detailed"
+
+──────────────────────────────────────────────────────────────────
+nachtschwaermer.png — «Nachtschwärmer» (Treue Spätdienste)
+  Rainy night city seen through a clinic window, neon reflections on
+  wet glass, lone figure silhouette at reception desk, violet and amber
+  light bleeding through. Mood: late-shift solitude.
+
+marathon.png — «Marathon» (Ganztagseinsätze 12h)
+  Single runner silhouette at the far end of an infinitely long dark
+  hospital corridor, a white light at the vanishing point. Motion blur
+  on legs. Mood: endurance, relentless forward motion.
+
+komorbid_detektiv.png — «Komorbiditäts-Detektiv» (Diagnosen mit Komorbidität)
+  A magnifying glass hovering over an intricate web of golden neural
+  threads and ICD codes dissolving into smoke. The glass lens glows
+  with cool blue light. Mood: obsessive precision.
+
+das_einhorn.png — «Das Einhorn» (Extrem seltene Diagnosen)
+  A single crystalline unicorn horn emerging from absolute darkness,
+  splitting prismatic light into iridescent shards. Hyper-detailed
+  facets like diamond. Mood: impossibly rare.
+
+der_puenktliche.png — «Der Pünktliche» (Dienste zeitnah geloggt)
+  Ancient ornate pocket watch face, golden gears visible through
+  cracked glass, a single lightning bolt striking the 12 o'clock mark.
+  Extreme macro detail. Mood: precision under pressure.
+
+meister_affekte.png — «Meister der Affekte» (F3-Diagnosen)
+  Abstract human brain silhouette built from crashing blue and violet
+  waves, emotional tides frozen in motion, phosphorescent foam edges.
+  Mood: turbulent inner life captured.
+
+meister_aengste.png — «Meister der Ängste» (F4-Diagnosen)
+  Small figure curled in fetal position at the centre of a dark void,
+  spiralling dark fog closing in, one tiny warm light point directly
+  above them. Mood: fear contained, not defeated.
+
+der_profiler.png — «Der Profiler» (F6-Persönlichkeitsstörungen)
+  Face split perfectly in half — left side a classic theatrical
+  comedy mask, right side tragedy, both extremely realistic and
+  detailed. Chiaroscuro lighting from below. Mood: duality exposed.
+
+der_chronist.png — «Der Chronist» (Dienste mit Log)
+  Ancient leather-bound book lying open, pages filled with glowing
+  golden script that dissolves into light at the edges, a quill pen
+  mid-stroke, single candle. Mood: meticulous record-keeping.
+
+schnellschreiber.png — «Schnellschreiber» (Logs binnen 2h)
+  A hand writing at impossible speed, ink droplets suspended in mid-air
+  around the pen, motion blur streaks, paper slightly scorched at edges.
+  Mood: racing against time.
+
+jackpot.png — «Jackpot» (Pathologisches Spielen diagnostiziert)
+  Three casino dice in mid-air, dark crimson atmospheric fog, golden
+  light rays cutting through smoke from below. Extreme surface detail
+  on dice faces. Mood: compulsion, chance, danger.
+
+spiegelkabinett.png — «Spiegelkabinett» (Dissoziative Identitätsstörung)
+  Infinite mirror corridor stretching into darkness, each reflection
+  slightly different from the last — posture, expression subtly altered.
+  Teal rim lighting. Mood: fragmented identity.
+
+fifty_shades.png — «Fifty Shades» (Störung der Sexualpräferenz)
+  Elegant Venetian mask against pure black, split by a vertical beam
+  of light: one half gold, one half silver. No face visible. Theatrical,
+  ambiguous. Mood: the hidden self on display.
+
+der_alchemist.png — «Der Alchemist» (Multipler Substanzgebrauch)
+  Ornate glass flask containing swirling multicoloured liquid,
+  bubbles rising in slow motion, amber and violet glow from inside,
+  alchemical symbols faintly etched in the glass. Mood: transformation.
+
+teufelskreis.png — «Teufelskreis» (Depression + Sucht kombiniert)
+  Ouroboros — a snake consuming its own tail — rendered in dark stone
+  and tarnished gold, crackling storm energy inside the loop. The cycle
+  looks inescapable. Mood: trapped recursion.
+
+schlaflos_in_wien.png — «Schlaflos in Wien» (Nichtorganische Schlafstörung)
+  Vienna skyline silhouette at 3 AM, full moon, one lit window in an
+  otherwise dark apartment block. Blue moonlight on wet cobblestones
+  below. Mood: alone and awake while the world sleeps.
+
+das_chamäleon.png — «Das Chamäleon» (Artifizielle Störung / Münchhausen)
+  Hyper-realistic chameleon on a clinical white surface, skin shifting
+  through a dozen colours in a single frame — each colour from a
+  different environment. Mood: perpetual camouflage, no true self.
+
+hypochonder.png — «Hypochonder» (Hypochondrische Störung)
+  Stethoscope coiled into a perfect infinity symbol on a dark surface,
+  the heartbeat line running straight through the centre, clinical cold
+  blue rim light. Mood: endless self-examination.
+
+das_volle_spektrum.png — «Das volle Spektrum» (F3+F4+F6 in einem Dienst)
+  A glass prism splitting a single white beam into the full visible
+  spectrum, each band razor-sharp, emerging into darkness. The prism
+  floats unsupported. Mood: rare completeness.
+
+doppeltes_lottchen.png — «Doppeltes Lottchen» (2 Patienten, gleicher Code)
+  Two identical silhouettes facing each other in perfect symmetry,
+  separated by a vertical mirror crack, but one detail slightly
+  different — a different scar, a tilted shoulder. Mood: same yet not.
+
+alte_schule.png — «Alte Schule» (Patient 51+ mit F0-Diagnose)
+  An elderly, weathered hand resting on an open modern medical file,
+  classical oil-painting texture meets harsh clinical paper. Golden
+  afternoon light from one side. Mood: memory and medicine collide.
+
+der_knotenpunkt.png — «Der Knotenpunkt» (Patient mit 3+ Komorbiditäten)
+  Dense spider web node map, golden threads connecting dozens of
+  glowing points, one central node pulsing brighter than all others.
+  Shot from above, dark background. Mood: everything is connected.
+
+geisterstunde.png — «Geisterstunde» (Dienst um 23–04 Uhr gespeichert)
+  Grandfather clock face showing 03:00, a translucent ghost-like
+  figure barely visible in the reflection of the glass. Gothic moody
+  atmosphere, candlelight. Mood: the hour that doesn't exist.
+
+leere_hallen.png — «Leere Hallen» (Dienst ohne Patienten)
+  Long empty hospital corridor, fluorescent lights flickering at far
+  end, single plastic chair overturned, everything else perfectly
+  still. Cold clinical blue-white light. Mood: eerie, deserted.
+
+workaholic.png — «Workaholic» (4+ Patienten in einem Dienst)
+  Tall stack of patient charts and medical files about to topple,
+  a coffee cup balanced on top, an exhausted hand still reaching
+  for more paper. Warm amber desk lamp. Mood: driven past limits.
+
+
+══════════════════════════════════════════════════════════════════
+2. SHIFT-TYPE BANNER HEADERS  →  assets/images/shifts/
+══════════════════════════════════════════════════════════════════
+Format: 800 × 260 px, PNG
+Verwendung: Subtiles Hintergrundbild hinter dem aktiven Dienst-Header
+            im Planer. Muss dunkel genug sein, damit weißer Text lesbar
+            bleibt — linke Hälfte tendenziell dunkler (Text dort).
+Stil-Zusatz: "…, dark left edge fading to slightly lit right edge,
+             wide cinematic crop, very subtle so UI text overlaid remains
+             legible, no focal object in the left third"
+
+früh_banner.png — Frühdienst (08–14:30 Uhr)
+  Golden sunrise light cutting through venetian blinds onto an empty
+  reception desk, long morning shadows, dust motes in the air.
+  Warm amber and cream tones bleeding into near-black on the left.
+
+spät_banner.png — Spätdienst (13:30–20 Uhr)
+  Deep violet and indigo dusk sky visible through a large clinic window,
+  city lights just beginning to glow, golden hour dissolving into blue
+  hour. Purple and gold gradient.
+
+samstag_banner.png — Samstagsdienst (09–16 Uhr)
+  Quiet weekend morning, soft diffused daylight in a calm waiting room,
+  empty chairs, a plant in the corner catching sunlight. Warm neutral
+  tones, relaxed atmosphere — less clinical than weekdays.
+
+full_banner.png — Ganztag (08–20 Uhr)
+  Extreme wide-angle clinic corridor: left third in warm sunrise gold,
+  right third in deep sunset violet, the middle in harsh midday white.
+  Time compressed into a single space. Epic, panoramic.
+
+schulung_banner.png — Schulungsdienst (10–16 Uhr)
+  Open medical textbooks and notebooks stacked and fanned out across
+  a dark wooden desk, pencil lying across an open page with diagrams,
+  single focused spotlight. Warm studiousness.
+
+
+══════════════════════════════════════════════════════════════════
+3. EMPTY STATE ILLUSTRATIONS  →  assets/images/empty/
+══════════════════════════════════════════════════════════════════
+Format: 400 × 400 px, PNG
+Verwendung: Zentriert in leeren Listenabschnitten (keine Diagnosen,
+            keine Dienste, kein Planer-Eintrag).
+Stil-Zusatz: "…, centred subject, lots of breathing room around it,
+             fades to pure black at edges, minimal composition"
+
+empty_diagnoses.png — Keine Diagnosen gefangen
+  An empty glass display case (like in a natural history museum),
+  velvet-lined interior with small lit pedestals, all pedestals empty
+  except one that holds a single glowing question mark crystal.
+  Mood: waiting to be filled.
+
+empty_shifts.png — Keine Dienste geloggt
+  An empty clinic waiting room at dawn — chairs in a perfect row,
+  untouched magazines on a side table, reception window dark, a single
+  floor lamp casting a warm pool of light. Inviting emptiness.
+
+empty_planner.png — Kein Dienst geplant
+  A blank weekly planner spread open on a dark desk, pages pristine
+  white against the darkness, a single pen resting on the binding,
+  ready. Mood: possibility, fresh start.
+
+
+══════════════════════════════════════════════════════════════════
+4. SHIFT CATEGORY ICONS  →  assets/images/categories/ (neue Dateien)
+══════════════════════════════════════════════════════════════════
+Hinweis: Ordner hat bereits f0–f9.png (ICD-Kategorien). Neue Dateien
+         mit Prefix "cat_" anlegen.
+Format: 256 × 256 px, PNG, App-Icon-Stil (schwarzer Hintergrund)
+
+cat_training.png — Kategorie «Training» (🎓)
+  Open anatomy textbook floating in darkness, pages turning as if
+  by invisible hands, golden light emanating from within the pages.
+  Mood: knowledge being absorbed.
+
+cat_regular.png — Kategorie «Regulär» (💼)
+  Classic doctor's leather briefcase, clasp gleaming in a sharp
+  beam of light, slightly worn at the corners — experienced but
+  reliable. Mood: professional, routine mastery.
+
+cat_senior.png — Kategorie «Senior» (⭐)
+  Ancient crown resting on a plinth, forged from dark metal with
+  golden star inlays, a single ambient glow from above as if
+  from a spotlight. Mood: earned authority.
+
+
+══════════════════════════════════════════════════════════════════
+5. STREAK VISUALS  →  assets/images/streak/
+══════════════════════════════════════════════════════════════════
+Format: 512 × 512 px, PNG
+Verwendung: Header-Bild im Streak-Modal je nach Status.
+
+streak_active.png — Aktiver Streak 🔥
+  Towering column of fire with a calendar silhouette visible inside
+  the flames, each page burning but not consumed. Deep amber and red
+  core, orange outer edges, dark smoke above. Mood: sustained heat.
+
+streak_frozen.png — Eingefrorener Streak 🧊
+  The same column shape as streak_active but entirely encased in a
+  massive ice crystal, frozen mid-flicker. Blue and white, ultra-cold
+  light refracted through ice facets. Mood: suspended, not dead.
+
+
+══════════════════════════════════════════════════════════════════
+6. PLANER «NÄCHSTER DIENST» CARD HINTERGRUNDBILD  →  assets/images/
+══════════════════════════════════════════════════════════════════
+Format: 800 × 320 px, PNG
+Verwendung: Sehr subtiles Overlay hinter der «Nächster Dienst»-Karte
+            auf der Planer-Startseite. Muss extrem dunkel sein
+            (opacity ~0.15 in CSS) — nur als texturgebende Tiefe.
+
+next_shift_bg.png
+  Abstract flowing aurora borealis curtains in deep violet and teal,
+  extremely dark and desaturated, gossamer light threads barely
+  visible. Mood: anticipation, something arriving.
+
+
+══════════════════════════════════════════════════════════════════
+ZUSAMMENFASSUNG — NACH PRIORITÄT
+══════════════════════════════════════════════════════════════════
+Prio 1 — Achievement Badges (25 Bilder, bereits im Code verdrahtet,
+          nur der Ordner fehlt → sofort sichtbarer Effekt in Stats)
+
+Prio 2 — Shift Banner Headers (5 Bilder, hoher visueller Impact im
+          Planer — der Hauptscreen auf Mobile)
+
+Prio 3 — Empty States (3 Bilder, verbessern den Ersteindruck und
+          leere Ladezeiten erheblich)
+
+Prio 4 — Streak Visuals (2 Bilder, Streak-Modal ist oft geöffnet)
+
+Prio 5 — Category Icons & Next-Shift-BG (6 Bilder, feines Tuning)
