@@ -633,11 +633,12 @@ function getMealHints(shift) {
 async function renderHomeTab() {
   const today = new Date().toISOString().split('T')[0];
 
-  // Pick nearest shift if none selected or selection is stale
+  // Pick shift: today's shift if exists, else most recent past, else nearest future
   if (!state.homeSelectedShiftId || !state.shifts.find(s => s.id === state.homeSelectedShiftId)) {
-    const upcoming = state.shifts.filter(s => s.date >= today).sort((a, b) => a.date.localeCompare(b.date));
-    const past     = state.shifts.filter(s => s.date <  today).sort((a, b) => b.date.localeCompare(a.date));
-    state.homeSelectedShiftId = (upcoming[0] ?? past[0])?.id ?? null;
+    const todayShift = state.shifts.find(s => s.date === today);
+    const past       = state.shifts.filter(s => s.date < today).sort((a, b) => b.date.localeCompare(a.date));
+    const upcoming   = state.shifts.filter(s => s.date > today).sort((a, b) => a.date.localeCompare(b.date));
+    state.homeSelectedShiftId = (todayShift ?? past[0] ?? upcoming[0])?.id ?? null;
   }
 
   const shift   = state.shifts.find(s => s.id === state.homeSelectedShiftId) ?? null;
@@ -784,27 +785,36 @@ function renderMonthCalendar() {
   const firstDow  = (new Date(year, month - 1, 1).getDay() + 6) % 7; // 0=Mon
   const daysInMon = new Date(year, month, 0).getDate();
 
-  let html = `<div class="cal-weekdays"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span class="cal-weekend">Sa</span><span class="cal-weekend">So</span></div><div class="cal-grid">`;
+  // Find next upcoming shift date for distinct highlight
+  const nextShiftDate = state.shifts
+    .filter(s => s.date > today)
+    .sort((a, b) => a.date.localeCompare(b.date))[0]?.date ?? null;
+
+  let html = `<div class="cal-weekdays"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span class="cal-weekend">Sa</span><span class="cal-weekend cal-sun-label">So</span></div><div class="cal-grid">`;
   for (let i = 0; i < firstDow; i++) html += '<div class="cal-cell cal-empty"></div>';
 
   for (let d = 1; d <= daysInMon; d++) {
     const ds  = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow = (new Date(year, month - 1, d).getDay() + 6) % 7; // 0=Mon..6=Sun
+    const isSunday   = dow === 6;
     const dsh = shiftByDay[d] || [];
-    const isToday    = ds === today;
-    const isPast     = ds < today;
-    const isSelected = dsh.some(s => s.id === state.homeSelectedShiftId);
+    const isToday      = ds === today;
+    const isPast       = ds < today;
+    const isSelected   = dsh.some(s => s.id === state.homeSelectedShiftId);
+    const isNextShift  = ds === nextShiftDate && !isToday;
 
     const dots = dsh.map(s => {
-      const color = s.category === 'training' ? '#a78bfa' : s.category === 'senior' ? '#f59e0b' : '#60a5fa';
-      const op    = s.date < today ? '.45' : '1';
-      const icon  = shiftIcon(s.type);
+      const op   = s.date < today ? '.45' : '1';
+      const icon = shiftIcon(s.type);
       return `<span class="cal-dot-icon" style="opacity:${op}" title="${shiftLabel(s.type)}">${icon}</span>`;
     }).join('');
 
     const cls = ['cal-cell',
+      isSunday   ? 'cal-sunday'    : '',
       isToday    ? 'cal-today'     : '',
       isPast     ? 'cal-past'      : '',
       isSelected ? 'cal-selected'  : '',
+      isNextShift? 'cal-next-shift': '',
       dsh.length ? 'cal-has-shift' : '',
     ].filter(Boolean).join(' ');
 
@@ -817,7 +827,7 @@ function renderMonthCalendar() {
   html += '</div>';
   calEl.innerHTML = html;
 
-  calEl.querySelectorAll('.cal-cell:not(.cal-empty)').forEach(cell => {
+  calEl.querySelectorAll('.cal-cell:not(.cal-empty):not(.cal-sunday)').forEach(cell => {
     cell.addEventListener('click', async () => {
       const ids = cell.dataset.shiftIds;
       if (ids) {
@@ -836,11 +846,27 @@ function openQuickCreateModal(dateStr) {
   document.getElementById('quick-create-title').textContent =
     `Neuer Dienst · ${new Date(dateStr + 'T12:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit' })}`;
   modal._pendingDate = dateStr;
-  // Reset selectors
+
+  // Smart defaults: Saturday → samstag; others → last non-samstag type/category
+  const isSaturday = new Date(dateStr + 'T12:00:00').getDay() === 6;
+  let defaultType = 'früh';
+  let defaultCat  = 'regulär';
+  if (isSaturday) {
+    defaultType = 'samstag';
+  } else {
+    const lastShift = state.shifts
+      .filter(s => s.type !== 'samstag' && s.date < dateStr)
+      .sort((a, b) => b.date.localeCompare(a.date))[0];
+    if (lastShift) {
+      if (lastShift.type === 'früh' || lastShift.type === 'spät') defaultType = lastShift.type;
+      if (lastShift.category) defaultCat = lastShift.category;
+    }
+  }
+
   modal.querySelectorAll('#qc-type-selector .type-btn').forEach(b => b.classList.remove('active'));
-  modal.querySelector('#qc-type-selector [data-type="früh"]')?.classList.add('active');
+  modal.querySelector(`#qc-type-selector [data-type="${defaultType}"]`)?.classList.add('active');
   modal.querySelectorAll('#qc-cat-selector .cat-btn').forEach(b => b.classList.remove('active'));
-  modal.querySelector('#qc-cat-selector [data-category="regulär"]')?.classList.add('active');
+  modal.querySelector(`#qc-cat-selector [data-category="${defaultCat}"]`)?.classList.add('active');
   modal.classList.remove('hidden');
 }
 
