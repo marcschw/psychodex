@@ -193,7 +193,7 @@ export const SECRET_ACHIEVEMENTS = [
     _check: state => ({ triggered: state.catches.some(c => c.code.startsWith('F51')) }),
   },
   {
-    id: 'das_chamäleon',
+    id: 'das_chamaeleon',
     name: 'Das Chamäleon',
     description: 'Artifizielle Störung / Münchhausen diagnostiziert',
     icon: '🦎',
