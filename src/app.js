@@ -1186,6 +1186,8 @@ function openSlotDetailModal(slot, source = 'planner') {
   const def  = SLOT_TYPES[slot.type] || {};
   const tips = SLOT_TIPS[slot.type]  || {};
   const hasTips = !!(tips.sections?.length || tips.tips?.length || tips.docHint);
+  const tipTotal = tips.sections ? tips.sections.reduce((s, sec) => s + sec.items.length, 0) : (tips.tips || []).length;
+  const tipDone  = (slot.checkedTips || []).length;
   const isPatient = !!def.patientContact;
 
   const flagsHtml = slot.flags?.length
@@ -1218,7 +1220,7 @@ function openSlotDetailModal(slot, source = 'planner') {
     ${slot.comment ? `<div class="slot-comment-display">${slot.comment}</div>` : ''}
     ${diagHtml}
     <div class="slot-detail-actions">
-      ${hasTips ? `<button class="btn-secondary" id="btn-slot-tips">ℹ️ Tipps</button>` : ''}
+      ${hasTips ? `<button class="btn-secondary" id="btn-slot-tips">☑️ Checkliste${tipTotal ? ` <span class="tip-btn-count">${tipDone}/${tipTotal}</span>` : ''}</button>` : ''}
       <button class="btn-secondary" id="btn-slot-detail-edit">✏️ Bearbeiten</button>
       <button class="btn-danger"    id="btn-slot-detail-delete">🗑 Löschen</button>
     </div>
@@ -1247,15 +1249,66 @@ function openSlotDetailModal(slot, source = 'planner') {
 function openSlotTipsModal(slot) {
   const def  = SLOT_TYPES[slot.type] || {};
   const tips = SLOT_TIPS[slot.type]  || {};
-  document.getElementById('slot-tips-title').textContent = `${def.icon} ${def.label} – Tipps`;
+  const checked = new Set(slot.checkedTips || []);
+
+  // Build flat list of { key, text } items
+  const allItems = tips.sections
+    ? tips.sections.flatMap((sec, si) => sec.items.map((t, ii) => ({ key: `${si}-${ii}`, text: t, section: sec.label, sectionIdx: si, itemIdx: ii })))
+    : (tips.tips || []).map((t, ii) => ({ key: `flat-${ii}`, text: t, section: null }));
+
+  const total = allItems.length;
+  const doneCount = allItems.filter(it => checked.has(it.key)).length;
+
+  const itemHtml = item => `
+    <label class="tip-check-item ${checked.has(item.key) ? 'tip-check-done' : ''}" data-key="${item.key}">
+      <span class="tip-check-box">${checked.has(item.key) ? '✓' : ''}</span>
+      <span class="tip-check-text">${item.text}</span>
+    </label>`;
+
+  let bodyHtml = '';
+  if (tips.sections) {
+    bodyHtml = tips.sections.map((sec, si) => `
+      <div class="slot-tips-header">${sec.label}</div>
+      <div class="tip-check-list">${sec.items.map((t, ii) => itemHtml({ key: `${si}-${ii}`, text: t })).join('')}</div>`).join('');
+  } else {
+    bodyHtml = `<div class="tip-check-list">${(tips.tips || []).map((t, ii) => itemHtml({ key: `flat-${ii}`, text: t })).join('')}</div>`;
+  }
+
+  document.getElementById('slot-tips-title').textContent = `${def.icon} ${def.label} – Checkliste`;
   document.getElementById('slot-tips-body').innerHTML = `
-    ${tips.sections
-      ? tips.sections.map(sec => `
-          <div class="slot-tips-header">${sec.label}</div>
-          <ul class="slot-tips-list">${sec.items.map(t => `<li>${t}</li>`).join('')}</ul>`).join('')
-      : `<ul class="slot-tips-list">${(tips.tips || []).map(t => `<li>${t}</li>`).join('')}</ul>`}
+    <div class="tip-progress-bar-wrap">
+      <div class="tip-progress-bar" id="tip-progress-bar" style="width:${total ? Math.round(doneCount/total*100) : 0}%"></div>
+    </div>
+    <div class="tip-progress-label" id="tip-progress-label">${doneCount} / ${total} erledigt</div>
+    ${bodyHtml}
     ${tips.docHint ? `<div class="slot-doc-hint">📄 ${tips.docHint}</div>` : ''}
   `;
+
+  // Wire tap/click on each item
+  document.getElementById('slot-tips-body').querySelectorAll('.tip-check-item').forEach(label => {
+    label.addEventListener('click', async () => {
+      const key = label.dataset.key;
+      const nowChecked = label.classList.toggle('tip-check-done');
+      label.querySelector('.tip-check-box').textContent = nowChecked ? '✓' : '';
+
+      if (nowChecked) checked.add(key); else checked.delete(key);
+      const newChecked = [...checked];
+
+      // Update in-memory slot
+      const mem = state.plannerSlots.find(s => s.id === slot.id);
+      if (mem) mem.checkedTips = newChecked;
+      slot.checkedTips = newChecked;
+
+      // Persist
+      await db.scheduleSlots.update(slot.id, { checkedTips: newChecked });
+
+      // Update progress
+      const done = newChecked.length;
+      document.getElementById('tip-progress-bar').style.width = `${total ? Math.round(done/total*100) : 0}%`;
+      document.getElementById('tip-progress-label').textContent = `${done} / ${total} erledigt`;
+    });
+  });
+
   document.getElementById('slot-tips-modal').classList.remove('hidden');
 }
 
