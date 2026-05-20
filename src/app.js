@@ -9,6 +9,7 @@ import { checkAchievements, ACHIEVEMENTS, SECRET_ACHIEVEMENTS, ACH_TIER_LABELS }
 const state = {
   currentTab: 'home',
   homeSelectedShiftId: null,
+  expandedSlotId: null,
   calMonth: null,
   icdfCollection: { symptoms: [], diagnoses: [] },
   icdData: {},
@@ -396,13 +397,47 @@ function renderApp() {
 }
 
 function updateHeader() {
-  const xp   = state.profile?.totalXP ?? 0;
-  const rank = getRankForXP(xp);
-  const next = getNextRank(rank.level);
-  const pct  = next ? ((xp - rank.xpRequired) / (next.xpRequired - rank.xpRequired)) * 100 : 100;
-  document.getElementById('header-rank-name').textContent = `${rank.title} ${rank.subtitle}`;
-  document.getElementById('header-level').textContent = `Rang ${rank.level}`;
-  document.getElementById('header-xp-fill').style.width = `${Math.min(100, pct)}%`;
+  if (state.currentTab === 'stats') renderDashboard();
+}
+
+async function inlineSaveShift(shift, updates) {
+  if (updates.type && updates.type !== shift.type) {
+    const oldXP = Math.round(calculateShiftXP(shift.type) * (CATEGORY_XP_MODIFIER[shift.category || 'regulär'] ?? 1));
+    const newXP = Math.round(calculateShiftXP(updates.type) * (CATEGORY_XP_MODIFIER[shift.category || 'regulär'] ?? 1));
+    const delta = newXP - oldXP;
+    updates.xpEarned = (shift.xpEarned || 0) + delta;
+    if (delta) {
+      const total = Math.max(0, (state.profile.totalXP ?? 0) + delta);
+      await db.profile.update(state.profile.id, { totalXP: total });
+      state.profile.totalXP = total;
+    }
+  }
+  if (updates.category && updates.category !== (shift.category || 'regulär')) {
+    const oldXP = Math.round(calculateShiftXP(shift.type) * (CATEGORY_XP_MODIFIER[shift.category || 'regulär'] ?? 1));
+    const newXP = Math.round(calculateShiftXP(shift.type) * (CATEGORY_XP_MODIFIER[updates.category] ?? 1));
+    const delta = newXP - oldXP;
+    updates.xpEarned = (shift.xpEarned || 0) + delta;
+    if (delta) {
+      const total = Math.max(0, (state.profile.totalXP ?? 0) + delta);
+      await db.profile.update(state.profile.id, { totalXP: total });
+      state.profile.totalXP = total;
+    }
+  }
+  if ('note' in updates) {
+    const hadNote = !!(shift.note && shift.note.trim().length > 0);
+    if (!hadNote && updates.note.trim().length > 0 && !shift.noteAddedAt) {
+      updates.noteAddedAt = new Date().toISOString();
+      const noteXP = calculateNoteXP(shift.date, updates.noteAddedAt);
+      updates.xpEarned = (shift.xpEarned || 0) + noteXP;
+      const total = (state.profile.totalXP ?? 0) + noteXP;
+      await db.profile.update(state.profile.id, { totalXP: total });
+      state.profile.totalXP = total;
+    }
+  }
+  updates.updatedAt = new Date().toISOString();
+  await db.shiftLogs.update(shift.id, updates);
+  state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+  Object.assign(shift, updates);
 }
 
 // ─── Game stats (rank card + streak + recent — now rendered in Stats tab) ─────
@@ -624,29 +659,63 @@ async function renderHomeTab() {
     state.plannerShiftId = shift.id;
     state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
 
-    const catMeta   = CATEGORY_META[shift.category || 'regulär'];
     const slotTotal = state.plannerSlots.reduce((s, sl) => s + (sl.xpEarned || 0), 0);
     const modifier  = CATEGORY_XP_MODIFIER[shift.category || 'regulär'];
     const base      = Math.round(calculateShiftXP(shift.type) * modifier);
     const xpLabel   = shift.baseXPAwarded
-      ? `Basis-XP ✓ · ${slotTotal} XP aus Einträgen`
-      : `+${base} XP · ${slotTotal} XP aus Einträgen`;
+      ? `✓ Basis-XP · +${slotTotal} XP Einträge`
+      : `+${base} Basis · +${slotTotal} XP Einträge`;
+
+    const typeButtons = ['früh','spät','samstag','full','schulung'].map(t =>
+      `<button class="home-type-btn${shift.type === t ? ' active' : ''}" data-type="${t}">${shiftIcon(t)} ${shiftLabel(t)}</button>`
+    ).join('');
+    const catButtons = ['training','regulär','senior'].map(c => {
+      const m = CATEGORY_META[c];
+      return `<button class="home-cat-btn${(shift.category||'regulär') === c ? ' active' : ''}" data-cat="${c}">${m.icon} ${m.label}</button>`;
+    }).join('');
 
     panel.innerHTML = `
-      <div class="home-shift-header">
-        <div class="home-shift-title-row">
-          <span class="home-shift-date-icon">${shiftIcon(shift.type)}</span>
-          <span class="home-shift-date">${fmtDateLong(shift.date)}</span>
-          <span class="cat-badge cat-badge-${shift.category || 'regulär'}">${catMeta.icon} ${catMeta.label}</span>
-          <button id="btn-edit-home-shift" class="btn-icon" title="Dienst bearbeiten">✎</button>
+      <div class="home-shift-inline-edit">
+        <div class="home-inline-row">
+          <input type="date" id="home-edit-date" class="home-date-input" value="${shift.date}">
+          <span class="home-inline-xp">${xpLabel}</span>
+          <button id="btn-delete-home-shift" class="btn-icon home-del-btn" title="Dienst löschen">🗑</button>
         </div>
-        <div class="home-shift-meta-row">
-          <span class="home-shift-type">${shiftLabel(shift.type)}</span>
-          <span class="home-shift-xp">${xpLabel}</span>
-        </div>
+        <div class="home-inline-type-row">${typeButtons}</div>
+        <div class="home-inline-cat-row">${catButtons}</div>
+        <textarea id="home-edit-note" class="home-note-area" rows="2"
+          placeholder="Dienst-Log / Notizen…">${shift.note || ''}</textarea>
       </div>`;
 
-    document.getElementById('btn-edit-home-shift').addEventListener('click', () => openEditShiftModal(shift.id));
+    // Auto-save on change
+    document.getElementById('home-edit-date').addEventListener('change', e =>
+      inlineSaveShift(shift, { date: e.target.value }));
+    panel.querySelectorAll('.home-type-btn').forEach(btn =>
+      btn.addEventListener('click', () => {
+        panel.querySelectorAll('.home-type-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        inlineSaveShift(shift, { type: btn.dataset.type });
+      }));
+    panel.querySelectorAll('.home-cat-btn').forEach(btn =>
+      btn.addEventListener('click', () => {
+        panel.querySelectorAll('.home-cat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        inlineSaveShift(shift, { category: btn.dataset.cat });
+      }));
+    document.getElementById('home-edit-note').addEventListener('blur', e =>
+      inlineSaveShift(shift, { note: e.target.value }));
+    document.getElementById('btn-delete-home-shift').addEventListener('click', async () => {
+      if (!confirm('Dienst löschen?')) return;
+      const xpBack = shift.xpEarned || 0;
+      await db.scheduleSlots.where('shiftId').equals(shift.id).delete();
+      await db.shiftLogs.delete(shift.id);
+      const newTotal = Math.max(0, (state.profile.totalXP ?? 0) - xpBack);
+      await db.profile.update(state.profile.id, { totalXP: newTotal });
+      state.profile.totalXP = newTotal;
+      state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+      state.homeSelectedShiftId = null;
+      renderHomeTab();
+    });
 
     // Notification banner (only for today's shift)
     const notifBanner = document.getElementById('notif-prompt-banner');
@@ -879,9 +948,38 @@ function renderTimeline(shift) {
     // slot
     const { slot } = row;
     const def = SLOT_TYPES[slot.type] || {};
+    const isExpanded = state.expandedSlotId === slot.id;
     const flags = slot.flags?.length ? slot.flags.map(f => `<span class="slot-flag">${f.toUpperCase()}</span>`).join('') : '';
     const commentHtml = slot.comment ? `<div class="tl-slot-comment">${slot.comment}</div>` : '';
-    return `<div class="tl-slot slot-${slot.type}" data-slot-id="${slot.id}">
+    const isPatient = !!def.patientContact;
+    const tips = SLOT_TIPS[slot.type] || {};
+    const hasTips = !!(tips.sections?.length || tips.tips?.length || tips.docHint);
+    let inlineDetail = '';
+    if (isExpanded) {
+      const slotCatches = state.catches.filter(c => c.slotId === slot.id)
+        .sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999));
+      const diagCards = isPatient ? slotCatches.map(c =>
+        `<div class="tl-diag-card" data-catch-id="${c.id}">
+          <img class="tl-diag-img" src="assets/images/diagnoses/${c.code}.png"
+               onerror="this.style.display='none'" alt="">
+          <div class="tl-diag-info">
+            <span class="tl-diag-code">${c.code}</span>
+            <span class="tl-diag-name">${c.name}</span>
+          </div>
+          <button class="tl-diag-del btn-icon" data-catch-id="${c.id}">🗑</button>
+        </div>`
+      ).join('') : '';
+      inlineDetail = `<div class="tl-slot-inline-detail">
+        ${isPatient ? `<div class="tl-inline-diag-list">${diagCards}</div>` : ''}
+        <div class="tl-inline-actions">
+          ${isPatient ? '<button class="tl-inline-btn tl-inline-add-diag">＋ Diagnose</button>' : ''}
+          ${hasTips ? '<button class="tl-inline-btn tl-inline-tips">☑️ Checkliste</button>' : ''}
+          <button class="tl-inline-btn tl-inline-edit">✏️ Bearbeiten</button>
+          <button class="tl-inline-btn tl-inline-del btn-danger-sm">🗑 Löschen</button>
+        </div>
+      </div>`;
+    }
+    return `<div class="tl-slot slot-${slot.type}${isExpanded ? ' tl-slot--expanded' : ''}" data-slot-id="${slot.id}">
       <div class="tl-slot-main">
         <span class="tl-drag-handle" data-drag title="Verschieben">⠿</span>
         <span class="tl-slot-icon">${def.icon}</span>
@@ -890,8 +988,10 @@ function renderTimeline(shift) {
           <div class="tl-slot-time">${padT(slot.startHour,slot.startMinute)}–${padT(slot.endHour,slot.endMinute)} · +${slot.xpEarned} XP</div>
           ${commentHtml}
         </div>
+        <span class="tl-slot-chevron">${isExpanded ? '▲' : '▼'}</span>
         <button class="tl-slot-delete btn-icon" data-slot-id="${slot.id}" title="Löschen">🗑</button>
       </div>
+      ${inlineDetail}
       ${breakStripHtml(row.breaks)}
     </div>`;
   }).join('');
@@ -904,12 +1004,41 @@ function renderTimeline(shift) {
     });
   });
 
-  // Wire slot clicks → tips/detail
+  // Wire slot clicks → inline expansion
   tl.querySelectorAll('.tl-slot').forEach(el => {
     el.addEventListener('click', e => {
-      if (e.target.closest('.tl-slot-delete') || e.target.closest('[data-drag]') || e.target.closest('.tl-break-badge')) return;
-      const slot = state.plannerSlots.find(s => s.id === parseInt(el.dataset.slotId));
-      if (slot) openSlotDetailModal(slot, 'planner');
+      if (e.target.closest('.tl-slot-delete') || e.target.closest('[data-drag]') ||
+          e.target.closest('.tl-break-badge') || e.target.closest('.tl-slot-inline-detail')) return;
+      const slotId = parseInt(el.dataset.slotId);
+      state.expandedSlotId = state.expandedSlotId === slotId ? null : slotId;
+      renderTimeline(shift);
+    });
+  });
+
+  // Wire inline detail actions
+  tl.querySelectorAll('.tl-slot--expanded').forEach(el => {
+    const slotId = parseInt(el.dataset.slotId);
+    const slot = state.plannerSlots.find(s => s.id === slotId);
+    if (!slot) return;
+    el.querySelector('.tl-inline-add-diag')?.addEventListener('click', e => {
+      e.stopPropagation(); openSlotDiagCatch(slot, 'planner');
+    });
+    el.querySelector('.tl-inline-tips')?.addEventListener('click', e => {
+      e.stopPropagation(); openSlotTipsModal(slot);
+    });
+    el.querySelector('.tl-inline-edit')?.addEventListener('click', e => {
+      e.stopPropagation(); openSlotEditForm(slot, 'planner');
+    });
+    el.querySelector('.tl-inline-del')?.addEventListener('click', async e => {
+      e.stopPropagation();
+      state.expandedSlotId = null;
+      await deleteSlot(slot.id, shift);
+    });
+    el.querySelectorAll('.tl-diag-del').forEach(btn => {
+      btn.addEventListener('click', async e => {
+        e.stopPropagation();
+        await deleteSlotCatch(parseInt(btn.dataset.catchId), slot, 'planner');
+      });
     });
   });
 
@@ -1551,8 +1680,13 @@ async function deleteSlotCatch(catchId, slot, source) {
   state.shifts  = await db.shiftLogs.orderBy('date').reverse().toArray();
   state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
   updateHeader();
-  const freshSlot = await db.scheduleSlots.get(slot.id);
-  if (freshSlot) openSlotDetailModal(freshSlot, source);
+  if (source === 'planner') {
+    const freshShift = state.shifts.find(s => s.id === slot.shiftId);
+    if (freshShift) renderTimeline(freshShift);
+  } else {
+    const freshSlot = await db.scheduleSlots.get(slot.id);
+    if (freshSlot) openSlotDetailModal(freshSlot, source);
+  }
 }
 
 function openSlotEditForm(slot, source) {
