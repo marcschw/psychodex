@@ -67,10 +67,10 @@ export const SHIFT_HOURS = {
 
 export const MEAL_HINTS = {
   früh:    [{ h:10, m:0,  icon:'🥤', label:'Proteinshake' }, { h:12, m:30, icon:'🍽️', label:'Mittagessen' }],
-  spät:    [{ h:16, m:0,  icon:'🥤', label:'Proteinshake' }, { h:17, m:0,  icon:'🍽️', label:'Abendessen'  }],
+  spät:    [{ h:16, m:0,  icon:'🥤', label:'Proteinshake' }, { h:17, m:30, icon:'🍽️', label:'Abendessen'  }],
   samstag: [{ h:12, m:30, icon:'🍽️', label:'Mittagessen' }],
   full:    [{ h:10, m:0,  icon:'🥤', label:'Proteinshake' }, { h:12, m:30, icon:'🍽️', label:'Mittagessen' },
-            { h:16, m:0,  icon:'🥤', label:'Proteinshake' }, { h:17, m:0,  icon:'🍽️', label:'Abendessen'  }],
+            { h:16, m:0,  icon:'🥤', label:'Proteinshake' }, { h:17, m:30, icon:'🍽️', label:'Abendessen'  }],
 };
 
 export const SLOT_TIPS = {
