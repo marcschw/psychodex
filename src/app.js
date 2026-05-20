@@ -300,8 +300,12 @@ async function loadFromDB() {
   state.profile = profiles[0];
   if (state.profile.targetHours == null) state.profile.targetHours = 480;
   if (state.profile.extraHours  == null) state.profile.extraHours  = 0;
-  state.shifts  = await db.shiftLogs.orderBy('date').reverse().toArray();
-  state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
+  try {
+    state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+  } catch { state.shifts = []; }
+  try {
+    state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
+  } catch { state.catches = []; }
   try {
     state.missions = await db.missions.toArray();
   } catch { state.missions = []; }
@@ -562,7 +566,8 @@ function calcStreak(shifts) {
     cursor.setDate(cursor.getDate() - 7);
   }
   let count = 0;
-  while (shiftWeeks.has(isoWeek(cursor))) {
+  let safety = 0;
+  while (shiftWeeks.has(isoWeek(cursor)) && safety++ < 500) {
     count++;
     cursor.setDate(cursor.getDate() - 7);
   }
