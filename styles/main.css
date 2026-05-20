@@ -2102,6 +2102,17 @@ img{max-width:100%;display:block}
 .slot-diag-row:last-of-type{border-bottom:none}
 .slot-diag-code{font-family:monospace;font-size:12px;font-weight:700;color:var(--accent-blue);flex-shrink:0}
 .slot-diag-name{flex:1;font-size:13px;color:var(--text)}
+.slot-diag-check{
+  flex-shrink:0;width:22px;height:22px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.2);background:none;
+  color:var(--accent);font-size:12px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:border-color .15s,background .15s;
+}
+.slot-diag-check-done{background:var(--accent);border-color:var(--accent);color:#fff}
+.slot-diag-check:active{opacity:.7}
+.slot-diag-done{color:var(--text-dim);text-decoration:line-through;text-decoration-color:rgba(255,255,255,.2)}
 .slot-diag-del{flex-shrink:0;opacity:.5;font-size:14px;padding:4px 6px}
 .slot-diag-del:active{opacity:1}
 .slot-diag-empty{font-size:13px;color:var(--text-dim);padding:6px 0}
@@ -2120,7 +2131,7 @@ img{max-width:100%;display:block}
 }
 .slot-detail-actions .btn-primary{flex:1}
 .slot-detail-actions .btn-secondary{flex:1}
-.slot-detail-actions .btn-danger{flex-shrink:0;padding:12px 14px}
+.slot-detail-actions .btn-danger{flex-shrink:0;width:44px;padding:12px 0}
 .btn-danger{
   padding:12px;border-radius:var(--r);font-size:14px;font-weight:600;cursor:pointer;
   background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);
