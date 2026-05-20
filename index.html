@@ -69,14 +69,7 @@
         </div>
 
         <!-- Hours Progress -->
-        <div class="hours-progress-card">
-          <div class="hp-top">
-            <span class="hp-title">Stunden-Fortschritt</span>
-            <span class="hp-pct-text" id="hp-pct">0%</span>
-          </div>
-          <div class="hp-bar-wrap"><div class="hp-bar-fill" id="hp-fill" style="width:0%"></div></div>
-          <div class="hp-abs" id="hp-abs">0 / 480h</div>
-        </div>
+        <div id="hours-counters"></div>
 
         <!-- Stats Row -->
         <div class="stats-row">
@@ -251,9 +244,9 @@
 
         <div class="section-header">Einstellungen</div>
         <div class="settings-grid">
-          <div class="setting-item">
-            <label class="setting-label">Ziel-Stunden</label>
-            <input type="number" id="target-hours-input" class="setting-input" min="1" max="2000" value="480">
+          <div class="setting-item setting-wide">
+            <label class="setting-label">Stunden-Zähler</label>
+            <div id="hour-counters-settings"></div>
           </div>
           <div class="setting-item setting-wide">
             <label class="setting-label">Extra-Stunden</label>

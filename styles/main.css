@@ -980,16 +980,43 @@ img{max-width:100%;display:block}
 .streak-shift-pill:hover{border-color:rgba(124,58,237,.45);color:var(--accent)}
 
 /* ── Hours Progress Card ───────────────────────────────────────────────────── */
-.hours-progress-card{
+/* ── Named hour counters ──────────────────────────────────────────────────── */
+#hours-counters{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.hours-counter-card{
   background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--r);padding:13px 16px;margin-bottom:12px;
+  border-radius:var(--r);padding:13px 16px;cursor:pointer;
+  transition:border-color .15s;
 }
-.hp-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.hp-title{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-dim)}
-.hp-pct-text{font-size:12px;font-weight:700;color:var(--accent-cyan)}
+.hours-counter-card:hover{border-color:var(--accent)}
+.hc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.hc-name{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-dim)}
+.hc-pct{font-size:12px;font-weight:700;color:var(--accent-cyan)}
+.hc-bar-wrap{height:7px;background:var(--bg-raised);border-radius:4px;overflow:hidden;margin-bottom:6px}
+.hc-bar-fill{height:100%;background:linear-gradient(90deg,#06b6d4,#10b981);border-radius:4px;transition:width .4s ease}
+.hc-abs{font-size:12px;color:var(--text-muted)}
+
+/* kept for possible legacy refs */
 .hp-bar-wrap{height:7px;background:var(--bg-raised);border-radius:4px;overflow:hidden;margin-bottom:6px}
 .hp-bar-fill{height:100%;background:linear-gradient(90deg,#06b6d4,#10b981);border-radius:4px;transition:width .4s ease}
-.hp-abs{font-size:12px;color:var(--text-muted)}
+
+/* ── Hours modal donut + summary ─────────────────────────────────────────── */
+.hours-summary{display:flex;align-items:center;gap:16px;padding:16px 0 8px}
+.hours-donut{flex-shrink:0}
+.hours-donut svg{display:block}
+.donut-empty{width:100px;height:100px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:24px}
+.hours-summary-info{flex:1;min-width:0}
+.hours-range{font-size:11px;color:var(--text-dim);margin-top:2px}
+.hours-type-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;font-size:12px}
+.hours-counter-tabs{display:flex;gap:6px;margin-bottom:8px}
+.hct-btn{background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;color:var(--text-muted);padding:6px 12px;font-size:12px;cursor:pointer}
+.hct-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(124,58,237,.1)}
+
+/* ── Counter settings ────────────────────────────────────────────────────── */
+.hcs-item{background:var(--bg-raised);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.hcs-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.hcs-row:last-child{margin-bottom:0}
+.hcs-name{flex:1;font-weight:600}
+.hcs-sub{font-size:11px;color:var(--text-dim);white-space:nowrap}
 
 /* ── Hours filter ──────────────────────────────────────────────────────────── */
 .hours-filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
@@ -1217,11 +1244,6 @@ img{max-width:100%;display:block}
 .symptom-diag-catch:hover{background:rgba(124,58,237,.3)}
 
 /* ── Hours Modal ───────────────────────────────────────────────────────────── */
-.hours-summary{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:14px;background:var(--bg-raised);border-radius:var(--r);
-  margin-bottom:16px;border:1px solid var(--border);
-}
 .hours-total{font-size:24px;font-weight:800;color:var(--accent)}
 .hours-label{font-size:11px;color:var(--text-dim);margin-top:2px;text-transform:uppercase;letter-spacing:.8px}
 .hours-list{display:flex;flex-direction:column;gap:6px}

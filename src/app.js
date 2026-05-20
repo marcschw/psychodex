@@ -169,6 +169,11 @@ function initSymptomCounters(container, interactive) {
 }
 
 // ─── Hours Helpers ────────────────────────────────────────────────────────────
+function calcCounterHours(counter) {
+  const from = counter.fromDate;
+  const shifts = from ? state.shifts.filter(s => s.date >= from) : state.shifts;
+  return shifts.reduce((s, sh) => s + calcShiftHours(sh), 0) + getExtraHoursTotal();
+}
 function calcShiftHours(shift) {
   const base = shift.type === 'full' ? 12 : shift.type === 'samstag' ? 7 : shift.type === 'schulung' ? 6 : 6.5;
   return base + (shift.extensionMinutes || 0) / 60;
@@ -310,6 +315,16 @@ async function loadFromDB() {
       : [];
     await db.profile.update(state.profile.id, { extraHourEntries: state.profile.extraHourEntries });
   }
+
+  // Migrate to named hourCounters
+  if (!Array.isArray(state.profile.hourCounters)) {
+    state.profile.hourCounters = [{
+      id: 1, name: 'Propädeutikum',
+      targetHours: state.profile.targetHours || 480,
+      fromDate: null
+    }];
+    await db.profile.update(state.profile.id, { hourCounters: state.profile.hourCounters });
+  }
 }
 
 // ─── Escape key closes any open modal ─────────────────────────────────────────
@@ -403,15 +418,11 @@ function renderDashboard() {
   document.getElementById('streak-icon').textContent  = streak.frozen ? '🧊' : '🔥';
   document.getElementById('streak-value').textContent = streak.count;
 
-  // Total hours + progress
+  // Named hours counters
+  renderHoursCounters();
+  // stat card still shows total
   const totalHoursNum = calcTotalHours();
-  const totalHours    = totalHoursNum.toFixed(1).replace(/\.0$/, '');
-  const targetH       = state.profile?.targetHours || 480;
-  const hPct          = Math.min(100, Math.max(0, (totalHoursNum / targetH) * 100));
-  document.getElementById('total-hours').textContent = `${totalHours}h`;
-  document.getElementById('hp-fill').style.width     = `${hPct}%`;
-  document.getElementById('hp-pct').textContent      = `${Math.round(hPct)}%`;
-  document.getElementById('hp-abs').textContent      = `${totalHours} / ${targetH}h`;
+  document.getElementById('total-hours').textContent = `${totalHoursNum.toFixed(1).replace(/\.0$/, '')}h`;
   document.getElementById('total-catches').textContent = state.catches.length;
 
   // Stat card clicks
@@ -492,6 +503,37 @@ function renderDashboard() {
       plannerBannerEl.innerHTML = '';
     }
   }
+}
+
+// ─── Hours Counters ───────────────────────────────────────────────────────────
+function renderHoursCounters() {
+  const el = document.getElementById('hours-counters');
+  if (!el) return;
+  const counters = state.profile?.hourCounters || [];
+  el.innerHTML = counters.map(c => {
+    const h = calcCounterHours(c);
+    const t = c.targetHours || 480;
+    const pct = Math.min(100, Math.round((h / t) * 100));
+    const fromTxt = c.fromDate
+      ? `ab ${new Date(c.fromDate + 'T12:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })}`
+      : '';
+    return `
+      <div class="hours-counter-card" data-counter-id="${c.id}">
+        <div class="hc-top">
+          <span class="hc-name">${c.name}</span>
+          <span class="hc-pct">${pct}%</span>
+        </div>
+        <div class="hc-bar-wrap"><div class="hc-bar-fill" style="width:${pct}%"></div></div>
+        <div class="hc-abs">${h.toFixed(1).replace('.0','')}h / ${t}h${fromTxt ? ` · ${fromTxt}` : ''}</div>
+      </div>`;
+  }).join('');
+  el.querySelectorAll('.hours-counter-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const cid = parseInt(card.dataset.counterId);
+      state.hoursModalCounter = cid;
+      openHoursModal();
+    });
+  });
 }
 
 // ─── Streak ───────────────────────────────────────────────────────────────────
@@ -2232,8 +2274,7 @@ function renderStats() {
   document.getElementById('stat-total-shifts').textContent  = shifts;
   document.getElementById('stat-avg-xp').textContent        = avgXP;
   document.getElementById('stat-hours').textContent         = `${hours.toFixed(1).replace('.0','')}h`;
-  const ti = document.getElementById('target-hours-input');
-  if (ti) ti.value = state.profile?.targetHours ?? 480;
+  renderHourCountersSettings();
   renderExtraHoursSettings();
   renderHeatmap();
   renderCategoryChart();
@@ -2934,37 +2975,92 @@ function setupHoursModalListeners() {
 
 function openHoursModal() {
   state.hoursFilter = 'all';
+  if (state.hoursModalCounter == null) {
+    const counters = state.profile?.hourCounters || [];
+    state.hoursModalCounter = counters[0]?.id ?? null;
+  }
   renderHoursModalBody();
   document.getElementById('hours-modal').classList.remove('hidden');
 }
 
+function buildDonut(segments) {
+  // segments: [{ pct, color }]
+  const r = 40, cx = 50, cy = 50, stroke = 14;
+  const circ = 2 * Math.PI * r;
+  let offset = 0;
+  const paths = segments.map(({ pct, color }) => {
+    const len = (pct / 100) * circ;
+    const el = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}"
+      stroke-width="${stroke}" stroke-dasharray="${len} ${circ - len}"
+      stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
+    offset += len;
+    return el;
+  });
+  return `<svg width="100" height="100" viewBox="0 0 100 100">${paths.join('')}</svg>`;
+}
+
 function renderHoursModalBody() {
   const body     = document.getElementById('hours-modal-body');
-  const all      = state.shifts;
+  const counters = state.profile?.hourCounters || [];
+  const counter  = counters.find(c => c.id === state.hoursModalCounter) || counters[0];
+  const baseShifts = counter?.fromDate
+    ? state.shifts.filter(s => s.date >= counter.fromDate)
+    : state.shifts;
+  const all      = baseShifts;
   const filtered = state.hoursFilter === 'all' ? all : all.filter(s => s.type === state.hoursFilter);
-  const totalH   = calcTotalHours();
-  const nFr = all.filter(s => s.type === 'früh').length;
-  const nSp = all.filter(s => s.type === 'spät').length;
-  const nFu = all.filter(s => s.type === 'full').length;
-  const extra = getExtraHoursTotal();
+  const totalH   = counter ? calcCounterHours(counter) : calcTotalHours();
+  const targetH  = counter?.targetHours || 480;
+  const extra    = getExtraHoursTotal();
+
+  const types = ['früh','spät','full','samstag','schulung'];
+  const typeCounts = Object.fromEntries(types.map(t => [t, all.filter(s=>s.type===t)]));
+  const typeHours  = Object.fromEntries(types.map(t => [t, typeCounts[t].reduce((s,sh)=>s+calcShiftHours(sh),0)]));
+  const nFr = typeCounts['früh'].length, nSp = typeCounts['spät'].length,
+        nFu = typeCounts['full'].length, nSa = typeCounts['samstag'].length,
+        nSc = typeCounts['schulung'].length;
+
+  const shiftH = Object.values(typeHours).reduce((a,b)=>a+b, 0);
+  const donutSegments = shiftH > 0 ? [
+    { pct: (typeHours['früh']    / shiftH) * 100, color: '#3b82f6' },
+    { pct: (typeHours['spät']    / shiftH) * 100, color: '#8b5cf6' },
+    { pct: (typeHours['full']    / shiftH) * 100, color: '#f59e0b' },
+    { pct: (typeHours['samstag'] / shiftH) * 100, color: '#10b981' },
+    { pct: (typeHours['schulung']/ shiftH) * 100, color: '#6366f1' },
+  ].filter(s => s.pct > 0) : [];
+
+  const fromDate = counter?.fromDate ? all.reduce((min,s) => s.date < min ? s.date : min, counter.fromDate) : (all.length ? [...all].sort((a,b)=>a.date.localeCompare(b.date))[0]?.date : null);
+  const toDate   = all.length ? [...all].sort((a,b)=>b.date.localeCompare(a.date))[0]?.date : null;
+  const fmtD = d => d ? new Date(d+'T12:00:00').toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric'}) : '–';
+
+  const counterTabs = counters.length > 1 ? `
+    <div class="hours-counter-tabs">
+      ${counters.map(c=>`<button class="hct-btn${c.id===counter?.id?' active':''}" data-cid="${c.id}">${c.name}</button>`).join('')}
+    </div>` : '';
 
   body.innerHTML = `
+    ${counterTabs}
     <div class="hours-summary">
-      <div>
-        <div class="hours-total">${totalH.toFixed(1).replace('.0','')}h</div>
-        <div class="hours-label">Gesamt${extra > 0 ? ` (+${extra.toFixed(1).replace('.0','')}h Extra)` : ''}</div>
-      </div>
-      <div style="text-align:right;font-size:12px;color:var(--text-dim);line-height:1.9">
-        <div>🌅 Früh: ${nFr}×</div>
-        <div>🌇 Spät: ${nSp}×</div>
-        <div>☀️ Ganztags: ${nFu}×</div>
+      <div class="hours-donut">${donutSegments.length ? buildDonut(donutSegments) : '<div class="donut-empty">–</div>'}</div>
+      <div class="hours-summary-info">
+        <div class="hours-total">${totalH.toFixed(1).replace('.0','')}h <span style="font-size:14px;color:var(--text-dim)">/ ${targetH}h</span></div>
+        <div class="hours-label">${counter?.name || 'Gesamt'}</div>
+        <div class="hours-range">${fmtD(fromDate)} – ${fmtD(toDate)}</div>
+        <div class="hours-type-legend">
+          ${nFr ? `<span style="color:#3b82f6">🌅 ${nFr}×</span>` : ''}
+          ${nSp ? `<span style="color:#8b5cf6">🌇 ${nSp}×</span>` : ''}
+          ${nFu ? `<span style="color:#f59e0b">☀️ ${nFu}×</span>` : ''}
+          ${nSa ? `<span style="color:#10b981">🗓️ ${nSa}×</span>` : ''}
+          ${nSc ? `<span style="color:#6366f1">📚 ${nSc}×</span>` : ''}
+          ${extra > 0 ? `<span style="color:var(--text-dim)">+${extra.toFixed(1).replace('.0','')}h Extra</span>` : ''}
+        </div>
       </div>
     </div>
     <div class="hours-filter-row">
       <button class="hours-filter-btn${state.hoursFilter==='all'?' active':''}" data-filter="all">Alle (${all.length})</button>
-      <button class="hours-filter-btn${state.hoursFilter==='früh'?' active':''}" data-filter="früh">🌅 Früh (${nFr})</button>
-      <button class="hours-filter-btn${state.hoursFilter==='spät'?' active':''}" data-filter="spät">🌇 Spät (${nSp})</button>
-      <button class="hours-filter-btn${state.hoursFilter==='full'?' active':''}" data-filter="full">☀️ Ganztags (${nFu})</button>
+      ${nFr ? `<button class="hours-filter-btn${state.hoursFilter==='früh'?' active':''}" data-filter="früh">🌅 Früh</button>` : ''}
+      ${nSp ? `<button class="hours-filter-btn${state.hoursFilter==='spät'?' active':''}" data-filter="spät">🌇 Spät</button>` : ''}
+      ${nFu ? `<button class="hours-filter-btn${state.hoursFilter==='full'?' active':''}" data-filter="full">☀️ Ganztags</button>` : ''}
+      ${nSa ? `<button class="hours-filter-btn${state.hoursFilter==='samstag'?' active':''}" data-filter="samstag">🗓️ Samstag</button>` : ''}
     </div>
     <div class="hours-list">
       ${filtered.length ? filtered.map(s => `
@@ -2976,9 +3072,11 @@ function renderHoursModalBody() {
           </div>
           <div class="hours-row-val">${calcShiftHours(s).toFixed(1).replace('.0','')}h</div>
         </div>`).join('')
-      : '<div class="empty-state">Keine Dienste in dieser Kategorie.</div>'}
+      : '<div class="empty-state">Keine Dienste in diesem Zeitraum.</div>'}
     </div>`;
 
+  body.querySelectorAll('.hct-btn').forEach(btn =>
+    btn.addEventListener('click', () => { state.hoursModalCounter = parseInt(btn.dataset.cid); state.hoursFilter = 'all'; renderHoursModalBody(); }));
   body.querySelectorAll('.hours-filter-btn').forEach(btn =>
     btn.addEventListener('click', () => { state.hoursFilter = btn.dataset.filter; renderHoursModalBody(); }));
   body.querySelectorAll('.hours-row').forEach(row =>
@@ -3660,6 +3758,66 @@ function setupDashboardCardListeners() {
   });
 }
 
+// ─── Hour Counters Settings ───────────────────────────────────────────────────
+function renderHourCountersSettings() {
+  const el = document.getElementById('hour-counters-settings');
+  if (!el) return;
+  const counters = state.profile?.hourCounters || [];
+  el.innerHTML = counters.map((c, i) => `
+    <div class="hcs-item" data-id="${c.id}">
+      <div class="hcs-row">
+        <input class="setting-input hcs-name" type="text" value="${c.name}" placeholder="Name" data-id="${c.id}">
+        ${counters.length > 1 ? `<button class="btn-icon hcs-del" data-id="${c.id}" title="Löschen">🗑</button>` : ''}
+      </div>
+      <div class="hcs-row">
+        <label class="hcs-sub">Ziel</label>
+        <input class="setting-input hcs-target" type="number" value="${c.targetHours}" min="1" max="5000" style="width:80px" data-id="${c.id}">
+        <span class="hcs-sub">h</span>
+        <label class="hcs-sub" style="margin-left:8px">Ab</label>
+        <input class="setting-input hcs-from" type="date" value="${c.fromDate || ''}" data-id="${c.id}" style="flex:1;min-width:0">
+      </div>
+    </div>`).join('') +
+    (counters.length < 2 ? `<button id="btn-add-counter" class="btn-secondary" style="width:100%;margin-top:8px;padding:8px;font-size:12px">+ Zweiten Zähler hinzufügen</button>` : '');
+
+  el.querySelectorAll('.hcs-name').forEach(inp => inp.addEventListener('change', async e => {
+    await updateCounter(parseInt(e.target.dataset.id), { name: e.target.value.trim() || 'Zähler' });
+  }));
+  el.querySelectorAll('.hcs-target').forEach(inp => inp.addEventListener('change', async e => {
+    const val = parseInt(e.target.value);
+    if (val > 0) await updateCounter(parseInt(e.target.dataset.id), { targetHours: val });
+  }));
+  el.querySelectorAll('.hcs-from').forEach(inp => inp.addEventListener('change', async e => {
+    await updateCounter(parseInt(e.target.dataset.id), { fromDate: e.target.value || null });
+  }));
+  el.querySelectorAll('.hcs-del').forEach(btn => btn.addEventListener('click', async () => {
+    const id = parseInt(btn.dataset.id);
+    const updated = (state.profile.hourCounters || []).filter(c => c.id !== id);
+    await saveCounters(updated);
+    renderHourCountersSettings();
+    renderHoursCounters();
+  }));
+  const addBtn = el.querySelector('#btn-add-counter');
+  if (addBtn) addBtn.addEventListener('click', async () => {
+    const newId = Date.now();
+    const updated = [...(state.profile.hourCounters || []),
+      { id: newId, name: 'Zähler 2', targetHours: 480, fromDate: null }];
+    await saveCounters(updated);
+    renderHourCountersSettings();
+    renderHoursCounters();
+  });
+}
+
+async function saveCounters(counters) {
+  await db.profile.update(state.profile.id, { hourCounters: counters });
+  state.profile.hourCounters = counters;
+}
+
+async function updateCounter(id, patch) {
+  const counters = (state.profile.hourCounters || []).map(c => c.id === id ? { ...c, ...patch } : c);
+  await saveCounters(counters);
+  renderHoursCounters();
+}
+
 // ─── Extra Hours ──────────────────────────────────────────────────────────────
 function renderExtraHoursSettings() {
   const el = document.getElementById('extra-hours-section');
@@ -3744,17 +3902,7 @@ async function deleteExtraHourEntry(entryId) {
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
 function setupSettingsInputs() {
-  const targetInput = document.getElementById('target-hours-input');
-  if (targetInput) {
-    targetInput.value = state.profile?.targetHours ?? 480;
-    targetInput.addEventListener('change', async () => {
-      const val = Math.max(1, Math.round(parseFloat(targetInput.value)) || 480);
-      targetInput.value = val;
-      await db.profile.update(state.profile.id, { targetHours: val });
-      state.profile.targetHours = val;
-      if (state.currentTab === 'dashboard') renderDashboard();
-    });
-  }
+  // counter settings are wired in renderHourCountersSettings
 }
 
 // ─── Shift Extension ──────────────────────────────────────────────────────────
