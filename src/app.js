@@ -170,8 +170,19 @@ function initSymptomCounters(container, interactive) {
 
 // ─── Hours Helpers ────────────────────────────────────────────────────────────
 function calcShiftHours(shift) {
-  const base = shift.type === 'full' ? 12 : shift.type === 'samstag' ? 7 : 6.5;
+  const base = shift.type === 'full' ? 12 : shift.type === 'samstag' ? 7 : shift.type === 'schulung' ? 6 : 6.5;
   return base + (shift.extensionMinutes || 0) / 60;
+}
+function fmtShiftDuration(shift) {
+  const h = calcShiftHours(shift);
+  const whole = Math.floor(h);
+  const mins  = Math.round((h - whole) * 60);
+  return mins ? `${whole}h ${mins}min` : `${whole}h`;
+}
+function shiftLabelFull(shift) {
+  const name = shift.type === 'full' ? 'Ganztags' : shift.type === 'spät' ? 'Spät'
+    : shift.type === 'samstag' ? 'Samstag' : shift.type === 'schulung' ? 'Schulung' : 'Früh';
+  return `${name} ${fmtShiftDuration(shift)}`;
 }
 function calcTotalHours() {
   const entries = state.profile?.extraHourEntries;
@@ -454,7 +465,7 @@ function renderDashboard() {
           <div class="shift-icon">${shiftIcon(s.type)}</div>
           <div class="recent-info">
             <div class="recent-name">${fmtDateShort(s.date)}</div>
-            <div class="recent-meta">${shiftLabel(s.type)} · +${s.xpEarned} XP · ${s.patientCount} Pat.</div>
+            <div class="recent-meta">${shiftLabelFull(s)} · +${s.xpEarned} XP · ${s.patientCount} Pat.</div>
           </div>
           ${!s.note ? '<span class="shift-no-log-badge" title="Kein Dienst-Log — Bonus-XP verfügbar!">📝</span>' : '<span style="font-size:12px;color:var(--text-dim)">›</span>'}
         </div>`).join('')
@@ -559,7 +570,29 @@ function updatePlannerXP(shift) {
     `${catBadge} · +${base + flame} XP bei Abschluss · ${slotTotal} XP Aktivitäten`;
 }
 
+function renderSchulungTimeline(shift) {
+  const tl = document.getElementById('planner-timeline');
+  tl.innerHTML = `
+    <div class="schulung-note-wrapper">
+      <div class="schulung-hint">📚 Schulungsdienst · Keine Einträge möglich</div>
+      <textarea class="schulung-note-area" id="schulung-note-area" rows="6"
+        placeholder="Notizen zur Schulung…">${shift.note || ''}</textarea>
+      <div class="schulung-note-hint">Wird automatisch gespeichert</div>
+    </div>`;
+  let saveTimer;
+  tl.querySelector('#schulung-note-area').addEventListener('input', e => {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      db.shiftLogs.update(shift.id, { note: e.target.value });
+      const s = state.shifts.find(x => x.id === shift.id);
+      if (s) s.note = e.target.value;
+    }, 800);
+  });
+}
+
 function renderTimeline(shift) {
+  if (shift.type === 'schulung') { renderSchulungTimeline(shift); return; }
+
   const { start, end } = shiftHours(shift.type);
   const startM = toMins(...start);
   const endM   = toMins(...end);
@@ -719,7 +752,7 @@ function renderPlannerPastShifts() {
         <div class="shift-icon">${shiftIcon(s.type)}</div>
         <div class="recent-info">
           <div class="recent-name">${fmtDateShort(s.date)}</div>
-          <div class="recent-meta">${shiftLabel(s.type)} · <span class="cat-badge cat-badge-${s.category || 'regulär'}">${meta.icon} ${meta.label}</span></div>
+          <div class="recent-meta">${shiftLabelFull(s)} · <span class="cat-badge cat-badge-${s.category || 'regulär'}">${meta.icon} ${meta.label}</span></div>
         </div>
         <button class="btn-open-imported" data-id="${s.id}">Öffnen</button>
       </div>`;
@@ -735,7 +768,7 @@ function renderPlannerPastShifts() {
         <div class="shift-icon">${shiftIcon(s.type)}</div>
         <div class="recent-info">
           <div class="recent-name">${fmtDateShort(s.date)} ${catBadge}</div>
-          <div class="recent-meta">${shiftLabel(s.type)} · +${s.xpEarned} XP</div>
+          <div class="recent-meta">${shiftLabelFull(s)} · +${s.xpEarned} XP</div>
         </div>
         <span style="font-size:12px;color:var(--text-dim)">›</span>
       </div>`;
@@ -901,7 +934,7 @@ async function closePlannerShift() {
   stopAlarmScheduler();
 
   updateHeader();
-  const bonuses = [{ label: `${shiftLabel(shift.type)} abgeschlossen`, xp: xpBase }];
+  const bonuses = [{ label: `${shiftLabelFull(shift)} abgeschlossen`, xp: xpBase }];
   if (flame > 0) bonuses.push({ label: '⚡ Flame Bonus', xp: flame });
   showXPPopup(totalBase, bonuses);
   checkLevelUp(newXP, oldXP);
@@ -2240,7 +2273,7 @@ function showHeatmapDetail(dateStr) {
   const catches = state.catches.filter(c => c.shiftId === shift.id);
   detail.innerHTML = `
     <span>${shiftIcon(shift.type)}</span>
-    <span><strong>${fmtDateShort(shift.date)}</strong> · ${shiftLabel(shift.type)} · +${shift.xpEarned} XP · ${shift.patientCount} Pat.</span>
+    <span><strong>${fmtDateShort(shift.date)}</strong> · ${shiftLabelFull(shift)} · +${shift.xpEarned} XP · ${shift.patientCount} Pat.</span>
     ${catches.length ? `<span style="color:var(--success)">${catches.length} Diagnosen: ${catches.map(c=>c.code).join(', ')}</span>` : ''}
     <span class="heatmap-detail-close" id="hd-close">✕</span>`;
   detail.classList.remove('hidden');
@@ -2385,7 +2418,7 @@ function renderShiftDetailBody(shift) {
   let html = `
     <div class="shift-detail-header">
       <div class="shift-detail-info">
-        <div class="shift-detail-date">${shiftIcon(shift.type)} ${fmtDateShort(shift.date)} · ${shiftLabel(shift.type)}</div>
+        <div class="shift-detail-date">${shiftIcon(shift.type)} ${fmtDateShort(shift.date)} · ${shiftLabelFull(shift)}</div>
         <div class="shift-detail-meta">+${shift.xpEarned} XP · ${actualPatientCount} Patient(en)</div>
         <div class="shift-timestamps">
           <span>📅 ${fmtDateTime(shift.createdAt)}</span>
@@ -2939,7 +2972,7 @@ function renderHoursModalBody() {
           <div class="hours-row-icon">${shiftIcon(s.type)}</div>
           <div class="hours-row-info">
             <div class="hours-row-date">${fmtDateShort(s.date)}</div>
-            <div class="hours-row-meta">${shiftLabel(s.type)}${s.extensionMinutes ? ` +${s.extensionMinutes}min` : ''} · +${s.xpEarned} XP · ${s.patientCount} Pat.</div>
+            <div class="hours-row-meta">${shiftLabelFull(s)} · +${s.xpEarned} XP · ${s.patientCount} Pat.</div>
           </div>
           <div class="hours-row-val">${calcShiftHours(s).toFixed(1).replace('.0','')}h</div>
         </div>`).join('')
@@ -3054,8 +3087,8 @@ const fmtDateShort = ds =>
 const fmtDateLong = ds =>
   new Date(ds + 'T12:00:00').toLocaleDateString('de-AT', { weekday:'long', day:'numeric', month:'long' });
 
-const shiftIcon  = t => t === 'full' ? '☀️' : t === 'spät' ? '🌇' : t === 'samstag' ? '🗓️' : '🌅';
-const shiftLabel = t => t === 'full' ? 'Ganztags 12h' : t === 'spät' ? 'Spät 6,5h' : t === 'samstag' ? 'Samstag 7h' : 'Früh 6,5h';
+const shiftIcon  = t => t === 'full' ? '☀️' : t === 'spät' ? '🌇' : t === 'samstag' ? '🗓️' : t === 'schulung' ? '📚' : '🌅';
+const shiftLabel = t => t === 'full' ? 'Ganztags 12h' : t === 'spät' ? 'Spät 6,5h' : t === 'samstag' ? 'Samstag 7h' : t === 'schulung' ? 'Schulung 6h' : 'Früh 6,5h';
 
 // ─── Diagnosis Info Modal ─────────────────────────────────────────────────────
 function setupDiagInfoModal() {
