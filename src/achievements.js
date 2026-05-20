@@ -295,7 +295,7 @@ export const SECRET_ACHIEVEMENTS = [
     icon: '🏚️',
     xp: 300,
     _check: state => ({
-      triggered: state.shifts.some(s => (s.patientCount || 0) === 0),
+      triggered: state.shifts.some(s => s.type !== 'schulung' && (s.patientCount || 0) === 0),
     }),
   },
   {
