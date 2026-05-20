@@ -361,6 +361,18 @@ img{max-width:100%;display:block}
   color:var(--text-dim);
   transition:all .2s;
 }
+
+/* ── Drag-and-drop ─── */
+.drag-handle{
+  flex-shrink:0;color:rgba(255,255,255,.25);font-size:16px;
+  cursor:grab;padding:4px 6px 4px 2px;user-select:none;
+  -webkit-tap-highlight-color:transparent;touch-action:none;
+}
+.drag-handle:active{cursor:grabbing;color:var(--accent)}
+.sort-placeholder{
+  background:rgba(124,58,237,.12);border:1px dashed rgba(124,58,237,.4);
+  border-radius:var(--r);margin:3px 0;
+}
 .btn-icon:hover{background:rgba(239,68,68,.1);color:var(--danger)}
 
 /* Patient Cards */

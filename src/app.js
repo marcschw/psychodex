@@ -574,6 +574,74 @@ function calcStreak(shifts) {
   return { count, frozen };
 }
 
+// ─── Drag-and-drop sort ───────────────────────────────────────────────────────
+function makeSortable(list, onSort) {
+  let item = null, ghost = null, placeholder = null, offsetY = 0;
+
+  function items() { return [...list.querySelectorAll('[data-sid]')]; }
+
+  function start(e) {
+    const handle = e.target.closest('[data-drag]');
+    if (!handle) return;
+    e.preventDefault();
+    item = handle.closest('[data-sid]');
+    if (!item) return;
+
+    const rect = item.getBoundingClientRect();
+    offsetY = (e.touches?.[0] || e).clientY - rect.top;
+
+    ghost = item.cloneNode(true);
+    ghost.style.cssText = `position:fixed;left:${rect.left}px;width:${rect.width}px;top:${rect.top}px;`
+      + `opacity:.85;pointer-events:none;z-index:9999;border-radius:10px;`
+      + `box-shadow:0 8px 24px rgba(0,0,0,.4);transition:none;`;
+    document.body.appendChild(ghost);
+
+    placeholder = document.createElement('div');
+    placeholder.className = 'sort-placeholder';
+    placeholder.style.height = rect.height + 'px';
+    item.replaceWith(placeholder);
+
+    document.addEventListener('touchmove', move, { passive: false });
+    document.addEventListener('mousemove', move);
+    document.addEventListener('touchend', end);
+    document.addEventListener('mouseup', end);
+  }
+
+  function move(e) {
+    if (!ghost) return;
+    e.preventDefault();
+    const y = (e.touches?.[0] || e).clientY;
+    ghost.style.top = (y - offsetY) + 'px';
+
+    let placed = false;
+    for (const el of items()) {
+      const r = el.getBoundingClientRect();
+      if (y < r.top + r.height / 2) {
+        list.insertBefore(placeholder, el);
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) list.appendChild(placeholder);
+  }
+
+  function end() {
+    if (!ghost) return;
+    ghost.remove();
+    placeholder.replaceWith(item);
+    item.style.transform = '';
+    ghost = null; placeholder = null; item = null;
+    onSort(items().map(el => parseInt(el.dataset.sid)));
+    document.removeEventListener('touchmove', move);
+    document.removeEventListener('mousemove', move);
+    document.removeEventListener('touchend', end);
+    document.removeEventListener('mouseup', end);
+  }
+
+  list.addEventListener('touchstart', start, { passive: false });
+  list.addEventListener('mousedown', start);
+}
+
 // ─── Planner ──────────────────────────────────────────────────────────────────
 const padT = (h, m) => `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
 const toMins = (h, m) => h * 60 + m;
@@ -1197,22 +1265,27 @@ function openSlotDetailModal(slot, source = 'planner') {
     ? `<div class="slot-demo-reminder">🎓 Studierende ${slot.startHour}:${String(slot.startMinute).padStart(2,'0')} − 15 min = <strong>${padT(slot.startHour - (slot.startMinute < 15 ? 1 : 0), (slot.startMinute - 15 + 60) % 60)}</strong> im EG abholen!</div>`
     : '';
 
-  const slotCatches = state.catches.filter(c => c.slotId === slot.id);
+  const slotCatches = state.catches
+    .filter(c => c.slotId === slot.id)
+    .sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999));
   const diagHtml = isPatient ? `
     <div class="slot-diag-section">
       <div class="slot-diag-header">
         Diagnosen
         <button class="slot-diag-add-inline" id="btn-slot-add-diag">＋</button>
       </div>
+      <div class="slot-diag-list">
       ${slotCatches.length
         ? slotCatches.map(c => `
-            <div class="slot-diag-row">
-              <button class="slot-diag-check ${c.documented ? 'slot-diag-check-done' : ''}" data-catch-id="${c.id}" title="Dokumentiert">${c.documented ? '✓' : ''}</button>
+            <div class="slot-diag-row" data-sid="${c.id}">
+              <span class="drag-handle" data-drag title="Verschieben">⠿</span>
+              <button class="slot-diag-check ${c.documented ? 'slot-diag-check-done' : ''}" data-catch-id="${c.id}">${c.documented ? '✓' : ''}</button>
               <span class="slot-diag-code">${c.code}</span>
               <span class="slot-diag-name ${c.documented ? 'slot-diag-done' : ''}">${c.name}</span>
               <button class="slot-diag-del btn-icon" data-catch-id="${c.id}" title="Entfernen">🗑</button>
             </div>`).join('')
         : '<div class="slot-diag-empty">Noch keine Diagnosen erfasst.</div>'}
+      </div>
     </div>` : '';
 
   document.getElementById('slot-detail-title').textContent = `${def.icon} ${def.label}`;
@@ -1246,6 +1319,18 @@ function openSlotDetailModal(slot, source = 'planner') {
     document.querySelectorAll('.slot-diag-del').forEach(btn =>
       btn.addEventListener('click', () =>
         deleteSlotCatch(parseInt(btn.dataset.catchId), slot, source)));
+
+    const diagList = document.querySelector('.slot-diag-list');
+    if (diagList && slotCatches.length > 1) {
+      makeSortable(diagList, async ids => {
+        for (let i = 0; i < ids.length; i++) {
+          await db.caughtDiagnoses.update(ids[i], { sortOrder: i });
+          const c = state.catches.find(x => x.id === ids[i]);
+          if (c) c.sortOrder = i;
+        }
+      });
+    }
+
     document.querySelectorAll('.slot-diag-check').forEach(btn => {
       btn.addEventListener('click', async () => {
         const catchId = parseInt(btn.dataset.catchId);
@@ -2942,17 +3027,22 @@ async function renderShiftDetailBody(shift) {
   </button>`;
 
   // Planner slots section — always show for any shift that has slots or plannerShift flag
-  const shiftSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
+  const shiftSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).toArray();
+  shiftSlots.sort((a, b) => {
+    if (a.sortOrder != null && b.sortOrder != null) return a.sortOrder - b.sortOrder;
+    return (a.startHour * 60 + (a.startMinute || 0)) - (b.startHour * 60 + (b.startMinute || 0));
+  });
   if (shiftSlots.length || shift.plannerShift) {
     html += `<div class="detail-slots-section">
       <div class="detail-slots-header">
         <span class="detail-slots-title">📋 Planer-Einträge</span>
         <button class="btn-secondary detail-add-slot-btn" id="btn-detail-add-slot">+ Eintrag</button>
       </div>
-      <div class="detail-slots-list">
+      <div class="detail-slots-list" id="detail-slots-sortable">
         ${shiftSlots.length ? shiftSlots.map(sl => {
           const def = SLOT_TYPES[sl.type] || {};
-          return `<div class="detail-slot-row" data-slot-id="${sl.id}">
+          return `<div class="detail-slot-row" data-slot-id="${sl.id}" data-sid="${sl.id}">
+            <span class="drag-handle" data-drag title="Verschieben">⠿</span>
             <span class="detail-slot-icon">${def.icon || '📌'}</span>
             <div class="detail-slot-info">
               <span class="detail-slot-label">${def.label || sl.type}</span>
@@ -3053,11 +3143,22 @@ async function renderShiftDetailBody(shift) {
   });
   body.querySelectorAll('.detail-slot-row').forEach(row => {
     row.addEventListener('click', async e => {
-      if (e.target.closest('.detail-slot-del')) return;
+      if (e.target.closest('.detail-slot-del') || e.target.closest('[data-drag]')) return;
       const slot = await db.scheduleSlots.get(parseInt(row.dataset.slotId));
       if (slot) openSlotDetailModal(slot, 'detail');
     });
   });
+
+  const slotsList = body.querySelector('#detail-slots-sortable');
+  if (slotsList && shiftSlots.length > 1) {
+    makeSortable(slotsList, async ids => {
+      for (let i = 0; i < ids.length; i++) {
+        await db.scheduleSlots.update(ids[i], { sortOrder: i });
+        const s = state.plannerSlots.find(x => x.id === ids[i]);
+        if (s) s.sortOrder = i;
+      }
+    });
+  }
 }
 
 async function saveShiftNote(shift, noteText) {
