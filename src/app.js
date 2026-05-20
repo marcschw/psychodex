@@ -821,67 +821,60 @@ function renderTimeline(shift) {
   const endM   = toMins(...end);
   const meals  = getMealHints(shift).map(h => ({ ...h, mins: toMins(h.h, h.m) }));
 
-  // Build a sorted list of slot time ranges
   const slots = [...state.plannerSlots].sort((a, b) => toMins(a.startHour, a.startMinute) - toMins(b.startHour, b.startMinute));
 
-  // Build rows: gap → slot → gap → meal hints in gaps → ...
+  // Breaks are overlaid on the row they fall within – not standalone rows
+  const breaksIn = (from, to) => meals.filter(m => m.mins >= from && m.mins < to);
+
   const rows = [];
   let cursor = startM;
 
   const pushHourTicks = (from, to) => {
     if (from >= to) return;
     let c = from;
-    // If gap starts at :30, push one button from :30 to next full hour first
     if (c % 60 !== 0) {
       const nextHour = Math.ceil(c / 60) * 60;
-      rows.push({ kind: 'gap', from: c, to: Math.min(nextHour, to) });
+      const e2 = Math.min(nextHour, to);
+      rows.push({ kind: 'gap', from: c, to: e2, breaks: breaksIn(c, e2) });
       c = nextHour;
     }
-    // One button per full hour
     while (c < to) {
-      rows.push({ kind: 'gap', from: c, to: Math.min(c + 60, to) });
+      const e2 = Math.min(c + 60, to);
+      rows.push({ kind: 'gap', from: c, to: e2, breaks: breaksIn(c, e2) });
       c += 60;
     }
-  };
-
-  const pushGaps = (from, to) => {
-    // Insert meal hints within the gap
-    const inRange = meals.filter(m => m.mins >= from && m.mins < to);
-    inRange.sort((a, b) => a.mins - b.mins);
-    let c = from;
-    for (const m of inRange) {
-      if (c < m.mins) pushHourTicks(c, m.mins);
-      rows.push({ kind:'meal', ...m });
-      c = m.mins;
-    }
-    if (c < to) pushHourTicks(c, to);
   };
 
   for (const slot of slots) {
     const slotStart = toMins(slot.startHour, slot.startMinute);
     const slotEnd   = toMins(slot.endHour, slot.endMinute);
-    if (cursor < slotStart) pushGaps(cursor, slotStart);
-    rows.push({ kind:'slot', slot });
+    if (cursor < slotStart) pushHourTicks(cursor, slotStart);
+    rows.push({ kind: 'slot', slot, breaks: breaksIn(slotStart, slotEnd) });
     cursor = slotEnd;
   }
-  if (cursor < endM) pushGaps(cursor, endM);
+  if (cursor < endM) pushHourTicks(cursor, endM);
+
+  const breakStripHtml = (rowBreaks) => rowBreaks.length
+    ? `<div class="tl-break-strip">${rowBreaks.map(m =>
+        `<span class="tl-break-badge" data-meal-id="${m.id}">
+          <span>${m.icon}</span>
+          <span class="tl-break-badge-time">${padT(m.h, m.m)}</span>
+          <span class="tl-break-badge-label">${m.label}</span>
+          <button class="tl-meal-del" data-meal-id="${m.id}" title="Löschen">🗑</button>
+        </span>`).join('')}</div>`
+    : '';
 
   const tl = document.getElementById('home-timeline');
   tl.innerHTML = rows.map(row => {
-    if (row.kind === 'meal') {
-      return `<div class="tl-meal" data-meal-id="${row.id}">
-        <span class="tl-meal-time">${padT(row.h, row.m)}</span>
-        <span class="tl-meal-icon">${row.icon}</span>
-        <span class="tl-meal-label">${row.label}</span>
-        <button class="tl-meal-del" data-meal-id="${row.id}" title="Löschen">🗑</button>
-      </div>`;
-    }
     if (row.kind === 'gap') {
       const label = padT(Math.floor(row.from/60), row.from%60);
-      return `<button class="tl-gap" data-startm="${row.from}" data-endm="${row.to}">
-        <span class="tl-gap-time">${label}</span>
-        <span class="tl-gap-add">＋ Eintrag</span>
-      </button>`;
+      return `<div class="tl-gap-wrap">
+        <button class="tl-gap" data-startm="${row.from}" data-endm="${row.to}">
+          <span class="tl-gap-time">${label}</span>
+          <span class="tl-gap-add">＋ Eintrag</span>
+        </button>
+        ${breakStripHtml(row.breaks)}
+      </div>`;
     }
     // slot
     const { slot } = row;
@@ -890,6 +883,7 @@ function renderTimeline(shift) {
     const commentHtml = slot.comment ? `<div class="tl-slot-comment">${slot.comment}</div>` : '';
     return `<div class="tl-slot slot-${slot.type}" data-slot-id="${slot.id}">
       <div class="tl-slot-main">
+        <span class="tl-drag-handle" data-drag title="Verschieben">⠿</span>
         <span class="tl-slot-icon">${def.icon}</span>
         <div class="tl-slot-info">
           <div class="tl-slot-label">${def.label} ${flags}</div>
@@ -898,6 +892,7 @@ function renderTimeline(shift) {
         </div>
         <button class="tl-slot-delete btn-icon" data-slot-id="${slot.id}" title="Löschen">🗑</button>
       </div>
+      ${breakStripHtml(row.breaks)}
     </div>`;
   }).join('');
 
@@ -912,7 +907,7 @@ function renderTimeline(shift) {
   // Wire slot clicks → tips/detail
   tl.querySelectorAll('.tl-slot').forEach(el => {
     el.addEventListener('click', e => {
-      if (e.target.closest('.tl-slot-delete')) return;
+      if (e.target.closest('.tl-slot-delete') || e.target.closest('[data-drag]') || e.target.closest('.tl-break-badge')) return;
       const slot = state.plannerSlots.find(s => s.id === parseInt(el.dataset.slotId));
       if (slot) openSlotDetailModal(slot, 'planner');
     });
@@ -926,17 +921,18 @@ function renderTimeline(shift) {
     });
   });
 
-  // Wire meal hint edit / delete
-  // Tap row → edit; tap delete button → delete
-  tl.querySelectorAll('.tl-meal').forEach(row => {
-    row.addEventListener('click', e => {
+  // Wire break badge tap → edit
+  tl.querySelectorAll('.tl-break-badge').forEach(badge => {
+    badge.addEventListener('click', e => {
       if (e.target.closest('.tl-meal-del')) return;
-      const id = parseInt(row.dataset.mealId);
+      e.stopPropagation();
+      const id = parseInt(badge.dataset.mealId);
       const hint = getMealHints(shift).find(h => h.id === id);
       openMealModal(shift, hint);
     });
   });
 
+  // Wire break delete buttons
   tl.querySelectorAll('.tl-meal-del').forEach(btn => {
     btn.addEventListener('click', async e => {
       e.stopPropagation();
@@ -946,6 +942,69 @@ function renderTimeline(shift) {
       state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
       renderTimeline({ ...shift, mealHints: updated });
     });
+  });
+
+  setupTimelineDrag(tl, shift);
+}
+
+function setupTimelineDrag(tl, shift) {
+  let dragSlotId = null, dragEl = null;
+
+  function onMove(e) {
+    e.preventDefault();
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const gap = el?.closest('.tl-gap');
+    tl.querySelectorAll('.tl-gap').forEach(g => g.classList.remove('tl-gap--drag-over'));
+    if (gap) gap.classList.add('tl-gap--drag-over');
+  }
+
+  async function onUp(e) {
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    document.removeEventListener('pointercancel', onCancel);
+    if (dragEl) dragEl.classList.remove('tl-dragging');
+    tl.querySelectorAll('.tl-gap').forEach(g => g.classList.remove('tl-gap--drag-over'));
+
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const gap = el?.closest('.tl-gap');
+    if (gap && dragSlotId) {
+      const newStartM = parseInt(gap.dataset.startm);
+      const slot = state.plannerSlots.find(s => s.id === dragSlotId);
+      if (slot) {
+        const durationM = toMins(slot.endHour, slot.endMinute) - toMins(slot.startHour, slot.startMinute);
+        const newEndM = newStartM + durationM;
+        await db.scheduleSlots.update(dragSlotId, {
+          startHour: Math.floor(newStartM / 60), startMinute: newStartM % 60,
+          endHour:   Math.floor(newEndM / 60),   endMinute:   newEndM % 60,
+        });
+        state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
+        renderTimeline(shift);
+      }
+    }
+    dragSlotId = null; dragEl = null;
+  }
+
+  function onCancel() {
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    document.removeEventListener('pointercancel', onCancel);
+    tl.querySelectorAll('.tl-gap').forEach(g => g.classList.remove('tl-gap--drag-over'));
+    if (dragEl) dragEl.classList.remove('tl-dragging');
+    dragSlotId = null; dragEl = null;
+  }
+
+  tl.addEventListener('pointerdown', e => {
+    const handle = e.target.closest('[data-drag]');
+    if (!handle) return;
+    const slotEl = handle.closest('[data-slot-id]');
+    if (!slotEl) return;
+    e.preventDefault();
+    dragSlotId = parseInt(slotEl.dataset.slotId);
+    dragEl = slotEl;
+    dragEl.classList.add('tl-dragging');
+    document.addEventListener('pointermove', onMove, { passive: false });
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onCancel);
   });
 }
 
