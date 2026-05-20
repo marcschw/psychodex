@@ -1879,6 +1879,22 @@ img{max-width:100%;display:block}
   font-size:13px;font-weight:600;margin-bottom:12px;text-align:center;
 }
 
+.notif-prompt-banner{
+  display:flex;align-items:center;gap:10px;
+  background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.3);
+  color:var(--text-dim);border-radius:var(--r);padding:10px 14px;
+  font-size:13px;margin-bottom:12px;
+}
+.notif-prompt-banner span{flex:1}
+.notif-prompt-btn{
+  background:var(--accent);color:#fff;border:none;border-radius:6px;
+  padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;
+}
+.notif-dismiss-btn{
+  background:none;border:none;color:var(--text-dim);cursor:pointer;
+  font-size:16px;line-height:1;padding:2px 4px;
+}
+
 /* ── Timeline ──────────────────────────────────────────────────────────────── */
 .planner-timeline{display:flex;flex-direction:column;gap:6px;padding-bottom:32px}
 
