@@ -2362,13 +2362,21 @@ img{max-width:100%;display:block}
 }
 .home-note-save-btn:active{opacity:.8}
 
-/* ── Timeline inline slot expansion ─────────────────────────────────────────── */
+/* ── Timeline global toggle & slot detail ────────────────────────────────────── */
+.tl-global-toggle-row{display:flex;justify-content:flex-end;padding:0 2px 6px}
+.tl-global-toggle-btn{
+  font-size:11px;font-weight:600;color:rgba(255,255,255,.45);background:transparent;
+  border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:4px 12px;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.tl-global-toggle-btn:active{background:rgba(255,255,255,.06)}
+.tl-slot-detail{border-top:1px solid rgba(255,255,255,.07);padding:8px 14px 10px;display:flex;flex-direction:column;gap:8px}
+.tl-slot-detail--hidden{display:none}
 .tl-slot-chevron{font-size:9px;color:rgba(255,255,255,.35);flex-shrink:0;padding:4px 6px;background:transparent;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent;border-radius:6px}
 .tl-slot-chevron:active{background:rgba(255,255,255,.08)}
 .tl-slot--expanded{border-color:var(--accent);border-width:1px}
 .tl-slot--expanded .tl-slot-chevron{color:var(--accent)}
-.tl-slot-inline-detail{border-top:1px solid rgba(255,255,255,.07);padding:10px 14px;display:flex;flex-direction:column;gap:8px}
-.tl-inline-diag-list{display:flex;flex-direction:column;gap:6px}
+.tl-inline-diag-list{display:flex;flex-direction:column;gap:6px;margin-bottom:2px}
 .tl-diag-card{
   display:flex;align-items:center;gap:10px;
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
@@ -2381,7 +2389,6 @@ img{max-width:100%;display:block}
 .tl-diag-del{opacity:.4;font-size:13px;flex-shrink:0}
 .tl-diag-del:active{opacity:1}
 .tl-inline-actions{display:flex;gap:6px;flex-wrap:wrap}
-.tl-inline-actions--always{padding:6px 14px 8px;border-top:1px solid rgba(255,255,255,.06)}
 .tl-inline-btn{
   padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;
   background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);

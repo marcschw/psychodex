@@ -10,6 +10,7 @@ const state = {
   currentTab: 'home',
   homeSelectedShiftId: null,
   expandedSlotId: null,
+  collapsedSlotIds: new Set(),
   calMonth: null,
   icdfCollection: { symptoms: [], diagnoses: [] },
   icdData: {},
@@ -969,8 +970,22 @@ function renderTimeline(shift) {
         </span>`).join('')}</div>`
     : '';
 
+  // Determine which patient slots have diagnoses (for global toggle visibility)
+  const patientSlotIds = slots.filter(s => !!(SLOT_TYPES[s.type]?.patientContact)).map(s => s.id);
+  const allCollapsed = patientSlotIds.length > 0 && patientSlotIds.every(id => state.collapsedSlotIds.has(id));
+
   const tl = document.getElementById('home-timeline');
-  tl.innerHTML = rows.map(row => {
+
+  // Global expand/collapse button (only when there are patient slots)
+  const globalToggleHtml = patientSlotIds.length > 0
+    ? `<div class="tl-global-toggle-row">
+        <button class="tl-global-toggle-btn" id="tl-global-toggle">
+          ${allCollapsed ? '▼ Details einblenden' : '▲ Details ausblenden'}
+        </button>
+       </div>`
+    : '';
+
+  tl.innerHTML = globalToggleHtml + rows.map(row => {
     if (row.kind === 'gap') {
       const label = padT(Math.floor(row.from/60), row.from%60);
       return `<div class="tl-gap-wrap">
@@ -984,16 +999,17 @@ function renderTimeline(shift) {
     // slot
     const { slot } = row;
     const def = SLOT_TYPES[slot.type] || {};
-    const isExpanded = state.expandedSlotId === slot.id;
+    // Default: expanded (show diagnoses). Collapsed only if explicitly in set.
+    const isExpanded = !state.collapsedSlotIds.has(slot.id);
     const flags = slot.flags?.length ? slot.flags.map(f => `<span class="slot-flag">${f.toUpperCase()}</span>`).join('') : '';
     const commentHtml = slot.comment ? `<div class="tl-slot-comment">${slot.comment}</div>` : '';
     const isPatient = !!def.patientContact;
     const tips = SLOT_TIPS[slot.type] || {};
     const hasTips = !!(tips.sections?.length || tips.tips?.length || tips.docHint);
 
-    // Diagnosis list – only when expanded
-    let diagListHtml = '';
-    if (isExpanded && isPatient) {
+    // Diagnosis list + actions – shown when expanded (or not a patient slot)
+    let detailHtml = '';
+    if (isPatient) {
       const slotCatches = state.catches.filter(c => c.slotId === slot.id)
         .sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999));
       const diagCards = slotCatches.map(c =>
@@ -1007,21 +1023,31 @@ function renderTimeline(shift) {
           <button class="tl-diag-del btn-icon" data-catch-id="${c.id}">🗑</button>
         </div>`
       ).join('');
-      diagListHtml = `<div class="tl-slot-inline-detail">
-        <div class="tl-inline-diag-list">${diagCards}</div>
+      const diagListHtml = slotCatches.length
+        ? `<div class="tl-inline-diag-list">${diagCards}</div>` : '';
+      detailHtml = `<div class="tl-slot-detail${isExpanded ? '' : ' tl-slot-detail--hidden'}">
+        ${diagListHtml}
+        <div class="tl-inline-actions">
+          <button class="tl-inline-btn tl-inline-add-diag">＋ Diagnose</button>
+          ${hasTips ? '<button class="tl-inline-btn tl-inline-tips">☑️ Checkliste</button>' : ''}
+          <button class="tl-inline-btn tl-inline-edit">✏️ Bearbeiten</button>
+          <button class="tl-inline-btn tl-inline-move">⤴ Verschieben</button>
+          <button class="tl-inline-btn tl-inline-del btn-danger-sm">🗑 Löschen</button>
+        </div>
+      </div>`;
+    } else {
+      // Non-patient slots: actions always visible, no diag list
+      detailHtml = `<div class="tl-slot-detail">
+        <div class="tl-inline-actions">
+          ${hasTips ? '<button class="tl-inline-btn tl-inline-tips">☑️ Checkliste</button>' : ''}
+          <button class="tl-inline-btn tl-inline-edit">✏️ Bearbeiten</button>
+          <button class="tl-inline-btn tl-inline-move">⤴ Verschieben</button>
+          <button class="tl-inline-btn tl-inline-del btn-danger-sm">🗑 Löschen</button>
+        </div>
       </div>`;
     }
 
-    // Action buttons – always visible
-    const actionsHtml = `<div class="tl-inline-actions tl-inline-actions--always">
-      ${isPatient ? '<button class="tl-inline-btn tl-inline-add-diag">＋ Diagnose</button>' : ''}
-      ${hasTips ? '<button class="tl-inline-btn tl-inline-tips">☑️ Checkliste</button>' : ''}
-      <button class="tl-inline-btn tl-inline-edit">✏️ Bearbeiten</button>
-      <button class="tl-inline-btn tl-inline-move">⤴ Verschieben</button>
-      <button class="tl-inline-btn tl-inline-del btn-danger-sm">🗑 Löschen</button>
-    </div>`;
-
-    return `<div class="tl-slot slot-${slot.type}${isExpanded ? ' tl-slot--expanded' : ''}" data-slot-id="${slot.id}">
+    return `<div class="tl-slot slot-${slot.type}${isPatient && isExpanded ? ' tl-slot--expanded' : ''}" data-slot-id="${slot.id}">
       <div class="tl-slot-main">
         <span class="tl-drag-handle" data-drag title="Verschieben">⠿</span>
         <span class="tl-slot-icon">${def.icon}</span>
@@ -1030,14 +1056,23 @@ function renderTimeline(shift) {
           <div class="tl-slot-time">${padT(slot.startHour,slot.startMinute)}–${padT(slot.endHour,slot.endMinute)} · +${slot.xpEarned} XP</div>
           ${commentHtml}
         </div>
-        ${isPatient ? `<span class="tl-slot-chevron" data-chevron title="${isExpanded ? 'Diagnosen einklappen' : 'Diagnosen anzeigen'}">${isExpanded ? '▲' : '▼'}</span>` : ''}
+        ${isPatient ? `<button class="tl-slot-chevron" data-chevron title="${isExpanded ? 'Einklappen' : 'Einblenden'}">${isExpanded ? '▲' : '▼'}</button>` : ''}
         <button class="tl-slot-delete btn-icon" data-slot-id="${slot.id}" title="Löschen">🗑</button>
       </div>
-      ${actionsHtml}
-      ${diagListHtml}
+      ${detailHtml}
       ${breakStripHtml(row.breaks)}
     </div>`;
   }).join('');
+
+  // Wire global toggle
+  document.getElementById('tl-global-toggle')?.addEventListener('click', () => {
+    if (allCollapsed) {
+      state.collapsedSlotIds.clear();
+    } else {
+      patientSlotIds.forEach(id => state.collapsedSlotIds.add(id));
+    }
+    renderTimeline(shift);
+  });
 
   // Wire gaps → slot add
   tl.querySelectorAll('.tl-gap').forEach(btn => {
@@ -1047,13 +1082,17 @@ function renderTimeline(shift) {
     });
   });
 
-  // Wire chevron clicks → toggle diagnosis list
+  // Wire chevron → per-slot toggle
   tl.querySelectorAll('[data-chevron]').forEach(chevron => {
     chevron.addEventListener('click', e => {
       e.stopPropagation();
       const slotEl = chevron.closest('.tl-slot');
       const slotId = parseInt(slotEl.dataset.slotId);
-      state.expandedSlotId = state.expandedSlotId === slotId ? null : slotId;
+      if (state.collapsedSlotIds.has(slotId)) {
+        state.collapsedSlotIds.delete(slotId);
+      } else {
+        state.collapsedSlotIds.add(slotId);
+      }
       renderTimeline(shift);
     });
   });
@@ -1077,7 +1116,7 @@ function renderTimeline(shift) {
     });
     el.querySelector('.tl-inline-del')?.addEventListener('click', async e => {
       e.stopPropagation();
-      state.expandedSlotId = null;
+      state.collapsedSlotIds.delete(slot.id);
       await deleteSlot(slot.id, shift);
     });
     el.querySelectorAll('.tl-diag-del').forEach(btn => {
@@ -1749,7 +1788,15 @@ async function deleteSlotCatch(catchId, slot, source) {
 function openSlotEditForm(slot, source) {
   const def = SLOT_TYPES[slot.type] || {};
   document.getElementById('slot-detail-title').textContent = `✏️ ${def.icon} ${def.label}`;
-  const hasDemo = slot.type === 'erstgespraech';
+  const hasFlags = slot.type === 'erstgespraech';
+  // All available flags per slot type
+  const SLOT_FLAGS = {
+    erstgespraech: [
+      { key: 'demo',          label: '🎓 Demo' },
+      { key: 'international', label: '🌍 International' },
+    ],
+  };
+  const slotFlags = SLOT_FLAGS[slot.type] || [];
 
   document.getElementById('slot-detail-body').innerHTML = `
     <div class="form-row">
@@ -1764,10 +1811,14 @@ function openSlotEditForm(slot, source) {
       <label class="form-label">Kommentar</label>
       <textarea id="slot-edit-comment" class="form-input" rows="3" placeholder="Notiz…">${slot.comment || ''}</textarea>
     </div>
-    ${hasDemo ? `
+    ${hasFlags ? `
     <div class="form-row">
       <label class="form-label">Flags</label>
-      <button class="flag-btn${slot.flags?.includes('demo') ? ' active' : ''}" id="slot-edit-flag-demo" data-flag="demo">🎓 Demo</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${slotFlags.map(f =>
+          `<button class="flag-btn${slot.flags?.includes(f.key) ? ' active' : ''}" data-edit-flag="${f.key}">${f.label}</button>`
+        ).join('')}
+      </div>
     </div>` : ''}
     <div class="slot-edit-btns">
       <button class="btn-primary"   id="btn-slot-edit-save">Speichern</button>
@@ -1775,9 +1826,9 @@ function openSlotEditForm(slot, source) {
     </div>
   `;
 
-  if (hasDemo) {
-    document.getElementById('slot-edit-flag-demo').addEventListener('click', e =>
-      e.currentTarget.classList.toggle('active'));
+  if (hasFlags) {
+    document.querySelectorAll('[data-edit-flag]').forEach(btn =>
+      btn.addEventListener('click', e => e.currentTarget.classList.toggle('active')));
   }
 
   document.getElementById('btn-slot-edit-cancel').addEventListener('click', () => {
@@ -1804,8 +1855,9 @@ async function saveSlotEdit(slot, source) {
   const [eh, em] = endVal.split(':').map(Number);
 
   const flags = [];
-  const demoBtn = document.getElementById('slot-edit-flag-demo');
-  if (demoBtn?.classList.contains('active')) flags.push('demo');
+  document.querySelectorAll('[data-edit-flag]').forEach(btn => {
+    if (btn.classList.contains('active')) flags.push(btn.dataset.editFlag);
+  });
 
   await db.scheduleSlots.update(slot.id, {
     startHour: sh, startMinute: sm,
