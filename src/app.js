@@ -592,6 +592,14 @@ async function renderPlannerTab() {
   // Load slots
   state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(openShift.id).sortBy('startHour');
 
+  // Show notification permission banner if not yet granted/dismissed
+  const notifBanner = document.getElementById('notif-prompt-banner');
+  if (notifBanner && 'Notification' in window) {
+    const dismissed = localStorage.getItem('notif-banner-dismissed');
+    const shouldShow = Notification.permission === 'default' && !dismissed;
+    notifBanner.classList.toggle('hidden', !shouldShow);
+  }
+
   // Header
   const catMeta = CATEGORY_META[openShift.category || 'regulär'];
   document.getElementById('planner-shift-title').innerHTML =
@@ -906,6 +914,23 @@ function setupPlannerListeners() {
     });
   });
 
+  // Notification permission banner
+  const btnEnable = document.getElementById('btn-enable-notif');
+  const btnDismiss = document.getElementById('btn-dismiss-notif');
+  if (btnEnable) {
+    btnEnable.addEventListener('click', async () => {
+      await requestNotificationPermission();
+      document.getElementById('notif-prompt-banner').classList.add('hidden');
+      localStorage.setItem('notif-banner-dismissed', '1');
+    });
+  }
+  if (btnDismiss) {
+    btnDismiss.addEventListener('click', () => {
+      document.getElementById('notif-prompt-banner').classList.add('hidden');
+      localStorage.setItem('notif-banner-dismissed', '1');
+    });
+  }
+
   // :00 / :30 time toggles
   document.querySelectorAll('.time-toggle-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -943,6 +968,9 @@ async function startPlannerShift() {
   state.plannerShiftId = shiftId;
   state.plannerSlots = [];
   state.alarmFired = new Set();
+
+  // Request notification permission once per session (non-blocking)
+  requestNotificationPermission();
 
   renderPlannerTab();
 }
@@ -1115,6 +1143,30 @@ function openSlotDetailModal(slot) {
   document.getElementById('slot-detail-modal').classList.remove('hidden');
 }
 
+// ─── Notifications ────────────────────────────────────────────────────────────
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
+  const result = await Notification.requestPermission();
+  return result === 'granted';
+}
+
+async function showSystemNotification(title, body, tag) {
+  if (!('serviceWorker' in navigator) || Notification.permission !== 'granted') return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    await reg.showNotification(title, {
+      body,
+      icon:  '/assets/icons/icon-192.png',
+      badge: '/assets/icons/icon-192.png',
+      tag,
+      renotify: false,
+      silent: false,
+    });
+  } catch { /* SW not available – silent fail */ }
+}
+
 // ─── Alarm Scheduler ──────────────────────────────────────────────────────────
 function startAlarmScheduler() {
   stopAlarmScheduler();
@@ -1142,13 +1194,25 @@ function checkAlarms() {
     if (state.alarmFired.has(slot.id)) continue;
     const diff = toMins(slot.startHour, slot.startMinute) - nowMins;
     if (diff >= 9 && diff <= 11) {
-      const def = SLOT_TYPES[slot.type] || {};
+      const def  = SLOT_TYPES[slot.type] || {};
+      const time = padT(slot.startHour, slot.startMinute);
+      const msg  = `${def.icon || '⏰'} ${def.label} um ${time}`;
+
+      // In-app banner
       const banner = document.getElementById('planner-alarm-banner');
       if (banner) {
-        banner.textContent = `⏰ In ~10 min: ${def.icon} ${def.label} um ${padT(slot.startHour, slot.startMinute)}`;
+        banner.textContent = `⏰ In ~10 min: ${msg}`;
         banner.classList.remove('hidden');
         setTimeout(() => banner.classList.add('hidden'), 10_000);
       }
+
+      // System notification (Android / iOS 16.4+ installed PWA)
+      showSystemNotification(
+        `⏰ In ~10 Minuten`,
+        msg,
+        `alarm-slot-${slot.id}`
+      );
+
       state.alarmFired.add(slot.id);
     }
   }

@@ -1,4 +1,4 @@
-const APP_VERSION  = 'v5';
+const APP_VERSION  = 'v7';
 const APP_CACHE    = `psychodex-app-${APP_VERSION}`;
 const IMAGE_CACHE  = `psychodex-images-${APP_VERSION}`;
 
@@ -115,4 +115,17 @@ self.addEventListener('fetch', e => {
         .catch(() => caches.match(request))
     );
   }
+});
+
+// ── Notification click → bring app to foreground ──────────────────────────
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const c of list) {
+        if (c.url.startsWith(self.location.origin) && 'focus' in c) return c.focus();
+      }
+      return clients.openWindow('/');
+    })
+  );
 });
