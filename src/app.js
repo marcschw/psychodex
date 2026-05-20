@@ -1,6 +1,6 @@
 import db from './db.js';
 import { loadAllICD, searchDiagnoses } from './icd-loader.js';
-import { calculateCatchXP, calculateShiftXP, calculateFlameBonus, calculateNoteXP, SLOT_TYPES, SHIFT_HOURS, MEAL_HINTS, SLOT_TIPS, CATEGORY_XP_MODIFIER, CATEGORY_META } from './xp-engine.js';
+import { calculateCatchXP, calculateShiftXP, calculateFlameBonus, calculateNoteXP, SLOT_TYPES, SHIFT_HOURS, MEAL_HINTS, BREAK_PRESETS, SLOT_TIPS, CATEGORY_XP_MODIFIER, CATEGORY_META } from './xp-engine.js';
 import { RANKS, getRankForXP, getNextRank } from './ranks.js';
 import { MISSION_POOL, TIER_LABELS, calcMissionProgress, pickNewMission } from './missions.js';
 import { checkAchievements, ACHIEVEMENTS, SECRET_ACHIEVEMENTS, ACH_TIER_LABELS } from './achievements.js';
@@ -33,6 +33,8 @@ const state = {
   slotAddContext: null,     // { shiftId, startH, startM, selectedType, flags:[]}
   alarmFired: new Set(),    // set of slot IDs that already triggered alarm
   alarmInterval: null,
+  mealModalContext: null,   // { shift, hint } for meal add/edit modal
+  mealModalIcon: '☕',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -573,6 +575,11 @@ const toMins = (h, m) => h * 60 + m;
 
 function shiftHours(type) { return SHIFT_HOURS[type] || SHIFT_HOURS['früh']; }
 
+function getMealHints(shift) {
+  if (shift.mealHints) return shift.mealHints;
+  return (MEAL_HINTS[shift.type] || []).map((h, i) => ({ ...h, id: i + 1 }));
+}
+
 async function renderPlannerTab() {
   // Find any open planner shift
   const openShift = state.shifts.find(s => s.plannerActive);
@@ -646,7 +653,7 @@ function renderTimeline(shift) {
   const { start, end } = shiftHours(shift.type);
   const startM = toMins(...start);
   const endM   = toMins(...end);
-  const meals  = (MEAL_HINTS[shift.type] || []).map(h => ({ ...h, mins: toMins(h.h, h.m) }));
+  const meals  = getMealHints(shift).map(h => ({ ...h, mins: toMins(h.h, h.m) }));
 
   // Build a sorted list of slot time ranges
   const slots = [...state.plannerSlots].sort((a, b) => toMins(a.startHour, a.startMinute) - toMins(b.startHour, b.startMinute));
@@ -696,7 +703,15 @@ function renderTimeline(shift) {
   const tl = document.getElementById('planner-timeline');
   tl.innerHTML = rows.map(row => {
     if (row.kind === 'meal') {
-      return `<div class="tl-meal">${row.icon} ${row.label}</div>`;
+      return `<div class="tl-meal" data-meal-id="${row.id}">
+        <span class="tl-meal-time">${padT(row.h, row.m)}</span>
+        <span class="tl-meal-icon">${row.icon}</span>
+        <span class="tl-meal-label">${row.label}</span>
+        <span class="tl-meal-actions">
+          <button class="tl-meal-edit btn-icon" data-meal-id="${row.id}" title="Bearbeiten">✏️</button>
+          <button class="tl-meal-del btn-icon" data-meal-id="${row.id}" title="Löschen">🗑</button>
+        </span>
+      </div>`;
     }
     if (row.kind === 'gap') {
       const label = padT(Math.floor(row.from/60), row.from%60);
@@ -745,6 +760,27 @@ function renderTimeline(shift) {
     btn.addEventListener('click', async e => {
       e.stopPropagation();
       await deleteSlot(parseInt(btn.dataset.slotId), shift);
+    });
+  });
+
+  // Wire meal hint edit / delete
+  tl.querySelectorAll('.tl-meal-del').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const id = parseInt(btn.dataset.mealId);
+      const updated = getMealHints(shift).filter(h => h.id !== id);
+      await db.shiftLogs.update(shift.id, { mealHints: updated });
+      state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+      renderTimeline({ ...shift, mealHints: updated });
+    });
+  });
+
+  tl.querySelectorAll('.tl-meal-edit').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = parseInt(btn.dataset.mealId);
+      const hint = getMealHints(shift).find(h => h.id === id);
+      openMealModal(shift, hint);
     });
   });
 }
@@ -942,6 +978,28 @@ function setupPlannerListeners() {
       setTimeToggleActive(btn.dataset.field, mins);
     });
   });
+
+  // Meal hint modal
+  document.getElementById('meal-hint-close').addEventListener('click', () =>
+    document.getElementById('meal-hint-modal').classList.add('hidden'));
+  document.getElementById('meal-hint-backdrop').addEventListener('click', () =>
+    document.getElementById('meal-hint-modal').classList.add('hidden'));
+  document.getElementById('btn-save-meal-hint').addEventListener('click', saveMealHint);
+  document.getElementById('btn-add-meal-hint').addEventListener('click', () => {
+    const openShift = state.shifts.find(s => s.plannerActive);
+    if (openShift) openMealModal(openShift);
+  });
+
+  // Meal preset buttons
+  document.querySelectorAll('.meal-preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.mealModalIcon = btn.dataset.icon;
+      const labelInput = document.getElementById('meal-label');
+      if (!labelInput.value) labelInput.value = btn.dataset.label;
+      document.querySelectorAll('.meal-preset-btn').forEach(b =>
+        b.classList.toggle('active', b === btn));
+    });
+  });
 }
 
 function setTimeToggleActive(field, mins) {
@@ -961,7 +1019,8 @@ async function startPlannerShift() {
     date: dateVal, type, category,
     xpEarned: 0, patientCount: 0,
     plannerShift: true, plannerActive: true,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    mealHints: (MEAL_HINTS[type] || []).map((h, i) => ({ ...h, id: i + 1 })),
   });
 
   state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
@@ -1165,6 +1224,52 @@ async function showSystemNotification(title, body, tag) {
       silent: false,
     });
   } catch { /* SW not available – silent fail */ }
+}
+
+// ─── Meal Hint Modal ──────────────────────────────────────────────────────────
+function openMealModal(shift, hint = null) {
+  state.mealModalContext = { shift, hint };
+  state.mealModalIcon = hint ? hint.icon : '☕';
+
+  const now = new Date();
+  document.getElementById('meal-time').value = hint
+    ? padT(hint.h, hint.m)
+    : padT(now.getHours(), 0);
+  document.getElementById('meal-label').value = hint ? hint.label : '';
+
+  document.querySelectorAll('.meal-preset-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.icon === state.mealModalIcon && btn.dataset.label === (hint?.label ?? ''));
+  });
+
+  document.getElementById('meal-hint-modal').classList.remove('hidden');
+}
+
+async function saveMealHint() {
+  const ctx = state.mealModalContext;
+  if (!ctx) return;
+
+  const timeVal = document.getElementById('meal-time').value;
+  const labelVal = document.getElementById('meal-label').value.trim();
+  if (!timeVal || !labelVal) { alert('Bitte Zeit und Bezeichnung angeben.'); return; }
+
+  const [h, m] = timeVal.split(':').map(Number);
+  const existing = getMealHints(ctx.shift);
+  let updated;
+  if (ctx.hint) {
+    updated = existing.map(x => x.id === ctx.hint.id
+      ? { ...x, h, m, icon: state.mealModalIcon, label: labelVal }
+      : x);
+  } else {
+    const newId = existing.length ? Math.max(...existing.map(x => x.id)) + 1 : 1;
+    updated = [...existing, { id: newId, h, m, icon: state.mealModalIcon, label: labelVal }];
+  }
+
+  await db.shiftLogs.update(ctx.shift.id, { mealHints: updated });
+  state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+  document.getElementById('meal-hint-modal').classList.add('hidden');
+
+  const fresh = state.shifts.find(s => s.id === ctx.shift.id);
+  if (fresh && state.plannerShiftId === fresh.id) renderTimeline(fresh);
 }
 
 // ─── Alarm Scheduler ──────────────────────────────────────────────────────────
