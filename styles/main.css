@@ -2190,7 +2190,6 @@ img{max-width:100%;display:block}
 }
 .btn-open-imported:active{background:rgba(124,58,237,.3)}
 
-
 /* ── Stats tab clickable cards ──────────────────────────────────────────────── */
 #stat-xp-card,#stat-shifts-card{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s}
 #stat-xp-card:active,#stat-shifts-card:active{opacity:.7}
