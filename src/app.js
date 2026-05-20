@@ -197,6 +197,29 @@ function shiftLabelFull(shift) {
     : shift.type === 'samstag' ? 'Samstag' : shift.type === 'schulung' ? 'Schulung' : 'Früh';
   return `${name} ${fmtShiftDuration(shift)}`;
 }
+function shiftGroupKey(shift) {
+  if (shift.type === 'schulung') return 'schulung';
+  if (shift.type === 'samstag') return 'samstag';
+  if (shift.type === 'full')    return `full_${shift.category || 'regulär'}`;
+  return shift.category || 'regulär';
+}
+function shiftGroupLabel(shift) {
+  if (shift.type === 'schulung') return 'Schulung';
+  if (shift.type === 'samstag') return 'Samstagsdienst';
+  if (shift.type === 'full')    return 'Ganztagsdienst';
+  const cat = shift.category || 'regulär';
+  return cat === 'training' ? 'Trainingsdienst' : cat === 'senior' ? 'Seniordienst' : 'regulärer Dienst';
+}
+function shiftNumber(shift) {
+  const key = shiftGroupKey(shift);
+  const sorted = state.shifts.slice().sort((a, b) =>
+    a.date !== b.date ? a.date.localeCompare(b.date) : a.id - b.id
+  );
+  const n = sorted.filter(s => shiftGroupKey(s) === key &&
+    (s.date < shift.date || (s.date === shift.date && s.id <= shift.id))
+  ).length;
+  return `${shiftGroupLabel(shift)} #${n}`;
+}
 function calcTotalHours() {
   const entries = state.profile?.extraHourEntries;
   const extra = Array.isArray(entries)
@@ -694,6 +717,7 @@ async function renderHomeTab() {
       <div class="home-shift-inline-edit">
         <div class="home-inline-row">
           <input type="date" id="home-edit-date" class="home-date-input" value="${shift.date}">
+          <span class="home-shift-num">${shiftNumber(shift)}</span>
           <span class="home-inline-xp">${xpLabel}</span>
           <button id="btn-delete-home-shift" class="btn-icon home-del-btn" title="Dienst löschen">🗑</button>
         </div>
@@ -5004,14 +5028,14 @@ async function exportData() {
   const achievements = await db.unlockedAchievements.toArray();
   const slots    = await db.scheduleSlots.toArray();
   const payload = {
-    version: 3,
+    version: 4,
     exportedAt: new Date().toISOString(),
     profile:      { totalXP: state.profile?.totalXP ?? 0 },
-    shifts:       shifts.map(({ id, ...s }) => s),
-    catches:      catches.map(({ id, ...c }) => c),
-    missions:     missions.map(({ id, ...m }) => m),
-    achievements: achievements.map(({ id, ...a }) => a),
-    slots:        slots.map(({ id, ...sl }) => sl),
+    shifts,
+    catches,
+    missions,
+    achievements,
+    slots,
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
@@ -5045,14 +5069,30 @@ async function importData(e) {
     if (db.scheduleSlots)        await db.scheduleSlots.clear();
 
     await db.profile.add({ totalXP: data.profile?.totalXP ?? 0, createdAt: new Date().toISOString() });
-    for (const s of data.shifts)  await db.shiftLogs.add(s);
-    for (const c of data.catches) await db.caughtDiagnoses.add(c);
-    if (db.missions && Array.isArray(data.missions))
-      for (const m of data.missions) await db.missions.add(m);
-    if (db.unlockedAchievements && Array.isArray(data.achievements))
-      for (const a of data.achievements) await db.unlockedAchievements.add(a);
-    if (db.scheduleSlots && Array.isArray(data.slots))
-      for (const sl of data.slots) await db.scheduleSlots.add(sl);
+
+    if (data.version >= 4) {
+      // v4+: records carry their original IDs — use put() to restore FK integrity
+      for (const s  of data.shifts)  await db.shiftLogs.put(s);
+      for (const c  of data.catches) await db.caughtDiagnoses.put(c);
+      if (db.missions && Array.isArray(data.missions))
+        for (const m of data.missions) await db.missions.put(m);
+      if (db.unlockedAchievements && Array.isArray(data.achievements))
+        for (const a of data.achievements) await db.unlockedAchievements.put(a);
+      if (db.scheduleSlots && Array.isArray(data.slots))
+        for (const sl of data.slots) await db.scheduleSlots.put(sl);
+    } else {
+      // v3 legacy: IDs were stripped — assign positional IDs (1-based, matching FK values)
+      for (let i = 0; i < data.shifts.length; i++)
+        await db.shiftLogs.put({ ...data.shifts[i], id: i + 1 });
+      if (db.scheduleSlots && Array.isArray(data.slots))
+        for (let i = 0; i < data.slots.length; i++)
+          await db.scheduleSlots.put({ ...data.slots[i], id: i + 1 });
+      for (const c of data.catches) await db.caughtDiagnoses.add(c);
+      if (db.missions && Array.isArray(data.missions))
+        for (const m of data.missions) await db.missions.add(m);
+      if (db.unlockedAchievements && Array.isArray(data.achievements))
+        for (const a of data.achievements) await db.unlockedAchievements.add(a);
+    }
 
     await loadFromDB();
     renderApp();
