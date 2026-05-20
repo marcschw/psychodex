@@ -2377,3 +2377,15 @@ img{max-width:100%;display:block}
 }
 .tl-inline-btn:active{background:rgba(255,255,255,.15)}
 .tl-inline-btn.btn-danger-sm{background:rgba(220,38,38,.12);border-color:rgba(220,38,38,.3);color:#f87171}
+
+/* ── Badge Lightbox ──────────────────────────────────────────────────────────── */
+.badge-lightbox{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center}
+.badge-lb-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(6px)}
+.badge-lb-content{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;padding:20px;max-width:min(90vw,90vh);max-height:min(90vw,90vh)}
+.badge-lb-img{width:min(80vw,80vh);height:min(80vw,80vh);object-fit:contain;border-radius:20px;box-shadow:0 0 60px rgba(0,0,0,.8)}
+.badge-lb-emoji{width:min(80vw,80vh);height:min(80vw,80vh);font-size:min(30vw,30vh);align-items:center;justify-content:center}
+.badge-lb-close{position:fixed;top:16px;right:16px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:var(--text);font-size:20px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+.badge-lb-close:active{background:rgba(255,255,255,.25)}
+.ach-img-clickable{cursor:pointer;transition:transform .15s,box-shadow .15s}
+.ach-img-clickable:active{transform:scale(.95)}
+.ach-img-clickable .ach-img,.ach-img-clickable .ach-emoji{box-shadow:0 0 12px rgba(124,58,237,.3)}

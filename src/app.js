@@ -276,6 +276,8 @@ async function init() {
     setupPlannerListeners();
     setupICDFCollectionListeners();
     setupEscapeKey();
+    document.getElementById('badge-lb-close').addEventListener('click', closeBadgeLightbox);
+    document.getElementById('badge-lb-backdrop').addEventListener('click', closeBadgeLightbox);
     document.getElementById('loading-screen').classList.add('fade-out');
     setTimeout(() => {
       document.getElementById('loading-screen').style.display = 'none';
@@ -2621,8 +2623,8 @@ function renderAchievements() {
     secretsDone.add(a.badgeId);
   });
 
-  const achImgHtml = (id, icon) =>
-    `<div class="ach-img-wrap">
+  const achImgHtml = (id, icon, unlocked = false) =>
+    `<div class="ach-img-wrap${unlocked ? ' ach-img-clickable' : ''}" data-badge-id="${id}" data-badge-icon="${icon}">
       <img class="ach-img" src="assets/images/badges/${id}.png"
            onload="this.nextElementSibling.style.display='none'"
            onerror="this.style.display='none'" alt="">
@@ -2631,15 +2633,16 @@ function renderAchievements() {
 
   const regularCards = ACHIEVEMENTS.map(ach => {
     const maxTier = maxTierMap[ach.id] || 0;
+    const unlocked = maxTier > 0;
     const dots = [1, 2, 3].map(t =>
       `<span class="ach-dot${t <= maxTier ? ' ach-dot-earned' : ''}"></span>`
     ).join('');
     return `<div class="ach-card ach-tier-${maxTier}">
-      ${achImgHtml(ach.id, ach.icon)}
+      ${achImgHtml(ach.id, ach.icon, unlocked)}
       <div class="ach-info">
         <div class="ach-name">${ach.name}</div>
         <div class="ach-desc">${ach.description}</div>
-        ${maxTier > 0 ? `<div class="ach-tier-label">${ACH_TIER_LABELS[maxTier]}</div>` : ''}
+        ${unlocked ? `<div class="ach-tier-label">${ACH_TIER_LABELS[maxTier]}</div>` : ''}
       </div>
       <div class="ach-dots">${dots}</div>
     </div>`;
@@ -2649,7 +2652,7 @@ function renderAchievements() {
     const isUnlocked = secretsDone.has(ach.id);
     if (isUnlocked) {
       return `<div class="ach-card ach-tier-3 ach-secret-unlocked">
-        ${achImgHtml(ach.id, ach.icon)}
+        ${achImgHtml(ach.id, ach.icon, true)}
         <div class="ach-info">
           <div class="ach-name">${ach.name}</div>
           <div class="ach-desc">${ach.description}</div>
@@ -2673,7 +2676,29 @@ function renderAchievements() {
      <div class="ach-grid">${regularCards}</div>
      <div class="section-subheader">Secret Achievements</div>
      <div class="ach-grid">${secretCards}</div>`;
+
   el.querySelector('#btn-recalc-achievements')?.addEventListener('click', recalculateAchievements);
+
+  // Badge lightbox — click unlocked badges for fullscreen view
+  el.querySelectorAll('.ach-img-clickable').forEach(wrap => {
+    wrap.addEventListener('click', () => openBadgeLightbox(wrap.dataset.badgeId, wrap.dataset.badgeIcon));
+  });
+}
+
+function openBadgeLightbox(id, icon) {
+  const lb = document.getElementById('badge-lightbox');
+  const img = document.getElementById('badge-lb-img');
+  const emoji = document.getElementById('badge-lb-emoji');
+  img.src = `assets/images/badges/large/${id}.jpg`;
+  img.onload  = () => { emoji.style.display = 'none'; };
+  img.onerror = () => { img.style.display = 'none'; emoji.textContent = icon; emoji.style.display = 'flex'; };
+  emoji.style.display = 'none';
+  img.style.display = 'block';
+  lb.classList.remove('hidden');
+}
+
+function closeBadgeLightbox() {
+  document.getElementById('badge-lightbox').classList.add('hidden');
 }
 
 // ─── Recalculate Achievements ─────────────────────────────────────────────────
