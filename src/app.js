@@ -2941,31 +2941,29 @@ async function renderShiftDetailBody(shift) {
     + Neuer Patient & Diagnose
   </button>`;
 
-  // Planner slots section
-  if (shift.plannerShift) {
-    const shiftSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
-    if (shiftSlots.length || true) {
-      html += `<div class="detail-slots-section">
-        <div class="detail-slots-header">
-          <span class="detail-slots-title">📋 Planer-Einträge</span>
-          <button class="btn-secondary detail-add-slot-btn" id="btn-detail-add-slot">+ Eintrag</button>
-        </div>
-        <div class="detail-slots-list">
-          ${shiftSlots.length ? shiftSlots.map(sl => {
-            const def = SLOT_TYPES[sl.type] || {};
-            return `<div class="detail-slot-row" data-slot-id="${sl.id}">
-              <span class="detail-slot-icon">${def.icon || '📌'}</span>
-              <div class="detail-slot-info">
-                <span class="detail-slot-label">${def.label || sl.type}</span>
-                <span class="detail-slot-time">${padT(sl.startHour,sl.startMinute)}–${padT(sl.endHour,sl.endMinute)} · +${sl.xpEarned} XP</span>
-                ${sl.comment ? `<span class="detail-slot-comment">${sl.comment}</span>` : ''}
-              </div>
-              <button class="btn-icon detail-slot-del" data-slot-id="${sl.id}">🗑</button>
-            </div>`;
-          }).join('') : '<div class="detail-slots-empty">Keine Einträge</div>'}
-        </div>
-      </div>`;
-    }
+  // Planner slots section — always show for any shift that has slots or plannerShift flag
+  const shiftSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
+  if (shiftSlots.length || shift.plannerShift) {
+    html += `<div class="detail-slots-section">
+      <div class="detail-slots-header">
+        <span class="detail-slots-title">📋 Planer-Einträge</span>
+        <button class="btn-secondary detail-add-slot-btn" id="btn-detail-add-slot">+ Eintrag</button>
+      </div>
+      <div class="detail-slots-list">
+        ${shiftSlots.length ? shiftSlots.map(sl => {
+          const def = SLOT_TYPES[sl.type] || {};
+          return `<div class="detail-slot-row" data-slot-id="${sl.id}">
+            <span class="detail-slot-icon">${def.icon || '📌'}</span>
+            <div class="detail-slot-info">
+              <span class="detail-slot-label">${def.label || sl.type}</span>
+              <span class="detail-slot-time">${padT(sl.startHour,sl.startMinute)}–${padT(sl.endHour,sl.endMinute)} · +${sl.xpEarned} XP</span>
+              ${sl.comment ? `<span class="detail-slot-comment">${sl.comment}</span>` : ''}
+            </div>
+            <button class="btn-icon detail-slot-del" data-slot-id="${sl.id}">🗑</button>
+          </div>`;
+        }).join('') : '<div class="detail-slots-empty">Keine Einträge</div>'}
+      </div>
+    </div>`;
   }
 
   html += `<button class="btn-danger" id="btn-delete-this-shift" data-id="${shift.id}">🗑 Dienst löschen</button>`;
@@ -3206,8 +3204,11 @@ async function saveToExistingShiftPatient(diagnosis, hasComorbidity, xpResult, s
   let ageGroup = 'unbekannt', gender = 'unbekannt', patientType = 'erstgespraech';
   let patientIndex;
 
+  const fromSlotId  = state.addToShiftContext?.slotId   ?? null;
+  const fromSlotSrc = state.addToShiftContext?.slotSource ?? 'planner';
+
   if (patientKey != null) {
-    // Find patient data from existing catches
+    // Find patient data from existing catches for this patient key
     const patientCatches = shiftCatches.filter(c =>
       (c.patientIndex != null ? String(c.patientIndex) : `${c.ageGroup}-${c.gender}-${c.patientType}`) === String(patientKey));
     if (patientCatches.length) {
@@ -3216,14 +3217,25 @@ async function saveToExistingShiftPatient(diagnosis, hasComorbidity, xpResult, s
       patientType = patientCatches[0].patientType;
       patientIndex = patientCatches[0].patientIndex ?? patientKey;
     }
+  } else if (fromSlotId != null) {
+    // Adding from a slot: all diagnoses for the same slot belong to the same patient
+    const slotCatches = shiftCatches.filter(c => c.slotId === fromSlotId);
+    if (slotCatches.length) {
+      // Reuse the patientIndex of existing catches for this slot
+      ageGroup    = slotCatches[0].ageGroup;
+      gender      = slotCatches[0].gender;
+      patientType = slotCatches[0].patientType;
+      patientIndex = slotCatches[0].patientIndex ?? 0;
+    } else {
+      // First diagnosis for this slot → new patient
+      const maxPIdx = shiftCatches.reduce((m, c) => Math.max(m, c.patientIndex ?? -1), -1);
+      patientIndex = maxPIdx + 1;
+    }
   } else {
-    // New patient
-    const maxPIdx = shiftCatches.reduce((m, c) => Math.max(m, c.patientIndex ?? 0), -1);
+    // New patient from shift detail
+    const maxPIdx = shiftCatches.reduce((m, c) => Math.max(m, c.patientIndex ?? -1), -1);
     patientIndex = maxPIdx + 1;
   }
-
-  const fromSlotId  = state.addToShiftContext?.slotId   ?? null;
-  const fromSlotSrc = state.addToShiftContext?.slotSource ?? 'planner';
 
   await db.caughtDiagnoses.add({
     code: diagnosis.code, name: diagnosis.name,
@@ -3237,7 +3249,9 @@ async function saveToExistingShiftPatient(diagnosis, hasComorbidity, xpResult, s
   });
 
   const newShiftXP = (shift.xpEarned || 0) + xpResult.total;
-  const newPatCount = patientKey == null ? (shift.patientCount || 0) + 1 : shift.patientCount;
+  // Only count new patient when this is genuinely the first catch for a new patient
+  const isNewPatient = patientKey == null && !(fromSlotId != null && shiftCatches.some(c => c.slotId === fromSlotId));
+  const newPatCount = isNewPatient ? (shift.patientCount || 0) + 1 : shift.patientCount;
   await db.shiftLogs.update(shiftId, { xpEarned: newShiftXP, patientCount: newPatCount });
 
   const oldXP = state.profile.totalXP ?? 0;
