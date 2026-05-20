@@ -685,8 +685,12 @@ async function renderHomeTab() {
         </div>
         <div class="home-inline-type-row">${typeButtons}</div>
         <div class="home-inline-cat-row">${catButtons}</div>
-        <textarea id="home-edit-note" class="home-note-area" rows="2"
+        ${shift.type !== 'schulung' ? `
+        <textarea id="home-edit-note" class="home-note-area" rows="4"
           placeholder="Dienst-Log / Notizen…">${shift.note || ''}</textarea>
+        <div class="home-note-save-row">
+          <button id="btn-save-home-note" class="home-note-save-btn">💾 Speichern</button>
+        </div>` : ''}
       </div>`;
 
     // Auto-save on change
@@ -704,8 +708,12 @@ async function renderHomeTab() {
         btn.classList.add('active');
         inlineSaveShift(shift, { category: btn.dataset.cat });
       }));
-    document.getElementById('home-edit-note').addEventListener('blur', e =>
-      inlineSaveShift(shift, { note: e.target.value }));
+    const noteEl = document.getElementById('home-edit-note');
+    if (noteEl) {
+      noteEl.addEventListener('blur', e => inlineSaveShift(shift, { note: e.target.value }));
+      document.getElementById('btn-save-home-note').addEventListener('click', () =>
+        inlineSaveShift(shift, { note: noteEl.value }));
+    }
     document.getElementById('btn-delete-home-shift').addEventListener('click', async () => {
       if (!confirm('Dienst löschen?')) return;
       const xpBack = shift.xpEarned || 0;
@@ -956,11 +964,13 @@ function renderTimeline(shift) {
     const isPatient = !!def.patientContact;
     const tips = SLOT_TIPS[slot.type] || {};
     const hasTips = !!(tips.sections?.length || tips.tips?.length || tips.docHint);
-    let inlineDetail = '';
-    if (isExpanded) {
+
+    // Diagnosis list – only when expanded
+    let diagListHtml = '';
+    if (isExpanded && isPatient) {
       const slotCatches = state.catches.filter(c => c.slotId === slot.id)
         .sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999));
-      const diagCards = isPatient ? slotCatches.map(c =>
+      const diagCards = slotCatches.map(c =>
         `<div class="tl-diag-card" data-catch-id="${c.id}">
           <img class="tl-diag-img" src="assets/images/diagnoses/${c.code}.png"
                onerror="this.style.display='none'" alt="">
@@ -970,17 +980,20 @@ function renderTimeline(shift) {
           </div>
           <button class="tl-diag-del btn-icon" data-catch-id="${c.id}">🗑</button>
         </div>`
-      ).join('') : '';
-      inlineDetail = `<div class="tl-slot-inline-detail">
-        ${isPatient ? `<div class="tl-inline-diag-list">${diagCards}</div>` : ''}
-        <div class="tl-inline-actions">
-          ${isPatient ? '<button class="tl-inline-btn tl-inline-add-diag">＋ Diagnose</button>' : ''}
-          ${hasTips ? '<button class="tl-inline-btn tl-inline-tips">☑️ Checkliste</button>' : ''}
-          <button class="tl-inline-btn tl-inline-edit">✏️ Bearbeiten</button>
-          <button class="tl-inline-btn tl-inline-del btn-danger-sm">🗑 Löschen</button>
-        </div>
+      ).join('');
+      diagListHtml = `<div class="tl-slot-inline-detail">
+        <div class="tl-inline-diag-list">${diagCards}</div>
       </div>`;
     }
+
+    // Action buttons – always visible
+    const actionsHtml = `<div class="tl-inline-actions tl-inline-actions--always">
+      ${isPatient ? '<button class="tl-inline-btn tl-inline-add-diag">＋ Diagnose</button>' : ''}
+      ${hasTips ? '<button class="tl-inline-btn tl-inline-tips">☑️ Checkliste</button>' : ''}
+      <button class="tl-inline-btn tl-inline-edit">✏️ Bearbeiten</button>
+      <button class="tl-inline-btn tl-inline-del btn-danger-sm">🗑 Löschen</button>
+    </div>`;
+
     return `<div class="tl-slot slot-${slot.type}${isExpanded ? ' tl-slot--expanded' : ''}" data-slot-id="${slot.id}">
       <div class="tl-slot-main">
         <span class="tl-drag-handle" data-drag title="Verschieben">⠿</span>
@@ -990,10 +1003,11 @@ function renderTimeline(shift) {
           <div class="tl-slot-time">${padT(slot.startHour,slot.startMinute)}–${padT(slot.endHour,slot.endMinute)} · +${slot.xpEarned} XP</div>
           ${commentHtml}
         </div>
-        <span class="tl-slot-chevron">${isExpanded ? '▲' : '▼'}</span>
+        ${isPatient ? `<span class="tl-slot-chevron" data-chevron title="${isExpanded ? 'Diagnosen einklappen' : 'Diagnosen anzeigen'}">${isExpanded ? '▲' : '▼'}</span>` : ''}
         <button class="tl-slot-delete btn-icon" data-slot-id="${slot.id}" title="Löschen">🗑</button>
       </div>
-      ${inlineDetail}
+      ${actionsHtml}
+      ${diagListHtml}
       ${breakStripHtml(row.breaks)}
     </div>`;
   }).join('');
@@ -1006,19 +1020,19 @@ function renderTimeline(shift) {
     });
   });
 
-  // Wire slot clicks → inline expansion
-  tl.querySelectorAll('.tl-slot').forEach(el => {
-    el.addEventListener('click', e => {
-      if (e.target.closest('.tl-slot-delete') || e.target.closest('[data-drag]') ||
-          e.target.closest('.tl-break-badge') || e.target.closest('.tl-slot-inline-detail')) return;
-      const slotId = parseInt(el.dataset.slotId);
+  // Wire chevron clicks → toggle diagnosis list
+  tl.querySelectorAll('[data-chevron]').forEach(chevron => {
+    chevron.addEventListener('click', e => {
+      e.stopPropagation();
+      const slotEl = chevron.closest('.tl-slot');
+      const slotId = parseInt(slotEl.dataset.slotId);
       state.expandedSlotId = state.expandedSlotId === slotId ? null : slotId;
       renderTimeline(shift);
     });
   });
 
-  // Wire inline detail actions
-  tl.querySelectorAll('.tl-slot--expanded').forEach(el => {
+  // Wire inline actions (always visible – present on all slots)
+  tl.querySelectorAll('.tl-slot').forEach(el => {
     const slotId = parseInt(el.dataset.slotId);
     const slot = state.plannerSlots.find(s => s.id === slotId);
     if (!slot) return;
@@ -1463,6 +1477,17 @@ async function saveSlot() {
       }
     }, 300);
   }
+}
+
+function updatePlannerXP(shift) {
+  const slotTotal = state.plannerSlots.reduce((s, sl) => s + (sl.xpEarned || 0), 0);
+  const modifier  = CATEGORY_XP_MODIFIER[shift.category || 'regulär'];
+  const base      = Math.round(calculateShiftXP(shift.type) * modifier);
+  const xpLabel   = shift.baseXPAwarded
+    ? `✓ Basis-XP · +${slotTotal} XP Einträge`
+    : `+${base} Basis · +${slotTotal} XP Einträge`;
+  const el = document.querySelector('.home-inline-xp');
+  if (el) el.textContent = xpLabel;
 }
 
 async function deleteSlot(slotId, shift, source = 'planner') {
@@ -2143,10 +2168,17 @@ function renderDiagBrowseList(catCode) {
 }
 
 function closeDiagnosisModal() {
+  const slotSrc = state.addToShiftContext?.slotSource;
+  const slotShiftId = state.addToShiftContext?.shiftId;
   document.getElementById('diagnosis-modal').classList.add('hidden');
   state.searchContext = { patientIndex: null, selectedDiagnosis: null, standalone: false };
   state.addToShiftContext = null;
   state.diagCatchStack = [];
+  // If we came from the planner timeline, refresh it
+  if (slotSrc === 'planner' && slotShiftId != null) {
+    const freshShift = state.shifts.find(s => s.id === slotShiftId);
+    if (freshShift) renderTimeline(freshShift);
+  }
 }
 
 function onSearch(e) {
@@ -4034,8 +4066,18 @@ async function saveToExistingShiftPatient(diagnosis, hasComorbidity, xpResult, s
   applyAchievements();
 
   if (fromSlotId) {
-    const freshSlot = await db.scheduleSlots.get(fromSlotId);
-    if (freshSlot) openSlotDetailModal(freshSlot, fromSlotSrc);
+    if (fromSlotSrc === 'planner') {
+      // Stay in planner – close diag modal and re-render timeline
+      document.getElementById('diagnosis-modal').classList.add('hidden');
+      state.addToShiftContext = null;
+      state.diagCatchStack = [];
+      state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shiftId).sortBy('startHour');
+      const freshShift = state.shifts.find(s => s.id === shiftId);
+      if (freshShift) renderTimeline(freshShift);
+    } else {
+      const freshSlot = await db.scheduleSlots.get(fromSlotId);
+      if (freshSlot) openSlotDetailModal(freshSlot, fromSlotSrc);
+    }
   } else {
     openShiftDetailModal(shiftId);
   }
