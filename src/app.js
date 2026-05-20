@@ -3190,6 +3190,9 @@ async function renderShiftDetailBody(shift) {
     }
     patientMap.get(key).catches.push(c);
   });
+  // Sort patients chronologically by time, unknown time last
+  const sortedPatients = [...patientMap.entries()]
+    .sort(([, a], [, b]) => (a.patientTime ?? 9999) - (b.patientTime ?? 9999));
 
   const extMins  = shift.extensionMinutes || 0;
   const shiftH   = calcShiftHours(shift).toFixed(1).replace('.0','');
@@ -3206,7 +3209,7 @@ async function renderShiftDetailBody(shift) {
     <div class="shift-detail-header">
       <div class="shift-detail-info">
         <div class="shift-detail-date">${shiftIcon(shift.type)} ${fmtDateShort(shift.date)} · ${shiftLabelFull(shift)}</div>
-        <div class="shift-detail-meta">+${shift.xpEarned} XP · ${actualPatientCount} Patient(en)</div>
+        <div class="shift-detail-meta">+${shift.xpEarned} XP · ${actualPatientCount} Termin(e)</div>
         <div class="shift-timestamps">
           <span>📅 ${fmtDateTime(shift.createdAt)}</span>
           ${shift.updatedAt ? `<span>✏️ ${fmtDateTime(shift.updatedAt)}</span>` : ''}
@@ -3234,18 +3237,23 @@ async function renderShiftDetailBody(shift) {
   }
 
   let pNum = 1;
-  for (const [, p] of patientMap) {
-    const timeStr  = p.patientTime != null ? ` · ${String(p.patientTime).padStart(2,'0')}:00 Uhr` : '';
-    const demoLabel = `${p.ageGroup} J · ${p.gender} · ${p.patientType === 'erstgespraech' ? 'Erstgespräch' : 'Interview'}${timeStr}`;
+  for (const [, p] of sortedPatients) {
+    const timeStr  = p.patientTime != null ? `${String(p.patientTime).padStart(2,'0')}:00 Uhr · ` : '';
+    const typeLabel = p.patientType === 'erstgespraech' ? 'Erstgespräch' : 'Interview';
+    const termLabel = p.patientTime != null
+      ? `Termin ${String(p.patientTime).padStart(2,'0')}:00`
+      : `Termin ${pNum}`;
+    const demoLabel = `${timeStr}${p.ageGroup} J · ${p.gender} · ${typeLabel}`;
     html += `<div class="patient-section" data-pkey="${p.index}">
       <div class="patient-section-header">
         <div>
-          <div class="patient-section-label">Patient ${pNum}</div>
+          <div class="patient-section-label">${termLabel}</div>
           <div class="patient-section-demo">${demoLabel}</div>
         </div>
         <div style="display:flex;gap:4px">
+          <button class="btn-icon btn-move-patient" data-pkey="${p.index}" title="Termin verschieben">↗</button>
           <button class="btn-icon btn-edit-patient-demo" data-pkey="${p.index}" title="Demografik bearbeiten">✎</button>
-          <button class="btn-icon btn-delete-shift-patient" data-pkey="${p.index}" title="Patient löschen">🗑</button>
+          <button class="btn-icon btn-delete-shift-patient" data-pkey="${p.index}" title="Termin löschen">🗑</button>
         </div>
       </div>
       <div class="patient-diags" id="pdiags-${shift.id}-${p.index}">`;
@@ -3270,10 +3278,10 @@ async function renderShiftDetailBody(shift) {
     pNum++;
   }
 
-  // Add new patient section
+  // Add new appointment section
   html += `<button class="patient-section-add" id="btn-add-new-patient-to-shift" data-shiftid="${shift.id}"
     style="display:block;width:100%;padding:12px;border:1px dashed rgba(124,58,237,.3);border-radius:var(--r);color:var(--accent);margin-top:8px">
-    + Neuer Patient & Diagnose
+    + Neuer Termin & Diagnose
   </button>`;
 
   // Planner slots section — always show for any shift that has slots or plannerShift flag
@@ -3361,10 +3369,10 @@ async function renderShiftDetailBody(shift) {
         const opt = document.createElement('button');
         opt.className = 'move-diag-option';
         if (String(pkey) === String(currentPkey)) {
-          opt.textContent = `Patient ${pNum} (aktuell)`;
+          opt.textContent = `Termin ${pNum} (aktuell)`;
           opt.disabled = true;
         } else {
-          opt.textContent = `→ Patient ${pNum}`;
+          opt.textContent = `→ Termin ${pNum}`;
           opt.addEventListener('click', async () => {
             await db.caughtDiagnoses.update(catchId, { patientIndex: pkey });
             state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
@@ -3387,6 +3395,35 @@ async function renderShiftDetailBody(shift) {
     deleteShift(parseInt(body.querySelector('#btn-delete-this-shift').dataset.id)));
 
   // Patient demo edit buttons
+  body.querySelectorAll('.btn-move-patient').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      body.querySelectorAll('.move-patient-menu').forEach(m => m.remove());
+      const pkey = btn.dataset.pkey;
+      const candidates = state.shifts
+        .filter(s => s.id !== shift.id && !s.plannerActive)
+        .slice(0, 10);
+      if (!candidates.length) { alert('Keine anderen Dienste vorhanden.'); return; }
+      const menu = document.createElement('div');
+      menu.className = 'move-patient-menu';
+      const title = document.createElement('div');
+      title.className = 'move-patient-title';
+      title.textContent = 'Termin verschieben in:';
+      menu.appendChild(title);
+      candidates.forEach(s => {
+        const opt = document.createElement('button');
+        opt.className = 'move-diag-option';
+        opt.textContent = `→ ${fmtDateShort(s.date)} ${shiftIcon(s.type)} ${shiftLabel(s.type)}`;
+        opt.addEventListener('click', async () => {
+          menu.remove();
+          await movePatientToShift(pkey, shift, s.id, patientMap);
+        });
+        menu.appendChild(opt);
+      });
+      btn.closest('.patient-section-header').after(menu);
+    });
+  });
+
   body.querySelectorAll('.btn-edit-patient-demo').forEach(btn => {
     btn.addEventListener('click', () => togglePatientEditRow(btn.dataset.pkey, shift.id, patientMap));
   });
@@ -3472,6 +3509,31 @@ async function saveShiftNote(shift, noteText) {
   } else {
     state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
   }
+}
+
+async function movePatientToShift(pkey, sourceShift, targetShiftId, patientMap) {
+  const keyVal = isNaN(pkey) ? pkey : parseInt(pkey);
+  const p = patientMap.get(keyVal);
+  if (!p || !p.catches.length) return;
+
+  // Next available patientIndex in target shift
+  const targetCatches = state.catches.filter(c => c.shiftId === targetShiftId);
+  const newPIdx = targetCatches.reduce((m, c) => Math.max(m, c.patientIndex ?? -1), -1) + 1;
+
+  for (const c of p.catches) {
+    await db.caughtDiagnoses.update(c.id, { shiftId: targetShiftId, patientIndex: newPIdx });
+  }
+
+  // Refresh patientCount on both shifts
+  state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
+  const srcCount = new Set(state.catches.filter(c => c.shiftId === sourceShift.id && c.patientIndex != null).map(c => c.patientIndex)).size;
+  const tgtCount = new Set(state.catches.filter(c => c.shiftId === targetShiftId && c.patientIndex != null).map(c => c.patientIndex)).size;
+  await db.shiftLogs.update(sourceShift.id, { patientCount: srcCount });
+  await db.shiftLogs.update(targetShiftId, { patientCount: tgtCount });
+  state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+
+  const updatedShift = state.shifts.find(s => s.id === sourceShift.id);
+  if (updatedShift) renderShiftDetailBody(updatedShift);
 }
 
 function togglePatientEditRow(pkey, shiftId, patientMap) {
