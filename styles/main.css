@@ -1680,16 +1680,19 @@ img{max-width:100%;display:block}
   box-shadow:0 0 18px rgba(245,158,11,.18);
 }
 .ach-img-wrap{
-  position:relative;width:52px;height:52px;flex-shrink:0;
+  position:relative;width:88px;height:88px;flex-shrink:0;
 }
 .ach-img{
-  width:52px;height:52px;object-fit:contain;
-  border-radius:50%;background:var(--bg-raised);display:block;
+  width:88px;height:88px;object-fit:cover;
+  border-radius:12px;display:block;
 }
 .ach-emoji{
   position:absolute;inset:0;
   display:flex;align-items:center;justify-content:center;
-  font-size:26px;background:var(--bg-raised);border-radius:50%;
+  font-size:36px;background:var(--bg-raised);border-radius:12px;
+}
+.ach-img-locked .ach-emoji{
+  filter:brightness(.5);
 }
 .ach-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.2;margin-bottom:2px}
 .ach-desc{font-size:11px;color:var(--text-dim);line-height:1.3}

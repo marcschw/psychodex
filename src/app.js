@@ -2487,17 +2487,21 @@ function renderAchievements() {
     secretsDone.add(a.badgeId);
   });
 
+  const achImgHtml = (id, icon) =>
+    `<div class="ach-img-wrap">
+      <img class="ach-img" src="assets/images/badges/${id}.png"
+           onload="this.nextElementSibling.style.display='none'"
+           onerror="this.style.display='none'" alt="">
+      <span class="ach-emoji">${icon}</span>
+    </div>`;
+
   const regularCards = ACHIEVEMENTS.map(ach => {
     const maxTier = maxTierMap[ach.id] || 0;
     const dots = [1, 2, 3].map(t =>
       `<span class="ach-dot${t <= maxTier ? ' ach-dot-earned' : ''}"></span>`
     ).join('');
     return `<div class="ach-card ach-tier-${maxTier}">
-      <div class="ach-img-wrap">
-        <img class="ach-img" src="assets/images/badges/${ach.id}.png"
-             onerror="this.style.display='none'" alt="">
-        <span class="ach-emoji">${ach.icon}</span>
-      </div>
+      ${achImgHtml(ach.id, ach.icon)}
       <div class="ach-info">
         <div class="ach-name">${ach.name}</div>
         <div class="ach-desc">${ach.description}</div>
@@ -2511,11 +2515,7 @@ function renderAchievements() {
     const isUnlocked = secretsDone.has(ach.id);
     if (isUnlocked) {
       return `<div class="ach-card ach-tier-3 ach-secret-unlocked">
-        <div class="ach-img-wrap">
-          <img class="ach-img" src="assets/images/badges/${ach.id}.png"
-               onerror="this.style.display='none'" alt="">
-          <span class="ach-emoji">${ach.icon}</span>
-        </div>
+        ${achImgHtml(ach.id, ach.icon)}
         <div class="ach-info">
           <div class="ach-name">${ach.name}</div>
           <div class="ach-desc">${ach.description}</div>
@@ -2524,7 +2524,7 @@ function renderAchievements() {
       </div>`;
     }
     return `<div class="ach-card ach-tier-0 ach-secret-locked">
-      <div class="ach-img-wrap"><span class="ach-emoji" style="filter:brightness(0) invert(.15)">⬛</span></div>
+      <div class="ach-img-wrap ach-img-locked"><span class="ach-emoji">🔒</span></div>
       <div class="ach-info">
         <div class="ach-name">${ach.name}</div>
         <div class="ach-desc">??? (Geheimnis)</div>
