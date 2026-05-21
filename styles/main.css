@@ -2522,3 +2522,26 @@ img{max-width:100%;display:block}
 .badge-lb-close:active{background:rgba(255,255,255,.25)}
 .ach-img-clickable{cursor:pointer;transition:transform .15s}
 .ach-img-clickable:active{transform:scale(.97)}
+
+/* ── Missions strip ────────────────────────────────────────────────────────── */
+.missions-strip{display:flex;align-items:stretch;gap:6px;padding:8px 12px;overflow-x:auto;scrollbar-width:none;background:rgba(0,0,0,.3);border-top:1px solid var(--border);flex-shrink:0}
+.missions-strip::-webkit-scrollbar{display:none}
+.mission-pill{display:flex;align-items:center;gap:7px;min-width:130px;max-width:190px;background:var(--bg-raised);border:1px solid var(--border);border-radius:10px;padding:6px 10px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s;flex-shrink:0}
+.mission-pill:active{background:var(--bg-hover)}
+.mp-tier-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.tier-dot-1{background:#94a3b8}.tier-dot-2{background:#60a5fa}.tier-dot-3{background:#a78bfa}.tier-dot-4{background:#f59e0b}
+.mp-body{flex:1;min-width:0}
+.mp-title{font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.mp-bar{height:3px;background:rgba(255,255,255,.1);border-radius:2px}
+.mp-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .3s}
+.mp-pct{font-size:10px;color:var(--text-dim);flex-shrink:0;font-variant-numeric:tabular-nums}
+.mission-history-pill{display:flex;align-items:center;justify-content:center;min-width:36px;font-size:18px;background:var(--bg-raised);border:1px solid var(--border);border-radius:10px;padding:6px 8px;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0;transition:background .15s}
+.mission-history-pill:active{background:var(--bg-hover)}
+/* Challenge history */
+.ch-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.ch-row:last-child{border-bottom:none}
+.ch-title{font-size:14px;font-weight:500;color:var(--text)}
+.ch-meta{font-size:12px;color:var(--text-dim);margin-top:2px}
+.ch-reward{font-size:13px;font-weight:700;color:var(--success);flex-shrink:0;margin-left:12px}
+/* Settings tab */
+#tab-settings{padding:16px}

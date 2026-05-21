@@ -142,24 +142,20 @@
         <!-- Sub-tab chips -->
         <div class="stats-subtabs" id="stats-subtab-bar">
           <button class="stats-subtab active" data-subtab="overview">
-            <span class="subtab-name">Übersicht</span>
+            <span class="subtab-name">📊 Übersicht</span>
             <span class="subtab-stat" id="sstab-overview-stat">Rang 1</span>
           </button>
           <button class="stats-subtab" data-subtab="dienste">
-            <span class="subtab-name">Missionen</span>
+            <span class="subtab-name">🎯 Missionen</span>
             <span class="subtab-stat" id="sstab-dienste-stat">0 aktiv</span>
           </button>
           <button class="stats-subtab" data-subtab="diagnosen">
-            <span class="subtab-name">Diagnosen</span>
+            <span class="subtab-name">🔬 Diagnosen</span>
             <span class="subtab-stat" id="sstab-diagnosen-stat">0</span>
           </button>
           <button class="stats-subtab" data-subtab="badges">
-            <span class="subtab-name">Badges</span>
+            <span class="subtab-name">🏆 Achievements</span>
             <span class="subtab-stat" id="sstab-badges-stat">0/25</span>
-          </button>
-          <button class="stats-subtab" data-subtab="einstellungen">
-            <span class="subtab-name">⚙️ Einstellungen</span>
-            <span class="subtab-stat">&nbsp;</span>
           </button>
         </div>
 
@@ -200,29 +196,6 @@
               <div class="stat-value" id="total-hours">0h</div>
               <div class="stat-label">Stunden</div>
             </div>
-            <div class="stat-card stat-clickable" id="stat-catches-card">
-              <div class="stat-icon">🔬</div>
-              <div class="stat-value" id="total-catches">0</div>
-              <div class="stat-label">Diagnosen</div>
-            </div>
-          </div>
-          <div class="progress-stats">
-            <div class="progress-stat" id="stat-xp-card">
-              <div class="ps-label">Gesamt XP</div>
-              <div class="ps-value" id="stat-total-xp">0</div>
-            </div>
-            <div class="progress-stat" id="stat-shifts-card">
-              <div class="ps-label">Dienste</div>
-              <div class="ps-value" id="stat-total-shifts">0</div>
-            </div>
-            <div class="progress-stat">
-              <div class="ps-label">Ø XP / Dienst</div>
-              <div class="ps-value" id="stat-avg-xp">0</div>
-            </div>
-            <div class="progress-stat">
-              <div class="ps-label">Stunden</div>
-              <div class="ps-value" id="stat-hours">0h</div>
-            </div>
           </div>
           <div id="hours-counters"></div>
           <div class="section-header" id="heatmap-section-header">Dienst-Aktivität</div>
@@ -251,38 +224,41 @@
           <div id="achievements-section"></div>
         </div>
 
-        <!-- Panel: Einstellungen -->
-        <div id="stats-panel-einstellungen" class="stats-panel stats-panel-hidden">
-          <div class="section-header">Einstellungen</div>
-          <div class="settings-grid">
-            <div class="setting-item setting-wide">
-              <label class="setting-label" for="setting-user-name">Mein Name (für Rolecall)</label>
-              <input type="text" id="setting-user-name" class="setting-input" placeholder="z.B. Marcel Schwarz">
-            </div>
-            <div class="setting-item setting-wide">
-              <label class="setting-label">Stunden-Zähler</label>
-              <div id="hour-counters-settings"></div>
-            </div>
-            <div class="setting-item setting-wide">
-              <label class="setting-label">Extra-Stunden</label>
-              <div id="extra-hours-section"></div>
-            </div>
+      </section>
+
+      <!-- ── Settings ─────────────────────────────────────────────────────────── -->
+      <section id="tab-settings" class="tab-view">
+        <div class="section-header">Einstellungen</div>
+        <div class="settings-grid">
+          <div class="setting-item setting-wide">
+            <label class="setting-label" for="setting-user-name">Mein Name (für Rolecall)</label>
+            <input type="text" id="setting-user-name" class="setting-input" placeholder="z.B. Marcel Schwarz">
           </div>
-          <div class="section-header">Daten &amp; Backup</div>
-          <div class="export-import-row">
-            <button id="btn-export" class="io-btn">⬇ Exportieren</button>
-            <label class="io-btn io-btn-import">⬆ Importieren
-              <input type="file" id="import-file-input" accept=".json" style="display:none">
-            </label>
-            <label class="io-btn io-btn-import">📅 Dienstplan XML
-              <input type="file" id="xml-import-input" accept=".xml" style="display:none">
-            </label>
+          <div class="setting-item setting-wide">
+            <label class="setting-label">Stunden-Zähler</label>
+            <div id="hour-counters-settings"></div>
+          </div>
+          <div class="setting-item setting-wide">
+            <label class="setting-label">Extra-Stunden</label>
+            <div id="extra-hours-section"></div>
           </div>
         </div>
-
+        <div class="section-header">Daten &amp; Backup</div>
+        <div class="export-import-row">
+          <button id="btn-export" class="io-btn">⬇ Exportieren</button>
+          <label class="io-btn io-btn-import">⬆ Importieren
+            <input type="file" id="import-file-input" accept=".json" style="display:none">
+          </label>
+          <label class="io-btn io-btn-import">📅 Dienstplan XML
+            <input type="file" id="xml-import-input" accept=".xml" style="display:none">
+          </label>
+        </div>
       </section>
 
     </div><!-- /.tab-container -->
+
+    <!-- Missions Strip -->
+    <div id="missions-strip" class="missions-strip"></div>
 
     <!-- Bottom Nav -->
     <nav class="bottom-nav" id="bottom-nav">
@@ -297,6 +273,10 @@
       <button class="nav-btn" data-tab="stats">
         <span class="nav-icon">◬</span>
         <span class="nav-label">Stats</span>
+      </button>
+      <button class="nav-btn" data-tab="settings">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Einstellungen</span>
       </button>
     </nav>
 
@@ -762,6 +742,32 @@
         <button class="btn-secondary" id="team-modal-cancel">Schließen</button>
         <button class="btn-primary" id="team-modal-save">✓ Speichern</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Mission Detail Modal -->
+  <div id="mission-detail-modal" class="modal hidden">
+    <div class="modal-backdrop" id="mission-detail-backdrop"></div>
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="modal-title">🎯 Mission</div>
+        <button class="modal-close" id="mission-detail-close">✕</button>
+      </div>
+      <div class="sheet-body" id="mission-detail-body"></div>
+    </div>
+  </div>
+
+  <!-- Challenge History Modal -->
+  <div id="challenge-history-modal" class="modal hidden">
+    <div class="modal-backdrop" id="challenge-history-backdrop"></div>
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="modal-title">📜 Challenge History</div>
+        <button class="modal-close" id="challenge-history-close">✕</button>
+      </div>
+      <div class="sheet-body" id="challenge-history-body"></div>
     </div>
   </div>
 

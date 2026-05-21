@@ -343,6 +343,7 @@ async function init() {
     setupICDFCollectionListeners();
     setupTeamModal();
     setupShiftAdvModal();
+    setupMissionModals();
     setupEscapeKey();
     document.getElementById('badge-lb-close').addEventListener('click', closeBadgeLightbox);
     document.getElementById('badge-lb-backdrop').addEventListener('click', closeBadgeLightbox);
@@ -460,7 +461,7 @@ function setupNav() {
   // Swipe left/right on stats tab → cycle sub-tabs
   const statsEl = document.getElementById('tab-stats');
   if (statsEl) {
-    const SUBTABS = ['overview', 'dienste', 'diagnosen', 'badges', 'einstellungen'];
+    const SUBTABS = ['overview', 'dienste', 'diagnosen', 'badges'];
     addSwipeHandler(statsEl,
       () => {
         const i = SUBTABS.indexOf(state.statsSubTab);
@@ -474,7 +475,7 @@ function setupNav() {
   }
 }
 
-const SUBTAB_ORDER = ['overview', 'dienste', 'diagnosen', 'badges', 'einstellungen'];
+const SUBTAB_ORDER = ['overview', 'dienste', 'diagnosen', 'badges'];
 
 function switchStatsSubTab(name) {
   const oldIdx = SUBTAB_ORDER.indexOf(state.statsSubTab);
@@ -528,6 +529,7 @@ function navigateTo(tab) {
   if (tab === 'home') renderHomeTab();
   if (tab === 'icdf') renderICDFTab();
   if (tab === 'stats') renderStats();
+  if (tab === 'settings') renderSettingsTab();
 }
 
 // ─── Render ───────────────────────────────────────────────────────────────────
@@ -535,6 +537,7 @@ function renderApp() {
   loadICDFCollection();
   renderHomeTab();
   updateHeader();
+  renderMissionsStrip();
 }
 
 function updateHeader() {
@@ -602,9 +605,9 @@ function renderDashboard() {
   imgEl.alt   = rank.title;
   imgEl.style.opacity = '1';
 
-  // Stars: 1 for levels 1-6, 2 for 7-12, 3 for 13-18
-  const numStars = rank.level <= 6 ? 1 : rank.level <= 12 ? 2 : 3;
-  document.getElementById('rank-stars').textContent = '⭐'.repeat(numStars);
+  // Stars: within-title progression (3 levels per title block)
+  const starPos = ((rank.level - 1) % 3) + 1;
+  document.getElementById('rank-stars').textContent = '★'.repeat(starPos) + '☆'.repeat(3 - starPos);
 
   // Streak
   const streak = calcStreak(state.shifts);
@@ -616,15 +619,12 @@ function renderDashboard() {
   // stat card still shows total
   const totalHoursNum = calcTotalHours();
   document.getElementById('total-hours').textContent = `${totalHoursNum.toFixed(1).replace(/\.0$/, '')}h`;
-  document.getElementById('total-catches').textContent = state.catches.length;
 
   // Stat card clicks
-  const hoursCard   = document.getElementById('stat-hours-card');
-  const catchesCard = document.getElementById('stat-catches-card');
-  const streakCard  = document.getElementById('stat-streak-card');
-  hoursCard.onclick   = openHoursModal;
-  catchesCard.onclick = openCatchesModal;
-  streakCard.onclick  = openStreakModal;
+  const hoursCard  = document.getElementById('stat-hours-card');
+  const streakCard = document.getElementById('stat-streak-card');
+  if (hoursCard)  hoursCard.onclick  = openHoursModal;
+  if (streakCard) streakCard.onclick = openStreakModal;
 }
 
 // ─── Hours Counters ───────────────────────────────────────────────────────────
@@ -846,14 +846,14 @@ async function renderHomeTab() {
         </div>
         <div class="home-inline-row">
           <span class="home-shift-num">${shiftNumber(shift)}</span>
-          <div class="home-type-compact-row">
-            ${specialChip}
-            <button class="home-half-btn${vmActive && !isSpecial ? ' active' : ''}" id="btn-home-vm">VM</button>
-            <button class="home-half-btn${nmActive && !isSpecial ? ' active' : ''}" id="btn-home-nm">NM</button>
-            <button class="home-adv-btn" id="btn-home-adv" title="Erweiterte Einstellungen">⚙️</button>
-          </div>
           <span class="home-inline-xp">${xpLabel}</span>
           <button id="btn-delete-home-shift" class="btn-icon home-del-btn" title="Dienst löschen">🗑</button>
+        </div>
+        <div class="home-type-compact-row">
+          ${isSpecial ? specialChip : `
+            <button class="home-half-btn${vmActive ? ' active' : ''}" id="btn-home-vm">VM</button>
+            <button class="home-half-btn${nmActive ? ' active' : ''}" id="btn-home-nm">NM</button>`}
+          <button class="home-adv-btn" id="btn-home-adv" title="Erweiterte Einstellungen">⚙️</button>
         </div>
         ${shift.type !== 'schulung' ? `
         <textarea id="home-edit-note" class="home-note-area" rows="6"
@@ -3615,10 +3615,102 @@ async function refreshMissionProgress() {
     setTimeout(async () => {
       await ensureMissionSlots();
       if (state.currentTab === 'stats') renderMissions();
+      renderMissionsStrip();
     }, 1800);
   }
 
   if (state.currentTab === 'stats') renderMissions();
+  renderMissionsStrip();
+}
+
+function renderSettingsTab() {
+  renderHourCountersSettings();
+  renderExtraHoursSettings();
+}
+
+// ─── Missions Strip ───────────────────────────────────────────────────────────
+function renderMissionsStrip() {
+  const el = document.getElementById('missions-strip');
+  if (!el) return;
+  const active = state.missions.filter(m => !m.completedAt).sort((a, b) => a.slotIndex - b.slotIndex);
+  if (!active.length) { el.innerHTML = ''; return; }
+  el.innerHTML = active.map(am => {
+    const def = MISSION_POOL.find(m => m.id === am.missionId);
+    if (!def) return '';
+    const catchesSince = state.catches.filter(c => c.caughtAt >= am.activatedAt);
+    const shiftsSince  = state.shifts.filter(s => (s.createdAt || `${s.date}T00:00:00`) >= am.activatedAt);
+    const { current, target } = calcMissionProgress(def, catchesSince, shiftsSince, state.icdFlat);
+    const pct = Math.min(100, Math.round((current / target) * 100));
+    return `<button class="mission-pill tier-${def.tier}" data-mission-id="${am.id}">
+      <div class="mp-tier-dot tier-dot-${def.tier}"></div>
+      <div class="mp-body">
+        <div class="mp-title">${def.title}</div>
+        <div class="mp-bar"><div class="mp-fill" style="width:${pct}%"></div></div>
+      </div>
+      <span class="mp-pct">${pct}%</span>
+    </button>`;
+  }).join('') + `<button class="mission-history-pill" id="btn-mission-history" title="Challenge History">📜</button>`;
+  el.querySelectorAll('.mission-pill').forEach(pill =>
+    pill.addEventListener('click', () => {
+      const am = state.missions.find(m => m.id === parseInt(pill.dataset.missionId));
+      if (am) openMissionDetailModal(am);
+    })
+  );
+  document.getElementById('btn-mission-history')?.addEventListener('click', openChallengeHistoryModal);
+}
+
+function openMissionDetailModal(am) {
+  const def = MISSION_POOL.find(m => m.id === am.missionId);
+  if (!def) return;
+  const modal = document.getElementById('mission-detail-modal');
+  const body  = document.getElementById('mission-detail-body');
+  const catchesSince = state.catches.filter(c => c.caughtAt >= am.activatedAt);
+  const shiftsSince  = state.shifts.filter(s => (s.createdAt || `${s.date}T00:00:00`) >= am.activatedAt);
+  const { current, target } = calcMissionProgress(def, catchesSince, shiftsSince, state.icdFlat);
+  const pct = Math.min(100, Math.round((current / target) * 100));
+  body.innerHTML = `
+    <div class="mission-card tier-${def.tier}" style="margin-bottom:12px">
+      <div class="mission-card-header">
+        <span class="mission-tier-badge">${TIER_LABELS[def.tier]}</span>
+        <span class="mission-reward">+${def.reward.toLocaleString('de-AT')} XP</span>
+      </div>
+      <div class="mission-title">${def.title}</div>
+      <div class="mission-desc">${def.description}</div>
+      <div class="mission-progress-row">
+        <div class="mission-prog-track"><div class="mission-prog-fill" style="width:${pct}%"></div></div>
+        <span class="mission-prog-text">${current} / ${target}</span>
+      </div>
+      ${def.badge ? `<div style="font-size:32px;text-align:center;margin-top:12px">${def.badge}</div>` : ''}
+    </div>
+    <div style="font-size:12px;color:var(--text-dim)">Aktiv seit ${new Date(am.activatedAt).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'2-digit'})}</div>`;
+  modal.classList.remove('hidden');
+}
+
+function openChallengeHistoryModal() {
+  const completed = state.missions.filter(m => m.completedAt).sort((a, b) => b.completedAt.localeCompare(a.completedAt));
+  const modal = document.getElementById('challenge-history-modal');
+  const body  = document.getElementById('challenge-history-body');
+  body.innerHTML = completed.length ? completed.map(am => {
+    const def = MISSION_POOL.find(m => m.id === am.missionId);
+    if (!def) return '';
+    const date = new Date(am.completedAt).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    return `<div class="ch-row">
+      <div><div class="ch-title">${def.title}</div><div class="ch-meta">${TIER_LABELS[def.tier]} · ${date}</div></div>
+      <div class="ch-reward">+${def.reward.toLocaleString('de-AT')} XP</div>
+    </div>`;
+  }).join('') : '<div class="empty-state">Noch keine abgeschlossenen Challenges</div>';
+  modal.classList.remove('hidden');
+}
+
+function setupMissionModals() {
+  document.getElementById('mission-detail-close').addEventListener('click', () =>
+    document.getElementById('mission-detail-modal').classList.add('hidden'));
+  document.getElementById('mission-detail-backdrop').addEventListener('click', () =>
+    document.getElementById('mission-detail-modal').classList.add('hidden'));
+  document.getElementById('challenge-history-close').addEventListener('click', () =>
+    document.getElementById('challenge-history-modal').classList.add('hidden'));
+  document.getElementById('challenge-history-backdrop').addEventListener('click', () =>
+    document.getElementById('challenge-history-modal').classList.add('hidden'));
 }
 
 function renderMissions() {
@@ -3979,15 +4071,8 @@ function renderStats() {
   renderMissions();
 
   const xp     = state.profile?.totalXP ?? 0;
-  const shifts = state.shifts.length;
-  const hours  = calcTotalHours();
-  const avgXP  = shifts ? Math.round(xp / shifts) : 0;
-  document.getElementById('stat-total-xp').textContent    = xp.toLocaleString('de-AT');
-  document.getElementById('stat-total-shifts').textContent = shifts;
-  document.getElementById('stat-avg-xp').textContent       = avgXP;
-  document.getElementById('stat-hours').textContent        = `${hours.toFixed(1).replace('.0','')}h`;
-  renderHourCountersSettings();
-  renderExtraHoursSettings();
+  const el = id => document.getElementById(id);
+  renderMissionsStrip();
   const heatmapStart = renderHeatmap();
   const heatmapHeader = document.getElementById('heatmap-section-header');
   if (heatmapHeader && heatmapStart) {
@@ -3996,17 +4081,14 @@ function renderStats() {
   }
   renderCategoryChart();
   renderAchievements();
-  const xpCard = document.getElementById('stat-xp-card');
-  const shiftsCard = document.getElementById('stat-shifts-card');
-  if (xpCard) xpCard.onclick = openXPBreakdownModal;
-  if (shiftsCard) shiftsCard.onclick = openHoursModal;
 
   // Update sub-tab summary chips
   const rank = getRankForXP(xp);
+  const starPos = ((rank.level - 1) % 3) + 1;
+  const starsStr = '★'.repeat(starPos) + '☆'.repeat(3 - starPos);
   const earnedBadges = new Set((state.unlockedAchievements || []).map(a => a.badgeId)).size;
   const totalBadges  = (ACHIEVEMENTS.length + SECRET_ACHIEVEMENTS.length);
-  const el = id => document.getElementById(id);
-  if (el('sstab-overview-stat'))  el('sstab-overview-stat').textContent  = `${rank.title} · Rang ${rank.level}`;
+  if (el('sstab-overview-stat'))  el('sstab-overview-stat').textContent  = `${rank.title} ${starsStr}`;
   const activeMissionCount = (state.missions || []).filter(m => !m.completedAt).length;
   if (el('sstab-dienste-stat'))   el('sstab-dienste-stat').textContent   = `${activeMissionCount} aktiv`;
   if (el('sstab-diagnosen-stat')) el('sstab-diagnosen-stat').textContent = `${state.catches.length} gefangen`;
