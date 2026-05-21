@@ -71,21 +71,15 @@ function tagIconsHTML(tags) {
 }
 function teamButtonPreviewHTML(colleagues) {
   if (!colleagues || !colleagues.length) return '';
-  const tagCounts = {};
   const teamTotal = {}, teamPresent = {};
   for (const c of colleagues) {
-    for (const tag of (c.tags || [])) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
     const t = c.team || 'D';
     teamTotal[t]   = (teamTotal[t]   || 0) + 1;
     if (c.present) teamPresent[t] = (teamPresent[t] || 0) + 1;
   }
-  const tagStr = Object.entries(tagCounts)
-    .map(([tag, n]) => `${TAG_ICONS[tag] || tag}${n > 1 ? `<sub>${n}</sub>` : ''}`)
-    .join('');
-  const teamStr = TEAM_ORDER.filter(t => teamTotal[t])
+  return ['D', 'T'].filter(t => teamTotal[t])
     .map(t => `<span class="team-count-chip">${t} ${teamPresent[t] || 0}/${teamTotal[t]}</span>`)
     .join('');
-  return `${tagStr ? `<span class="team-btn-tags">${tagStr}</span>` : ''}${teamStr}`;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -839,6 +833,7 @@ async function renderHomeTab() {
     const timeRange = `${String(sh_s[0]).padStart(2,'0')}:${String(sh_s[1]).padStart(2,'0')} – ${String(sh_e[0]).padStart(2,'0')}:${String(sh_e[1]).padStart(2,'0')}`;
     const colleagues = shift.colleagues || [];
     const hasTeam = colleagues.length > 0;
+    const hideIcons = localStorage.getItem('hide-team-icons') === '1';
     panel.innerHTML = `
       <div class="home-shift-inline-edit">
         <div class="home-date-row">
@@ -846,7 +841,8 @@ async function renderHomeTab() {
             <span class="home-date-pretty">${prettyDateStr}</span>
             <span class="home-date-time">${timeRange}</span>
             <button class="home-date-edit-btn" id="btn-home-date-edit" title="Datum & Zeit verschieben">✏️</button>
-            ${hasTeam ? `<button class="home-team-btn" id="btn-home-team" title="Team-Anwesenheit">👥 ${teamButtonPreviewHTML(colleagues)}</button>` : ''}
+            ${hasTeam ? `<button class="home-team-btn" id="btn-home-team" title="Rolecall">👥 ${teamButtonPreviewHTML(colleagues)}</button>
+            <button class="home-icons-toggle" id="btn-icons-toggle" title="${hideIcons ? 'Tag-Icons zeigen' : 'Tag-Icons ausblenden'}">${hideIcons ? '◎' : '◉'}</button>` : ''}
           </div>
         </div>
         <div class="home-inline-row">
@@ -869,6 +865,11 @@ async function renderHomeTab() {
       openRescheduleModal(shift));
     const teamBtn = document.getElementById('btn-home-team');
     if (teamBtn) teamBtn.addEventListener('click', () => openTeamModal(shift));
+    const iconsToggle = document.getElementById('btn-icons-toggle');
+    if (iconsToggle) iconsToggle.addEventListener('click', () => {
+      localStorage.setItem('hide-team-icons', hideIcons ? '' : '1');
+      renderHomeTab();
+    });
     panel.querySelectorAll('.home-type-btn').forEach(btn =>
       btn.addEventListener('click', () => {
         panel.querySelectorAll('.home-type-btn').forEach(b => b.classList.remove('active'));
@@ -1162,44 +1163,88 @@ function openRescheduleModal(shift) {
 
 // ─── Team Attendance Modal ────────────────────────────────────────────────────
 function openTeamModal(shift) {
-  const colleagues = shift.colleagues || [];
-  if (!colleagues.length) return;
+  const rawColleagues = shift.colleagues || [];
+  if (!rawColleagues.length) return;
 
-  const modal = document.getElementById('team-modal');
-  const body  = document.getElementById('team-modal-body');
-  const title = document.getElementById('team-modal-title');
+  const modal    = document.getElementById('team-modal');
+  const body     = document.getElementById('team-modal-body');
+  const titleEl  = document.getElementById('team-modal-title');
+  const subEl    = document.getElementById('team-modal-subtitle');
 
-  const dateStr = new Date(shift.date + 'T12:00:00')
-    .toLocaleDateString('de-AT', { weekday:'short', day:'2-digit', month:'short' });
-  title.textContent = `👥 Team · ${dateStr}`;
+  const dateObj   = new Date(shift.date + 'T12:00:00');
+  const wdShort   = dateObj.toLocaleDateString('de-AT', { weekday:'short' });
+  const dtShort   = dateObj.toLocaleDateString('de-AT', { day:'numeric', month:'numeric', year:'numeric' });
+  const typeAbbr  = { früh:'VM', spät:'NM', samstag:'SAT', full:'Ganztag', schulung:'Sch' }[shift.type] || '';
+  const typeLabel = { früh:'Vormittag', spät:'Nachmittag', samstag:'Samstag', full:'Ganztag', schulung:'Schulung' }[shift.type] || '';
+  titleEl.textContent = `Rolecall – ${wdShort} ${dtShort} ${typeAbbr}`;
+
+  const { start: ss, end: se } = shiftHours(shift);
+  const tr = `${String(ss[0]).padStart(2,'0')}:${String(ss[1]).padStart(2,'0')}–${String(se[0]).padStart(2,'0')}:${String(se[1]).padStart(2,'0')}`;
+  const dtLong = dateObj.toLocaleDateString('de-AT', { weekday:'long', day:'numeric', month:'numeric', year:'numeric' });
+  subEl.textContent = `${dtLong} · ${typeLabel} (${tr})`;
+
+  // Inject self if name is set and not already listed
+  const userName = localStorage.getItem('psychodex-user-name') || '';
+  const colleagues = rawColleagues.map((c, i) => ({ ...c, _rawIdx: i }));
+  if (userName && !colleagues.some(c => c.name.toLowerCase() === userName.toLowerCase())) {
+    colleagues.unshift({ name: userName, funktion: '(Ich)', team: 'D', tags: [], present: true, _self: true, _rawIdx: -1 });
+  }
+
+  const hideIcons = localStorage.getItem('hide-team-icons') === '1';
+
+  const updateStatus = () => {
+    const checks = body.querySelectorAll('.team-colleague-check');
+    const p = Array.from(checks).filter(x => x.checked).length;
+    const f = checks.length - p;
+    body.querySelector('.rolecall-fehlen').textContent  = `${f} fehlen`;
+    body.querySelector('.rolecall-anwesend').textContent = `${p} anwesend`;
+  };
 
   const groups = {};
   for (const c of colleagues) {
     const t = c.team || 'D';
     if (!groups[t]) groups[t] = [];
-    groups[t].push({ ...c, _idx: colleagues.indexOf(c) });
+    groups[t].push(c);
   }
 
-  body.innerHTML = TEAM_ORDER.filter(t => groups[t]).map(t => `
-    <div class="team-group-header" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</div>
-    ${groups[t].map(c => `
-      <label class="team-colleague-row">
-        <input type="checkbox" class="team-colleague-check" data-idx="${c._idx}" ${c.present ? 'checked' : ''}>
-        <div class="team-colleague-info">
-          <div class="team-colleague-name">${c.name}</div>
-          <div class="team-colleague-func">${c.funktion}</div>
-        </div>
-        <div class="team-colleague-tags">${tagIconsHTML(c.tags)}</div>
-      </label>
-    `).join('')}
-  `).join('');
+  const initPresent = colleagues.filter(c => c.present).length;
+  const initFehlen  = colleagues.length - initPresent;
+
+  body.innerHTML = `
+    <div class="rolecall-status">
+      <span class="rolecall-fehlen">${initFehlen} fehlen</span>
+      <span class="rolecall-dot">·</span>
+      <span class="rolecall-anwesend">${initPresent} anwesend</span>
+    </div>
+    ${TEAM_ORDER.filter(t => groups[t]).map(t => `
+      <div class="team-group-header" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</div>
+      ${groups[t].map(c => `
+        <label class="team-colleague-row${c.present ? ' is-present' : ''}" data-team="${t}">
+          <input type="checkbox" class="team-colleague-check" data-idx="${c._rawIdx}" ${c.present ? 'checked' : ''}>
+          <span class="team-dot" style="background:${TEAM_META[t].color}"></span>
+          <div class="team-colleague-info">
+            <div class="team-colleague-name">${c.name}${c._self ? ' <span class="team-self-badge">Ich</span>' : ''}</div>
+            <div class="team-colleague-func">${c.funktion}</div>
+          </div>
+          ${!hideIcons && (c.tags || []).length ? `<div class="team-colleague-tags">${tagIconsHTML(c.tags)}</div>` : ''}
+        </label>
+      `).join('')}
+    `).join('')}`;
+
+  body.querySelectorAll('.team-colleague-check').forEach(cb => {
+    cb.addEventListener('change', () => {
+      cb.closest('.team-colleague-row').classList.toggle('is-present', cb.checked);
+      updateStatus();
+    });
+  });
 
   modal.classList.remove('hidden');
 
   document.getElementById('team-modal-save').onclick = async () => {
-    const updated = colleagues.map(c => ({ ...c }));
+    const updated = rawColleagues.map(c => ({ ...c }));
     body.querySelectorAll('.team-colleague-check').forEach(cb => {
-      updated[parseInt(cb.dataset.idx)].present = cb.checked;
+      const idx = parseInt(cb.dataset.idx);
+      if (idx >= 0) updated[idx].present = cb.checked;
     });
     await db.shiftLogs.update(shift.id, { colleagues: updated });
     state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
@@ -5930,6 +5975,13 @@ async function deleteExtraHourEntry(entryId) {
 // ─── Settings ─────────────────────────────────────────────────────────────────
 function setupSettingsInputs() {
   // counter settings are wired in renderHourCountersSettings
+  const nameInput = document.getElementById('setting-user-name');
+  if (nameInput) {
+    nameInput.value = localStorage.getItem('psychodex-user-name') || '';
+    nameInput.addEventListener('change', e => {
+      localStorage.setItem('psychodex-user-name', e.target.value.trim());
+    });
+  }
 }
 
 // ─── Shift Extension ──────────────────────────────────────────────────────────

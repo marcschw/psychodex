@@ -256,6 +256,10 @@
           <div class="section-header">Einstellungen</div>
           <div class="settings-grid">
             <div class="setting-item setting-wide">
+              <label class="setting-label" for="setting-user-name">Mein Name (für Rolecall)</label>
+              <input type="text" id="setting-user-name" class="setting-input" placeholder="z.B. Marcel Schwarz">
+            </div>
+            <div class="setting-item setting-wide">
               <label class="setting-label">Stunden-Zähler</label>
               <div id="hour-counters-settings"></div>
             </div>
@@ -725,7 +729,10 @@
     <div class="modal-sheet">
       <div class="sheet-handle"></div>
       <div class="sheet-header">
-        <div class="modal-title" id="team-modal-title">👥 Team</div>
+        <div>
+          <div class="modal-title" id="team-modal-title">Rolecall</div>
+          <div class="team-modal-subtitle" id="team-modal-subtitle"></div>
+        </div>
         <button class="modal-close" id="team-modal-close">✕</button>
       </div>
       <div class="sheet-body" id="team-modal-body"></div>
