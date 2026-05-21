@@ -41,6 +41,19 @@
       <!-- ── Home ──────────────────────────────────────────────────────────── -->
       <section id="tab-home" class="tab-view active">
 
+        <!-- Shift mini-navigator (top) -->
+        <div class="home-shift-nav" id="home-shift-nav">
+          <button class="home-snav-arrow" id="btn-snav-prev">
+            <span class="home-snav-arrow-icon">‹</span>
+            <span class="home-snav-date" id="snav-prev-date">—</span>
+          </button>
+          <button class="home-snav-cal" id="btn-open-cal">📅 Kalender</button>
+          <button class="home-snav-arrow home-snav-arrow-right" id="btn-snav-next">
+            <span class="home-snav-date" id="snav-next-date">—</span>
+            <span class="home-snav-arrow-icon">›</span>
+          </button>
+        </div>
+
         <!-- Animated content wrapper -->
         <div id="home-view-content">
 
@@ -60,19 +73,6 @@
         <button id="btn-add-home-break" class="tl-add-break-btn hidden">＋ Pause / Snack hinzufügen</button>
 
         </div><!-- /#home-view-content -->
-
-        <!-- Shift mini-navigator -->
-        <div class="home-shift-nav" id="home-shift-nav">
-          <button class="home-snav-arrow" id="btn-snav-prev">
-            <span class="home-snav-arrow-icon">‹</span>
-            <span class="home-snav-date" id="snav-prev-date">—</span>
-          </button>
-          <button class="home-snav-cal" id="btn-open-cal">📅 Kalender</button>
-          <button class="home-snav-arrow home-snav-arrow-right" id="btn-snav-next">
-            <span class="home-snav-date" id="snav-next-date">—</span>
-            <span class="home-snav-arrow-icon">›</span>
-          </button>
-        </div>
 
         <!-- Calendar Modal -->
         <div id="cal-modal" class="cal-modal hidden">
@@ -719,6 +719,28 @@
       <div class="sheet-footer">
         <button class="btn-secondary" id="shift-reschedule-cancel">Abbrechen</button>
         <button class="btn-primary" id="shift-reschedule-save">Verschieben</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Shift Advanced Settings Modal ──────────────────────────────────── -->
+  <div id="shift-adv-modal" class="modal hidden">
+    <div class="modal-backdrop" id="shift-adv-backdrop"></div>
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="modal-title">⚙️ Erweiterte Einstellungen</div>
+        <button class="modal-close" id="shift-adv-close">✕</button>
+      </div>
+      <div class="sheet-body">
+        <div class="form-group">
+          <label class="form-label">Spezialtyp</label>
+          <div id="shift-adv-type-row" class="adv-btn-row"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kategorie</label>
+          <div id="shift-adv-cat-row" class="adv-btn-row"></div>
+        </div>
       </div>
     </div>
   </div>

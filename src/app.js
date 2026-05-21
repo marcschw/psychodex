@@ -342,6 +342,7 @@ async function init() {
     setupPlannerListeners();
     setupICDFCollectionListeners();
     setupTeamModal();
+    setupShiftAdvModal();
     setupEscapeKey();
     document.getElementById('badge-lb-close').addEventListener('click', closeBadgeLightbox);
     document.getElementById('badge-lb-backdrop').addEventListener('click', closeBadgeLightbox);
@@ -819,14 +820,6 @@ async function renderHomeTab() {
       ? `✓ Basis-XP · +${slotTotal} XP Einträge`
       : `+${base} Basis · +${slotTotal} XP Einträge`;
 
-    const typeButtons = ['früh','spät','samstag','full','schulung'].map(t =>
-      `<button class="home-type-btn${shift.type === t ? ' active' : ''}" data-type="${t}">${shiftIcon(t)} ${shiftLabel(t)}</button>`
-    ).join('');
-    const catButtons = ['training','regulär','senior'].map(c => {
-      const m = CATEGORY_META[c];
-      return `<button class="home-cat-btn${(shift.category||'regulär') === c ? ' active' : ''}" data-cat="${c}">${m.icon} ${m.label}</button>`;
-    }).join('');
-
     const prettyDateStr = new Date(shift.date + 'T12:00:00')
       .toLocaleDateString('de-AT', { weekday:'short', day:'2-digit', month:'2-digit', year:'2-digit' });
     const { start: sh_s, end: sh_e } = shiftHours(shift);
@@ -834,6 +827,12 @@ async function renderHomeTab() {
     const colleagues = shift.colleagues || [];
     const hasTeam = colleagues.length > 0;
     const hideIcons = localStorage.getItem('hide-team-icons') === '1';
+
+    const vmActive = ['früh','full'].includes(shift.type);
+    const nmActive = ['spät','full'].includes(shift.type);
+    const isSpecial = ['samstag','schulung'].includes(shift.type);
+    const specialChip = isSpecial ? `<span class="home-special-chip">${shiftIcon(shift.type)} ${shiftLabel(shift.type)}</span>` : '';
+
     panel.innerHTML = `
       <div class="home-shift-inline-edit">
         <div class="home-date-row">
@@ -847,11 +846,15 @@ async function renderHomeTab() {
         </div>
         <div class="home-inline-row">
           <span class="home-shift-num">${shiftNumber(shift)}</span>
+          <div class="home-type-compact-row">
+            ${specialChip}
+            <button class="home-half-btn${vmActive && !isSpecial ? ' active' : ''}" id="btn-home-vm">VM</button>
+            <button class="home-half-btn${nmActive && !isSpecial ? ' active' : ''}" id="btn-home-nm">NM</button>
+            <button class="home-adv-btn" id="btn-home-adv" title="Erweiterte Einstellungen">⚙️</button>
+          </div>
           <span class="home-inline-xp">${xpLabel}</span>
           <button id="btn-delete-home-shift" class="btn-icon home-del-btn" title="Dienst löschen">🗑</button>
         </div>
-        <div class="home-inline-type-row">${typeButtons}</div>
-        <div class="home-inline-cat-row">${catButtons}</div>
         ${shift.type !== 'schulung' ? `
         <textarea id="home-edit-note" class="home-note-area" rows="6"
           placeholder="Dienst-Log / Notizen…">${shift.note || ''}</textarea>
@@ -870,18 +873,24 @@ async function renderHomeTab() {
       localStorage.setItem('hide-team-icons', hideIcons ? '' : '1');
       renderHomeTab();
     });
-    panel.querySelectorAll('.home-type-btn').forEach(btn =>
-      btn.addEventListener('click', () => {
-        panel.querySelectorAll('.home-type-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        inlineSaveShift(shift, { type: btn.dataset.type });
-      }));
-    panel.querySelectorAll('.home-cat-btn').forEach(btn =>
-      btn.addEventListener('click', () => {
-        panel.querySelectorAll('.home-cat-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        inlineSaveShift(shift, { category: btn.dataset.cat });
-      }));
+    document.getElementById('btn-home-vm').addEventListener('click', () => {
+      let newType;
+      if (isSpecial)           newType = 'früh';
+      else if (vmActive && nmActive) newType = 'spät';
+      else if (!vmActive)      newType = nmActive ? 'full' : 'früh';
+      else                     return;
+      inlineSaveShift(shift, { type: newType });
+    });
+    document.getElementById('btn-home-nm').addEventListener('click', () => {
+      let newType;
+      if (isSpecial)           newType = 'spät';
+      else if (nmActive && vmActive) newType = 'früh';
+      else if (!nmActive)      newType = vmActive ? 'full' : 'spät';
+      else                     return;
+      inlineSaveShift(shift, { type: newType });
+    });
+    document.getElementById('btn-home-adv').addEventListener('click', () =>
+      openShiftAdvModal(shift));
     const noteEl = document.getElementById('home-edit-note');
     if (noteEl) {
       noteEl.addEventListener('blur', e => inlineSaveShift(shift, { note: e.target.value }));
@@ -1115,6 +1124,48 @@ function renderShiftNav() {
     nextBtn.disabled = true;
     nextBtn.onclick = null;
   }
+}
+
+// ─── Shift Advanced Settings Modal ───────────────────────────────────────────
+function openShiftAdvModal(shift) {
+  const modal   = document.getElementById('shift-adv-modal');
+  const typeRow = document.getElementById('shift-adv-type-row');
+  const catRow  = document.getElementById('shift-adv-cat-row');
+  if (!modal) return;
+
+  const renderAdv = (s) => {
+    typeRow.innerHTML = ['samstag','schulung'].map(t => `
+      <button class="adv-type-btn${s.type === t ? ' active' : ''}" data-type="${t}">
+        ${shiftIcon(t)} ${shiftLabel(t)}
+      </button>`).join('');
+    catRow.innerHTML = ['training','regulär','senior'].map(c => {
+      const m = CATEGORY_META[c];
+      return `<button class="adv-cat-btn${(s.category||'regulär') === c ? ' active' : ''}" data-cat="${c}">${m.icon} ${m.label}</button>`;
+    }).join('');
+
+    typeRow.querySelectorAll('.adv-type-btn').forEach(btn =>
+      btn.addEventListener('click', async () => {
+        const newType = s.type === btn.dataset.type ? 'spät' : btn.dataset.type;
+        await inlineSaveShift(s, { type: newType });
+        const updated = state.shifts.find(x => x.id === s.id);
+        if (updated) { Object.assign(s, updated); renderAdv(s); }
+      }));
+    catRow.querySelectorAll('.adv-cat-btn').forEach(btn =>
+      btn.addEventListener('click', async () => {
+        await inlineSaveShift(s, { category: btn.dataset.cat });
+        const updated = state.shifts.find(x => x.id === s.id);
+        if (updated) { Object.assign(s, updated); renderAdv(s); }
+      }));
+  };
+
+  renderAdv(shift);
+  modal.classList.remove('hidden');
+}
+
+function setupShiftAdvModal() {
+  const close = () => document.getElementById('shift-adv-modal').classList.add('hidden');
+  document.getElementById('shift-adv-close').addEventListener('click', close);
+  document.getElementById('shift-adv-backdrop').addEventListener('click', close);
 }
 
 function openRescheduleModal(shift) {
