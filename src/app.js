@@ -778,13 +778,15 @@ async function renderHomeTab() {
       .toLocaleDateString('de-AT', { weekday:'short', day:'2-digit', month:'2-digit', year:'2-digit' });
     panel.innerHTML = `
       <div class="home-shift-inline-edit">
-        <div class="home-inline-row">
+        <div class="home-date-row">
           <div class="home-date-badge">
             <span class="home-date-pretty">${prettyDateStr}</span>
             <button class="home-date-edit-btn" id="btn-home-date-edit" title="Datum verschieben">✏️</button>
             <input type="date" id="home-edit-date" value="${shift.date}"
               style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px">
           </div>
+        </div>
+        <div class="home-inline-row">
           <span class="home-shift-num">${shiftNumber(shift)}</span>
           <span class="home-inline-xp">${xpLabel}</span>
           <button id="btn-delete-home-shift" class="btn-icon home-del-btn" title="Dienst löschen">🗑</button>

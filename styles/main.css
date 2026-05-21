@@ -2325,7 +2325,8 @@ img{max-width:100%;display:block}
 /* ── Home shift panel ─────────────────────────────────────────────────────── */
 .home-shift-inline-edit{padding:16px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--border)}
 .home-inline-row{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
-.home-date-badge{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.home-date-row{display:flex;align-items:center}
+.home-date-badge{display:flex;align-items:center;gap:6px}
 .home-date-pretty{font-size:15px;font-weight:700;color:var(--text)}
 .home-date-edit-btn{
   font-size:13px;padding:3px 7px;border-radius:8px;cursor:pointer;
