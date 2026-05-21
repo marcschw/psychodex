@@ -404,6 +404,31 @@ function setupNav() {
   document.querySelectorAll('.stats-subtab').forEach(btn => {
     btn.addEventListener('click', () => switchStatsSubTab(btn.dataset.subtab));
   });
+
+  // Swipe left/right on home tab → navigate shifts
+  const homeEl = document.getElementById('tab-home');
+  if (homeEl) {
+    addSwipeHandler(homeEl,
+      () => document.getElementById('btn-snav-next')?.click(),
+      () => document.getElementById('btn-snav-prev')?.click()
+    );
+  }
+
+  // Swipe left/right on stats tab → cycle sub-tabs
+  const statsEl = document.getElementById('tab-stats');
+  if (statsEl) {
+    const SUBTABS = ['overview', 'dienste', 'diagnosen', 'badges', 'einstellungen'];
+    addSwipeHandler(statsEl,
+      () => {
+        const i = SUBTABS.indexOf(state.statsSubTab);
+        if (i < SUBTABS.length - 1) switchStatsSubTab(SUBTABS[i + 1]);
+      },
+      () => {
+        const i = SUBTABS.indexOf(state.statsSubTab);
+        if (i > 0) switchStatsSubTab(SUBTABS[i - 1]);
+      }
+    );
+  }
 }
 
 function switchStatsSubTab(name) {
@@ -412,6 +437,29 @@ function switchStatsSubTab(name) {
     b.classList.toggle('active', b.dataset.subtab === name));
   document.querySelectorAll('.stats-panel').forEach(p =>
     p.classList.toggle('stats-panel-hidden', p.id !== `stats-panel-${name}`));
+}
+
+function addSwipeHandler(el, onLeft, onRight, minDist = 50) {
+  let sx = 0, sy = 0, locked = false;
+  el.addEventListener('touchstart', e => {
+    sx = e.touches[0].clientX;
+    sy = e.touches[0].clientY;
+    locked = false;
+  }, { passive: true });
+  el.addEventListener('touchend', e => {
+    if (locked) return;
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) < minDist || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    if (dx < 0) onLeft();
+    else         onRight();
+  }, { passive: true });
+  // Lock out swipe if user is clearly scrolling vertically
+  el.addEventListener('touchmove', e => {
+    const dy = Math.abs(e.touches[0].clientY - sy);
+    const dx = Math.abs(e.touches[0].clientX - sx);
+    if (dy > dx * 1.2) locked = true;
+  }, { passive: true });
 }
 
 function navigateTo(tab) {
