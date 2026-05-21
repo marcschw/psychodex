@@ -71,13 +71,15 @@ function tagIconsHTML(tags) {
 }
 function teamButtonPreviewHTML(colleagues) {
   if (!colleagues || !colleagues.length) return '';
-  const teamTotal = {};
-  for (const c of colleagues) {
-    const t = c.team || 'D';
-    teamTotal[t] = (teamTotal[t] || 0) + 1;
-  }
-  // Button label: DEU team total only
-  return `D ${teamTotal['D'] || 0}`;
+  const isSenior = c => c.team === 'D' && (c.funktion || '').toLowerCase().includes('senior');
+  const deuReg  = colleagues.filter(c => c.team === 'D' && !isSenior(c));
+  const senior  = colleagues.some(isSenior);
+  const training = colleagues.filter(c => c.team === 'T');
+  const parts = [];
+  if (deuReg.length || senior) parts.push(`D: ${deuReg.length}/6`);
+  if (senior) parts.push('S');
+  if (training.length) parts.push(`T: ${training.length}/2`);
+  return parts.join(' ') || '';
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -833,19 +835,20 @@ async function renderHomeTab() {
     // Team counts info (left side of team row)
     const teamInfoHTML = (() => {
       if (!hasTeam) return '';
-      const teamTotal = {}, tagCounts = {};
-      for (const c of colleagues) {
-        const t = c.team || 'D';
-        teamTotal[t] = (teamTotal[t] || 0) + 1;
-        if (!hideIcons) for (const tag of (c.tags || [])) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-      }
-      const teams = TEAM_ORDER.filter(t => teamTotal[t])
-        .map(t => `<span class="team-info-chip" style="color:${TEAM_META[t].color}">${t} ${teamTotal[t]}</span>`)
-        .join('');
+      const isSenior = c => c.team === 'D' && (c.funktion || '').toLowerCase().includes('senior');
+      const deuReg  = colleagues.filter(c => c.team === 'D' && !isSenior(c));
+      const senior  = colleagues.some(isSenior);
+      const training = colleagues.filter(c => c.team === 'T');
+      const tagCounts = {};
+      if (!hideIcons) for (const c of colleagues) for (const tag of (c.tags || [])) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+      const parts = [];
+      if (deuReg.length || senior) parts.push(`<span class="team-info-chip" style="color:${TEAM_META.D.color}">D: ${deuReg.length}/6</span>`);
+      if (senior) parts.push(`<span class="team-info-chip" style="color:#f59e0b">S</span>`);
+      if (training.length) parts.push(`<span class="team-info-chip" style="color:${TEAM_META.T.color}">T: ${training.length}/2</span>`);
       const tags = Object.entries(tagCounts)
         .map(([tag, n]) => `<span class="team-info-chip">${TAG_ICONS[tag] || tag}${n > 1 ? ` ${n}` : ''}</span>`)
         .join('');
-      return `<div class="home-team-info">${teams}${tags}</div>`;
+      return `<div class="home-team-info">${parts.join('')}${tags}</div>`;
     })();
 
     panel.innerHTML = `
@@ -1270,15 +1273,20 @@ function openTeamModal(shift) {
     body.querySelector('.rolecall-anwesend').textContent = `${p} anwesend`;
   };
 
+  const isSenior = c => c.team === 'D' && (c.funktion || '').toLowerCase().includes('senior');
+  const colleagueDotColor = c => isSenior(c) ? '#f59e0b' : TEAM_META[c.team || 'D'].color;
+
+  // Rolecall only shows DEU (D) and Training (T) — filter other teams
+  const rcColleagues = colleagues.filter(c => c.team === 'D' || c.team === 'T');
   const groups = {};
-  for (const c of colleagues) {
+  for (const c of rcColleagues) {
     const t = c.team || 'D';
     if (!groups[t]) groups[t] = [];
     groups[t].push(c);
   }
 
-  const initPresent = colleagues.filter(c => c.present).length;
-  const initFehlen  = colleagues.length - initPresent;
+  const initPresent = rcColleagues.filter(c => c.present).length;
+  const initFehlen  = rcColleagues.length - initPresent;
 
   body.innerHTML = `
     <div class="rolecall-status">
@@ -1286,15 +1294,15 @@ function openTeamModal(shift) {
       <span class="rolecall-dot">·</span>
       <span class="rolecall-anwesend">${initPresent} anwesend</span>
     </div>
-    ${TEAM_ORDER.filter(t => groups[t]).map(t => `
+    ${['D', 'T'].filter(t => groups[t]).map(t => `
       <div class="team-group-header" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</div>
       ${groups[t].map(c => `
         <label class="team-colleague-row${c.present ? ' is-present' : ''}" data-team="${t}">
           <input type="checkbox" class="team-colleague-check" data-idx="${c._rawIdx}" ${c.present ? 'checked' : ''}>
-          <span class="team-dot" style="background:${TEAM_META[t].color}"></span>
+          <span class="team-dot" style="background:${colleagueDotColor(c)}"></span>
           <div class="team-colleague-info">
             <div class="team-colleague-name">${c.name}${c._self ? ' <span class="team-self-badge">Ich</span>' : ''}</div>
-            <div class="team-colleague-func">${c.funktion}</div>
+            <div class="team-colleague-func" style="color:${isSenior(c) ? '#f59e0b' : ''}">${c.funktion}</div>
           </div>
           ${!hideIcons && (c.tags || []).length ? `<div class="team-colleague-tags">${tagIconsHTML(c.tags)}</div>` : ''}
         </label>
