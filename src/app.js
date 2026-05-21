@@ -44,6 +44,50 @@ const state = {
   swipeDir: null,
 };
 
+// ─── Team / Colleague Constants ───────────────────────────────────────────────
+const TAG_ICONS = {
+  'favorit-a': '♥',
+  'favorit-b': '♡',
+  'favorit-c': '♦',
+  'adhd':      'Ⓐ',
+  'achtung':   '⚠️',
+  'bekannt':   '★',
+};
+const TEAM_META = {
+  D: { label: 'Deutsches Team',             color: '#60a5fa' },
+  I: { label: 'Internationales Team',       color: '#34d399' },
+  F: { label: 'Forschungsteam / Bindung',   color: '#a78bfa' },
+  T: { label: 'Training',                   color: '#f59e0b' },
+};
+const TEAM_ORDER = ['D', 'I', 'F', 'T'];
+function xmlTypToTeam(typ) {
+  if (typ === 'training') return 'T';
+  if (typ === 'int')      return 'I';
+  if (typ === 'forschung' || typ === 'bindung') return 'F';
+  return 'D';
+}
+function tagIconsHTML(tags) {
+  return (tags || []).map(t => TAG_ICONS[t] || t).join(' ');
+}
+function teamButtonPreviewHTML(colleagues) {
+  if (!colleagues || !colleagues.length) return '';
+  const tagCounts = {};
+  const teamTotal = {}, teamPresent = {};
+  for (const c of colleagues) {
+    for (const tag of (c.tags || [])) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+    const t = c.team || 'D';
+    teamTotal[t]   = (teamTotal[t]   || 0) + 1;
+    if (c.present) teamPresent[t] = (teamPresent[t] || 0) + 1;
+  }
+  const tagStr = Object.entries(tagCounts)
+    .map(([tag, n]) => `${TAG_ICONS[tag] || tag}${n > 1 ? `<sub>${n}</sub>` : ''}`)
+    .join('');
+  const teamStr = TEAM_ORDER.filter(t => teamTotal[t])
+    .map(t => `<span class="team-count-chip">${t} ${teamPresent[t] || 0}/${teamTotal[t]}</span>`)
+    .join('');
+  return `${tagStr ? `<span class="team-btn-tags">${tagStr}</span>` : ''}${teamStr}`;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 // Normalize kategorie to the 2-char block code (F0-F9) used as icdData keys.
 // Handles old DB data where sub-categories like "F40","F41" were stored.
@@ -303,6 +347,7 @@ async function init() {
     setupDashboardCardListeners();
     setupPlannerListeners();
     setupICDFCollectionListeners();
+    setupTeamModal();
     setupEscapeKey();
     document.getElementById('badge-lb-close').addEventListener('click', closeBadgeLightbox);
     document.getElementById('badge-lb-backdrop').addEventListener('click', closeBadgeLightbox);
@@ -792,6 +837,8 @@ async function renderHomeTab() {
       .toLocaleDateString('de-AT', { weekday:'short', day:'2-digit', month:'2-digit', year:'2-digit' });
     const { start: sh_s, end: sh_e } = shiftHours(shift);
     const timeRange = `${String(sh_s[0]).padStart(2,'0')}:${String(sh_s[1]).padStart(2,'0')} – ${String(sh_e[0]).padStart(2,'0')}:${String(sh_e[1]).padStart(2,'0')}`;
+    const colleagues = shift.colleagues || [];
+    const hasTeam = colleagues.length > 0;
     panel.innerHTML = `
       <div class="home-shift-inline-edit">
         <div class="home-date-row">
@@ -799,6 +846,7 @@ async function renderHomeTab() {
             <span class="home-date-pretty">${prettyDateStr}</span>
             <span class="home-date-time">${timeRange}</span>
             <button class="home-date-edit-btn" id="btn-home-date-edit" title="Datum & Zeit verschieben">✏️</button>
+            ${hasTeam ? `<button class="home-team-btn" id="btn-home-team" title="Team-Anwesenheit">👥 ${teamButtonPreviewHTML(colleagues)}</button>` : ''}
           </div>
         </div>
         <div class="home-inline-row">
@@ -819,6 +867,8 @@ async function renderHomeTab() {
     // Date edit button opens reschedule modal
     document.getElementById('btn-home-date-edit').addEventListener('click', () =>
       openRescheduleModal(shift));
+    const teamBtn = document.getElementById('btn-home-team');
+    if (teamBtn) teamBtn.addEventListener('click', () => openTeamModal(shift));
     panel.querySelectorAll('.home-type-btn').forEach(btn =>
       btn.addEventListener('click', () => {
         panel.querySelectorAll('.home-type-btn').forEach(b => b.classList.remove('active'));
@@ -1108,6 +1158,61 @@ function openRescheduleModal(shift) {
     await inlineSaveShift(shift, updates);
     close();
   };
+}
+
+// ─── Team Attendance Modal ────────────────────────────────────────────────────
+function openTeamModal(shift) {
+  const colleagues = shift.colleagues || [];
+  if (!colleagues.length) return;
+
+  const modal = document.getElementById('team-modal');
+  const body  = document.getElementById('team-modal-body');
+  const title = document.getElementById('team-modal-title');
+
+  const dateStr = new Date(shift.date + 'T12:00:00')
+    .toLocaleDateString('de-AT', { weekday:'short', day:'2-digit', month:'short' });
+  title.textContent = `👥 Team · ${dateStr}`;
+
+  const groups = {};
+  for (const c of colleagues) {
+    const t = c.team || 'D';
+    if (!groups[t]) groups[t] = [];
+    groups[t].push({ ...c, _idx: colleagues.indexOf(c) });
+  }
+
+  body.innerHTML = TEAM_ORDER.filter(t => groups[t]).map(t => `
+    <div class="team-group-header" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</div>
+    ${groups[t].map(c => `
+      <label class="team-colleague-row">
+        <input type="checkbox" class="team-colleague-check" data-idx="${c._idx}" ${c.present ? 'checked' : ''}>
+        <div class="team-colleague-info">
+          <div class="team-colleague-name">${c.name}</div>
+          <div class="team-colleague-func">${c.funktion}</div>
+        </div>
+        <div class="team-colleague-tags">${tagIconsHTML(c.tags)}</div>
+      </label>
+    `).join('')}
+  `).join('');
+
+  modal.classList.remove('hidden');
+
+  document.getElementById('team-modal-save').onclick = async () => {
+    const updated = colleagues.map(c => ({ ...c }));
+    body.querySelectorAll('.team-colleague-check').forEach(cb => {
+      updated[parseInt(cb.dataset.idx)].present = cb.checked;
+    });
+    await db.shiftLogs.update(shift.id, { colleagues: updated });
+    state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+    modal.classList.add('hidden');
+    renderHomeTab();
+  };
+}
+
+function setupTeamModal() {
+  const close = () => document.getElementById('team-modal').classList.add('hidden');
+  document.getElementById('team-modal-close').addEventListener('click', close);
+  document.getElementById('team-modal-backdrop').addEventListener('click', close);
+  document.getElementById('team-modal-cancel').addEventListener('click', close);
 }
 
 function openCalModal() {
@@ -5310,7 +5415,7 @@ async function importShiftsFromXML(xmlText) {
   const dienste = Array.from(doc.querySelectorAll('dienst'));
   if (!dienste.length) { alert('Keine Dienste in der XML-Datei gefunden.'); return; }
 
-  const halbtagToType = { AM: 'früh', PM: 'spät', SAT: 'samstag', FULL: 'full' };
+  const halbtagToType = { AM: 'früh', PM: 'spät', NM: 'spät', SAT: 'samstag', FULL: 'full' };
 
   const getCategory = (typ, spalte) => {
     if (typ === 'training') return 'training';
@@ -5335,13 +5440,31 @@ async function importShiftsFromXML(xmlText) {
     const category = getCategory(typ, spalte);
     const key = `${datum}_${type}`;
 
-    if (existingKeys.has(key)) { skipped++; continue; }
+    const team = xmlTypToTeam(typ);
+    const colleagues = Array.from(el.querySelectorAll('kollege')).map(k => ({
+      name:     k.getAttribute('name')     || '',
+      funktion: k.getAttribute('funktion') || '',
+      tags:     (k.getAttribute('tags') || '').split(',').map(t => t.trim()).filter(Boolean),
+      team,
+      present:  false,
+    }));
+
+    if (existingKeys.has(key)) {
+      // Update colleagues if shift already exists and has none yet
+      const existing = existingShifts.find(s => s.date === datum && s.type === type);
+      if (existing && colleagues.length && !(existing.colleagues || []).length) {
+        await db.shiftLogs.update(existing.id, { colleagues });
+      }
+      skipped++;
+      continue;
+    }
 
     await db.shiftLogs.add({
       date: datum, type, category,
       xpEarned: 0, patientCount: 0,
       plannerShift: true, plannerActive: false,
       importedFrom: 'xml',
+      colleagues,
       createdAt: new Date().toISOString()
     });
     existingKeys.add(key);
