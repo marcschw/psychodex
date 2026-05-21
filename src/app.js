@@ -71,15 +71,13 @@ function tagIconsHTML(tags) {
 }
 function teamButtonPreviewHTML(colleagues) {
   if (!colleagues || !colleagues.length) return '';
-  const teamTotal = {}, teamPresent = {};
+  const teamTotal = {};
   for (const c of colleagues) {
     const t = c.team || 'D';
-    teamTotal[t]   = (teamTotal[t]   || 0) + 1;
-    if (c.present) teamPresent[t] = (teamPresent[t] || 0) + 1;
+    teamTotal[t] = (teamTotal[t] || 0) + 1;
   }
-  return ['D', 'T'].filter(t => teamTotal[t])
-    .map(t => `<span class="team-count-chip">${t} ${teamPresent[t] || 0}/${teamTotal[t]}</span>`)
-    .join('');
+  // Button label: DEU team total only
+  return `D ${teamTotal['D'] || 0}`;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -833,6 +831,24 @@ async function renderHomeTab() {
     const isSpecial = ['samstag','schulung'].includes(shift.type);
     const specialChip = isSpecial ? `<span class="home-special-chip">${shiftIcon(shift.type)} ${shiftLabel(shift.type)}</span>` : '';
 
+    // Team counts info (left side of team row)
+    const teamInfoHTML = (() => {
+      if (!hasTeam) return '';
+      const teamTotal = {}, tagCounts = {};
+      for (const c of colleagues) {
+        const t = c.team || 'D';
+        teamTotal[t] = (teamTotal[t] || 0) + 1;
+        if (!hideIcons) for (const tag of (c.tags || [])) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+      }
+      const teams = TEAM_ORDER.filter(t => teamTotal[t])
+        .map(t => `<span class="team-info-chip" style="color:${TEAM_META[t].color}">${t} ${teamTotal[t]}</span>`)
+        .join('');
+      const tags = Object.entries(tagCounts)
+        .map(([tag, n]) => `<span class="team-info-chip">${TAG_ICONS[tag] || tag}${n > 1 ? ` ${n}` : ''}</span>`)
+        .join('');
+      return `<div class="home-team-info">${teams}${tags}</div>`;
+    })();
+
     panel.innerHTML = `
       <div class="home-shift-inline-edit">
         <div class="home-date-row">
@@ -840,10 +856,16 @@ async function renderHomeTab() {
             <span class="home-date-pretty">${prettyDateStr}</span>
             <span class="home-date-time">${timeRange}</span>
             <button class="home-date-edit-btn" id="btn-home-date-edit" title="Datum & Zeit verschieben">✏️</button>
-            ${hasTeam ? `<button class="home-team-btn" id="btn-home-team" title="Rolecall">👥 ${teamButtonPreviewHTML(colleagues)}</button>
-            <button class="home-icons-toggle" id="btn-icons-toggle" title="${hideIcons ? 'Tag-Icons zeigen' : 'Tag-Icons ausblenden'}">${hideIcons ? '◎' : '◉'}</button>` : ''}
           </div>
         </div>
+        ${hasTeam ? `
+        <div class="home-team-row">
+          ${teamInfoHTML}
+          <div class="home-team-btns">
+            <button class="home-team-btn" id="btn-home-team" title="Rolecall">👥 ${teamButtonPreviewHTML(colleagues)}</button>
+            <button class="home-icons-toggle" id="btn-icons-toggle" title="${hideIcons ? 'Tag-Icons zeigen' : 'Tag-Icons ausblenden'}">${hideIcons ? '◎' : '◉'}</button>
+          </div>
+        </div>` : ''}
         <div class="home-inline-row">
           <span class="home-shift-num">${shiftNumber(shift)}</span>
           <span class="home-inline-xp">${xpLabel}</span>
@@ -854,13 +876,11 @@ async function renderHomeTab() {
             <button class="home-half-btn${vmActive ? ' active' : ''}" id="btn-home-vm">VM</button>
             <button class="home-half-btn${nmActive ? ' active' : ''}" id="btn-home-nm">NM</button>`}
           <button class="home-adv-btn" id="btn-home-adv" title="Erweiterte Einstellungen">⚙️</button>
+          ${shift.type !== 'schulung' ? `<button id="btn-save-home-note" class="home-note-save-btn">💾</button>` : ''}
         </div>
         ${shift.type !== 'schulung' ? `
         <textarea id="home-edit-note" class="home-note-area" rows="6"
-          placeholder="Dienst-Log / Notizen…">${shift.note || ''}</textarea>
-        <div class="home-note-save-row">
-          <button id="btn-save-home-note" class="home-note-save-btn">💾 Speichern</button>
-        </div>` : ''}
+          placeholder="Dienst-Log / Notizen…">${shift.note || ''}</textarea>` : ''}
       </div>`;
 
     // Date edit button opens reschedule modal
