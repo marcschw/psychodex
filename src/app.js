@@ -5502,15 +5502,17 @@ function setupExportImport() {
 }
 
 async function exportData() {
-  const shifts   = await db.shiftLogs.toArray();
-  const catches  = await db.caughtDiagnoses.toArray();
-  const missions = await db.missions.toArray();
+  const shifts       = await db.shiftLogs.toArray();
+  const catches      = await db.caughtDiagnoses.toArray();
+  const missions     = await db.missions.toArray();
   const achievements = await db.unlockedAchievements.toArray();
-  const slots    = await db.scheduleSlots.toArray();
+  const slots        = await db.scheduleSlots.toArray();
+  // Export full profile (all fields) so hourCounters / extraHourEntries survive round-trips
+  const { id: _pid, ...profileFields } = state.profile ?? {};
   const payload = {
-    version: 4,
+    version:    5,
     exportedAt: new Date().toISOString(),
-    profile:      { totalXP: state.profile?.totalXP ?? 0 },
+    profile:    profileFields,
     shifts,
     catches,
     missions,
@@ -5539,44 +5541,68 @@ async function importData(e) {
     const achCount  = data.achievements?.length ?? 0;
     const msnCount  = data.missions?.length ?? 0;
     const slotCount = data.slots?.length ?? 0;
-    if (!confirm(`Alle aktuellen Daten werden ersetzt.\n${data.shifts.length} Dienste, ${data.catches.length} Diagnosen, ${slotCount} Planer-Einträge, ${achCount} Achievements, ${msnCount} Missionen werden importiert.\n\nFortfahren?`)) return;
+    const teamCount = data.shifts.filter(s => (s.colleagues||[]).length > 0).length;
+    if (!confirm(
+      `Alle aktuellen Daten werden ersetzt.\n\n` +
+      `${data.shifts.length} Dienste (${teamCount} mit Team), ${data.catches.length} Diagnosen, ` +
+      `${slotCount} Planer-Einträge, ${achCount} Achievements, ${msnCount} Missionen.\n\n` +
+      `Version: ${data.version} · Erstellt: ${data.exportedAt ? new Date(data.exportedAt).toLocaleDateString('de-AT') : '?'}\n\nFortfahren?`
+    )) return;
 
-    await db.profile.clear();
-    await db.shiftLogs.clear();
-    await db.caughtDiagnoses.clear();
-    if (db.missions)             await db.missions.clear();
-    if (db.unlockedAchievements) await db.unlockedAchievements.clear();
-    if (db.scheduleSlots)        await db.scheduleSlots.clear();
+    // Use a single transaction for atomicity
+    await db.transaction('rw',
+      db.profile, db.shiftLogs, db.caughtDiagnoses, db.missions,
+      db.unlockedAchievements, db.scheduleSlots,
+      async () => {
+        await db.profile.clear();
+        await db.shiftLogs.clear();
+        await db.caughtDiagnoses.clear();
+        await db.missions.clear();
+        await db.unlockedAchievements.clear();
+        await db.scheduleSlots.clear();
 
-    await db.profile.add({ totalXP: data.profile?.totalXP ?? 0, createdAt: new Date().toISOString() });
+        // Restore full profile (v5 has all fields; v4 and below only had totalXP)
+        const profileToStore = {
+          totalXP:          data.profile?.totalXP ?? 0,
+          hourCounters:     data.profile?.hourCounters     ?? null,
+          extraHourEntries: data.profile?.extraHourEntries ?? null,
+          extraHours:       data.profile?.extraHours       ?? 0,
+          createdAt:        data.profile?.createdAt        ?? new Date().toISOString(),
+        };
+        await db.profile.add(profileToStore);
 
-    if (data.version >= 4) {
-      // v4+: records carry their original IDs — use put() to restore FK integrity
-      for (const s  of data.shifts)  await db.shiftLogs.put(s);
-      for (const c  of data.catches) await db.caughtDiagnoses.put(c);
-      if (db.missions && Array.isArray(data.missions))
-        for (const m of data.missions) await db.missions.put(m);
-      if (db.unlockedAchievements && Array.isArray(data.achievements))
-        for (const a of data.achievements) await db.unlockedAchievements.put(a);
-      if (db.scheduleSlots && Array.isArray(data.slots))
-        for (const sl of data.slots) await db.scheduleSlots.put(sl);
-    } else {
-      // v3 legacy: IDs were stripped — assign positional IDs (1-based, matching FK values)
-      for (let i = 0; i < data.shifts.length; i++)
-        await db.shiftLogs.put({ ...data.shifts[i], id: i + 1 });
-      if (db.scheduleSlots && Array.isArray(data.slots))
-        for (let i = 0; i < data.slots.length; i++)
-          await db.scheduleSlots.put({ ...data.slots[i], id: i + 1 });
-      for (const c of data.catches) await db.caughtDiagnoses.add(c);
-      if (db.missions && Array.isArray(data.missions))
-        for (const m of data.missions) await db.missions.add(m);
-      if (db.unlockedAchievements && Array.isArray(data.achievements))
-        for (const a of data.achievements) await db.unlockedAchievements.add(a);
-    }
+        if (data.version >= 4) {
+          // v4/v5: records carry original IDs — put() restores FK integrity
+          for (const s  of data.shifts)       await db.shiftLogs.put(s);
+          for (const c  of data.catches)      await db.caughtDiagnoses.put(c);
+          for (const m  of data.missions)     await db.missions.put(m);
+          for (const a  of data.achievements) await db.unlockedAchievements.put(a);
+          for (const sl of data.slots)        await db.scheduleSlots.put(sl);
+        } else {
+          // v3 legacy: IDs were stripped — assign positional IDs to preserve FK links
+          for (let i = 0; i < data.shifts.length; i++)
+            await db.shiftLogs.put({ ...data.shifts[i], id: i + 1 });
+          if (Array.isArray(data.slots))
+            for (let i = 0; i < data.slots.length; i++)
+              await db.scheduleSlots.put({ ...data.slots[i], id: i + 1 });
+          for (const c of data.catches)      await db.caughtDiagnoses.add(c);
+          if (Array.isArray(data.missions))
+            for (const m of data.missions)   await db.missions.add(m);
+          if (Array.isArray(data.achievements))
+            for (const a of data.achievements) await db.unlockedAchievements.add(a);
+        }
+      }
+    );
 
     await loadFromDB();
     renderApp();
-    alert(`Import erfolgreich: ${data.shifts.length} Dienste, ${data.catches.length} Diagnosen, ${slotCount} Planer-Einträge, ${achCount} Achievements geladen.`);
+    renderMissionsStrip();
+    alert(
+      `Import erfolgreich ✓\n\n` +
+      `${data.shifts.length} Dienste, ${data.catches.length} Diagnosen, ` +
+      `${slotCount} Planer-Einträge, ${achCount} Achievements, ${msnCount} Missionen.` +
+      (teamCount ? `\n${teamCount} Dienste mit Team-Daten.` : '')
+    );
     navigateTo('stats');
   } catch (err) {
     alert(`Import fehlgeschlagen: ${err.message}`);
