@@ -878,6 +878,26 @@ async function renderHomeTab() {
   renderShiftNav();
 }
 
+// ─── Clinic Closures (holidays + special) ─────────────────────────────────────
+// Add entries here for future vacation weeks etc.
+const CLINIC_CLOSURES = [
+  { from: '2026-08-10', to: '2026-08-16', label: 'Ambulanz Ferien' },
+];
+
+function getClinicClosureDates() {
+  const map = new Map();
+  for (const { from, to, label } of CLINIC_CLOSURES) {
+    const cur = new Date(from + 'T12:00:00');
+    const end = new Date(to   + 'T12:00:00');
+    while (cur <= end) {
+      const ds = cur.toISOString().split('T')[0];
+      map.set(ds, label);
+      cur.setDate(cur.getDate() + 1);
+    }
+  }
+  return map;
+}
+
 // ─── Austrian Public Holidays ─────────────────────────────────────────────────
 function easterSunday(y) {
   const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,
@@ -948,7 +968,7 @@ function renderMonthCalendar() {
 
   const firstDow  = (new Date(year, month - 1, 1).getDay() + 6) % 7; // 0=Mon
   const daysInMon = new Date(year, month, 0).getDate();
-  const holidays  = getAustrianHolidays(year);
+  const holidays  = new Map([...getAustrianHolidays(year), ...getClinicClosureDates()]);
 
   // Find next upcoming shift date for distinct highlight
   const nextShiftDate = state.shifts
