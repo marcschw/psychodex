@@ -2326,8 +2326,10 @@ img{max-width:100%;display:block}
 .home-shift-inline-edit{padding:16px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--border)}
 .home-inline-row{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
 .home-date-row{display:flex;align-items:center}
-.home-date-badge{display:flex;align-items:center;gap:6px}
+.home-date-badge{display:flex;align-items:center;gap:8px}
 .home-date-pretty{font-size:15px;font-weight:700;color:var(--text)}
+.home-date-time{font-size:13px;color:var(--text-dim);font-variant-numeric:tabular-nums}
+.sheet-footer{display:flex;gap:10px;padding:14px 20px calc(14px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--border);flex-shrink:0}
 .home-date-edit-btn{
   font-size:13px;padding:3px 7px;border-radius:8px;cursor:pointer;
   background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);

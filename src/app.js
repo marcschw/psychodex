@@ -184,6 +184,8 @@ function calcCounterHours(counter) {
   return shifts.reduce((s, sh) => s + calcShiftHours(sh), 0) + getExtraHoursTotal();
 }
 function calcShiftHours(shift) {
+  if (shift.customStart != null && shift.customEnd != null)
+    return Math.max(0, (shift.customEnd - shift.customStart) / 60);
   const base = shift.type === 'full' ? 12 : shift.type === 'samstag' ? 7 : shift.type === 'schulung' ? 6 : 6.5;
   return base + (shift.extensionMinutes || 0) / 60;
 }
@@ -720,7 +722,19 @@ function makeSortable(list, onSort) {
 const padT = (h, m) => `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
 const toMins = (h, m) => h * 60 + m;
 
-function shiftHours(type) { return SHIFT_HOURS[type] || SHIFT_HOURS['früh']; }
+function shiftHours(typeOrShift) {
+  if (typeOrShift && typeof typeOrShift === 'object') {
+    const sh = typeOrShift;
+    if (sh.customStart != null && sh.customEnd != null) {
+      return {
+        start: [Math.floor(sh.customStart / 60), sh.customStart % 60],
+        end:   [Math.floor(sh.customEnd   / 60), sh.customEnd   % 60],
+      };
+    }
+    return SHIFT_HOURS[sh.type] || SHIFT_HOURS['früh'];
+  }
+  return SHIFT_HOURS[typeOrShift] || SHIFT_HOURS['früh'];
+}
 
 function getMealHints(shift) {
   if (shift.mealHints) return shift.mealHints;
@@ -776,14 +790,15 @@ async function renderHomeTab() {
 
     const prettyDateStr = new Date(shift.date + 'T12:00:00')
       .toLocaleDateString('de-AT', { weekday:'short', day:'2-digit', month:'2-digit', year:'2-digit' });
+    const { start: sh_s, end: sh_e } = shiftHours(shift);
+    const timeRange = `${String(sh_s[0]).padStart(2,'0')}:${String(sh_s[1]).padStart(2,'0')} – ${String(sh_e[0]).padStart(2,'0')}:${String(sh_e[1]).padStart(2,'0')}`;
     panel.innerHTML = `
       <div class="home-shift-inline-edit">
         <div class="home-date-row">
           <div class="home-date-badge">
             <span class="home-date-pretty">${prettyDateStr}</span>
-            <button class="home-date-edit-btn" id="btn-home-date-edit" title="Datum verschieben">✏️</button>
-            <input type="date" id="home-edit-date" value="${shift.date}"
-              style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px">
+            <span class="home-date-time">${timeRange}</span>
+            <button class="home-date-edit-btn" id="btn-home-date-edit" title="Datum & Zeit verschieben">✏️</button>
           </div>
         </div>
         <div class="home-inline-row">
@@ -801,13 +816,9 @@ async function renderHomeTab() {
         </div>` : ''}
       </div>`;
 
-    // Date edit button opens native date picker
-    document.getElementById('btn-home-date-edit').addEventListener('click', () => {
-      const inp = document.getElementById('home-edit-date');
-      try { inp.showPicker(); } catch { inp.click(); }
-    });
-    document.getElementById('home-edit-date').addEventListener('change', e =>
-      inlineSaveShift(shift, { date: e.target.value }));
+    // Date edit button opens reschedule modal
+    document.getElementById('btn-home-date-edit').addEventListener('click', () =>
+      openRescheduleModal(shift));
     panel.querySelectorAll('.home-type-btn').forEach(btn =>
       btn.addEventListener('click', () => {
         panel.querySelectorAll('.home-type-btn').forEach(b => b.classList.remove('active'));
@@ -998,6 +1009,50 @@ function renderShiftNav() {
   }
 }
 
+function openRescheduleModal(shift) {
+  const modal = document.getElementById('shift-reschedule-modal');
+  if (!modal) return;
+
+  const { start, end } = shiftHours(shift);
+  const fmt2 = n => String(n).padStart(2, '0');
+  document.getElementById('reschedule-date').value  = shift.date;
+  document.getElementById('reschedule-start').value = `${fmt2(start[0])}:${fmt2(start[1])}`;
+  document.getElementById('reschedule-end').value   = `${fmt2(end[0])}:${fmt2(end[1])}`;
+
+  modal.classList.remove('hidden');
+
+  const close = () => modal.classList.add('hidden');
+  document.getElementById('shift-reschedule-close').onclick  = close;
+  document.getElementById('shift-reschedule-cancel').onclick = close;
+  document.getElementById('shift-reschedule-backdrop').onclick = close;
+
+  document.getElementById('shift-reschedule-save').onclick = async () => {
+    const newDate  = document.getElementById('reschedule-date').value;
+    const startVal = document.getElementById('reschedule-start').value;
+    const endVal   = document.getElementById('reschedule-end').value;
+    if (!newDate || !startVal || !endVal) return;
+
+    const [sh, sm] = startVal.split(':').map(Number);
+    const [eh, em] = endVal.split(':').map(Number);
+    const customStart = sh * 60 + sm;
+    const customEnd   = eh * 60 + em;
+
+    // Check if times match the shift type defaults (if so, clear custom times)
+    const def = SHIFT_HOURS[shift.type] || SHIFT_HOURS['früh'];
+    const defStart = def.start[0] * 60 + def.start[1];
+    const defEnd   = def.end[0]   * 60 + def.end[1];
+    const isDefault = customStart === defStart && customEnd === defEnd;
+
+    const updates = {
+      date: newDate,
+      customStart: isDefault ? null : customStart,
+      customEnd:   isDefault ? null : customEnd,
+    };
+    await inlineSaveShift(shift, updates);
+    close();
+  };
+}
+
 function openCalModal() {
   const modal = document.getElementById('cal-modal');
   if (!modal) return;
@@ -1090,7 +1145,7 @@ function renderSchulungTimeline(shift) {
 function renderTimeline(shift) {
   if (shift.type === 'schulung') { renderSchulungTimeline(shift); return; }
 
-  const { start, end } = shiftHours(shift.type);
+  const { start, end } = shiftHours(shift);
   const startM = toMins(...start);
   const endM   = toMins(...end);
   const meals  = getMealHints(shift).map(h => ({ ...h, mins: toMins(h.h, h.m) }));
@@ -4184,7 +4239,7 @@ async function renderShiftDetailBody(shift) {
 
   // Planner slot actions
   body.querySelector('#btn-detail-add-slot')?.addEventListener('click', () => {
-    const { start } = shiftHours(shift.type);
+    const { start } = shiftHours(shift);
     openSlotAddModal(shift.id, start[0], start[1], 'detail');
   });
   body.querySelectorAll('.detail-slot-del').forEach(btn => {
