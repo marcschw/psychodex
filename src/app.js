@@ -41,6 +41,7 @@ const state = {
   mealModalContext: null,   // { shift, hint } for meal add/edit modal
   mealModalIcon: '☕',
   statsSubTab: 'overview',
+  swipeDir: null,
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -431,12 +432,24 @@ function setupNav() {
   }
 }
 
+const SUBTAB_ORDER = ['overview', 'dienste', 'diagnosen', 'badges', 'einstellungen'];
+
 function switchStatsSubTab(name) {
+  const oldIdx = SUBTAB_ORDER.indexOf(state.statsSubTab);
+  const newIdx = SUBTAB_ORDER.indexOf(name);
   state.statsSubTab = name;
   document.querySelectorAll('.stats-subtab').forEach(b =>
     b.classList.toggle('active', b.dataset.subtab === name));
   document.querySelectorAll('.stats-panel').forEach(p =>
     p.classList.toggle('stats-panel-hidden', p.id !== `stats-panel-${name}`));
+  if (oldIdx !== -1 && newIdx !== -1 && oldIdx !== newIdx) {
+    const panel = document.getElementById(`stats-panel-${name}`);
+    if (panel) {
+      panel.classList.remove('swipe-in-right', 'swipe-in-left');
+      void panel.offsetWidth;
+      panel.classList.add(newIdx > oldIdx ? 'swipe-in-right' : 'swipe-in-left');
+    }
+  }
 }
 
 function addSwipeHandler(el, onLeft, onRight, minDist = 50) {
@@ -761,10 +774,17 @@ async function renderHomeTab() {
       return `<button class="home-cat-btn${(shift.category||'regulär') === c ? ' active' : ''}" data-cat="${c}">${m.icon} ${m.label}</button>`;
     }).join('');
 
+    const prettyDateStr = new Date(shift.date + 'T12:00:00')
+      .toLocaleDateString('de-AT', { weekday:'short', day:'2-digit', month:'2-digit', year:'2-digit' });
     panel.innerHTML = `
       <div class="home-shift-inline-edit">
         <div class="home-inline-row">
-          <input type="date" id="home-edit-date" class="home-date-input" value="${shift.date}">
+          <div class="home-date-badge">
+            <span class="home-date-pretty">${prettyDateStr}</span>
+            <button class="home-date-edit-btn" id="btn-home-date-edit" title="Datum verschieben">✏️</button>
+            <input type="date" id="home-edit-date" value="${shift.date}"
+              style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px">
+          </div>
           <span class="home-shift-num">${shiftNumber(shift)}</span>
           <span class="home-inline-xp">${xpLabel}</span>
           <button id="btn-delete-home-shift" class="btn-icon home-del-btn" title="Dienst löschen">🗑</button>
@@ -779,7 +799,11 @@ async function renderHomeTab() {
         </div>` : ''}
       </div>`;
 
-    // Auto-save on change
+    // Date edit button opens native date picker
+    document.getElementById('btn-home-date-edit').addEventListener('click', () => {
+      const inp = document.getElementById('home-edit-date');
+      try { inp.showPicker(); } catch { inp.click(); }
+    });
     document.getElementById('home-edit-date').addEventListener('change', e =>
       inlineSaveShift(shift, { date: e.target.value }));
     panel.querySelectorAll('.home-type-btn').forEach(btn =>
@@ -824,6 +848,17 @@ async function renderHomeTab() {
     renderTimeline(shift);
     breakBtn.classList.remove('hidden');
     if (shift.date === today) startAlarmScheduler();
+  }
+
+  // Apply swipe animation to content wrapper
+  if (state.swipeDir) {
+    const vc = document.getElementById('home-view-content');
+    if (vc) {
+      vc.classList.remove('swipe-in-right', 'swipe-in-left');
+      void vc.offsetWidth;
+      vc.classList.add(state.swipeDir === 'next' ? 'swipe-in-right' : 'swipe-in-left');
+    }
+    state.swipeDir = null;
   }
 
   if (!state.calMonth) state.calMonth = today.slice(0, 7);
@@ -944,7 +979,7 @@ function renderShiftNav() {
   if (prevShift) {
     prevDate.textContent = fmtDate(prevShift.date);
     prevBtn.disabled = false;
-    prevBtn.onclick = () => { state.homeSelectedShiftId = prevShift.id; renderHomeTab(); };
+    prevBtn.onclick = () => { state.swipeDir = 'prev'; state.homeSelectedShiftId = prevShift.id; renderHomeTab(); };
   } else {
     prevDate.textContent = '—';
     prevBtn.disabled = true;
@@ -953,7 +988,7 @@ function renderShiftNav() {
   if (nextShift) {
     nextDate.textContent = fmtDate(nextShift.date);
     nextBtn.disabled = false;
-    nextBtn.onclick = () => { state.homeSelectedShiftId = nextShift.id; renderHomeTab(); };
+    nextBtn.onclick = () => { state.swipeDir = 'next'; state.homeSelectedShiftId = nextShift.id; renderHomeTab(); };
   } else {
     nextDate.textContent = '—';
     nextBtn.disabled = true;
