@@ -66,15 +66,27 @@ function xmlTypToTeam(typ) {
   if (typ === 'forschung' || typ === 'bindung') return 'F';
   return 'D';
 }
+// Derive per-colleague team from funktion string (takes priority over shift-level team)
+function inferColleagueTeam(funktion) {
+  const f = (funktion || '').trim().toUpperCase();
+  if (f.startsWith('DEU-'))  return 'D';
+  if (f.startsWith('INT-'))  return 'I';
+  if (/^TRAINING\s*\d*$/.test(f)) return 'T';
+  if (f.startsWith('FORSCH') || f.startsWith('BIND')) return 'F';
+  return null;
+}
+function effectiveTeam(c) {
+  return inferColleagueTeam(c.funktion) || c.team || 'D';
+}
 function tagIconsHTML(tags) {
   return (tags || []).map(t => TAG_ICONS[t] || t).join(' ');
 }
 function teamButtonPreviewHTML(colleagues) {
   if (!colleagues || !colleagues.length) return '';
-  const isSenior = c => c.team === 'D' && (c.funktion || '').toLowerCase().includes('senior');
-  const deuReg  = colleagues.filter(c => c.team === 'D' && !isSenior(c));
-  const senior  = colleagues.some(isSenior);
-  const training = colleagues.filter(c => c.team === 'T');
+  const isSenior = c => effectiveTeam(c) === 'D' && (c.funktion || '').toLowerCase().includes('senior');
+  const deuReg   = colleagues.filter(c => effectiveTeam(c) === 'D' && !isSenior(c));
+  const senior   = colleagues.some(isSenior);
+  const training = colleagues.filter(c => effectiveTeam(c) === 'T');
   const parts = [];
   if (deuReg.length || senior) parts.push(`D: ${deuReg.length}/6`);
   if (senior) parts.push('S');
@@ -342,6 +354,7 @@ async function init() {
     setupPlannerListeners();
     setupICDFCollectionListeners();
     setupTeamModal();
+    setupOtherTeamsModal();
     setupShiftAdvModal();
     setupMissionModals();
     setupEscapeKey();
@@ -835,10 +848,10 @@ async function renderHomeTab() {
     // Team counts info (left side of team row)
     const teamInfoHTML = (() => {
       if (!hasTeam) return '';
-      const isSenior = c => c.team === 'D' && (c.funktion || '').toLowerCase().includes('senior');
-      const deuReg  = colleagues.filter(c => c.team === 'D' && !isSenior(c));
-      const senior  = colleagues.some(isSenior);
-      const training = colleagues.filter(c => c.team === 'T');
+      const isSenior = c => effectiveTeam(c) === 'D' && (c.funktion || '').toLowerCase().includes('senior');
+      const deuReg   = colleagues.filter(c => effectiveTeam(c) === 'D' && !isSenior(c));
+      const senior   = colleagues.some(isSenior);
+      const training = colleagues.filter(c => effectiveTeam(c) === 'T');
       const tagCounts = {};
       if (!hideIcons) for (const c of colleagues) for (const tag of (c.tags || [])) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
       const parts = [];
@@ -1273,14 +1286,15 @@ function openTeamModal(shift) {
     body.querySelector('.rolecall-anwesend').textContent = `${p} anwesend`;
   };
 
-  const isSenior = c => c.team === 'D' && (c.funktion || '').toLowerCase().includes('senior');
-  const colleagueDotColor = c => isSenior(c) ? '#f59e0b' : TEAM_META[c.team || 'D'].color;
+  const isSenior = c => effectiveTeam(c) === 'D' && (c.funktion || '').toLowerCase().includes('senior');
+  const dotColor = c => isSenior(c) ? '#f59e0b' : TEAM_META[effectiveTeam(c)]?.color || TEAM_META.D.color;
 
   // Rolecall only shows DEU (D) and Training (T) — filter other teams
-  const rcColleagues = colleagues.filter(c => c.team === 'D' || c.team === 'T');
+  const rcColleagues = colleagues.filter(c => effectiveTeam(c) === 'D' || effectiveTeam(c) === 'T');
+  const otherColleagues = colleagues.filter(c => effectiveTeam(c) !== 'D' && effectiveTeam(c) !== 'T' && !c._self);
   const groups = {};
   for (const c of rcColleagues) {
-    const t = c.team || 'D';
+    const t = effectiveTeam(c);
     if (!groups[t]) groups[t] = [];
     groups[t].push(c);
   }
@@ -1299,7 +1313,7 @@ function openTeamModal(shift) {
       ${groups[t].map(c => `
         <label class="team-colleague-row${c.present ? ' is-present' : ''}" data-team="${t}">
           <input type="checkbox" class="team-colleague-check" data-idx="${c._rawIdx}" ${c.present ? 'checked' : ''}>
-          <span class="team-dot" style="background:${colleagueDotColor(c)}"></span>
+          <span class="team-dot" style="background:${dotColor(c)}"></span>
           <div class="team-colleague-info">
             <div class="team-colleague-name">${c.name}${c._self ? ' <span class="team-self-badge">Ich</span>' : ''}</div>
             <div class="team-colleague-func" style="color:${isSenior(c) ? '#f59e0b' : ''}">${c.funktion}</div>
@@ -1307,7 +1321,11 @@ function openTeamModal(shift) {
           ${!hideIcons && (c.tags || []).length ? `<div class="team-colleague-tags">${tagIconsHTML(c.tags)}</div>` : ''}
         </label>
       `).join('')}
-    `).join('')}`;
+    `).join('')}
+    ${otherColleagues.length ? `
+      <button class="other-teams-link" id="btn-other-teams">
+        👁 Andere Teams (${otherColleagues.length})
+      </button>` : ''}`;
 
   body.querySelectorAll('.team-colleague-check').forEach(cb => {
     cb.addEventListener('change', () => {
@@ -1315,6 +1333,7 @@ function openTeamModal(shift) {
       updateStatus();
     });
   });
+  body.querySelector('#btn-other-teams')?.addEventListener('click', () => openOtherTeamsModal(otherColleagues, hideIcons));
 
   modal.classList.remove('hidden');
 
@@ -1336,6 +1355,37 @@ function setupTeamModal() {
   document.getElementById('team-modal-close').addEventListener('click', close);
   document.getElementById('team-modal-backdrop').addEventListener('click', close);
   document.getElementById('team-modal-cancel').addEventListener('click', close);
+}
+
+function openOtherTeamsModal(otherColleagues, hideIcons) {
+  const modal = document.getElementById('other-teams-modal');
+  const body  = document.getElementById('other-teams-body');
+  const groups = {};
+  for (const c of otherColleagues) {
+    const t = effectiveTeam(c);
+    if (!groups[t]) groups[t] = [];
+    groups[t].push(c);
+  }
+  body.innerHTML = TEAM_ORDER.filter(t => groups[t]).map(t => `
+    <div class="team-group-header" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</div>
+    ${groups[t].map(c => `
+      <div class="team-colleague-row" style="cursor:default">
+        <span class="team-dot" style="background:${TEAM_META[t].color}"></span>
+        <div class="team-colleague-info">
+          <div class="team-colleague-name">${c.name}</div>
+          <div class="team-colleague-func">${c.funktion}</div>
+        </div>
+        ${!hideIcons && (c.tags || []).length ? `<div class="team-colleague-tags">${tagIconsHTML(c.tags)}</div>` : ''}
+      </div>
+    `).join('')}
+  `).join('') || '<div class="empty-state">Keine anderen Teams</div>';
+  modal.classList.remove('hidden');
+}
+
+function setupOtherTeamsModal() {
+  const close = () => document.getElementById('other-teams-modal').classList.add('hidden');
+  document.getElementById('other-teams-close').addEventListener('click', close);
+  document.getElementById('other-teams-backdrop').addEventListener('click', close);
 }
 
 function openCalModal() {
@@ -5673,14 +5723,17 @@ async function importShiftsFromXML(xmlText) {
     const category = getCategory(typ, spalte);
     const key = `${datum}_${type}`;
 
-    const team = xmlTypToTeam(typ);
-    const colleagues = Array.from(el.querySelectorAll('kollege')).map(k => ({
-      name:     k.getAttribute('name')     || '',
-      funktion: k.getAttribute('funktion') || '',
-      tags:     (k.getAttribute('tags') || '').split(',').map(t => t.trim()).filter(Boolean),
-      team,
-      present:  false,
-    }));
+    const shiftTeam = xmlTypToTeam(typ);
+    const colleagues = Array.from(el.querySelectorAll('kollege')).map(k => {
+      const funktion = k.getAttribute('funktion') || '';
+      return {
+        name:     k.getAttribute('name') || '',
+        funktion,
+        tags:     (k.getAttribute('tags') || '').split(',').map(t => t.trim()).filter(Boolean),
+        team:     inferColleagueTeam(funktion) || shiftTeam,
+        present:  false,
+      };
+    });
 
     if (existingKeys.has(key)) {
       // Update colleagues if shift already exists and has none yet
