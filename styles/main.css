@@ -2399,6 +2399,36 @@ img{max-width:100%;display:block}
   font-size:10px;background:rgba(124,58,237,.18);color:var(--accent);
   border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;
 }
+.rc-del-btn{
+  flex-shrink:0;margin-left:auto;padding:2px 7px;border-radius:6px;
+  font-size:12px;color:var(--text-dim);background:transparent;
+  border:1px solid transparent;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:color .15s,border-color .15s;
+}
+.rc-del-btn:active{color:#f87171;border-color:rgba(248,113,113,.3)}
+.rc-add-form{
+  display:flex;align-items:center;gap:6px;margin-top:14px;
+  padding-top:12px;border-top:1px solid var(--border);
+}
+.rc-add-name{
+  flex:1;min-width:0;padding:7px 10px;border-radius:8px;
+  background:rgba(255,255,255,.06);border:1px solid var(--border);
+  color:var(--text);font-size:13px;outline:none;
+}
+.rc-add-name:focus{border-color:var(--accent)}
+.rc-add-funk{
+  flex:1.4;min-width:0;padding:7px 8px;border-radius:8px;
+  background:rgba(255,255,255,.06);border:1px solid var(--border);
+  color:var(--text);font-size:12px;outline:none;cursor:pointer;
+  -webkit-appearance:none;
+}
+.rc-add-btn{
+  flex-shrink:0;padding:7px 12px;border-radius:8px;font-size:16px;
+  background:rgba(124,58,237,.18);border:1px solid rgba(124,58,237,.3);
+  color:var(--accent);cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:background .15s;font-weight:700;
+}
+.rc-add-btn:active{background:rgba(124,58,237,.35)}
 .other-teams-link{
   display:block;width:100%;margin-top:14px;padding:9px 0;
   font-size:12px;color:var(--text-dim);text-align:center;

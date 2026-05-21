@@ -69,12 +69,22 @@ function xmlTypToTeam(typ) {
 // Derive per-colleague team from funktion string (takes priority over shift-level team)
 function inferColleagueTeam(funktion) {
   const f = (funktion || '').trim().toUpperCase();
+  if (f === 'DEU-BINDUNG')   return 'F'; // before generic DEU-* check
   if (f.startsWith('DEU-'))  return 'D';
   if (f.startsWith('INT-'))  return 'I';
   if (/^TRAINING\s*\d*$/.test(f)) return 'T';
   if (f.startsWith('FORSCH') || f.startsWith('BIND')) return 'F';
   return null;
 }
+
+const FUNK_OPTIONS = [
+  'DEU-A-Seniorassistent',
+  'DEU-B','DEU-C','DEU-D','DEU-E','DEU-F','DEU-G',
+  'DEU-Bindung',
+  'Training 1','Training 2',
+  'INT-A-Seniorassistent','INT-B',
+  'Forschung 1','Forschung 2','Forschung 3','Forschung 4','Forschung 5','Forschung 6',
+];
 function effectiveTeam(c) {
   return inferColleagueTeam(c.funktion) || c.team || 'D';
 }
@@ -1261,19 +1271,16 @@ function openRescheduleModal(shift) {
 
 // ─── Team Attendance Modal ────────────────────────────────────────────────────
 function openTeamModal(shift) {
-  const rawColleagues = shift.colleagues || [];
-  if (!rawColleagues.length) return;
+  const modal   = document.getElementById('team-modal');
+  const body    = document.getElementById('team-modal-body');
+  const titleEl = document.getElementById('team-modal-title');
+  const subEl   = document.getElementById('team-modal-subtitle');
 
-  const modal    = document.getElementById('team-modal');
-  const body     = document.getElementById('team-modal-body');
-  const titleEl  = document.getElementById('team-modal-title');
-  const subEl    = document.getElementById('team-modal-subtitle');
-
-  const dateObj   = new Date(shift.date + 'T12:00:00');
-  const wdShort   = dateObj.toLocaleDateString('de-AT', { weekday:'short' });
-  const dtShort   = dateObj.toLocaleDateString('de-AT', { day:'numeric', month:'numeric', year:'numeric' });
-  const typeAbbr  = { früh:'VM', spät:'NM', samstag:'SAT', full:'Ganztag', schulung:'Sch' }[shift.type] || '';
-  const typeLabel = { früh:'Vormittag', spät:'Nachmittag', samstag:'Samstag', full:'Ganztag', schulung:'Schulung' }[shift.type] || '';
+  const dateObj  = new Date(shift.date + 'T12:00:00');
+  const wdShort  = dateObj.toLocaleDateString('de-AT', { weekday:'short' });
+  const dtShort  = dateObj.toLocaleDateString('de-AT', { day:'numeric', month:'numeric', year:'numeric' });
+  const typeAbbr = { früh:'VM', spät:'NM', samstag:'SAT', full:'Ganztag', schulung:'Sch' }[shift.type] || '';
+  const typeLabel= { früh:'Vormittag', spät:'Nachmittag', samstag:'Samstag', full:'Ganztag', schulung:'Schulung' }[shift.type] || '';
   titleEl.textContent = `Rolecall – ${wdShort} ${dtShort} ${typeAbbr}`;
 
   const { start: ss, end: se } = shiftHours(shift);
@@ -1281,83 +1288,120 @@ function openTeamModal(shift) {
   const dtLong = dateObj.toLocaleDateString('de-AT', { weekday:'long', day:'numeric', month:'numeric', year:'numeric' });
   subEl.textContent = `${dtLong} · ${typeLabel} (${tr})`;
 
-  // Inject self if name is set and not already listed
-  const userName = localStorage.getItem('psychodex-user-name') || '';
-  const colleagues = rawColleagues.map((c, i) => ({ ...c, _rawIdx: i }));
-  if (userName && !colleagues.some(c => c.name.toLowerCase() === userName.toLowerCase())) {
-    const selfTeam = shift.category === 'training' ? 'T' : 'D';
-    const selfFunk = shift.category === 'senior' ? 'Seniorassistent (Ich)' : '(Ich)';
-    colleagues.unshift({ name: userName, funktion: selfFunk, team: selfTeam, tags: [], present: true, _self: true, _rawIdx: -1 });
-  }
-
+  const userName  = localStorage.getItem('psychodex-user-name') || '';
   const hideIcons = localStorage.getItem('hide-team-icons') === '1';
+  const selfTeam  = shift.category === 'training' ? 'T' : 'D';
+  const selfFunk  = shift.category === 'senior' ? 'Seniorassistent (Ich)' : '(Ich)';
 
-  const updateStatus = () => {
-    const checks = body.querySelectorAll('.team-colleague-check');
-    const p = Array.from(checks).filter(x => x.checked).length;
-    const f = checks.length - p;
-    body.querySelector('.rolecall-fehlen').textContent  = `${f} fehlen`;
-    body.querySelector('.rolecall-anwesend').textContent = `${p} anwesend`;
-  };
+  // Mutable working list — source of truth for save
+  const working = (shift.colleagues || []).map(c => ({ ...c }));
 
   const isSenior = c => effectiveTeam(c) === 'D' && (c.funktion || '').toLowerCase().includes('senior');
-  const dotColor = c => isSenior(c) ? '#f59e0b' : TEAM_META[effectiveTeam(c)]?.color || TEAM_META.D.color;
+  const dotColor = c => isSenior(c) ? '#f59e0b' : (TEAM_META[effectiveTeam(c)]?.color || TEAM_META.D.color);
 
-  // Rolecall only shows DEU (D) and Training (T) — filter other teams
-  const rcColleagues = colleagues.filter(c => effectiveTeam(c) === 'D' || effectiveTeam(c) === 'T');
-  const otherColleagues = colleagues.filter(c => effectiveTeam(c) !== 'D' && effectiveTeam(c) !== 'T' && !c._self);
-  const groups = {};
-  for (const c of rcColleagues) {
-    const t = effectiveTeam(c);
-    if (!groups[t]) groups[t] = [];
-    groups[t].push(c);
-  }
+  const renderBody = () => {
+    // Build display: self-entry + working list, each tagged with working index
+    const display = working.map((c, i) => ({ ...c, _wi: i }));
+    if (userName && !display.some(c => c.name.toLowerCase() === userName.toLowerCase())) {
+      display.unshift({ name: userName, funktion: selfFunk, team: selfTeam, tags: [], present: true, _self: true, _wi: -1 });
+    }
 
-  const initPresent = rcColleagues.filter(c => c.present).length;
-  const initFehlen  = rcColleagues.length - initPresent;
+    const rcDisplay    = display.filter(c => effectiveTeam(c) === 'D' || effectiveTeam(c) === 'T');
+    const otherDisplay = display.filter(c => effectiveTeam(c) !== 'D' && effectiveTeam(c) !== 'T' && !c._self);
 
-  body.innerHTML = `
-    <div class="rolecall-status">
-      <span class="rolecall-fehlen">${initFehlen} fehlen</span>
-      <span class="rolecall-dot">·</span>
-      <span class="rolecall-anwesend">${initPresent} anwesend</span>
-    </div>
-    ${['D', 'T'].filter(t => groups[t]).map(t => `
-      <div class="team-group-header" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</div>
-      ${groups[t].map(c => `
-        <label class="team-colleague-row${c.present ? ' is-present' : ''}" data-team="${t}">
-          <input type="checkbox" class="team-colleague-check" data-idx="${c._rawIdx}" ${c.present ? 'checked' : ''}>
-          <span class="team-dot" style="background:${dotColor(c)}"></span>
-          <div class="team-colleague-info">
-            <div class="team-colleague-name">${c.name}${c._self ? ' <span class="team-self-badge">Ich</span>' : ''}</div>
-            <div class="team-colleague-func" style="color:${isSenior(c) ? '#f59e0b' : ''}">${c.funktion}</div>
-          </div>
-          ${!hideIcons && (c.tags || []).length ? `<div class="team-colleague-tags">${tagIconsHTML(c.tags)}</div>` : ''}
-        </label>
+    const present = rcDisplay.filter(c => c.present).length;
+    const fehlen  = rcDisplay.length - present;
+
+    const groups = { D: [], T: [] };
+    for (const c of rcDisplay) groups[effectiveTeam(c)].push(c);
+
+    const funkSelectHTML = `<select class="rc-add-funk" id="rc-add-funk">
+      ${FUNK_OPTIONS.map(f => `<option value="${f}">${f}</option>`).join('')}
+    </select>`;
+
+    body.innerHTML = `
+      <div class="rolecall-status">
+        <span class="rolecall-fehlen">${fehlen} fehlen</span>
+        <span class="rolecall-dot">·</span>
+        <span class="rolecall-anwesend">${present} anwesend</span>
+      </div>
+      ${['D','T'].filter(t => groups[t].length).map(t => `
+        <div class="team-group-header" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</div>
+        ${groups[t].map(c => `
+          <label class="team-colleague-row${c.present ? ' is-present' : ''}">
+            <input type="checkbox" class="team-colleague-check" data-wi="${c._wi}" ${c.present ? 'checked' : ''}>
+            <span class="team-dot" style="background:${dotColor(c)}"></span>
+            <div class="team-colleague-info">
+              <div class="team-colleague-name">${c.name}${c._self ? ' <span class="team-self-badge">Ich</span>' : ''}</div>
+              <div class="team-colleague-func" style="color:${isSenior(c) ? '#f59e0b' : ''}">${c.funktion}</div>
+            </div>
+            ${!hideIcons && (c.tags||[]).length ? `<div class="team-colleague-tags">${tagIconsHTML(c.tags)}</div>` : ''}
+            ${!c._self ? `<button class="rc-del-btn" data-wi="${c._wi}" title="Entfernen">✕</button>` : ''}
+          </label>
+        `).join('')}
       `).join('')}
-    `).join('')}
-    ${otherColleagues.length ? `
-      <button class="other-teams-link" id="btn-other-teams">
-        👁 Andere Teams (${otherColleagues.length})
-      </button>` : ''}`;
+      ${otherDisplay.length ? `<button class="other-teams-link" id="btn-other-teams">👁 Andere Teams (${otherDisplay.length})</button>` : ''}
+      <div class="rc-add-form">
+        <input type="text" class="rc-add-name" id="rc-add-name" placeholder="Name…">
+        ${funkSelectHTML}
+        <button class="rc-add-btn" id="rc-add-btn">＋</button>
+      </div>`;
 
-  body.querySelectorAll('.team-colleague-check').forEach(cb => {
-    cb.addEventListener('change', () => {
-      cb.closest('.team-colleague-row').classList.toggle('is-present', cb.checked);
-      updateStatus();
+    // Status update helper
+    const updateStatus = () => {
+      const checks = body.querySelectorAll('.team-colleague-check');
+      const p = Array.from(checks).filter(x => x.checked).length;
+      body.querySelector('.rolecall-fehlen').textContent   = `${checks.length - p} fehlen`;
+      body.querySelector('.rolecall-anwesend').textContent = `${p} anwesend`;
+    };
+
+    // Checkbox changes — sync to working
+    body.querySelectorAll('.team-colleague-check').forEach(cb => {
+      cb.addEventListener('change', () => {
+        cb.closest('.team-colleague-row').classList.toggle('is-present', cb.checked);
+        const wi = parseInt(cb.dataset.wi);
+        if (wi >= 0) working[wi].present = cb.checked;
+        updateStatus();
+      });
     });
-  });
-  body.querySelector('#btn-other-teams')?.addEventListener('click', () => openOtherTeamsModal(otherColleagues, hideIcons));
 
+    // Delete buttons
+    body.querySelectorAll('.rc-del-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        const wi = parseInt(btn.dataset.wi);
+        if (wi >= 0) working.splice(wi, 1);
+        renderBody();
+      });
+    });
+
+    // Add form
+    body.querySelector('#rc-add-btn')?.addEventListener('click', () => {
+      const name = body.querySelector('#rc-add-name').value.trim();
+      const funk = body.querySelector('#rc-add-funk').value;
+      if (!name) { body.querySelector('#rc-add-name').focus(); return; }
+      working.push({ name, funktion: funk, team: inferColleagueTeam(funk) || 'D', tags: [], present: false });
+      renderBody();
+    });
+
+    // Enter key in name field triggers add
+    body.querySelector('#rc-add-name')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') body.querySelector('#rc-add-btn').click();
+    });
+
+    body.querySelector('#btn-other-teams')?.addEventListener('click', () => openOtherTeamsModal(otherDisplay, hideIcons));
+  };
+
+  renderBody();
   modal.classList.remove('hidden');
 
   document.getElementById('team-modal-save').onclick = async () => {
-    const updated = rawColleagues.map(c => ({ ...c }));
+    // Sync any uncaptured checkbox state before saving
     body.querySelectorAll('.team-colleague-check').forEach(cb => {
-      const idx = parseInt(cb.dataset.idx);
-      if (idx >= 0) updated[idx].present = cb.checked;
+      const wi = parseInt(cb.dataset.wi);
+      if (wi >= 0 && wi < working.length) working[wi].present = cb.checked;
     });
-    await db.shiftLogs.update(shift.id, { colleagues: updated });
+    await db.shiftLogs.update(shift.id, { colleagues: working });
     state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
     modal.classList.add('hidden');
     renderHomeTab();
