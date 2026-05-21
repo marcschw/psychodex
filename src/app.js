@@ -1273,7 +1273,8 @@ function openTeamModal(shift) {
   const userName = localStorage.getItem('psychodex-user-name') || '';
   const colleagues = rawColleagues.map((c, i) => ({ ...c, _rawIdx: i }));
   if (userName && !colleagues.some(c => c.name.toLowerCase() === userName.toLowerCase())) {
-    colleagues.unshift({ name: userName, funktion: '(Ich)', team: 'D', tags: [], present: true, _self: true, _rawIdx: -1 });
+    const selfTeam = shift.category === 'training' ? 'T' : 'D';
+    colleagues.unshift({ name: userName, funktion: '(Ich)', team: selfTeam, tags: [], present: true, _self: true, _rawIdx: -1 });
   }
 
   const hideIcons = localStorage.getItem('hide-team-icons') === '1';
