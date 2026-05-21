@@ -845,13 +845,25 @@ async function renderHomeTab() {
     const isSpecial = ['samstag','schulung'].includes(shift.type);
     const specialChip = isSpecial ? `<span class="home-special-chip">${shiftIcon(shift.type)} ${shiftLabel(shift.type)}</span>` : '';
 
+    // Include self in team counts
+    const selfUserName = localStorage.getItem('psychodex-user-name') || '';
+    const colleaguesWithSelf = (() => {
+      const list = [...colleagues];
+      if (selfUserName && !list.some(c => c.name.toLowerCase() === selfUserName.toLowerCase())) {
+        const selfTeam = shift.category === 'training' ? 'T' : 'D';
+        const selfFunk = shift.category === 'senior' ? 'Seniorassistent (Ich)' : '(Ich)';
+        list.push({ name: selfUserName, funktion: selfFunk, team: selfTeam, tags: [] });
+      }
+      return list;
+    })();
+
     // Team counts info (left side of team row)
     const teamInfoHTML = (() => {
-      if (!hasTeam) return '';
+      if (!hasTeam && !selfUserName) return '';
       const isSenior = c => effectiveTeam(c) === 'D' && (c.funktion || '').toLowerCase().includes('senior');
-      const deuReg   = colleagues.filter(c => effectiveTeam(c) === 'D' && !isSenior(c));
-      const senior   = colleagues.some(isSenior);
-      const training = colleagues.filter(c => effectiveTeam(c) === 'T');
+      const deuReg   = colleaguesWithSelf.filter(c => effectiveTeam(c) === 'D' && !isSenior(c));
+      const senior   = colleaguesWithSelf.some(isSenior);
+      const training = colleaguesWithSelf.filter(c => effectiveTeam(c) === 'T');
       const tagCounts = {};
       if (!hideIcons) for (const c of colleagues) for (const tag of (c.tags || [])) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
       const parts = [];
@@ -877,7 +889,7 @@ async function renderHomeTab() {
         <div class="home-team-row">
           ${teamInfoHTML}
           <div class="home-team-btns">
-            <button class="home-team-btn" id="btn-home-team" title="Rolecall">👥 ${teamButtonPreviewHTML(colleagues)}</button>
+            <button class="home-team-btn" id="btn-home-team" title="Rolecall">👥 ${teamButtonPreviewHTML(colleaguesWithSelf)}</button>
             <button class="home-icons-toggle" id="btn-icons-toggle" title="${hideIcons ? 'Tag-Icons zeigen' : 'Tag-Icons ausblenden'}">${hideIcons ? '◎' : '◉'}</button>
           </div>
         </div>` : ''}
@@ -1274,7 +1286,8 @@ function openTeamModal(shift) {
   const colleagues = rawColleagues.map((c, i) => ({ ...c, _rawIdx: i }));
   if (userName && !colleagues.some(c => c.name.toLowerCase() === userName.toLowerCase())) {
     const selfTeam = shift.category === 'training' ? 'T' : 'D';
-    colleagues.unshift({ name: userName, funktion: '(Ich)', team: selfTeam, tags: [], present: true, _self: true, _rawIdx: -1 });
+    const selfFunk = shift.category === 'senior' ? 'Seniorassistent (Ich)' : '(Ich)';
+    colleagues.unshift({ name: userName, funktion: selfFunk, team: selfTeam, tags: [], present: true, _self: true, _rawIdx: -1 });
   }
 
   const hideIcons = localStorage.getItem('hide-team-icons') === '1';
