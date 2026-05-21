@@ -5,6 +5,7 @@ export const MISSION_POOL = [
   {
     id: 'c1_catch3',
     tier: 1,
+    emoji: '👣',
     title: 'Erste Schritte',
     description: 'Fange 3 Diagnosen.',
     condition: { type: 'count_catches', target: 3 },
@@ -13,6 +14,7 @@ export const MISSION_POOL = [
   {
     id: 'c2_shifts2',
     tier: 1,
+    emoji: '📅',
     title: 'Diensttreue',
     description: 'Logge 2 Dienste.',
     condition: { type: 'count_shifts_logged', target: 2 },
@@ -21,6 +23,7 @@ export const MISSION_POOL = [
   {
     id: 'c3_f3_x1',
     tier: 1,
+    emoji: '💙',
     title: 'Affektiver Einstieg',
     description: 'Fange eine Diagnose aus dem F3-Bereich (Affektive Störungen).',
     condition: { type: 'count_in_category', target: 1, param: 'F3' },
@@ -29,6 +32,7 @@ export const MISSION_POOL = [
   {
     id: 'c4_f4_x1',
     tier: 1,
+    emoji: '😰',
     title: 'Angst & Stress',
     description: 'Fange eine Diagnose aus dem F4-Bereich (Neurotische Störungen).',
     condition: { type: 'count_in_category', target: 1, param: 'F4' },
@@ -37,6 +41,7 @@ export const MISSION_POOL = [
   {
     id: 'c5_f1_x1',
     tier: 1,
+    emoji: '🧪',
     title: 'Sucht-Protokoll',
     description: 'Fange eine Diagnose aus dem F1-Bereich (Substanzstörungen).',
     condition: { type: 'count_in_category', target: 1, param: 'F1' },
@@ -45,6 +50,7 @@ export const MISSION_POOL = [
   {
     id: 'c6_cats2',
     tier: 1,
+    emoji: '🗂️',
     title: 'Diagnostische Breite',
     description: 'Fange Diagnosen aus 2 verschiedenen Kategorien.',
     condition: { type: 'count_different_categories', target: 2 },
@@ -53,6 +59,7 @@ export const MISSION_POOL = [
   {
     id: 'c7_rare5',
     tier: 1,
+    emoji: '🔍',
     title: 'Ungewöhnlicher Fall',
     description: 'Fange eine Diagnose mit Seltenheit ≥ ★5.',
     condition: { type: 'count_rarity_min', target: 1, param: 5 },
@@ -61,6 +68,7 @@ export const MISSION_POOL = [
   {
     id: 'c8_catch5',
     tier: 1,
+    emoji: '🚶',
     title: 'Auf dem Weg',
     description: 'Fange 5 Diagnosen.',
     condition: { type: 'count_catches', target: 5 },
@@ -70,6 +78,7 @@ export const MISSION_POOL = [
   {
     id: 'r1_f3_x3',
     tier: 2,
+    emoji: '🌧️',
     title: 'Depressiver Schwerpunkt',
     description: 'Fange 3 Diagnosen aus dem F3-Bereich.',
     condition: { type: 'count_in_category', target: 3, param: 'F3' },
@@ -78,6 +87,7 @@ export const MISSION_POOL = [
   {
     id: 'r2_comorbid1',
     tier: 2,
+    emoji: '🔗',
     title: 'Komorbide Entdeckung',
     description: 'Fange eine Diagnose mit Komorbidität (Patient hatte bereits eine Diagnose).',
     condition: { type: 'count_with_comorbidity', target: 1 },
@@ -86,6 +96,7 @@ export const MISSION_POOL = [
   {
     id: 'r3_rare7',
     tier: 2,
+    emoji: '💎',
     title: 'Seltener Fund',
     description: 'Fange eine Diagnose mit Seltenheit ≥ ★7.',
     condition: { type: 'count_rarity_min', target: 1, param: 7 },
@@ -94,6 +105,7 @@ export const MISSION_POOL = [
   {
     id: 'r4_cats4',
     tier: 2,
+    emoji: '🌐',
     title: 'Breites Spektrum',
     description: 'Fange Diagnosen aus 4 verschiedenen Kategorien.',
     condition: { type: 'count_different_categories', target: 4 },
@@ -102,6 +114,7 @@ export const MISSION_POOL = [
   {
     id: 'r5_shifts5',
     tier: 2,
+    emoji: '📋',
     title: 'Fünf Dienste',
     description: 'Logge 5 Dienste.',
     condition: { type: 'count_shifts_logged', target: 5 },
@@ -110,6 +123,7 @@ export const MISSION_POOL = [
   {
     id: 'r6_comorbid2',
     tier: 2,
+    emoji: '🧩',
     title: 'Komorbiditätsmuster',
     description: 'Fange 2 Diagnosen mit Komorbidität.',
     condition: { type: 'count_with_comorbidity', target: 2 },
@@ -118,6 +132,7 @@ export const MISSION_POOL = [
   {
     id: 'r7_f4_x3',
     tier: 2,
+    emoji: '😨',
     title: 'Angstexpert*in',
     description: 'Fange 3 Diagnosen aus dem F4-Bereich.',
     condition: { type: 'count_in_category', target: 3, param: 'F4' },
@@ -126,6 +141,7 @@ export const MISSION_POOL = [
   {
     id: 'r8_catch10',
     tier: 2,
+    emoji: '🔢',
     title: 'Zweistellig',
     description: 'Fange 10 Diagnosen gesamt.',
     condition: { type: 'count_catches', target: 10 },
@@ -134,6 +150,7 @@ export const MISSION_POOL = [
   {
     id: 'r9_per_shift2',
     tier: 2,
+    emoji: '✌️',
     title: 'Doppel-Diagnose',
     description: 'Fange 2 Diagnosen in einem einzigen Dienst.',
     condition: { type: 'per_shift_catches', target: 2 },
@@ -142,6 +159,7 @@ export const MISSION_POOL = [
   {
     id: 'r10_f5_x1',
     tier: 2,
+    emoji: '🍽️',
     title: 'Verhaltensmuster',
     description: 'Fange eine Diagnose aus dem F5-Bereich (Essstörungen & Verhaltenssyndrome).',
     condition: { type: 'count_in_category', target: 1, param: 'F5' },
@@ -150,6 +168,7 @@ export const MISSION_POOL = [
   {
     id: 'r11_f6_x1',
     tier: 2,
+    emoji: '🎭',
     title: 'Persönlichkeit',
     description: 'Fange eine Diagnose aus dem F6-Bereich (Persönlichkeitsstörungen).',
     condition: { type: 'count_in_category', target: 1, param: 'F6' },
@@ -160,6 +179,7 @@ export const MISSION_POOL = [
   {
     id: 'm1_rare9',
     tier: 3,
+    emoji: '🏆',
     title: 'Ultraseltener Fund',
     description: 'Fange eine Diagnose mit Seltenheit ≥ ★9.',
     condition: { type: 'count_rarity_min', target: 1, param: 9 },
@@ -169,6 +189,7 @@ export const MISSION_POOL = [
   {
     id: 'm2_f0_comorbid',
     tier: 3,
+    emoji: '🧠',
     title: 'Neuropsychiatrische Tiefe',
     description: 'Fange eine Diagnose aus dem F0-Bereich (Demenz & Organisch) mit Komorbidität.',
     condition: { type: 'count_in_category_comorbid', target: 1, param: 'F0' },
@@ -178,6 +199,7 @@ export const MISSION_POOL = [
   {
     id: 'm3_cats6',
     tier: 3,
+    emoji: '🗺️',
     title: 'Taxonomischer Meister',
     description: 'Fange Diagnosen aus 6 verschiedenen Kategorien.',
     condition: { type: 'count_different_categories', target: 6 },
@@ -186,6 +208,7 @@ export const MISSION_POOL = [
   {
     id: 'm4_per_shift3',
     tier: 3,
+    emoji: '⚡',
     title: 'Dreifach-Diagnostiker',
     description: 'Fange 3 Diagnosen in einem einzigen Dienst.',
     condition: { type: 'per_shift_catches', target: 3 },
@@ -195,6 +218,7 @@ export const MISSION_POOL = [
   {
     id: 'm5_shifts10',
     tier: 3,
+    emoji: '🏅',
     title: 'Zehn Dienste',
     description: 'Logge 10 Dienste.',
     condition: { type: 'count_shifts_logged', target: 10 },
@@ -203,6 +227,7 @@ export const MISSION_POOL = [
   {
     id: 'm6_rare7_x2',
     tier: 3,
+    emoji: '💠',
     title: 'Doppelte Seltenheit',
     description: 'Fange 2 Diagnosen mit Seltenheit ≥ ★7.',
     condition: { type: 'count_rarity_min', target: 2, param: 7 },
@@ -211,6 +236,7 @@ export const MISSION_POOL = [
   {
     id: 'm7_f2_x2',
     tier: 3,
+    emoji: '🌀',
     title: 'Psychotische Welt',
     description: 'Fange 2 Diagnosen aus dem F2-Bereich (Schizophrenie & Psychosen).',
     condition: { type: 'count_in_category', target: 2, param: 'F2' },
@@ -219,6 +245,7 @@ export const MISSION_POOL = [
   {
     id: 'm8_per_shift_cats2',
     tier: 3,
+    emoji: '🎲',
     title: 'Kategorien-Kombination',
     description: 'Fange in einem Dienst Diagnosen aus 2 verschiedenen Kategorien.',
     condition: { type: 'per_shift_diff_categories', target: 2 },
@@ -227,6 +254,7 @@ export const MISSION_POOL = [
   {
     id: 'm9_f6_x2',
     tier: 3,
+    emoji: '🎭',
     title: 'Persönlichkeitsprofi',
     description: 'Fange 2 Diagnosen aus dem F6-Bereich (Persönlichkeitsstörungen).',
     condition: { type: 'count_in_category', target: 2, param: 'F6' },
@@ -235,6 +263,7 @@ export const MISSION_POOL = [
   {
     id: 'm10_comorbid3',
     tier: 3,
+    emoji: '🔗',
     title: 'Komorbide Meisterschaft',
     description: 'Fange 3 Diagnosen mit Komorbidität.',
     condition: { type: 'count_with_comorbidity', target: 3 },

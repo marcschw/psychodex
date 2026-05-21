@@ -535,7 +535,6 @@ function renderApp() {
   loadICDFCollection();
   renderHomeTab();
   updateHeader();
-  renderMissionsStrip();
 }
 
 function updateHeader() {
@@ -3635,12 +3634,10 @@ async function refreshMissionProgress() {
     setTimeout(async () => {
       await ensureMissionSlots();
       if (state.currentTab === 'stats') renderMissions();
-      renderMissionsStrip();
     }, 1800);
   }
 
   if (state.currentTab === 'stats') renderMissions();
-  renderMissionsStrip();
 }
 
 function renderSettingsTab() {
@@ -3715,7 +3712,11 @@ function openChallengeHistoryModal() {
     if (!def) return '';
     const date = new Date(am.completedAt).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'2-digit'});
     return `<div class="ch-row">
-      <div><div class="ch-title">${def.title}</div><div class="ch-meta">${TIER_LABELS[def.tier]} · ${date}</div></div>
+      <div class="ch-main">
+        <div class="ch-title">${def.emoji ? def.emoji + ' ' : ''}${def.title}</div>
+        <div class="ch-desc">${def.description}</div>
+        <div class="ch-meta">${TIER_LABELS[def.tier]} · ${date}</div>
+      </div>
       <div class="ch-reward">+${def.reward.toLocaleString('de-AT')} XP</div>
     </div>`;
   }).join('') : '<div class="empty-state">Noch keine abgeschlossenen Challenges</div>';
@@ -3759,7 +3760,7 @@ function renderMissions() {
     return `
       <div class="mission-card tier-${mDef.tier}">
         <div class="mission-card-header">
-          <span class="mission-tier-badge">${TIER_LABELS[mDef.tier]}</span>
+          <span class="mission-tier-badge">${mDef.emoji ? mDef.emoji + ' ' : ''}${TIER_LABELS[mDef.tier]}</span>
           <span class="mission-reward">+${mDef.reward.toLocaleString('de-AT')} XP</span>
         </div>
         <div class="mission-title">${mDef.title}</div>
@@ -3773,6 +3774,8 @@ function renderMissions() {
         ${mDef.badge ? `<div class="mission-badge">${mDef.badge}</div>` : ''}
       </div>`;
   }).join('');
+
+  document.getElementById('btn-mission-history')?.addEventListener('click', openChallengeHistoryModal);
 }
 
 // ─── ICD-F Tab ────────────────────────────────────────────────────────────────
@@ -4092,7 +4095,6 @@ function renderStats() {
 
   const xp     = state.profile?.totalXP ?? 0;
   const el = id => document.getElementById(id);
-  renderMissionsStrip();
   const heatmapStart = renderHeatmap();
   const heatmapHeader = document.getElementById('heatmap-section-header');
   if (heatmapHeader && heatmapStart) {
@@ -5616,7 +5618,6 @@ async function importData(e) {
 
     await loadFromDB();
     renderApp();
-    renderMissionsStrip();
     alert(
       `Import erfolgreich ✓\n\n` +
       `${data.shifts.length} Dienste, ${data.catches.length} Diagnosen, ` +

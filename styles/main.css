@@ -1337,6 +1337,17 @@ img{max-width:100%;display:block}
 .privacy-close:hover{color:var(--text)}
 
 /* ── Mission Control ───────────────────────────────────────────────────────── */
+.missions-panel-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;padding-bottom:0;
+}
+.mission-history-btn{
+  font-size:12px;padding:4px 10px;border-radius:8px;cursor:pointer;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  color:var(--text-dim);-webkit-tap-highlight-color:transparent;transition:background .15s;
+  flex-shrink:0;
+}
+.mission-history-btn:active{background:rgba(255,255,255,.14)}
 .missions-grid{
   display:flex;flex-direction:column;gap:10px;
   margin-bottom:4px;
@@ -2542,10 +2553,12 @@ img{max-width:100%;display:block}
 .mission-history-pill{display:flex;align-items:center;justify-content:center;min-width:36px;font-size:18px;background:var(--bg-raised);border:1px solid var(--border);border-radius:10px;padding:6px 8px;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0;transition:background .15s}
 .mission-history-pill:active{background:var(--bg-hover)}
 /* Challenge history */
-.ch-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.ch-row{display:flex;align-items:flex-start;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
 .ch-row:last-child{border-bottom:none}
+.ch-main{flex:1;min-width:0}
 .ch-title{font-size:14px;font-weight:500;color:var(--text)}
-.ch-meta{font-size:12px;color:var(--text-dim);margin-top:2px}
-.ch-reward{font-size:13px;font-weight:700;color:var(--success);flex-shrink:0;margin-left:12px}
+.ch-desc{font-size:12px;color:var(--text-dim);margin-top:3px;line-height:1.4}
+.ch-meta{font-size:11px;color:var(--text-dim);opacity:.7;margin-top:3px}
+.ch-reward{font-size:13px;font-weight:700;color:var(--success);flex-shrink:0;margin-left:12px;padding-top:2px}
 /* Settings tab */
 #tab-settings{padding:16px}
