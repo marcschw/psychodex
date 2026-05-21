@@ -1,4 +1,4 @@
-const APP_VERSION  = 'v32';
+const APP_VERSION  = 'v33';
 const APP_CACHE    = `psychodex-app-${APP_VERSION}`;
 const IMAGE_CACHE  = `psychodex-images-${APP_VERSION}`;
 

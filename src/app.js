@@ -878,6 +878,37 @@ async function renderHomeTab() {
   renderShiftNav();
 }
 
+// ─── Austrian Public Holidays ─────────────────────────────────────────────────
+function easterSunday(y) {
+  const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,
+        f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),
+        h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,
+        l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),
+        mo=Math.floor((h+l-7*m+114)/31),dy=((h+l-7*m+114)%31)+1;
+  return new Date(y, mo-1, dy);
+}
+function getAustrianHolidays(year) {
+  const p2 = n => String(n).padStart(2,'0');
+  const fmt = d => `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
+  const add = (base, days) => { const d=new Date(base); d.setDate(d.getDate()+days); return d; };
+  const e = easterSunday(year);
+  return new Map([
+    [`${year}-01-01`, 'Neujahr'],
+    [`${year}-01-06`, 'Heilige Drei Könige'],
+    [`${year}-05-01`, 'Staatsfeiertag'],
+    [`${year}-08-15`, 'Mariä Himmelfahrt'],
+    [`${year}-10-26`, 'Nationalfeiertag'],
+    [`${year}-11-01`, 'Allerheiligen'],
+    [`${year}-12-08`, 'Mariä Empfängnis'],
+    [`${year}-12-25`, 'Christtag'],
+    [`${year}-12-26`, 'Stefanitag'],
+    [fmt(add(e,  1)), 'Ostermontag'],
+    [fmt(add(e, 39)), 'Christi Himmelfahrt'],
+    [fmt(add(e, 49)), 'Pfingstmontag'],
+    [fmt(add(e, 60)), 'Fronleichnam'],
+  ]);
+}
+
 function renderMonthCalendar() {
   const calEl = document.getElementById('home-calendar');
   if (!calEl) return;
@@ -917,6 +948,7 @@ function renderMonthCalendar() {
 
   const firstDow  = (new Date(year, month - 1, 1).getDay() + 6) % 7; // 0=Mon
   const daysInMon = new Date(year, month, 0).getDate();
+  const holidays  = getAustrianHolidays(year);
 
   // Find next upcoming shift date for distinct highlight
   const nextShiftDate = state.shifts
@@ -929,7 +961,9 @@ function renderMonthCalendar() {
   for (let d = 1; d <= daysInMon; d++) {
     const ds  = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const dow = (new Date(year, month - 1, d).getDay() + 6) % 7; // 0=Mon..6=Sun
-    const isSunday   = dow === 6;
+    const isSunday    = dow === 6;
+    const holidayName = holidays.get(ds) ?? null;
+    const isBlocked   = isSunday || !!holidayName;
     const dsh = shiftByDay[d] || [];
     const isToday      = ds === today;
     const isPast       = ds < today;
@@ -943,24 +977,27 @@ function renderMonthCalendar() {
     }).join('');
 
     const cls = ['cal-cell',
-      isSunday   ? 'cal-sunday'    : '',
-      isToday    ? 'cal-today'     : '',
-      isPast     ? 'cal-past'      : '',
-      isSelected ? 'cal-selected'  : '',
-      isNextShift? 'cal-next-shift': '',
-      dsh.length ? 'cal-has-shift' : '',
+      isSunday    ? 'cal-sunday'    : '',
+      holidayName ? 'cal-holiday'   : '',
+      isToday     ? 'cal-today'     : '',
+      isPast      ? 'cal-past'      : '',
+      isSelected  ? 'cal-selected'  : '',
+      isNextShift ? 'cal-next-shift': '',
+      dsh.length  ? 'cal-has-shift' : '',
     ].filter(Boolean).join(' ');
 
-    const ids = dsh.map(s => s.id).join(',');
-    html += `<div class="${cls}" data-date="${ds}" data-shift-ids="${ids}">
+    const ids   = dsh.map(s => s.id).join(',');
+    const title = holidayName ? ` title="${holidayName}"` : '';
+    html += `<div class="${cls}" data-date="${ds}" data-shift-ids="${ids}"${title}>
       <span class="cal-day-num">${d}</span>
+      ${holidayName ? '<span class="cal-holiday-dot">🇦🇹</span>' : ''}
       ${dots ? `<div class="cal-dots">${dots}</div>` : ''}
     </div>`;
   }
   html += '</div>';
   calEl.innerHTML = html;
 
-  calEl.querySelectorAll('.cal-cell:not(.cal-empty):not(.cal-sunday)').forEach(cell => {
+  calEl.querySelectorAll('.cal-cell:not(.cal-empty):not(.cal-sunday):not(.cal-holiday)').forEach(cell => {
     cell.addEventListener('click', async () => {
       const ids = cell.dataset.shiftIds;
       if (ids) {
