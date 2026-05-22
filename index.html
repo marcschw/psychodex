@@ -925,7 +925,8 @@
     </div>
     <div class="sheet-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
       <div style="font-size:13px;color:var(--text-dim)">Patient: <span id="verify-modal-label" style="color:var(--text);font-weight:600"></span></div>
-      <div style="font-size:13px">Dein Verdacht: <span id="verify-suspected" style="font-weight:700;color:var(--accent)"></span></div>
+      <div style="font-size:13px;margin-bottom:2px">Dein Verdacht:</div>
+      <div id="verify-suspected" class="susp-chips-wrap" style="min-height:28px"></div>
       <div class="form-row">
         <label class="form-label">Senior-Diagnose (ICD-Code)</label>
         <input type="text" id="verify-senior-input" class="form-input" placeholder="z.B. F32.1" style="text-transform:uppercase">

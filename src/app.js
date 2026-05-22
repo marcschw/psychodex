@@ -44,6 +44,8 @@ const state = {
   swipeDir: null,
 };
 
+let _editingSuspectedCodes = []; // working copy while slot-edit form is open
+
 // ─── Team / Colleague Constants ───────────────────────────────────────────────
 const TAG_ICONS = {
   'favorit-a': '♥',
@@ -1777,10 +1779,13 @@ function renderTimeline(shift) {
       ).join('');
       const diagListHtml = slotCatches.length
         ? `<div class="tl-inline-diag-list">${diagCards}</div>` : '';
+      const hasVerifyPending = (slot.suspectedCodes?.length > 0) && !slot.seniorCode;
       detailHtml = `<div class="tl-slot-detail${isExpanded ? '' : ' tl-slot-detail--hidden'}">
         ${diagListHtml}
         <div class="tl-inline-actions">
           <button class="tl-inline-btn tl-inline-add-diag" title="Diagnose hinzufügen">➕</button>
+          ${hasVerifyPending ? '<button class="tl-inline-btn tl-inline-verify" title="Senior-Diagnose prüfen">🔍</button>' : ''}
+          <button class="tl-inline-btn tl-inline-recall" title="Patient aus früherem Dienst">📋</button>
           ${hasTips ? '<button class="tl-inline-btn tl-inline-tips" title="Checkliste">✅</button>' : ''}
           <button class="tl-inline-btn tl-inline-edit" title="Bearbeiten">✏️</button>
           <button class="tl-inline-btn tl-inline-move" title="Verschieben">↕️</button>
@@ -1856,6 +1861,12 @@ function renderTimeline(shift) {
     if (!slot) return;
     el.querySelector('.tl-inline-add-diag')?.addEventListener('click', e => {
       e.stopPropagation(); openSlotDiagCatch(slot, 'planner');
+    });
+    el.querySelector('.tl-inline-verify')?.addEventListener('click', e => {
+      e.stopPropagation(); openVerifyModal(slot);
+    });
+    el.querySelector('.tl-inline-recall')?.addEventListener('click', e => {
+      e.stopPropagation(); openRecallPatientModal(slot, shift);
     });
     el.querySelector('.tl-inline-tips')?.addEventListener('click', e => {
       e.stopPropagation(); openSlotTipsModal(slot);
@@ -2593,9 +2604,14 @@ function openSlotEditForm(slot, source) {
       <label class="form-label">🔖 Kürzel / Notiz</label>
       <input type="text" id="slot-edit-notes" class="form-input" placeholder="Codename…" value="${(slot.patientNotes || '').replace(/"/g,'&quot;')}">
     </div>
-    <div class="form-row">
-      <label class="form-label">🔬 Verdachtsdiagnose</label>
-      <input type="text" id="slot-edit-suspected" class="form-input" placeholder="ICD-Code, z.B. F32.1" value="${slot.suspectedCode || ''}">
+    <div class="form-row" style="flex-direction:column;align-items:stretch;gap:8px">
+      <label class="form-label">🔬 Verdachtsdiagnosen</label>
+      <div class="susp-chips-wrap" id="susp-chips-wrap"></div>
+      <div class="susp-inline-wrap hidden" id="susp-search-wrap">
+        <input type="text" id="susp-search-q" class="form-input" placeholder="Diagnose suchen…" autocomplete="off">
+        <div id="susp-search-res" class="susp-search-results"></div>
+      </div>
+      <button type="button" class="btn-secondary" id="btn-susp-add">＋ Verdacht hinzufügen</button>
     </div>
     ${terminInterviewField}
     ${terminErstgespraechField}
@@ -2638,6 +2654,62 @@ function openSlotEditForm(slot, source) {
       btn.addEventListener('click', e => e.currentTarget.classList.toggle('active')));
   }
 
+  if (isPatient) {
+    _editingSuspectedCodes = [...(slot.suspectedCodes || [])];
+
+    const renderSuspChips = () => {
+      const wrap = document.getElementById('susp-chips-wrap');
+      if (!wrap) return;
+      wrap.innerHTML = _editingSuspectedCodes.map((c, i) =>
+        `<span class="susp-chip">
+          <span class="susp-chip-code">${c.code}</span>
+          <span class="susp-chip-title">${c.title || ''}</span>
+          <button type="button" class="susp-chip-rm" data-idx="${i}">✕</button>
+        </span>`
+      ).join('');
+      wrap.querySelectorAll('.susp-chip-rm').forEach(btn =>
+        btn.addEventListener('click', e => {
+          e.preventDefault();
+          _editingSuspectedCodes.splice(parseInt(btn.dataset.idx), 1);
+          renderSuspChips();
+        })
+      );
+    };
+    renderSuspChips();
+
+    document.getElementById('btn-susp-add')?.addEventListener('click', e => {
+      e.preventDefault();
+      const wrap = document.getElementById('susp-search-wrap');
+      wrap?.classList.toggle('hidden');
+      if (!wrap?.classList.contains('hidden'))
+        document.getElementById('susp-search-q')?.focus();
+    });
+
+    document.getElementById('susp-search-q')?.addEventListener('input', e => {
+      const q = e.target.value.trim();
+      const res = document.getElementById('susp-search-res');
+      if (!res) return;
+      if (q.length < 2) { res.innerHTML = ''; return; }
+      const results = searchDiagnoses(state.icdFlat, q).slice(0, 8);
+      res.innerHTML = results.map(d =>
+        `<div class="susp-search-item" data-code="${d.code}" data-title="${(d.name||'').replace(/"/g,'&quot;')}">
+          <span class="susp-si-code">${d.code}</span>
+          <span class="susp-si-title">${d.name}</span>
+        </div>`
+      ).join('');
+      res.querySelectorAll('.susp-search-item').forEach(item =>
+        item.addEventListener('click', () => {
+          if (!_editingSuspectedCodes.some(c => c.code === item.dataset.code))
+            _editingSuspectedCodes.push({ code: item.dataset.code, title: item.dataset.title });
+          document.getElementById('susp-search-q').value = '';
+          res.innerHTML = '';
+          document.getElementById('susp-search-wrap')?.classList.add('hidden');
+          renderSuspChips();
+        })
+      );
+    });
+  }
+
   document.getElementById('btn-slot-edit-cancel').addEventListener('click', () => {
     if (source === 'planner') {
       document.getElementById('slot-detail-modal').classList.add('hidden');
@@ -2668,7 +2740,7 @@ async function saveSlotEdit(slot, source) {
 
   const isPatient = !!SLOT_TYPES[slot.type]?.patientContact;
   const patientNotes = isPatient ? (document.getElementById('slot-edit-notes')?.value.trim() || null) : undefined;
-  const suspectedCode = isPatient ? (document.getElementById('slot-edit-suspected')?.value.trim().toUpperCase() || null) : undefined;
+  const suspectedCodes = isPatient ? [..._editingSuspectedCodes] : undefined;
   const terminInterview = document.getElementById('slot-edit-termin-interview')?.value || undefined;
   const terminErstgespraech = document.getElementById('slot-edit-termin-erst')?.value || undefined;
   const ausfallChecked = document.getElementById('slot-edit-ausfall')?.checked ?? false;
@@ -2680,7 +2752,7 @@ async function saveSlotEdit(slot, source) {
     comment: comment || null,
     flags,
     ...(patientNotes !== undefined && { patientNotes }),
-    ...(suspectedCode !== undefined && { suspectedCode }),
+    ...(suspectedCodes !== undefined && { suspectedCodes }),
     ...(terminInterview !== undefined && { terminInterview }),
     ...(terminErstgespraech !== undefined && { terminErstgespraech }),
     ...(isPatient && { ausfall: ausfallChecked }),
@@ -2752,7 +2824,10 @@ function openVerifyModal(slot) {
   if (!modal) return;
   const label = slot.patientNotes ? `„${slot.patientNotes}"` : `Slot #${slot.id}`;
   document.getElementById('verify-modal-label').textContent = label;
-  document.getElementById('verify-suspected').textContent   = slot.suspectedCode || '(kein Verdacht)';
+  const suspCodes = slot.suspectedCodes || [];
+  document.getElementById('verify-suspected').innerHTML = suspCodes.length
+    ? suspCodes.map(c => `<span class="susp-chip"><span class="susp-chip-code">${c.code}</span><span class="susp-chip-title">${c.title||''}</span></span>`).join('')
+    : '<span style="color:var(--text-dim);font-size:13px">(kein Verdacht)</span>';
   document.getElementById('verify-senior-input').value      = '';
   modal.classList.remove('hidden');
 
@@ -2767,11 +2842,14 @@ function openVerifyModal(slot) {
 }
 
 async function applyVerifyXP(slot, seniorCode) {
-  const suspected = (slot.suspectedCode || '').trim().toUpperCase();
+  const codes = (slot.suspectedCodes || []).map(c => c.code.trim().toUpperCase());
+  const senior = seniorCode.trim().toUpperCase();
   let result;
-  if (suspected && suspected === seniorCode) {
+  if (codes.includes(senior)) {
     result = DIAGNOSTIC_VERIFY_XP.exact;
-  } else if (suspected && seniorCode.slice(0,2) === suspected.slice(0,2)) {
+  } else if (codes.some(c => c.slice(0, 3) === senior.slice(0, 3))) {
+    result = DIAGNOSTIC_VERIFY_XP.partial;
+  } else if (codes.some(c => c.slice(0, 2) === senior.slice(0, 2))) {
     result = DIAGNOSTIC_VERIFY_XP.partial;
   } else {
     result = DIAGNOSTIC_VERIFY_XP.miss;
@@ -2809,6 +2887,67 @@ async function applyVerifyXP(slot, seniorCode) {
   const today = new Date().toISOString().slice(0, 10);
   renderDiagnosticReminders(today);
   renderDashboard();
+}
+
+// ─── Recall Patient Modal ─────────────────────────────────────────────────────
+async function openRecallPatientModal(targetSlot, shift) {
+  const allSlots = await db.scheduleSlots.toArray();
+  const patients = allSlots
+    .filter(s => s.type === 'patient' && s.shiftId !== shift.id && s.patientNotes)
+    .sort((a, b) => b.shiftId - a.shiftId);
+
+  const existing = document.getElementById('recall-modal');
+  if (existing) existing.remove();
+
+  const itemsHtml = patients.length
+    ? patients.map(p => {
+        const chips = (p.suspectedCodes || []).map(c =>
+          `<span class="susp-chip"><span class="susp-chip-code">${c.code}</span></span>`
+        ).join('');
+        return `<div class="recall-item" data-id="${p.id}">
+          <div class="recall-item-name">${p.patientNotes}</div>
+          <div class="recall-item-chips">${chips}</div>
+        </div>`;
+      }).join('')
+    : '<div style="color:var(--text-dim);font-size:13px;padding:16px 0">Keine früheren Patienten gefunden.</div>';
+
+  const modal = document.createElement('div');
+  modal.id = 'recall-modal';
+  modal.innerHTML = `
+    <div class="modal-backdrop" id="recall-backdrop"></div>
+    <div class="modal-sheet">
+      <div class="sheet-header">
+        <div class="modal-title">📋 Früheren Patienten übernehmen</div>
+      </div>
+      <div class="sheet-body" style="padding:12px 16px;display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto">
+        ${itemsHtml}
+      </div>
+      <div style="padding:12px 16px;border-top:1px solid rgba(255,255,255,.07)">
+        <button id="recall-cancel" class="btn-secondary" style="width:100%">Abbrechen</button>
+      </div>
+    </div>`;
+  modal.className = 'modal';
+  document.body.appendChild(modal);
+
+  const close = () => modal.remove();
+  document.getElementById('recall-backdrop').onclick = close;
+  document.getElementById('recall-cancel').onclick   = close;
+
+  modal.querySelectorAll('.recall-item').forEach(item => {
+    item.addEventListener('click', async () => {
+      const src = patients.find(p => p.id === parseInt(item.dataset.id));
+      if (!src) return;
+      close();
+      await db.scheduleSlots.update(targetSlot.id, {
+        patientNotes:   src.patientNotes,
+        suspectedCodes: src.suspectedCodes || [],
+      });
+      if (state.plannerShiftId === shift.id) {
+        state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
+        renderTimeline(shift);
+      }
+    });
+  });
 }
 
 // ─── Rolecall Gamification Bonuses ────────────────────────────────────────────

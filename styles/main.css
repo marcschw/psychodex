@@ -2586,6 +2586,29 @@ img{max-width:100%;display:block}
 }
 .tl-inline-btn:active{background:rgba(255,255,255,.15)}
 .tl-inline-btn.btn-danger-sm{background:rgba(220,38,38,.12);border-color:rgba(220,38,38,.3);color:#f87171}
+.tl-inline-verify{color:var(--accent)}
+
+/* ── Suspected Codes (Verdachtsdiagnosen) ───────────────────────────────────── */
+.susp-chips-wrap{display:flex;flex-wrap:wrap;gap:6px;min-height:28px;align-items:flex-start}
+.susp-chip{display:inline-flex;align-items:center;gap:4px;background:rgba(155,89,182,.15);border:1px solid rgba(155,89,182,.35);border-radius:20px;padding:3px 8px 3px 10px;font-size:12px}
+.susp-chip-code{color:var(--accent);font-weight:700;font-size:11px;letter-spacing:.3px}
+.susp-chip-title{color:var(--text);font-size:11px;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.susp-chip-rm{background:none;border:none;color:var(--text-dim);font-size:14px;cursor:pointer;padding:0 0 0 2px;line-height:1}
+.susp-chip-rm:hover{color:#f87171}
+.susp-inline-wrap{display:flex;flex-direction:column;gap:4px}
+.susp-inline-wrap.hidden{display:none}
+.susp-search-results{background:var(--card-bg);border:1px solid rgba(255,255,255,.1);border-radius:10px;max-height:180px;overflow-y:auto}
+.susp-search-item{display:flex;gap:8px;align-items:baseline;padding:9px 12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05)}
+.susp-search-item:last-child{border-bottom:none}
+.susp-search-item:hover,.susp-search-item:active{background:rgba(255,255,255,.06)}
+.susp-si-code{color:var(--accent);font-weight:700;font-size:12px;flex-shrink:0}
+.susp-si-title{color:var(--text);font-size:12px}
+
+/* ── Recall Patient Modal ────────────────────────────────────────────────────── */
+.recall-item{padding:10px 12px;border-radius:10px;cursor:pointer;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03)}
+.recall-item:hover,.recall-item:active{background:rgba(255,255,255,.07)}
+.recall-item-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px}
+.recall-item-chips{display:flex;flex-wrap:wrap;gap:4px}
 
 /* ── Stats Sub-tabs ──────────────────────────────────────────────────────────── */
 .stats-subtabs{
