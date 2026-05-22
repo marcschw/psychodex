@@ -273,6 +273,66 @@ export const SECRET_ACHIEVEMENTS = [
       return { triggered: Object.values(counts).some(n => n >= 3) };
     },
   },
+  // ── Rolecall-Dynamik ──
+  {
+    id: 'dream_team',
+    name: 'Dream Team',
+    description: 'Dienst mit mind. 3 Favoriten-Kollegen',
+    icon: '🌟',
+    xp: 500,
+    _check: state => ({
+      triggered: state.shifts.some(s =>
+        (s.colleagues || []).filter(c =>
+          c.present && (['favorit-a','favorit-b'].some(t => (c.tags||[]).includes(t)))
+        ).length >= 3
+      ),
+    }),
+  },
+  {
+    id: 'durch_die_hoelle',
+    name: 'Durch die Hölle',
+    description: 'Dienst mit mind. 2 unangenehmen Kollegen',
+    icon: '😤',
+    xp: 800,
+    _check: state => ({
+      triggered: state.shifts.some(s =>
+        (s.colleagues || []).filter(c =>
+          c.present && (c.tags||[]).includes('achtung')
+        ).length >= 2
+      ),
+    }),
+  },
+  {
+    id: 'neurodivers',
+    name: 'Neurodivers',
+    description: 'Dienst mit mind. 2 ADHS-Kollegen',
+    icon: '🧠',
+    xp: 600,
+    _check: state => ({
+      triggered: state.shifts.some(s =>
+        (s.colleagues || []).filter(c =>
+          c.present && (c.tags||[]).includes('adhd')
+        ).length >= 2
+      ),
+    }),
+  },
+  {
+    id: 'solo_flug',
+    name: 'Solo-Flug',
+    description: 'Dienst ohne anwesenden Senior abgeschlossen',
+    icon: '✈️',
+    xp: 1000,
+    _check: state => ({
+      triggered: state.shifts.some(s => {
+        const cols = s.colleagues || [];
+        if (!cols.length) return false;
+        const hasSenior = cols.some(c =>
+          c.present && (c.funktion||'').toLowerCase().includes('senior')
+        );
+        return !hasSenior;
+      }),
+    }),
+  },
   // ── User-Verhalten ──
   {
     id: 'geisterstunde',

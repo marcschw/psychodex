@@ -78,9 +78,52 @@ export const BREAK_PRESETS = [
   { icon: '🍽️', label: 'Mittagessen' },
   { icon: '🍽️', label: 'Abendessen' },
   { icon: '🍎', label: 'Snack' },
+  { icon: '☕', label: 'Kaffee' },
   { icon: '☕', label: 'Pause' },
   { icon: '🚬', label: 'Rauchpause' },
 ];
+
+// ─── Consumable Effects ───────────────────────────────────────────────────────
+export const CONSUMABLE_XP = {
+  sanity: { labels: ['Mittagessen', 'Abendessen'], xp: 50, label: '🍽️ Sanity Restored' },
+  koffein: { labels: ['Proteinshake', 'Kaffee'],   boost: 0.1, label: '☕ Koffein-Kick +10%' },
+};
+
+// ─── Ausfall-Roulette ─────────────────────────────────────────────────────────
+export const ROULETTE_DROPS = [
+  {
+    id: 'wunderheilung', label: 'Spontane Wunderheilung',
+    desc: 'Nächstes Diagnose-Verify bringt +20% XP Bonus!',
+    img: './assets/images/roulette/drop_wunderheilung.png', effect: 'verify_boost_20',
+  },
+  {
+    id: 'zeitpuffer', label: 'Die ÖBB war schuld',
+    desc: '+50 Flat-XP Schmerzensgeld.',
+    img: './assets/images/roulette/drop_zeitpuffer.png', flat: 50,
+  },
+  {
+    id: 'aktenjenga', label: 'Akten-Jenga',
+    desc: 'Streak dieser Woche eingefroren/geschützt!',
+    img: './assets/images/roulette/drop_aktenjenga.png', effect: 'freeze_streak',
+  },
+  {
+    id: 'kaffeekoma', label: 'Kaffee-Koma',
+    desc: 'Rang-Titel wird vorübergehend auf "Kaffee-Junkie" geändert.',
+    img: './assets/images/roulette/drop_kaffeekoma.png', effect: 'kaffeekoma', durationMs: 24*3600*1000,
+  },
+  {
+    id: 'phantom', label: 'Das Phantom',
+    desc: '+20 XP.',
+    img: './assets/images/roulette/drop_phantom.png', flat: 20,
+  },
+];
+
+// ─── Diagnostic Loop Verify XP ────────────────────────────────────────────────
+export const DIAGNOSTIC_VERIFY_XP = {
+  exact:   { xp: 300, label: '🎯 Scharfschütze', img: './assets/images/diagnostic_loop/verify_perfect.png' },
+  partial: { xp: 100, label: '👃 Guter Riecher',  img: './assets/images/diagnostic_loop/verify_partial.png' },
+  miss:    { xp:  50, label: '📚 Lernmoment',     img: './assets/images/diagnostic_loop/verify_miss.png' },
+};
 
 export const SLOT_TIPS = {
   anmeldung: {

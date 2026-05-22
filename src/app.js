@@ -1,6 +1,6 @@
 import db from './db.js';
 import { loadAllICD, searchDiagnoses } from './icd-loader.js';
-import { calculateCatchXP, calculateShiftXP, calculateFlameBonus, calculateNoteXP, SLOT_TYPES, SHIFT_HOURS, MEAL_HINTS, BREAK_PRESETS, SLOT_TIPS, CATEGORY_XP_MODIFIER, CATEGORY_META } from './xp-engine.js';
+import { calculateCatchXP, calculateShiftXP, calculateFlameBonus, calculateNoteXP, SLOT_TYPES, SHIFT_HOURS, MEAL_HINTS, BREAK_PRESETS, SLOT_TIPS, CATEGORY_XP_MODIFIER, CATEGORY_META, ROULETTE_DROPS, DIAGNOSTIC_VERIFY_XP, CONSUMABLE_XP } from './xp-engine.js';
 import { RANKS, getRankForXP, getNextRank } from './ranks.js';
 import { MISSION_POOL, TIER_LABELS, calcMissionProgress, pickNewMission } from './missions.js';
 import { checkAchievements, ACHIEVEMENTS, SECRET_ACHIEVEMENTS, ACH_TIER_LABELS } from './achievements.js';
@@ -52,6 +52,14 @@ const TAG_ICONS = {
   'adhd':      'Ⓐ',
   'achtung':   '⚠️',
   'bekannt':   '★',
+};
+const TAG_LABELS = {
+  'favorit-a': '♥ Top-Favorit',
+  'favorit-b': '♡ Favorit',
+  'favorit-c': '♦ Cool / interessant',
+  'adhd':      'Ⓐ ADHS',
+  'achtung':   '⚠️ Unangenehm / Vorsicht',
+  'bekannt':   '★ Bekannt',
 };
 const TEAM_META = {
   D: { label: 'Deutsches Team',             color: '#60a5fa' },
@@ -330,7 +338,11 @@ const lazyObserver = (() => {
 async function init() {
   const showError = msg => {
     document.getElementById('loading-screen').innerHTML =
-      `<div class="load-error">${msg}<br><button onclick="location.reload()" style="margin-top:16px;padding:10px 24px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;">Neu laden</button></div>`;
+      `<div class="load-error">
+        <img src="assets/images/errors/error_state.png" class="error-state-img" alt="">
+        <div>${msg}</div>
+        <button onclick="location.reload()" style="margin-top:16px;padding:10px 24px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;">Neu laden</button>
+      </div>`;
   };
 
   const timeout = setTimeout(() =>
@@ -456,6 +468,9 @@ function setupEscapeKey() {
       { id: 'hours-modal',          fn: closeHoursModal },
       { id: 'catches-modal',        fn: closeCatchesModal },
       { id: 'shift-assign-modal',   fn: closeShiftAssignModal },
+      { id: 'roulette-modal',       fn: () => document.getElementById('roulette-modal').classList.add('hidden') },
+      { id: 'supervision-modal',    fn: () => document.getElementById('supervision-modal').classList.add('hidden') },
+      { id: 'verify-modal',         fn: () => document.getElementById('verify-modal').classList.add('hidden') },
     ];
     for (const { id, fn } of openModals) {
       if (!document.getElementById(id)?.classList.contains('hidden')) { fn(); break; }
@@ -613,7 +628,8 @@ function renderDashboard() {
   const next = getNextRank(rank.level);
   const pct  = next ? ((xp - rank.xpRequired) / (next.xpRequired - rank.xpRequired)) * 100 : 100;
 
-  document.getElementById('rank-title').textContent    = rank.title;
+  const kaffeeKomaActive = state.profile.kaffeeKomaUntil && new Date(state.profile.kaffeeKomaUntil) > new Date();
+  document.getElementById('rank-title').textContent    = kaffeeKomaActive ? '☕ Kaffee-Junkie' : rank.title;
   document.getElementById('rank-subtitle').textContent = rank.subtitle;
   document.getElementById('rank-level').textContent    = `Rang ${rank.level} / 18`;
   document.getElementById('xp-current').textContent    = xp.toLocaleString('de-AT');
@@ -661,8 +677,13 @@ function renderHoursCounters() {
     const fromTxt = c.fromDate
       ? `ab ${new Date(c.fromDate + 'T12:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })}`
       : '';
+    const nm = (c.name || '').toLowerCase();
+    const trackerBg = nm.includes('psych') ? 'url(./assets/images/trackers/tracker_psy.png)'
+      : nm.includes('fach') ? 'url(./assets/images/trackers/tracker_fach.png)' : '';
     return `
-      <div class="hours-counter-card" data-counter-id="${c.id}">
+      <div class="hours-counter-card${trackerBg ? ' has-tracker-bg' : ''}"
+           data-counter-id="${c.id}"
+           ${trackerBg ? `style="--tracker-bg:${trackerBg}"` : ''}>
         <div class="hc-top">
           <span class="hc-name">${c.name}</span>
           <span class="hc-pct">${pct}%</span>
@@ -822,7 +843,7 @@ async function renderHomeTab() {
 
   if (!shift) {
     panel.innerHTML = `<div class="home-no-shift">
-      <div style="font-size:32px;margin-bottom:8px">📅</div>
+      <img src="./assets/images/empty/empty_shifts.png" class="empty-state-img" alt="">
       <div>Noch keine Dienste</div>
       <div style="font-size:13px;color:var(--text-dim);margin-top:6px">Tippe auf einen Kalendertag um einen Dienst zu erstellen</div>
     </div>`;
@@ -831,6 +852,7 @@ async function renderHomeTab() {
     if (alarmBn) alarmBn.classList.add('hidden');
     const notifBanner = document.getElementById('notif-prompt-banner');
     if (notifBanner) notifBanner.classList.add('hidden');
+    renderDiagnosticReminders(today);
   } else {
     state.plannerShiftId = shift.id;
     state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
@@ -886,8 +908,12 @@ async function renderHomeTab() {
       return `<div class="home-team-info">${parts.join('')}${tags}</div>`;
     })();
 
+    const bannerMap = { 'früh':'frueh', 'spät':'spaet', 'samstag':'samstag', 'full':'full', 'schulung':'schulung' };
+    const bannerFile = bannerMap[shift.type] ? `url(./assets/images/banners/${bannerMap[shift.type]}_banner.png)` : '';
+
     panel.innerHTML = `
-      <div class="home-shift-inline-edit">
+      <div class="home-shift-inline-edit${bannerFile ? ' home-shift-banner' : ''}"
+           ${bannerFile ? `style="--shift-banner-url:${bannerFile}"` : ''}>
         <div class="home-date-row">
           <div class="home-date-badge">
             <span class="home-date-pretty">${prettyDateStr}</span>
@@ -913,7 +939,6 @@ async function renderHomeTab() {
             <button class="home-half-btn${vmActive ? ' active' : ''}" id="btn-home-vm">VM</button>
             <button class="home-half-btn${nmActive ? ' active' : ''}" id="btn-home-nm">NM</button>`}
           <button class="home-adv-btn" id="btn-home-adv" title="Erweiterte Einstellungen">⚙️</button>
-          ${shift.type !== 'schulung' ? `<button id="btn-save-home-note" class="home-note-save-btn">💾</button>` : ''}
         </div>
         ${shift.type !== 'schulung' ? `
         <textarea id="home-edit-note" class="home-note-area" rows="6"
@@ -951,7 +976,7 @@ async function renderHomeTab() {
     const noteEl = document.getElementById('home-edit-note');
     if (noteEl) {
       noteEl.addEventListener('blur', e => inlineSaveShift(shift, { note: e.target.value }));
-      document.getElementById('btn-save-home-note').addEventListener('click', () =>
+      document.getElementById('btn-save-fab').addEventListener('click', () =>
         inlineSaveShift(shift, { note: noteEl.value }));
     }
     document.getElementById('btn-delete-home-shift').addEventListener('click', async () => {
@@ -966,6 +991,9 @@ async function renderHomeTab() {
       state.homeSelectedShiftId = null;
       renderHomeTab();
     });
+
+    renderHomeMissions();
+    renderDiagnosticReminders(today);
 
     // Notification banner (only for today's shift)
     const notifBanner = document.getElementById('notif-prompt-banner');
@@ -1296,8 +1324,16 @@ function openTeamModal(shift) {
   // Mutable working list — source of truth for save
   const working = (shift.colleagues || []).map(c => ({ ...c }));
 
-  const isSenior = c => effectiveTeam(c) === 'D' && (c.funktion || '').toLowerCase().includes('senior');
-  const dotColor = c => isSenior(c) ? '#f59e0b' : (TEAM_META[effectiveTeam(c)]?.color || TEAM_META.D.color);
+  const isSenior  = c => effectiveTeam(c) === 'D' && (c.funktion || '').toLowerCase().includes('senior');
+  const dotColor  = c => isSenior(c) ? '#f59e0b' : (TEAM_META[effectiveTeam(c)]?.color || TEAM_META.D.color);
+  const avatarSrc = c => {
+    if (isSenior(c)) return './assets/images/avatars/avatar_owl.png';
+    const t = effectiveTeam(c);
+    if (t === 'I' || t === 'F') return './assets/images/avatars/avatar_raven.png';
+    return './assets/images/avatars/avatar_wolf.png';
+  };
+
+  let editingIdx = null; // null = add mode, >=0 = edit existing working[editingIdx]
 
   const renderBody = () => {
     // Build display: self-entry + working list, each tagged with working index
@@ -1315,9 +1351,8 @@ function openTeamModal(shift) {
     const groups = { D: [], T: [] };
     for (const c of rcDisplay) groups[effectiveTeam(c)].push(c);
 
-    const funkSelectHTML = `<select class="rc-add-funk" id="rc-add-funk">
-      ${FUNK_OPTIONS.map(f => `<option value="${f}">${f}</option>`).join('')}
-    </select>`;
+    const editing = editingIdx !== null ? working[editingIdx] : null;
+    const funkOpts = f => FUNK_OPTIONS.map(o => `<option value="${o}"${editing && o === editing.funktion ? ' selected' : ''}>${o}</option>`).join('');
 
     body.innerHTML = `
       <div class="rolecall-status">
@@ -1330,24 +1365,33 @@ function openTeamModal(shift) {
         ${groups[t].map(c => `
           <label class="team-colleague-row${c.present ? ' is-present' : ''}">
             <input type="checkbox" class="team-colleague-check" data-wi="${c._wi}" ${c.present ? 'checked' : ''}>
-            <span class="team-dot" style="background:${dotColor(c)}"></span>
+            <img class="rc-avatar" src="${avatarSrc(c)}" alt="" style="border-color:${dotColor(c)}">
             <div class="team-colleague-info">
               <div class="team-colleague-name">${c.name}${c._self ? ' <span class="team-self-badge">Ich</span>' : ''}</div>
               <div class="team-colleague-func" style="color:${isSenior(c) ? '#f59e0b' : ''}">${c.funktion}</div>
             </div>
             ${!hideIcons && (c.tags||[]).length ? `<div class="team-colleague-tags">${tagIconsHTML(c.tags)}</div>` : ''}
-            ${!c._self ? `<button class="rc-del-btn" data-wi="${c._wi}" title="Entfernen">✕</button>` : ''}
+            ${!c._self ? `
+              <button class="rc-edit-btn" data-wi="${c._wi}" title="Bearbeiten">✏️</button>
+              <button class="rc-del-btn"  data-wi="${c._wi}" title="Entfernen">✕</button>` : ''}
           </label>
         `).join('')}
       `).join('')}
       ${otherDisplay.length ? `<button class="other-teams-link" id="btn-other-teams">👁 Andere Teams (${otherDisplay.length})</button>` : ''}
       <div class="rc-add-form">
-        <input type="text" class="rc-add-name" id="rc-add-name" placeholder="Name…">
-        ${funkSelectHTML}
-        <button class="rc-add-btn" id="rc-add-btn">＋</button>
-      </div>`;
+        <input type="text" class="rc-add-name" id="rc-add-name"
+               placeholder="${editing ? '' : 'Name…'}"
+               value="${editing ? editing.name.replace(/"/g,'&quot;') : ''}">
+        <select class="rc-add-funk" id="rc-add-funk">${funkOpts()}</select>
+        <button class="rc-add-btn" id="rc-add-btn">${editing ? '✓' : '＋'}</button>
+        ${editing ? `<button class="rc-cancel-btn" id="rc-cancel-btn">✗</button>` : ''}
+      </div>
+      ${editing ? `<div class="rc-tag-row">
+        ${Object.entries(TAG_ICONS).map(([k,v]) => `<button class="rc-tag-btn${(editing.tags||[]).includes(k)?' active':''}" data-tag="${k}" title="${TAG_LABELS[k]||k}">${v}</button>`).join('')}
+        <span class="rc-tag-hint">Tags</span>
+      </div>` : ''}`;
 
-    // Status update helper
+    // Status update
     const updateStatus = () => {
       const checks = body.querySelectorAll('.team-colleague-check');
       const p = Array.from(checks).filter(x => x.checked).length;
@@ -1355,7 +1399,7 @@ function openTeamModal(shift) {
       body.querySelector('.rolecall-anwesend').textContent = `${p} anwesend`;
     };
 
-    // Checkbox changes — sync to working
+    // Checkboxes
     body.querySelectorAll('.team-colleague-check').forEach(cb => {
       cb.addEventListener('change', () => {
         cb.closest('.team-colleague-row').classList.toggle('is-present', cb.checked);
@@ -1365,31 +1409,56 @@ function openTeamModal(shift) {
       });
     });
 
+    // Edit buttons — pre-fill form and scroll to it
+    body.querySelectorAll('.rc-edit-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        editingIdx = parseInt(btn.dataset.wi);
+        renderBody();
+        body.querySelector('#rc-add-name')?.focus();
+      });
+    });
+
     // Delete buttons
     body.querySelectorAll('.rc-del-btn').forEach(btn => {
       btn.addEventListener('click', e => {
         e.preventDefault();
         const wi = parseInt(btn.dataset.wi);
-        if (wi >= 0) working.splice(wi, 1);
+        if (wi >= 0) { working.splice(wi, 1); if (editingIdx === wi) editingIdx = null; }
         renderBody();
       });
     });
 
-    // Add form
-    body.querySelector('#rc-add-btn')?.addEventListener('click', () => {
+    // Add / save edit
+    const doSubmit = () => {
       const name = body.querySelector('#rc-add-name').value.trim();
       const funk = body.querySelector('#rc-add-funk').value;
       if (!name) { body.querySelector('#rc-add-name').focus(); return; }
-      working.push({ name, funktion: funk, team: inferColleagueTeam(funk) || 'D', tags: [], present: false });
+      const tags = Array.from(body.querySelectorAll('.rc-tag-btn.active')).map(b => b.dataset.tag);
+      if (editingIdx !== null) {
+        working[editingIdx].name     = name;
+        working[editingIdx].funktion = funk;
+        working[editingIdx].team     = inferColleagueTeam(funk) || 'D';
+        working[editingIdx].tags     = tags;
+        editingIdx = null;
+      } else {
+        working.push({ name, funktion: funk, team: inferColleagueTeam(funk) || 'D', tags, present: false });
+      }
       renderBody();
+    };
+    body.querySelector('#rc-add-btn')?.addEventListener('click', doSubmit);
+    body.querySelector('#rc-add-name')?.addEventListener('keydown', e => { if (e.key === 'Enter') doSubmit(); });
+    body.querySelector('#rc-cancel-btn')?.addEventListener('click', () => { editingIdx = null; renderBody(); });
+
+    body.querySelectorAll('.rc-tag-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        btn.classList.toggle('active');
+      });
     });
 
-    // Enter key in name field triggers add
-    body.querySelector('#rc-add-name')?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') body.querySelector('#rc-add-btn').click();
-    });
-
-    body.querySelector('#btn-other-teams')?.addEventListener('click', () => openOtherTeamsModal(otherDisplay, hideIcons));
+    body.querySelector('#btn-other-teams')?.addEventListener('click', () =>
+      openOtherTeamsModal(working, hideIcons, renderBody));
   };
 
   renderBody();
@@ -1404,6 +1473,7 @@ function openTeamModal(shift) {
     await db.shiftLogs.update(shift.id, { colleagues: working });
     state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
     modal.classList.add('hidden');
+    await applyRolecallBonuses(shift, working);
     renderHomeTab();
   };
 }
@@ -1415,28 +1485,83 @@ function setupTeamModal() {
   document.getElementById('team-modal-cancel').addEventListener('click', close);
 }
 
-function openOtherTeamsModal(otherColleagues, hideIcons) {
+function openOtherTeamsModal(working, hideIcons, onChanged) {
   const modal = document.getElementById('other-teams-modal');
   const body  = document.getElementById('other-teams-body');
-  const groups = {};
-  for (const c of otherColleagues) {
-    const t = effectiveTeam(c);
-    if (!groups[t]) groups[t] = [];
-    groups[t].push(c);
-  }
-  body.innerHTML = TEAM_ORDER.filter(t => groups[t]).map(t => `
-    <div class="team-group-header" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</div>
-    ${groups[t].map(c => `
-      <div class="team-colleague-row" style="cursor:default">
-        <span class="team-dot" style="background:${TEAM_META[t].color}"></span>
-        <div class="team-colleague-info">
-          <div class="team-colleague-name">${c.name}</div>
-          <div class="team-colleague-func">${c.funktion}</div>
-        </div>
-        ${!hideIcons && (c.tags || []).length ? `<div class="team-colleague-tags">${tagIconsHTML(c.tags)}</div>` : ''}
-      </div>
-    `).join('')}
-  `).join('') || '<div class="empty-state">Keine anderen Teams</div>';
+  let otherEditIdx = null;
+
+  const renderOther = () => {
+    const others = working.map((c, i) => ({ ...c, _wi: i }))
+      .filter(c => effectiveTeam(c) !== 'D' && effectiveTeam(c) !== 'T');
+    const groups = {};
+    for (const c of others) {
+      const t = effectiveTeam(c);
+      if (!groups[t]) groups[t] = [];
+      groups[t].push(c);
+    }
+    const editing = otherEditIdx !== null ? working[otherEditIdx] : null;
+
+    body.innerHTML = (others.length
+      ? TEAM_ORDER.filter(t => groups[t]).map(t => `
+        <div class="team-group-header" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</div>
+        ${groups[t].map(c => `
+          <div class="team-colleague-row" style="cursor:default">
+            <img class="rc-avatar" src="${(t === 'I' || t === 'F') ? './assets/images/avatars/avatar_raven.png' : './assets/images/avatars/avatar_wolf.png'}" alt="" style="border-color:${TEAM_META[t].color}">
+            <div class="team-colleague-info">
+              <div class="team-colleague-name">${c.name}</div>
+              <div class="team-colleague-func">${c.funktion}</div>
+            </div>
+            ${!hideIcons && (c.tags||[]).length ? `<div class="team-colleague-tags">${tagIconsHTML(c.tags)}</div>` : ''}
+            <button class="rc-edit-btn" data-wi="${c._wi}" title="Bearbeiten">✏️</button>
+            <button class="rc-del-btn"  data-wi="${c._wi}" title="Entfernen">✕</button>
+          </div>
+        `).join('')}
+      `).join('')
+      : '<div class="empty-state">Keine anderen Teams</div>') + `
+    <div class="rc-add-form">
+      <input type="text" class="rc-add-name" id="rc-other-name"
+             placeholder="Name…" value="${editing ? editing.name.replace(/"/g,'&quot;') : ''}">
+      <select class="rc-add-funk" id="rc-other-funk">
+        ${FUNK_OPTIONS.map(f => `<option value="${f}"${editing && f===editing.funktion?' selected':''}>${f}</option>`).join('')}
+      </select>
+      ${editing ? `
+        <button class="rc-add-btn" id="rc-other-save">✓</button>
+        <button class="rc-cancel-btn" id="rc-other-cancel">✗</button>` : `
+        <button class="rc-add-btn" id="rc-other-add">＋</button>`}
+    </div>`;
+
+    body.querySelectorAll('.rc-edit-btn').forEach(btn => btn.addEventListener('click', () => {
+      otherEditIdx = parseInt(btn.dataset.wi); renderOther();
+      body.querySelector('#rc-other-name')?.focus();
+    }));
+    body.querySelectorAll('.rc-del-btn').forEach(btn => btn.addEventListener('click', () => {
+      const wi = parseInt(btn.dataset.wi);
+      if (wi >= 0) working.splice(wi, 1);
+      otherEditIdx = null; renderOther(); onChanged();
+    }));
+    body.querySelector('#rc-other-save')?.addEventListener('click', () => {
+      const name = body.querySelector('#rc-other-name').value.trim();
+      const funk = body.querySelector('#rc-other-funk').value;
+      if (!name) return;
+      working[otherEditIdx].name = name;
+      working[otherEditIdx].funktion = funk;
+      working[otherEditIdx].team = inferColleagueTeam(funk) || 'D';
+      otherEditIdx = null; renderOther(); onChanged();
+    });
+    body.querySelector('#rc-other-cancel')?.addEventListener('click', () => { otherEditIdx = null; renderOther(); });
+    body.querySelector('#rc-other-add')?.addEventListener('click', () => {
+      const name = body.querySelector('#rc-other-name').value.trim();
+      const funk = body.querySelector('#rc-other-funk').value;
+      if (!name) { body.querySelector('#rc-other-name').focus(); return; }
+      working.push({ name, funktion: funk, team: inferColleagueTeam(funk)||'D', tags:[], present:false });
+      renderOther(); onChanged();
+    });
+    body.querySelector('#rc-other-name')?.addEventListener('keydown', e => {
+      if (e.key==='Enter') (body.querySelector('#rc-other-save')||body.querySelector('#rc-other-add'))?.click();
+    });
+  };
+
+  renderOther();
   modal.classList.remove('hidden');
 }
 
@@ -1601,7 +1726,10 @@ function renderTimeline(shift) {
        </div>`
     : '';
 
-  tl.innerHTML = globalToggleHtml + rows.map(row => {
+  const emptyPlannerHtml = slots.length === 0
+    ? `<div class="tl-empty-hint"><img src="./assets/images/empty/empty_planner.png" class="empty-state-img" alt=""><div style="font-size:13px;color:var(--text-dim);margin-top:4px">Noch keine Einträge – tippe auf ＋ um zu beginnen</div></div>`
+    : '';
+  tl.innerHTML = emptyPlannerHtml + globalToggleHtml + rows.map(row => {
     if (row.kind === 'gap') {
       const label = padT(Math.floor(row.from/60), row.from%60);
       return `<div class="tl-gap-wrap">
@@ -1643,21 +1771,21 @@ function renderTimeline(shift) {
       detailHtml = `<div class="tl-slot-detail${isExpanded ? '' : ' tl-slot-detail--hidden'}">
         ${diagListHtml}
         <div class="tl-inline-actions">
-          <button class="tl-inline-btn tl-inline-add-diag">＋ Diagnose</button>
-          ${hasTips ? '<button class="tl-inline-btn tl-inline-tips">☑️ Checkliste</button>' : ''}
-          <button class="tl-inline-btn tl-inline-edit">✏️ Bearbeiten</button>
-          <button class="tl-inline-btn tl-inline-move">⤴ Verschieben</button>
-          <button class="tl-inline-btn tl-inline-del btn-danger-sm">🗑 Löschen</button>
+          <button class="tl-inline-btn tl-inline-add-diag" title="Diagnose hinzufügen">➕</button>
+          ${hasTips ? '<button class="tl-inline-btn tl-inline-tips" title="Checkliste">✅</button>' : ''}
+          <button class="tl-inline-btn tl-inline-edit" title="Bearbeiten">✏️</button>
+          <button class="tl-inline-btn tl-inline-move" title="Verschieben">↕️</button>
+          <button class="tl-inline-btn tl-inline-del btn-danger-sm" title="Löschen">🗑</button>
         </div>
       </div>`;
     } else {
       // Non-patient slots: actions always visible, no diag list
       detailHtml = `<div class="tl-slot-detail">
         <div class="tl-inline-actions">
-          ${hasTips ? '<button class="tl-inline-btn tl-inline-tips">☑️ Checkliste</button>' : ''}
-          <button class="tl-inline-btn tl-inline-edit">✏️ Bearbeiten</button>
-          <button class="tl-inline-btn tl-inline-move">⤴ Verschieben</button>
-          <button class="tl-inline-btn tl-inline-del btn-danger-sm">🗑 Löschen</button>
+          ${hasTips ? '<button class="tl-inline-btn tl-inline-tips" title="Checkliste">✅</button>' : ''}
+          <button class="tl-inline-btn tl-inline-edit" title="Bearbeiten">✏️</button>
+          <button class="tl-inline-btn tl-inline-move" title="Verschieben">↕️</button>
+          <button class="tl-inline-btn tl-inline-del btn-danger-sm" title="Löschen">🗑</button>
         </div>
       </div>`;
     }
@@ -1750,13 +1878,36 @@ function renderTimeline(shift) {
     });
   });
 
-  // Wire break badge tap → edit
+  // Wire break badge tap → check-off (XP) on first tap, edit on badge label tap
   tl.querySelectorAll('.tl-break-badge').forEach(badge => {
-    badge.addEventListener('click', e => {
+    badge.addEventListener('click', async e => {
       if (e.target.closest('.tl-meal-del')) return;
       e.stopPropagation();
       const id = parseInt(badge.dataset.mealId);
       const hint = getMealHints(shift).find(h => h.id === id);
+
+      // Check off: award XP once per meal
+      const checkedKey = `meal-checked-${shift.id}-${id}`;
+      if (!sessionStorage.getItem(checkedKey)) {
+        sessionStorage.setItem(checkedKey, '1');
+        const sanity = CONSUMABLE_XP.sanity.labels.includes(hint?.label);
+        const koffein = CONSUMABLE_XP.koffein.labels.includes(hint?.label);
+        if (sanity) {
+          const xp = CONSUMABLE_XP.sanity.xp;
+          const newTotal = (state.profile.totalXP ?? 0) + xp;
+          await db.profile.update(state.profile.id, { totalXP: newTotal });
+          state.profile.totalXP = newTotal;
+          showXPPopup(xp, [{ label: CONSUMABLE_XP.sanity.label }]);
+          badge.classList.add('meal-checked');
+        } else if (koffein) {
+          const shiftBoostKey = `koffein-shift-${shift.id}`;
+          sessionStorage.setItem(shiftBoostKey, '1');
+          showXPPopup(0, [{ label: CONSUMABLE_XP.koffein.label }]);
+          badge.classList.add('meal-checked');
+        }
+        return;
+      }
+      // Already checked: open edit
       openMealModal(shift, hint);
     });
   });
@@ -2417,6 +2568,33 @@ function openSlotEditForm(slot, source) {
   };
   const slotFlags = SLOT_FLAGS[slot.type] || [];
 
+  const isPatient = !!SLOT_TYPES[slot.type]?.patientContact;
+  const terminInterviewField = ['anmeldung'].includes(slot.type)
+    ? `<div class="form-row">
+        <label class="form-label">📅 Interview-Termin</label>
+        <input type="date" id="slot-edit-termin-interview" class="form-input" value="${slot.terminInterview || ''}">
+      </div>` : '';
+  const terminErstgespraechField = ['interview'].includes(slot.type)
+    ? `<div class="form-row">
+        <label class="form-label">📅 Erstgesprächs-Termin</label>
+        <input type="date" id="slot-edit-termin-erst" class="form-input" value="${slot.terminErstgespraech || ''}">
+      </div>` : '';
+  const patientFields = isPatient ? `
+    <div class="form-row">
+      <label class="form-label">🔖 Kürzel / Notiz</label>
+      <input type="text" id="slot-edit-notes" class="form-input" placeholder="Codename…" value="${(slot.patientNotes || '').replace(/"/g,'&quot;')}">
+    </div>
+    <div class="form-row">
+      <label class="form-label">🔬 Verdachtsdiagnose</label>
+      <input type="text" id="slot-edit-suspected" class="form-input" placeholder="ICD-Code, z.B. F32.1" value="${slot.suspectedCode || ''}">
+    </div>
+    ${terminInterviewField}
+    ${terminErstgespraechField}
+    <div class="form-row" style="align-items:center;gap:12px">
+      <label class="form-label" style="margin-bottom:0">❌ Ausfall</label>
+      <input type="checkbox" id="slot-edit-ausfall" style="width:20px;height:20px;accent-color:#f87171" ${slot.ausfall ? 'checked' : ''}>
+    </div>` : '';
+
   document.getElementById('slot-detail-body').innerHTML = `
     <div class="form-row">
       <label class="form-label">Von</label>
@@ -2428,8 +2606,9 @@ function openSlotEditForm(slot, source) {
     </div>
     <div class="form-row">
       <label class="form-label">Kommentar</label>
-      <textarea id="slot-edit-comment" class="form-input" rows="3" placeholder="Notiz…">${slot.comment || ''}</textarea>
+      <textarea id="slot-edit-comment" class="form-input" rows="2" placeholder="Notiz…">${slot.comment || ''}</textarea>
     </div>
+    ${patientFields}
     ${hasFlags ? `
     <div class="form-row">
       <label class="form-label">Flags</label>
@@ -2478,12 +2657,27 @@ async function saveSlotEdit(slot, source) {
     if (btn.classList.contains('active')) flags.push(btn.dataset.editFlag);
   });
 
-  await db.scheduleSlots.update(slot.id, {
+  const isPatient = !!SLOT_TYPES[slot.type]?.patientContact;
+  const patientNotes = isPatient ? (document.getElementById('slot-edit-notes')?.value.trim() || null) : undefined;
+  const suspectedCode = isPatient ? (document.getElementById('slot-edit-suspected')?.value.trim().toUpperCase() || null) : undefined;
+  const terminInterview = document.getElementById('slot-edit-termin-interview')?.value || undefined;
+  const terminErstgespraech = document.getElementById('slot-edit-termin-erst')?.value || undefined;
+  const ausfallChecked = document.getElementById('slot-edit-ausfall')?.checked ?? false;
+  const wasAusfall = slot.ausfall;
+
+  const updates = {
     startHour: sh, startMinute: sm,
     endHour: eh,   endMinute: em,
     comment: comment || null,
     flags,
-  });
+    ...(patientNotes !== undefined && { patientNotes }),
+    ...(suspectedCode !== undefined && { suspectedCode }),
+    ...(terminInterview !== undefined && { terminInterview }),
+    ...(terminErstgespraech !== undefined && { terminErstgespraech }),
+    ...(isPatient && { ausfall: ausfallChecked }),
+  };
+
+  await db.scheduleSlots.update(slot.id, updates);
 
   document.getElementById('slot-detail-modal').classList.add('hidden');
 
@@ -2491,10 +2685,167 @@ async function saveSlotEdit(slot, source) {
   if (!shift) return;
 
   state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
+
+  // Ausfall-Roulette: first time ausfall is set
+  if (isPatient && ausfallChecked && !wasAusfall) {
+    triggerAusfallRoulette(slot, shift);
+  }
+
   if (source === 'detail') {
     renderShiftDetailBody(shift);
   } else {
     renderTimeline(shift);
+  }
+}
+
+// ─── Ausfall-Roulette ─────────────────────────────────────────────────────────
+async function triggerAusfallRoulette(slot, shift) {
+  const drop = ROULETTE_DROPS[Math.floor(Math.random() * ROULETTE_DROPS.length)];
+
+  // Apply effect
+  if (drop.flat) {
+    const newTotal = (state.profile.totalXP ?? 0) + drop.flat;
+    await db.profile.update(state.profile.id, { totalXP: newTotal });
+    state.profile.totalXP = newTotal;
+    await db.scheduleSlots.update(slot.id, { xpEarned: (slot.xpEarned||0) + drop.flat, rouletteEffect: drop.id });
+  }
+  if (drop.effect === 'freeze_streak') {
+    await db.profile.update(state.profile.id, { streakFrozenUntil: new Date().toISOString() });
+    state.profile.streakFrozenUntil = new Date().toISOString();
+  }
+  if (drop.effect === 'kaffeekoma') {
+    const until = new Date(Date.now() + drop.durationMs).toISOString();
+    await db.profile.update(state.profile.id, { kaffeeKomaUntil: until });
+    state.profile.kaffeeKomaUntil = until;
+  }
+  if (drop.effect === 'verify_boost_20') {
+    await db.profile.update(state.profile.id, { verifyBoost20: true });
+    state.profile.verifyBoost20 = true;
+  }
+  await db.scheduleSlots.update(slot.id, { rouletteEffect: drop.id });
+
+  openRouletteModal(drop);
+}
+
+function openRouletteModal(drop) {
+  const modal = document.getElementById('roulette-modal');
+  if (!modal) return;
+  document.getElementById('roulette-drop-img').src   = drop.img;
+  document.getElementById('roulette-drop-label').textContent = drop.label;
+  document.getElementById('roulette-drop-desc').textContent  = drop.desc;
+  modal.classList.remove('hidden');
+  document.getElementById('roulette-modal-close').onclick = () => modal.classList.add('hidden');
+  document.getElementById('roulette-backdrop').onclick    = () => modal.classList.add('hidden');
+}
+
+// ─── Diagnostic Verify ────────────────────────────────────────────────────────
+function openVerifyModal(slot) {
+  const modal = document.getElementById('verify-modal');
+  if (!modal) return;
+  const label = slot.patientNotes ? `„${slot.patientNotes}"` : `Slot #${slot.id}`;
+  document.getElementById('verify-modal-label').textContent = label;
+  document.getElementById('verify-suspected').textContent   = slot.suspectedCode || '(kein Verdacht)';
+  document.getElementById('verify-senior-input').value      = '';
+  modal.classList.remove('hidden');
+
+  document.getElementById('verify-backdrop').onclick = () => modal.classList.add('hidden');
+  document.getElementById('verify-cancel').onclick   = () => modal.classList.add('hidden');
+  document.getElementById('verify-save').onclick     = async () => {
+    const seniorCode = document.getElementById('verify-senior-input').value.trim().toUpperCase();
+    if (!seniorCode) { alert('Bitte Diagnose eingeben.'); return; }
+    modal.classList.add('hidden');
+    await applyVerifyXP(slot, seniorCode);
+  };
+}
+
+async function applyVerifyXP(slot, seniorCode) {
+  const suspected = (slot.suspectedCode || '').trim().toUpperCase();
+  let result;
+  if (suspected && suspected === seniorCode) {
+    result = DIAGNOSTIC_VERIFY_XP.exact;
+  } else if (suspected && seniorCode.slice(0,2) === suspected.slice(0,2)) {
+    result = DIAGNOSTIC_VERIFY_XP.partial;
+  } else {
+    result = DIAGNOSTIC_VERIFY_XP.miss;
+  }
+
+  let xp = result.xp;
+  if (state.profile.verifyBoost20) {
+    xp = Math.round(xp * 1.2);
+    await db.profile.update(state.profile.id, { verifyBoost20: false });
+    state.profile.verifyBoost20 = false;
+  }
+
+  await db.scheduleSlots.update(slot.id, {
+    seniorCode,
+    terminInterviewDone: true,
+    xpEarned: (slot.xpEarned || 0) + xp,
+  });
+
+  const newTotal = (state.profile.totalXP ?? 0) + xp;
+  await db.profile.update(state.profile.id, { totalXP: newTotal });
+  state.profile.totalXP = newTotal;
+
+  const bonuses = [{ label: result.label, xp }];
+  showXPPopup(xp, bonuses);
+
+  // Show verify result image briefly
+  const imgEl = document.getElementById('verify-result-img');
+  if (imgEl) {
+    imgEl.src = result.img;
+    imgEl.classList.remove('hidden');
+    setTimeout(() => imgEl.classList.add('hidden'), 3000);
+  }
+
+  state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(slot.shiftId).sortBy('startHour');
+  const today = new Date().toISOString().slice(0, 10);
+  renderDiagnosticReminders(today);
+  renderDashboard();
+}
+
+// ─── Rolecall Gamification Bonuses ────────────────────────────────────────────
+async function applyRolecallBonuses(shift, colleagues) {
+  // Only award once per shift (track with a flag on the shift object)
+  if (shift.rolecallBonusAwarded) return;
+
+  const present = colleagues.filter(c => c.present);
+  const bonusList = [];
+  let totalBonus = 0;
+
+  // Gefahrenzulage: +25 XP per achtung colleague
+  const gefahren = present.filter(c => (c.tags||[]).includes('achtung'));
+  if (gefahren.length) {
+    const xp = gefahren.length * 25;
+    bonusList.push({ label: `⚠️ Gefahrenzulage ×${gefahren.length}`, xp });
+    totalBonus += xp;
+  }
+
+  if (!totalBonus && !bonusList.length) {
+    // Mark as checked even with no bonus so we don't re-check
+    await db.shiftLogs.update(shift.id, { rolecallBonusAwarded: true });
+    return;
+  }
+
+  const newTotal = (state.profile.totalXP ?? 0) + totalBonus;
+  await db.profile.update(state.profile.id, { totalXP: newTotal });
+  state.profile.totalXP = newTotal;
+  await db.shiftLogs.update(shift.id, {
+    xpEarned: (shift.xpEarned || 0) + totalBonus,
+    rolecallBonusAwarded: true,
+  });
+
+  if (totalBonus > 0) showXPPopup(totalBonus, bonusList);
+
+  // Check for rolecall secret achievements
+  state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+  const newUnlocks = await checkAchievements(state, db);
+  for (const u of newUnlocks) {
+    if (u.xp) {
+      const t2 = (state.profile.totalXP ?? 0) + u.xp;
+      await db.profile.update(state.profile.id, { totalXP: t2 });
+      state.profile.totalXP = t2;
+    }
+    setTimeout(() => showXPPopup(u.xp || 0, [{ label: `${u.icon} ${u.name}` }]), 1200);
   }
 }
 
@@ -3115,7 +3466,13 @@ function catchDiagnosis() {
     }));
   }
   const normDiag = { ...selectedDiagnosis, kategorie: normalizeKat(selectedDiagnosis.kategorie) };
-  const xpResult = calculateCatchXP(normDiag, hasComorbidity, caughtCodes, caughtKats);
+  let xpResult = calculateCatchXP(normDiag, hasComorbidity, caughtCodes, caughtKats);
+  // Apply Koffein-Kick +10% if active for this shift
+  const activeShiftId = state.addToShiftContext?.shiftId ?? state.activeShift?.id ?? null;
+  if (activeShiftId && sessionStorage.getItem(`koffein-shift-${activeShiftId}`)) {
+    const boost = Math.round(xpResult.total * CONSUMABLE_XP.koffein.boost);
+    xpResult = { ...xpResult, total: xpResult.total + boost, bonuses: [...xpResult.bonuses, { label: '☕ Koffein-Kick', xp: boost }] };
+  }
 
   // Adding to an existing shift's patient (from shift detail view)
   if (state.addToShiftContext) {
@@ -3759,6 +4116,54 @@ async function refreshMissionProgress() {
 function renderSettingsTab() {
   renderHourCountersSettings();
   renderExtraHoursSettings();
+  renderSupervisionHistory();
+}
+
+// ─── Supervision Logging ──────────────────────────────────────────────────────
+async function renderSupervisionHistory() {
+  const el = document.getElementById('supervision-history');
+  if (!el) return;
+  const logs = await db.supervisionLogs.orderBy('date').reverse().limit(5).toArray();
+  if (!logs.length) { el.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:4px 0">Noch keine Supervisionen geloggt.</div>'; return; }
+  el.innerHTML = logs.map(l => `
+    <div class="supervision-log-row">
+      <span class="sl-date">${l.date}</span>
+      <span class="sl-dur">${l.duration}h</span>
+      <span class="sl-sup">${l.supervisor || '–'}</span>
+    </div>`).join('');
+}
+
+function openSupervisionModal() {
+  const modal = document.getElementById('supervision-modal');
+  if (!modal) return;
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('supervision-date').value = today;
+  document.getElementById('supervision-duration').value = '';
+  document.getElementById('supervision-supervisor').value = '';
+  modal.classList.remove('hidden');
+  document.getElementById('supervision-backdrop').onclick = () => modal.classList.add('hidden');
+  document.getElementById('supervision-cancel').onclick   = () => modal.classList.add('hidden');
+  document.getElementById('supervision-save').onclick     = saveSupervision;
+}
+
+async function saveSupervision() {
+  const date   = document.getElementById('supervision-date').value;
+  const durStr = document.getElementById('supervision-duration').value;
+  const supervisor = document.getElementById('supervision-supervisor').value.trim();
+  const duration = parseFloat(durStr);
+  if (!date || isNaN(duration) || duration <= 0) { alert('Bitte Datum und Dauer angeben.'); return; }
+
+  const xp = Math.round(250 * duration);
+  await db.supervisionLogs.add({ date, duration, supervisor: supervisor || null, notes: '', xpEarned: xp });
+
+  const newTotal = (state.profile.totalXP ?? 0) + xp;
+  await db.profile.update(state.profile.id, { totalXP: newTotal });
+  state.profile.totalXP = newTotal;
+
+  document.getElementById('supervision-modal').classList.add('hidden');
+  showXPPopup(xp, [{ label: `🎓 Supervision ${duration}h` }]);
+  renderSupervisionHistory();
+  renderDashboard();
 }
 
 // ─── Missions Strip ───────────────────────────────────────────────────────────
@@ -3848,6 +4253,93 @@ function setupMissionModals() {
     document.getElementById('challenge-history-modal').classList.add('hidden'));
   document.getElementById('challenge-history-backdrop').addEventListener('click', () =>
     document.getElementById('challenge-history-modal').classList.add('hidden'));
+}
+
+function renderHomeMissions() {
+  const el = document.getElementById('home-missions-mini');
+  if (!el) return;
+  const active = state.missions.filter(m => !m.completedAt).sort((a, b) => a.slotIndex - b.slotIndex);
+  if (!active.length) { el.innerHTML = ''; el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  el.innerHTML = active.slice(0, 3).map(am => {
+    const def = MISSION_POOL.find(m => m.id === am.missionId);
+    if (!def) return '';
+    const catchesSince = state.catches.filter(c => c.caughtAt >= am.activatedAt);
+    const shiftsSince  = state.shifts.filter(s => (s.createdAt || `${s.date}T00:00:00`) >= am.activatedAt);
+    const { current, target } = calcMissionProgress(def, catchesSince, shiftsSince, state.icdFlat);
+    const pct = Math.min(100, Math.round((current / target) * 100));
+    return `<div class="hm-mission-pill tier-${def.tier}">
+      <span class="hm-mp-emoji">${def.emoji||''}</span>
+      <div class="hm-mp-body">
+        <div class="hm-mp-title">${def.title}</div>
+        <div class="hm-mp-bar"><div class="hm-mp-fill" style="width:${pct}%"></div></div>
+      </div>
+      <span class="hm-mp-pct">${pct}%</span>
+    </div>`;
+  }).join('');
+}
+
+// ─── Diagnostic Loop Reminders ────────────────────────────────────────────────
+async function renderDiagnosticReminders(today) {
+  const el = document.getElementById('diag-reminders');
+  if (!el) return;
+
+  // Collect all patient-contact slots that have termin dates set
+  const allSlots = await db.scheduleSlots.toArray();
+  const reminders = [];
+
+  for (const slot of allSlots) {
+    if (!SLOT_TYPES[slot.type]?.patientContact) continue;
+    const label = slot.patientNotes ? `„${slot.patientNotes}"` : `Slot #${slot.id}`;
+
+    if (slot.terminInterview && !slot.terminInterviewDone) {
+      const d = slot.terminInterview.slice(0, 10);
+      if (d <= today) {
+        reminders.push({
+          icon: '📝', urgent: d === today,
+          text: d === today
+            ? `Heute Interview mit ${label} – Zeit, den Verdacht zu prüfen!`
+            : `Überfällig: Interview mit ${label} war ${d}`,
+          slotId: slot.id,
+          action: 'interview',
+        });
+      }
+    }
+    if (slot.terminErstgespraech && !slot.seniorCode) {
+      const d = slot.terminErstgespraech.slice(0, 10);
+      if (d <= today) {
+        reminders.push({
+          icon: '🔍', urgent: d === today,
+          text: d === today
+            ? `Heute Erstgespräch mit ${label} – Akten-Check vorbereiten!`
+            : `Akten-Check: Was hat der Senior bei ${label} diagnostiziert? (${d})`,
+          slotId: slot.id,
+          action: 'verify',
+        });
+      }
+    }
+  }
+
+  if (!reminders.length) { el.innerHTML = ''; el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  el.innerHTML = reminders.map(r => `
+    <div class="diag-reminder${r.urgent ? ' diag-reminder--urgent' : ''}" data-slot-id="${r.slotId}" data-action="${r.action}">
+      <span class="diag-reminder-icon">${r.icon}</span>
+      <span class="diag-reminder-text">${r.text}</span>
+      <button class="diag-reminder-btn">Öffnen ›</button>
+    </div>`).join('');
+
+  el.querySelectorAll('[data-slot-id]').forEach(row => {
+    row.querySelector('.diag-reminder-btn').addEventListener('click', async () => {
+      const slot = await db.scheduleSlots.get(parseInt(row.dataset.slotId));
+      if (!slot) return;
+      if (row.dataset.action === 'verify') {
+        openVerifyModal(slot);
+      } else {
+        openSlotEditForm(slot, 'planner');
+      }
+    });
+  });
 }
 
 function renderMissions() {
@@ -5380,7 +5872,7 @@ function renderCatchItem(c) {
 function renderCatchesModalBody() {
   const body = document.getElementById('catches-modal-body');
   if (!state.catches.length) {
-    body.innerHTML = '<div class="empty-state">Noch keine Diagnosen gefangen.</div>';
+    body.innerHTML = '<div class="empty-state"><img src="./assets/images/empty/empty_diagnoses.png" class="empty-state-img" alt=""><div>Noch keine Diagnosen gefangen.</div></div>';
     return;
   }
 
@@ -5595,6 +6087,7 @@ function openStreakModal() {
     : streak.count === 0 ? 'Noch kein Streak' : 'Aktiver Streak 🔥';
 
   document.getElementById('streak-modal-body').innerHTML = `
+    ${streak.frozen ? `<img src="./assets/images/streak/streak_frozen.png" class="streak-visual-img" alt="">` : ''}
     <div class="streak-summary">
       <div class="streak-big-icon">${streak.frozen ? '🧊' : streak.count > 0 ? '🔥' : '—'}</div>
       <div>
@@ -6127,6 +6620,7 @@ function setupDashboardCardListeners() {
     e.stopPropagation();
     openXPInfoModal();
   });
+  document.getElementById('btn-log-supervision')?.addEventListener('click', openSupervisionModal);
 }
 
 // ─── Hour Counters Settings ───────────────────────────────────────────────────
@@ -6148,7 +6642,7 @@ function renderHourCountersSettings() {
         <input class="setting-input hcs-from" type="date" value="${c.fromDate || ''}" data-id="${c.id}" style="flex:1;min-width:0">
       </div>
     </div>`).join('') +
-    (counters.length < 2 ? `<button id="btn-add-counter" class="btn-secondary" style="width:100%;margin-top:8px;padding:8px;font-size:12px">+ Zweiten Zähler hinzufügen</button>` : '');
+    (counters.length < 2 ? `<button id="btn-add-counter" class="io-btn" style="width:100%;margin-top:8px">+ Zweiten Zähler</button>` : '');
 
   el.querySelectorAll('.hcs-name').forEach(inp => inp.addEventListener('change', async e => {
     await updateCounter(parseInt(e.target.dataset.id), { name: e.target.value.trim() || 'Zähler' });
@@ -6231,7 +6725,7 @@ function renderExtraHoursSettings() {
         <button id="eaf-cancel" class="btn-secondary" style="padding:8px 12px">✕</button>
       </div>
     </div>
-    <button id="btn-add-extra" class="btn-secondary" style="width:100%;margin-top:8px;padding:8px;font-size:12px">+ Extra-Stunden hinzufügen</button>`;
+    <button id="btn-add-extra" class="io-btn" style="width:100%;margin-top:8px">+ Extra-Stunden</button>`;
 
   el.querySelectorAll('.btn-del-extra').forEach(btn =>
     btn.addEventListener('click', () => deleteExtraHourEntry(parseInt(btn.dataset.id))));
