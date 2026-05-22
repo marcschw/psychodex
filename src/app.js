@@ -53,6 +53,14 @@ const TAG_ICONS = {
   'achtung':   '⚠️',
   'bekannt':   '★',
 };
+const TAG_LABELS = {
+  'favorit-a': '♥ Top-Favorit',
+  'favorit-b': '♡ Favorit',
+  'favorit-c': '♦ Cool / interessant',
+  'adhd':      'Ⓐ ADHS',
+  'achtung':   '⚠️ Unangenehm / Vorsicht',
+  'bekannt':   '★ Bekannt',
+};
 const TEAM_META = {
   D: { label: 'Deutsches Team',             color: '#60a5fa' },
   I: { label: 'Internationales Team',       color: '#34d399' },
@@ -913,7 +921,6 @@ async function renderHomeTab() {
             <button class="home-half-btn${vmActive ? ' active' : ''}" id="btn-home-vm">VM</button>
             <button class="home-half-btn${nmActive ? ' active' : ''}" id="btn-home-nm">NM</button>`}
           <button class="home-adv-btn" id="btn-home-adv" title="Erweiterte Einstellungen">⚙️</button>
-          ${shift.type !== 'schulung' ? `<button id="btn-save-home-note" class="home-note-save-btn">💾</button>` : ''}
         </div>
         ${shift.type !== 'schulung' ? `
         <textarea id="home-edit-note" class="home-note-area" rows="6"
@@ -951,7 +958,7 @@ async function renderHomeTab() {
     const noteEl = document.getElementById('home-edit-note');
     if (noteEl) {
       noteEl.addEventListener('blur', e => inlineSaveShift(shift, { note: e.target.value }));
-      document.getElementById('btn-save-home-note').addEventListener('click', () =>
+      document.getElementById('btn-save-fab').addEventListener('click', () =>
         inlineSaveShift(shift, { note: noteEl.value }));
     }
     document.getElementById('btn-delete-home-shift').addEventListener('click', async () => {
@@ -966,6 +973,8 @@ async function renderHomeTab() {
       state.homeSelectedShiftId = null;
       renderHomeTab();
     });
+
+    renderHomeMissions();
 
     // Notification banner (only for today's shift)
     const notifBanner = document.getElementById('notif-prompt-banner');
@@ -1299,6 +1308,8 @@ function openTeamModal(shift) {
   const isSenior = c => effectiveTeam(c) === 'D' && (c.funktion || '').toLowerCase().includes('senior');
   const dotColor = c => isSenior(c) ? '#f59e0b' : (TEAM_META[effectiveTeam(c)]?.color || TEAM_META.D.color);
 
+  let editingIdx = null; // null = add mode, >=0 = edit existing working[editingIdx]
+
   const renderBody = () => {
     // Build display: self-entry + working list, each tagged with working index
     const display = working.map((c, i) => ({ ...c, _wi: i }));
@@ -1315,9 +1326,8 @@ function openTeamModal(shift) {
     const groups = { D: [], T: [] };
     for (const c of rcDisplay) groups[effectiveTeam(c)].push(c);
 
-    const funkSelectHTML = `<select class="rc-add-funk" id="rc-add-funk">
-      ${FUNK_OPTIONS.map(f => `<option value="${f}">${f}</option>`).join('')}
-    </select>`;
+    const editing = editingIdx !== null ? working[editingIdx] : null;
+    const funkOpts = f => FUNK_OPTIONS.map(o => `<option value="${o}"${editing && o === editing.funktion ? ' selected' : ''}>${o}</option>`).join('');
 
     body.innerHTML = `
       <div class="rolecall-status">
@@ -1336,18 +1346,27 @@ function openTeamModal(shift) {
               <div class="team-colleague-func" style="color:${isSenior(c) ? '#f59e0b' : ''}">${c.funktion}</div>
             </div>
             ${!hideIcons && (c.tags||[]).length ? `<div class="team-colleague-tags">${tagIconsHTML(c.tags)}</div>` : ''}
-            ${!c._self ? `<button class="rc-del-btn" data-wi="${c._wi}" title="Entfernen">✕</button>` : ''}
+            ${!c._self ? `
+              <button class="rc-edit-btn" data-wi="${c._wi}" title="Bearbeiten">✏️</button>
+              <button class="rc-del-btn"  data-wi="${c._wi}" title="Entfernen">✕</button>` : ''}
           </label>
         `).join('')}
       `).join('')}
       ${otherDisplay.length ? `<button class="other-teams-link" id="btn-other-teams">👁 Andere Teams (${otherDisplay.length})</button>` : ''}
       <div class="rc-add-form">
-        <input type="text" class="rc-add-name" id="rc-add-name" placeholder="Name…">
-        ${funkSelectHTML}
-        <button class="rc-add-btn" id="rc-add-btn">＋</button>
-      </div>`;
+        <input type="text" class="rc-add-name" id="rc-add-name"
+               placeholder="${editing ? '' : 'Name…'}"
+               value="${editing ? editing.name.replace(/"/g,'&quot;') : ''}">
+        <select class="rc-add-funk" id="rc-add-funk">${funkOpts()}</select>
+        <button class="rc-add-btn" id="rc-add-btn">${editing ? '✓' : '＋'}</button>
+        ${editing ? `<button class="rc-cancel-btn" id="rc-cancel-btn">✗</button>` : ''}
+      </div>
+      ${editing ? `<div class="rc-tag-row">
+        ${Object.entries(TAG_ICONS).map(([k,v]) => `<button class="rc-tag-btn${(editing.tags||[]).includes(k)?' active':''}" data-tag="${k}" title="${TAG_LABELS[k]||k}">${v}</button>`).join('')}
+        <span class="rc-tag-hint">Tags</span>
+      </div>` : ''}`;
 
-    // Status update helper
+    // Status update
     const updateStatus = () => {
       const checks = body.querySelectorAll('.team-colleague-check');
       const p = Array.from(checks).filter(x => x.checked).length;
@@ -1355,7 +1374,7 @@ function openTeamModal(shift) {
       body.querySelector('.rolecall-anwesend').textContent = `${p} anwesend`;
     };
 
-    // Checkbox changes — sync to working
+    // Checkboxes
     body.querySelectorAll('.team-colleague-check').forEach(cb => {
       cb.addEventListener('change', () => {
         cb.closest('.team-colleague-row').classList.toggle('is-present', cb.checked);
@@ -1365,31 +1384,56 @@ function openTeamModal(shift) {
       });
     });
 
+    // Edit buttons — pre-fill form and scroll to it
+    body.querySelectorAll('.rc-edit-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        editingIdx = parseInt(btn.dataset.wi);
+        renderBody();
+        body.querySelector('#rc-add-name')?.focus();
+      });
+    });
+
     // Delete buttons
     body.querySelectorAll('.rc-del-btn').forEach(btn => {
       btn.addEventListener('click', e => {
         e.preventDefault();
         const wi = parseInt(btn.dataset.wi);
-        if (wi >= 0) working.splice(wi, 1);
+        if (wi >= 0) { working.splice(wi, 1); if (editingIdx === wi) editingIdx = null; }
         renderBody();
       });
     });
 
-    // Add form
-    body.querySelector('#rc-add-btn')?.addEventListener('click', () => {
+    // Add / save edit
+    const doSubmit = () => {
       const name = body.querySelector('#rc-add-name').value.trim();
       const funk = body.querySelector('#rc-add-funk').value;
       if (!name) { body.querySelector('#rc-add-name').focus(); return; }
-      working.push({ name, funktion: funk, team: inferColleagueTeam(funk) || 'D', tags: [], present: false });
+      const tags = Array.from(body.querySelectorAll('.rc-tag-btn.active')).map(b => b.dataset.tag);
+      if (editingIdx !== null) {
+        working[editingIdx].name     = name;
+        working[editingIdx].funktion = funk;
+        working[editingIdx].team     = inferColleagueTeam(funk) || 'D';
+        working[editingIdx].tags     = tags;
+        editingIdx = null;
+      } else {
+        working.push({ name, funktion: funk, team: inferColleagueTeam(funk) || 'D', tags, present: false });
+      }
       renderBody();
+    };
+    body.querySelector('#rc-add-btn')?.addEventListener('click', doSubmit);
+    body.querySelector('#rc-add-name')?.addEventListener('keydown', e => { if (e.key === 'Enter') doSubmit(); });
+    body.querySelector('#rc-cancel-btn')?.addEventListener('click', () => { editingIdx = null; renderBody(); });
+
+    body.querySelectorAll('.rc-tag-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        btn.classList.toggle('active');
+      });
     });
 
-    // Enter key in name field triggers add
-    body.querySelector('#rc-add-name')?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') body.querySelector('#rc-add-btn').click();
-    });
-
-    body.querySelector('#btn-other-teams')?.addEventListener('click', () => openOtherTeamsModal(otherDisplay, hideIcons));
+    body.querySelector('#btn-other-teams')?.addEventListener('click', () =>
+      openOtherTeamsModal(working, hideIcons, renderBody));
   };
 
   renderBody();
@@ -1415,28 +1459,83 @@ function setupTeamModal() {
   document.getElementById('team-modal-cancel').addEventListener('click', close);
 }
 
-function openOtherTeamsModal(otherColleagues, hideIcons) {
+function openOtherTeamsModal(working, hideIcons, onChanged) {
   const modal = document.getElementById('other-teams-modal');
   const body  = document.getElementById('other-teams-body');
-  const groups = {};
-  for (const c of otherColleagues) {
-    const t = effectiveTeam(c);
-    if (!groups[t]) groups[t] = [];
-    groups[t].push(c);
-  }
-  body.innerHTML = TEAM_ORDER.filter(t => groups[t]).map(t => `
-    <div class="team-group-header" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</div>
-    ${groups[t].map(c => `
-      <div class="team-colleague-row" style="cursor:default">
-        <span class="team-dot" style="background:${TEAM_META[t].color}"></span>
-        <div class="team-colleague-info">
-          <div class="team-colleague-name">${c.name}</div>
-          <div class="team-colleague-func">${c.funktion}</div>
-        </div>
-        ${!hideIcons && (c.tags || []).length ? `<div class="team-colleague-tags">${tagIconsHTML(c.tags)}</div>` : ''}
-      </div>
-    `).join('')}
-  `).join('') || '<div class="empty-state">Keine anderen Teams</div>';
+  let otherEditIdx = null;
+
+  const renderOther = () => {
+    const others = working.map((c, i) => ({ ...c, _wi: i }))
+      .filter(c => effectiveTeam(c) !== 'D' && effectiveTeam(c) !== 'T');
+    const groups = {};
+    for (const c of others) {
+      const t = effectiveTeam(c);
+      if (!groups[t]) groups[t] = [];
+      groups[t].push(c);
+    }
+    const editing = otherEditIdx !== null ? working[otherEditIdx] : null;
+
+    body.innerHTML = (others.length
+      ? TEAM_ORDER.filter(t => groups[t]).map(t => `
+        <div class="team-group-header" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</div>
+        ${groups[t].map(c => `
+          <div class="team-colleague-row" style="cursor:default">
+            <span class="team-dot" style="background:${TEAM_META[t].color}"></span>
+            <div class="team-colleague-info">
+              <div class="team-colleague-name">${c.name}</div>
+              <div class="team-colleague-func">${c.funktion}</div>
+            </div>
+            ${!hideIcons && (c.tags||[]).length ? `<div class="team-colleague-tags">${tagIconsHTML(c.tags)}</div>` : ''}
+            <button class="rc-edit-btn" data-wi="${c._wi}" title="Bearbeiten">✏️</button>
+            <button class="rc-del-btn"  data-wi="${c._wi}" title="Entfernen">✕</button>
+          </div>
+        `).join('')}
+      `).join('')
+      : '<div class="empty-state">Keine anderen Teams</div>') + `
+    <div class="rc-add-form">
+      <input type="text" class="rc-add-name" id="rc-other-name"
+             placeholder="Name…" value="${editing ? editing.name.replace(/"/g,'&quot;') : ''}">
+      <select class="rc-add-funk" id="rc-other-funk">
+        ${FUNK_OPTIONS.map(f => `<option value="${f}"${editing && f===editing.funktion?' selected':''}>${f}</option>`).join('')}
+      </select>
+      ${editing ? `
+        <button class="rc-add-btn" id="rc-other-save">✓</button>
+        <button class="rc-cancel-btn" id="rc-other-cancel">✗</button>` : `
+        <button class="rc-add-btn" id="rc-other-add">＋</button>`}
+    </div>`;
+
+    body.querySelectorAll('.rc-edit-btn').forEach(btn => btn.addEventListener('click', () => {
+      otherEditIdx = parseInt(btn.dataset.wi); renderOther();
+      body.querySelector('#rc-other-name')?.focus();
+    }));
+    body.querySelectorAll('.rc-del-btn').forEach(btn => btn.addEventListener('click', () => {
+      const wi = parseInt(btn.dataset.wi);
+      if (wi >= 0) working.splice(wi, 1);
+      otherEditIdx = null; renderOther(); onChanged();
+    }));
+    body.querySelector('#rc-other-save')?.addEventListener('click', () => {
+      const name = body.querySelector('#rc-other-name').value.trim();
+      const funk = body.querySelector('#rc-other-funk').value;
+      if (!name) return;
+      working[otherEditIdx].name = name;
+      working[otherEditIdx].funktion = funk;
+      working[otherEditIdx].team = inferColleagueTeam(funk) || 'D';
+      otherEditIdx = null; renderOther(); onChanged();
+    });
+    body.querySelector('#rc-other-cancel')?.addEventListener('click', () => { otherEditIdx = null; renderOther(); });
+    body.querySelector('#rc-other-add')?.addEventListener('click', () => {
+      const name = body.querySelector('#rc-other-name').value.trim();
+      const funk = body.querySelector('#rc-other-funk').value;
+      if (!name) { body.querySelector('#rc-other-name').focus(); return; }
+      working.push({ name, funktion: funk, team: inferColleagueTeam(funk)||'D', tags:[], present:false });
+      renderOther(); onChanged();
+    });
+    body.querySelector('#rc-other-name')?.addEventListener('keydown', e => {
+      if (e.key==='Enter') (body.querySelector('#rc-other-save')||body.querySelector('#rc-other-add'))?.click();
+    });
+  };
+
+  renderOther();
   modal.classList.remove('hidden');
 }
 
@@ -1643,21 +1742,21 @@ function renderTimeline(shift) {
       detailHtml = `<div class="tl-slot-detail${isExpanded ? '' : ' tl-slot-detail--hidden'}">
         ${diagListHtml}
         <div class="tl-inline-actions">
-          <button class="tl-inline-btn tl-inline-add-diag">＋ Diagnose</button>
-          ${hasTips ? '<button class="tl-inline-btn tl-inline-tips">☑️ Checkliste</button>' : ''}
-          <button class="tl-inline-btn tl-inline-edit">✏️ Bearbeiten</button>
-          <button class="tl-inline-btn tl-inline-move">⤴ Verschieben</button>
-          <button class="tl-inline-btn tl-inline-del btn-danger-sm">🗑 Löschen</button>
+          <button class="tl-inline-btn tl-inline-add-diag" title="Diagnose hinzufügen">➕</button>
+          ${hasTips ? '<button class="tl-inline-btn tl-inline-tips" title="Checkliste">✅</button>' : ''}
+          <button class="tl-inline-btn tl-inline-edit" title="Bearbeiten">✏️</button>
+          <button class="tl-inline-btn tl-inline-move" title="Verschieben">↕️</button>
+          <button class="tl-inline-btn tl-inline-del btn-danger-sm" title="Löschen">🗑</button>
         </div>
       </div>`;
     } else {
       // Non-patient slots: actions always visible, no diag list
       detailHtml = `<div class="tl-slot-detail">
         <div class="tl-inline-actions">
-          ${hasTips ? '<button class="tl-inline-btn tl-inline-tips">☑️ Checkliste</button>' : ''}
-          <button class="tl-inline-btn tl-inline-edit">✏️ Bearbeiten</button>
-          <button class="tl-inline-btn tl-inline-move">⤴ Verschieben</button>
-          <button class="tl-inline-btn tl-inline-del btn-danger-sm">🗑 Löschen</button>
+          ${hasTips ? '<button class="tl-inline-btn tl-inline-tips" title="Checkliste">✅</button>' : ''}
+          <button class="tl-inline-btn tl-inline-edit" title="Bearbeiten">✏️</button>
+          <button class="tl-inline-btn tl-inline-move" title="Verschieben">↕️</button>
+          <button class="tl-inline-btn tl-inline-del btn-danger-sm" title="Löschen">🗑</button>
         </div>
       </div>`;
     }
@@ -3848,6 +3947,30 @@ function setupMissionModals() {
     document.getElementById('challenge-history-modal').classList.add('hidden'));
   document.getElementById('challenge-history-backdrop').addEventListener('click', () =>
     document.getElementById('challenge-history-modal').classList.add('hidden'));
+}
+
+function renderHomeMissions() {
+  const el = document.getElementById('home-missions-mini');
+  if (!el) return;
+  const active = state.missions.filter(m => !m.completedAt).sort((a, b) => a.slotIndex - b.slotIndex);
+  if (!active.length) { el.innerHTML = ''; el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  el.innerHTML = active.slice(0, 3).map(am => {
+    const def = MISSION_POOL.find(m => m.id === am.missionId);
+    if (!def) return '';
+    const catchesSince = state.catches.filter(c => c.caughtAt >= am.activatedAt);
+    const shiftsSince  = state.shifts.filter(s => (s.createdAt || `${s.date}T00:00:00`) >= am.activatedAt);
+    const { current, target } = calcMissionProgress(def, catchesSince, shiftsSince, state.icdFlat);
+    const pct = Math.min(100, Math.round((current / target) * 100));
+    return `<div class="hm-mission-pill tier-${def.tier}">
+      <span class="hm-mp-emoji">${def.emoji||''}</span>
+      <div class="hm-mp-body">
+        <div class="hm-mp-title">${def.title}</div>
+        <div class="hm-mp-bar"><div class="hm-mp-fill" style="width:${pct}%"></div></div>
+      </div>
+      <span class="hm-mp-pct">${pct}%</span>
+    </div>`;
+  }).join('');
 }
 
 function renderMissions() {
@@ -6148,7 +6271,7 @@ function renderHourCountersSettings() {
         <input class="setting-input hcs-from" type="date" value="${c.fromDate || ''}" data-id="${c.id}" style="flex:1;min-width:0">
       </div>
     </div>`).join('') +
-    (counters.length < 2 ? `<button id="btn-add-counter" class="btn-secondary" style="width:100%;margin-top:8px;padding:8px;font-size:12px">+ Zweiten Zähler hinzufügen</button>` : '');
+    (counters.length < 2 ? `<button id="btn-add-counter" class="io-btn" style="width:100%;margin-top:8px">+ Zweiten Zähler</button>` : '');
 
   el.querySelectorAll('.hcs-name').forEach(inp => inp.addEventListener('change', async e => {
     await updateCounter(parseInt(e.target.dataset.id), { name: e.target.value.trim() || 'Zähler' });
@@ -6231,7 +6354,7 @@ function renderExtraHoursSettings() {
         <button id="eaf-cancel" class="btn-secondary" style="padding:8px 12px">✕</button>
       </div>
     </div>
-    <button id="btn-add-extra" class="btn-secondary" style="width:100%;margin-top:8px;padding:8px;font-size:12px">+ Extra-Stunden hinzufügen</button>`;
+    <button id="btn-add-extra" class="io-btn" style="width:100%;margin-top:8px">+ Extra-Stunden</button>`;
 
   el.querySelectorAll('.btn-del-extra').forEach(btn =>
     btn.addEventListener('click', () => deleteExtraHourEntry(parseInt(btn.dataset.id))));
