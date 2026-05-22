@@ -2717,3 +2717,22 @@ img{max-width:100%;display:block}
   animation:roulette-pop .4s cubic-bezier(.175,.885,.32,1.275);
 }
 @keyframes roulette-pop{from{transform:scale(.5) rotate(-10deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+
+/* ── Settings backup background ─────────────────────────────────────────────── */
+.backup-section-wrap{
+  position:relative;overflow:hidden;
+  border-radius:var(--r);border:1px solid var(--border);padding:12px;margin-bottom:8px;
+}
+.backup-section-wrap::before{
+  content:'';position:absolute;inset:0;
+  background:url(../assets/images/settings_backup_bg.png) center/cover no-repeat;
+  opacity:.18;pointer-events:none;border-radius:var(--r);
+}
+.backup-section-wrap>.export-import-row{position:relative;z-index:1}
+
+/* ── Error state image ───────────────────────────────────────────────────────── */
+.load-error{
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+  color:var(--text-dim);font-size:14px;text-align:center;padding:24px;
+}
+.error-state-img{width:160px;height:160px;object-fit:contain;opacity:.7;border-radius:16px}

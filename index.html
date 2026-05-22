@@ -8,7 +8,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Psychodex">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="apple-touch-icon" href="assets/images/app_icon.png">
+  <link rel="icon" type="image/png" sizes="1254x1254" href="assets/images/app_icon.png">
   <link rel="icon" type="image/png" sizes="512x512" href="assets/icons/icon-512.png">
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
   <title>PsychoDex</title>
@@ -258,7 +259,8 @@
           <button id="btn-log-supervision" class="io-btn" style="margin-top:8px;width:100%">🎓 Supervision loggen (+250 XP/h)</button>
         </div>
         <div class="section-header">Daten &amp; Backup</div>
-        <div class="export-import-row">
+        <div class="backup-section-wrap">
+          <div class="export-import-row">
           <button id="btn-export" class="io-btn">⬇ Exportieren</button>
           <label class="io-btn io-btn-import">⬆ Importieren
             <input type="file" id="import-file-input" accept=".json" style="display:none">
@@ -267,6 +269,7 @@
             <input type="file" id="xml-import-input" accept=".xml" style="display:none">
           </label>
         </div>
+        </div><!-- /.backup-section-wrap -->
       </section>
 
     </div><!-- /.tab-container -->

@@ -338,7 +338,11 @@ const lazyObserver = (() => {
 async function init() {
   const showError = msg => {
     document.getElementById('loading-screen').innerHTML =
-      `<div class="load-error">${msg}<br><button onclick="location.reload()" style="margin-top:16px;padding:10px 24px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;">Neu laden</button></div>`;
+      `<div class="load-error">
+        <img src="assets/images/errors/error_state.png" class="error-state-img" alt="">
+        <div>${msg}</div>
+        <button onclick="location.reload()" style="margin-top:16px;padding:10px 24px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;">Neu laden</button>
+      </div>`;
   };
 
   const timeout = setTimeout(() =>
