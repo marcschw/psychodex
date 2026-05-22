@@ -2646,21 +2646,33 @@ img{max-width:100%;display:block}
 .mp-pct{font-size:10px;color:var(--text-dim);flex-shrink:0;font-variant-numeric:tabular-nums}
 
 /* ── Home mini missions ───────────────────────────────────────────────────── */
-.home-missions-mini{display:flex;flex-direction:column;gap:6px;padding:10px 16px 4px;flex-shrink:0}
+.home-missions-mini{
+  display:flex;flex-direction:row;gap:6px;
+  padding:8px 16px 10px;
+  margin:0 -16px 8px;
+  position:sticky;top:0;z-index:20;
+  background:rgba(8,8,15,.93);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(255,255,255,.07);
+  flex-shrink:0;
+}
 .home-missions-mini.hidden{display:none}
 .hm-mission-pill{
-  display:flex;align-items:center;gap:8px;
-  padding:8px 10px;border-radius:10px;
+  flex:1;min-width:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;padding:6px 4px;height:56px;
+  border-radius:10px;
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+  overflow:hidden;
 }
 .hm-mission-pill.tier-2{border-color:rgba(96,165,250,.2)}
 .hm-mission-pill.tier-3{border-color:rgba(167,139,250,.25)}
-.hm-mp-emoji{font-size:16px;flex-shrink:0}
-.hm-mp-body{flex:1;min-width:0}
-.hm-mp-title{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hm-mp-bar{height:3px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:3px}
+.hm-mp-emoji{font-size:18px;flex-shrink:0;line-height:1}
+.hm-mp-body{width:100%;min-width:0}
+.hm-mp-title{font-size:10px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.hm-mp-bar{height:3px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:2px}
 .hm-mp-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .3s}
-.hm-mp-pct{font-size:10px;color:var(--text-dim);flex-shrink:0;font-variant-numeric:tabular-nums}
+.hm-mp-pct{font-size:10px;color:var(--text-dim);flex-shrink:0;font-variant-numeric:tabular-nums;text-align:center}
 
 .mission-history-pill{display:flex;align-items:center;justify-content:center;min-width:36px;font-size:18px;background:var(--bg-raised);border:1px solid var(--border);border-radius:10px;padding:6px 8px;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0;transition:background .15s}
 .mission-history-pill:active{background:var(--bg-hover)}
