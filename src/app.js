@@ -854,6 +854,9 @@ async function renderHomeTab() {
     if (notifBanner) notifBanner.classList.add('hidden');
     renderDiagnosticReminders(today);
   } else {
+    // Clear stale timeline immediately before the async slot load to prevent
+    // a previous shift's content from persisting during navigation
+    tlEl.innerHTML = '';
     state.plannerShiftId = shift.id;
     state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
 
@@ -1329,7 +1332,7 @@ function openTeamModal(shift) {
   const avatarSrc = c => {
     if (isSenior(c)) return './assets/images/avatars/avatar_owl.png';
     const t = effectiveTeam(c);
-    if (t === 'I' || t === 'F') return './assets/images/avatars/avatar_raven.png';
+    if (t === 'F') return './assets/images/avatars/avatar_raven.png';
     return './assets/images/avatars/avatar_wolf.png';
   };
 
@@ -1424,7 +1427,10 @@ function openTeamModal(shift) {
       btn.addEventListener('click', e => {
         e.preventDefault();
         const wi = parseInt(btn.dataset.wi);
-        if (wi >= 0) { working.splice(wi, 1); if (editingIdx === wi) editingIdx = null; }
+        if (wi < 0) return;
+        if (!confirm(`„${working[wi].name}" aus der Liste entfernen?`)) return;
+        working.splice(wi, 1);
+        if (editingIdx === wi) editingIdx = null;
         renderBody();
       });
     });
@@ -1506,7 +1512,7 @@ function openOtherTeamsModal(working, hideIcons, onChanged) {
         <div class="team-group-header" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</div>
         ${groups[t].map(c => `
           <div class="team-colleague-row" style="cursor:default">
-            <img class="rc-avatar" src="${(t === 'I' || t === 'F') ? './assets/images/avatars/avatar_raven.png' : './assets/images/avatars/avatar_wolf.png'}" alt="" style="border-color:${TEAM_META[t].color}">
+            <img class="rc-avatar" src="${t === 'F' ? './assets/images/avatars/avatar_raven.png' : './assets/images/avatars/avatar_wolf.png'}" alt="" style="border-color:${TEAM_META[t].color}">
             <div class="team-colleague-info">
               <div class="team-colleague-name">${c.name}</div>
               <div class="team-colleague-func">${c.funktion}</div>
@@ -1536,7 +1542,9 @@ function openOtherTeamsModal(working, hideIcons, onChanged) {
     }));
     body.querySelectorAll('.rc-del-btn').forEach(btn => btn.addEventListener('click', () => {
       const wi = parseInt(btn.dataset.wi);
-      if (wi >= 0) working.splice(wi, 1);
+      if (wi < 0) return;
+      if (!confirm(`„${working[wi].name}" aus der Liste entfernen?`)) return;
+      working.splice(wi, 1);
       otherEditIdx = null; renderOther(); onChanged();
     }));
     body.querySelector('#rc-other-save')?.addEventListener('click', () => {
@@ -2290,7 +2298,6 @@ async function saveSlot() {
   await db.profile.update(state.profile.id, { totalXP: newXP });
   state.profile.totalXP = newXP;
   state.shifts  = await db.shiftLogs.orderBy('date').reverse().toArray();
-  state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(ctx.shiftId).sortBy('startHour');
 
   document.getElementById('slot-add-modal').classList.add('hidden');
   showXPPopup(xp, [{ label: def.label, xp }]);
@@ -2302,7 +2309,8 @@ async function saveSlot() {
   if (updatedShift) {
     if (ctx.source === 'detail') {
       renderShiftDetailBody(updatedShift);
-    } else {
+    } else if (state.plannerShiftId === ctx.shiftId) {
+      state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(ctx.shiftId).sortBy('startHour');
       updatePlannerXP(updatedShift);
       renderTimeline(updatedShift);
     }
@@ -2342,13 +2350,13 @@ async function deleteSlot(slotId, shift, source = 'planner') {
   await db.profile.update(state.profile.id, { totalXP: newXP });
   state.profile.totalXP = newXP;
   state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
-  state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
   updateHeader();
   const updatedShift = state.shifts.find(s => s.id === shift.id);
   if (!updatedShift) return;
   if (source === 'detail') {
     renderShiftDetailBody(updatedShift);
-  } else {
+  } else if (state.plannerShiftId === shift.id) {
+    state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
     updatePlannerXP(updatedShift);
     renderTimeline(updatedShift);
   }
@@ -2548,7 +2556,7 @@ async function deleteSlotCatch(catchId, slot, source) {
   updateHeader();
   if (source === 'planner') {
     const freshShift = state.shifts.find(s => s.id === slot.shiftId);
-    if (freshShift) renderTimeline(freshShift);
+    if (freshShift && state.plannerShiftId === freshShift.id) renderTimeline(freshShift);
   } else {
     const freshSlot = await db.scheduleSlots.get(slot.id);
     if (freshSlot) openSlotDetailModal(freshSlot, source);
@@ -2684,8 +2692,6 @@ async function saveSlotEdit(slot, source) {
   const shift = state.shifts.find(s => s.id === slot.shiftId);
   if (!shift) return;
 
-  state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
-
   // Ausfall-Roulette: first time ausfall is set
   if (isPatient && ausfallChecked && !wasAusfall) {
     triggerAusfallRoulette(slot, shift);
@@ -2693,7 +2699,8 @@ async function saveSlotEdit(slot, source) {
 
   if (source === 'detail') {
     renderShiftDetailBody(shift);
-  } else {
+  } else if (state.plannerShiftId === shift.id) {
+    state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
     renderTimeline(shift);
   }
 }
@@ -3306,8 +3313,8 @@ function closeDiagnosisModal() {
   state.searchContext = { patientIndex: null, selectedDiagnosis: null, standalone: false };
   state.addToShiftContext = null;
   state.diagCatchStack = [];
-  // If we came from the planner timeline, refresh it
-  if (slotSrc === 'planner' && slotShiftId != null) {
+  // If we came from the planner timeline, refresh it (only if still on same shift)
+  if (slotSrc === 'planner' && slotShiftId != null && state.plannerShiftId === slotShiftId) {
     const freshShift = state.shifts.find(s => s.id === slotShiftId);
     if (freshShift) renderTimeline(freshShift);
   }
@@ -5473,13 +5480,15 @@ async function saveToExistingShiftPatient(diagnosis, hasComorbidity, xpResult, s
 
   if (fromSlotId) {
     if (fromSlotSrc === 'planner') {
-      // Stay in planner – close diag modal and re-render timeline
+      // Stay in planner – close diag modal and re-render timeline (only if still on same shift)
       document.getElementById('diagnosis-modal').classList.add('hidden');
       state.addToShiftContext = null;
       state.diagCatchStack = [];
-      state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shiftId).sortBy('startHour');
-      const freshShift = state.shifts.find(s => s.id === shiftId);
-      if (freshShift) renderTimeline(freshShift);
+      if (state.plannerShiftId === shiftId) {
+        state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shiftId).sortBy('startHour');
+        const freshShift = state.shifts.find(s => s.id === shiftId);
+        if (freshShift) renderTimeline(freshShift);
+      }
     } else {
       const freshSlot = await db.scheduleSlots.get(fromSlotId);
       if (freshSlot) openSlotDetailModal(freshSlot, fromSlotSrc);
