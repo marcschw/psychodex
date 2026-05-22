@@ -669,8 +669,13 @@ function renderHoursCounters() {
     const fromTxt = c.fromDate
       ? `ab ${new Date(c.fromDate + 'T12:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })}`
       : '';
+    const nm = (c.name || '').toLowerCase();
+    const trackerBg = nm.includes('psych') ? 'url(./assets/images/trackers/tracker_psy.png)'
+      : nm.includes('fach') ? 'url(./assets/images/trackers/tracker_fach.png)' : '';
     return `
-      <div class="hours-counter-card" data-counter-id="${c.id}">
+      <div class="hours-counter-card${trackerBg ? ' has-tracker-bg' : ''}"
+           data-counter-id="${c.id}"
+           ${trackerBg ? `style="--tracker-bg:${trackerBg}"` : ''}>
         <div class="hc-top">
           <span class="hc-name">${c.name}</span>
           <span class="hc-pct">${pct}%</span>
@@ -830,7 +835,7 @@ async function renderHomeTab() {
 
   if (!shift) {
     panel.innerHTML = `<div class="home-no-shift">
-      <div style="font-size:32px;margin-bottom:8px">📅</div>
+      <img src="./assets/images/empty/empty_shifts.png" class="empty-state-img" alt="">
       <div>Noch keine Dienste</div>
       <div style="font-size:13px;color:var(--text-dim);margin-top:6px">Tippe auf einen Kalendertag um einen Dienst zu erstellen</div>
     </div>`;
@@ -894,8 +899,12 @@ async function renderHomeTab() {
       return `<div class="home-team-info">${parts.join('')}${tags}</div>`;
     })();
 
+    const bannerMap = { 'früh':'frueh', 'spät':'spaet', 'samstag':'samstag', 'full':'full', 'schulung':'schulung' };
+    const bannerFile = bannerMap[shift.type] ? `url(./assets/images/banners/${bannerMap[shift.type]}_banner.png)` : '';
+
     panel.innerHTML = `
-      <div class="home-shift-inline-edit">
+      <div class="home-shift-inline-edit${bannerFile ? ' home-shift-banner' : ''}"
+           ${bannerFile ? `style="--shift-banner-url:${bannerFile}"` : ''}>
         <div class="home-date-row">
           <div class="home-date-badge">
             <span class="home-date-pretty">${prettyDateStr}</span>
@@ -1305,8 +1314,14 @@ function openTeamModal(shift) {
   // Mutable working list — source of truth for save
   const working = (shift.colleagues || []).map(c => ({ ...c }));
 
-  const isSenior = c => effectiveTeam(c) === 'D' && (c.funktion || '').toLowerCase().includes('senior');
-  const dotColor = c => isSenior(c) ? '#f59e0b' : (TEAM_META[effectiveTeam(c)]?.color || TEAM_META.D.color);
+  const isSenior  = c => effectiveTeam(c) === 'D' && (c.funktion || '').toLowerCase().includes('senior');
+  const dotColor  = c => isSenior(c) ? '#f59e0b' : (TEAM_META[effectiveTeam(c)]?.color || TEAM_META.D.color);
+  const avatarSrc = c => {
+    if (isSenior(c)) return './assets/images/avatars/avatar_owl.png';
+    const t = effectiveTeam(c);
+    if (t === 'I' || t === 'F') return './assets/images/avatars/avatar_raven.png';
+    return './assets/images/avatars/avatar_wolf.png';
+  };
 
   let editingIdx = null; // null = add mode, >=0 = edit existing working[editingIdx]
 
@@ -1340,7 +1355,7 @@ function openTeamModal(shift) {
         ${groups[t].map(c => `
           <label class="team-colleague-row${c.present ? ' is-present' : ''}">
             <input type="checkbox" class="team-colleague-check" data-wi="${c._wi}" ${c.present ? 'checked' : ''}>
-            <span class="team-dot" style="background:${dotColor(c)}"></span>
+            <img class="rc-avatar" src="${avatarSrc(c)}" alt="" style="border-color:${dotColor(c)}">
             <div class="team-colleague-info">
               <div class="team-colleague-name">${c.name}${c._self ? ' <span class="team-self-badge">Ich</span>' : ''}</div>
               <div class="team-colleague-func" style="color:${isSenior(c) ? '#f59e0b' : ''}">${c.funktion}</div>
@@ -1480,7 +1495,7 @@ function openOtherTeamsModal(working, hideIcons, onChanged) {
         <div class="team-group-header" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</div>
         ${groups[t].map(c => `
           <div class="team-colleague-row" style="cursor:default">
-            <span class="team-dot" style="background:${TEAM_META[t].color}"></span>
+            <img class="rc-avatar" src="${(t === 'I' || t === 'F') ? './assets/images/avatars/avatar_raven.png' : './assets/images/avatars/avatar_wolf.png'}" alt="" style="border-color:${TEAM_META[t].color}">
             <div class="team-colleague-info">
               <div class="team-colleague-name">${c.name}</div>
               <div class="team-colleague-func">${c.funktion}</div>
@@ -1700,7 +1715,10 @@ function renderTimeline(shift) {
        </div>`
     : '';
 
-  tl.innerHTML = globalToggleHtml + rows.map(row => {
+  const emptyPlannerHtml = slots.length === 0
+    ? `<div class="tl-empty-hint"><img src="./assets/images/empty/empty_planner.png" class="empty-state-img" alt=""><div style="font-size:13px;color:var(--text-dim);margin-top:4px">Noch keine Einträge – tippe auf ＋ um zu beginnen</div></div>`
+    : '';
+  tl.innerHTML = emptyPlannerHtml + globalToggleHtml + rows.map(row => {
     if (row.kind === 'gap') {
       const label = padT(Math.floor(row.from/60), row.from%60);
       return `<div class="tl-gap-wrap">
@@ -5503,7 +5521,7 @@ function renderCatchItem(c) {
 function renderCatchesModalBody() {
   const body = document.getElementById('catches-modal-body');
   if (!state.catches.length) {
-    body.innerHTML = '<div class="empty-state">Noch keine Diagnosen gefangen.</div>';
+    body.innerHTML = '<div class="empty-state"><img src="./assets/images/empty/empty_diagnoses.png" class="empty-state-img" alt=""><div>Noch keine Diagnosen gefangen.</div></div>';
     return;
   }
 
@@ -5718,6 +5736,7 @@ function openStreakModal() {
     : streak.count === 0 ? 'Noch kein Streak' : 'Aktiver Streak 🔥';
 
   document.getElementById('streak-modal-body').innerHTML = `
+    ${streak.frozen ? `<img src="./assets/images/streak/streak_frozen.png" class="streak-visual-img" alt="">` : ''}
     <div class="streak-summary">
       <div class="streak-big-icon">${streak.frozen ? '🧊' : streak.count > 0 ? '🔥' : '—'}</div>
       <div>
