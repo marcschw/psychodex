@@ -63,6 +63,17 @@ db.version(7).stores({
   scheduleSlots: '++id, shiftId, type, startHour'
 });
 
+// v8: supervisionLogs store; scheduleSlots gains diagnostic loop fields (no index change needed)
+db.version(8).stores({
+  profile: '++id',
+  shiftLogs: '++id, date, type, category',
+  caughtDiagnoses: '++id, code, kategorie, shiftId, caughtAt',
+  missions: '++id, slotIndex',
+  unlockedAchievements: '++id, badgeId, tier, unlockedAt',
+  scheduleSlots: '++id, shiftId, type, startHour',
+  supervisionLogs: '++id, date',
+});
+
 // Auto-reload when another tab upgrades the DB to avoid blocking
 db.on('versionchange', () => {
   db.close();

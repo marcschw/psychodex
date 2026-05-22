@@ -1,6 +1,6 @@
 import db from './db.js';
 import { loadAllICD, searchDiagnoses } from './icd-loader.js';
-import { calculateCatchXP, calculateShiftXP, calculateFlameBonus, calculateNoteXP, SLOT_TYPES, SHIFT_HOURS, MEAL_HINTS, BREAK_PRESETS, SLOT_TIPS, CATEGORY_XP_MODIFIER, CATEGORY_META } from './xp-engine.js';
+import { calculateCatchXP, calculateShiftXP, calculateFlameBonus, calculateNoteXP, SLOT_TYPES, SHIFT_HOURS, MEAL_HINTS, BREAK_PRESETS, SLOT_TIPS, CATEGORY_XP_MODIFIER, CATEGORY_META, ROULETTE_DROPS, DIAGNOSTIC_VERIFY_XP, CONSUMABLE_XP } from './xp-engine.js';
 import { RANKS, getRankForXP, getNextRank } from './ranks.js';
 import { MISSION_POOL, TIER_LABELS, calcMissionProgress, pickNewMission } from './missions.js';
 import { checkAchievements, ACHIEVEMENTS, SECRET_ACHIEVEMENTS, ACH_TIER_LABELS } from './achievements.js';
@@ -464,6 +464,9 @@ function setupEscapeKey() {
       { id: 'hours-modal',          fn: closeHoursModal },
       { id: 'catches-modal',        fn: closeCatchesModal },
       { id: 'shift-assign-modal',   fn: closeShiftAssignModal },
+      { id: 'roulette-modal',       fn: () => document.getElementById('roulette-modal').classList.add('hidden') },
+      { id: 'supervision-modal',    fn: () => document.getElementById('supervision-modal').classList.add('hidden') },
+      { id: 'verify-modal',         fn: () => document.getElementById('verify-modal').classList.add('hidden') },
     ];
     for (const { id, fn } of openModals) {
       if (!document.getElementById(id)?.classList.contains('hidden')) { fn(); break; }
@@ -621,7 +624,8 @@ function renderDashboard() {
   const next = getNextRank(rank.level);
   const pct  = next ? ((xp - rank.xpRequired) / (next.xpRequired - rank.xpRequired)) * 100 : 100;
 
-  document.getElementById('rank-title').textContent    = rank.title;
+  const kaffeeKomaActive = state.profile.kaffeeKomaUntil && new Date(state.profile.kaffeeKomaUntil) > new Date();
+  document.getElementById('rank-title').textContent    = kaffeeKomaActive ? '☕ Kaffee-Junkie' : rank.title;
   document.getElementById('rank-subtitle').textContent = rank.subtitle;
   document.getElementById('rank-level').textContent    = `Rang ${rank.level} / 18`;
   document.getElementById('xp-current').textContent    = xp.toLocaleString('de-AT');
@@ -844,6 +848,7 @@ async function renderHomeTab() {
     if (alarmBn) alarmBn.classList.add('hidden');
     const notifBanner = document.getElementById('notif-prompt-banner');
     if (notifBanner) notifBanner.classList.add('hidden');
+    renderDiagnosticReminders(today);
   } else {
     state.plannerShiftId = shift.id;
     state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
@@ -984,6 +989,7 @@ async function renderHomeTab() {
     });
 
     renderHomeMissions();
+    renderDiagnosticReminders(today);
 
     // Notification banner (only for today's shift)
     const notifBanner = document.getElementById('notif-prompt-banner');
@@ -1463,6 +1469,7 @@ function openTeamModal(shift) {
     await db.shiftLogs.update(shift.id, { colleagues: working });
     state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
     modal.classList.add('hidden');
+    await applyRolecallBonuses(shift, working);
     renderHomeTab();
   };
 }
@@ -1867,13 +1874,36 @@ function renderTimeline(shift) {
     });
   });
 
-  // Wire break badge tap → edit
+  // Wire break badge tap → check-off (XP) on first tap, edit on badge label tap
   tl.querySelectorAll('.tl-break-badge').forEach(badge => {
-    badge.addEventListener('click', e => {
+    badge.addEventListener('click', async e => {
       if (e.target.closest('.tl-meal-del')) return;
       e.stopPropagation();
       const id = parseInt(badge.dataset.mealId);
       const hint = getMealHints(shift).find(h => h.id === id);
+
+      // Check off: award XP once per meal
+      const checkedKey = `meal-checked-${shift.id}-${id}`;
+      if (!sessionStorage.getItem(checkedKey)) {
+        sessionStorage.setItem(checkedKey, '1');
+        const sanity = CONSUMABLE_XP.sanity.labels.includes(hint?.label);
+        const koffein = CONSUMABLE_XP.koffein.labels.includes(hint?.label);
+        if (sanity) {
+          const xp = CONSUMABLE_XP.sanity.xp;
+          const newTotal = (state.profile.totalXP ?? 0) + xp;
+          await db.profile.update(state.profile.id, { totalXP: newTotal });
+          state.profile.totalXP = newTotal;
+          showXPPopup(xp, [{ label: CONSUMABLE_XP.sanity.label }]);
+          badge.classList.add('meal-checked');
+        } else if (koffein) {
+          const shiftBoostKey = `koffein-shift-${shift.id}`;
+          sessionStorage.setItem(shiftBoostKey, '1');
+          showXPPopup(0, [{ label: CONSUMABLE_XP.koffein.label }]);
+          badge.classList.add('meal-checked');
+        }
+        return;
+      }
+      // Already checked: open edit
       openMealModal(shift, hint);
     });
   });
@@ -2534,6 +2564,33 @@ function openSlotEditForm(slot, source) {
   };
   const slotFlags = SLOT_FLAGS[slot.type] || [];
 
+  const isPatient = !!SLOT_TYPES[slot.type]?.patientContact;
+  const terminInterviewField = ['anmeldung'].includes(slot.type)
+    ? `<div class="form-row">
+        <label class="form-label">📅 Interview-Termin</label>
+        <input type="date" id="slot-edit-termin-interview" class="form-input" value="${slot.terminInterview || ''}">
+      </div>` : '';
+  const terminErstgespraechField = ['interview'].includes(slot.type)
+    ? `<div class="form-row">
+        <label class="form-label">📅 Erstgesprächs-Termin</label>
+        <input type="date" id="slot-edit-termin-erst" class="form-input" value="${slot.terminErstgespraech || ''}">
+      </div>` : '';
+  const patientFields = isPatient ? `
+    <div class="form-row">
+      <label class="form-label">🔖 Kürzel / Notiz</label>
+      <input type="text" id="slot-edit-notes" class="form-input" placeholder="Codename…" value="${(slot.patientNotes || '').replace(/"/g,'&quot;')}">
+    </div>
+    <div class="form-row">
+      <label class="form-label">🔬 Verdachtsdiagnose</label>
+      <input type="text" id="slot-edit-suspected" class="form-input" placeholder="ICD-Code, z.B. F32.1" value="${slot.suspectedCode || ''}">
+    </div>
+    ${terminInterviewField}
+    ${terminErstgespraechField}
+    <div class="form-row" style="align-items:center;gap:12px">
+      <label class="form-label" style="margin-bottom:0">❌ Ausfall</label>
+      <input type="checkbox" id="slot-edit-ausfall" style="width:20px;height:20px;accent-color:#f87171" ${slot.ausfall ? 'checked' : ''}>
+    </div>` : '';
+
   document.getElementById('slot-detail-body').innerHTML = `
     <div class="form-row">
       <label class="form-label">Von</label>
@@ -2545,8 +2602,9 @@ function openSlotEditForm(slot, source) {
     </div>
     <div class="form-row">
       <label class="form-label">Kommentar</label>
-      <textarea id="slot-edit-comment" class="form-input" rows="3" placeholder="Notiz…">${slot.comment || ''}</textarea>
+      <textarea id="slot-edit-comment" class="form-input" rows="2" placeholder="Notiz…">${slot.comment || ''}</textarea>
     </div>
+    ${patientFields}
     ${hasFlags ? `
     <div class="form-row">
       <label class="form-label">Flags</label>
@@ -2595,12 +2653,27 @@ async function saveSlotEdit(slot, source) {
     if (btn.classList.contains('active')) flags.push(btn.dataset.editFlag);
   });
 
-  await db.scheduleSlots.update(slot.id, {
+  const isPatient = !!SLOT_TYPES[slot.type]?.patientContact;
+  const patientNotes = isPatient ? (document.getElementById('slot-edit-notes')?.value.trim() || null) : undefined;
+  const suspectedCode = isPatient ? (document.getElementById('slot-edit-suspected')?.value.trim().toUpperCase() || null) : undefined;
+  const terminInterview = document.getElementById('slot-edit-termin-interview')?.value || undefined;
+  const terminErstgespraech = document.getElementById('slot-edit-termin-erst')?.value || undefined;
+  const ausfallChecked = document.getElementById('slot-edit-ausfall')?.checked ?? false;
+  const wasAusfall = slot.ausfall;
+
+  const updates = {
     startHour: sh, startMinute: sm,
     endHour: eh,   endMinute: em,
     comment: comment || null,
     flags,
-  });
+    ...(patientNotes !== undefined && { patientNotes }),
+    ...(suspectedCode !== undefined && { suspectedCode }),
+    ...(terminInterview !== undefined && { terminInterview }),
+    ...(terminErstgespraech !== undefined && { terminErstgespraech }),
+    ...(isPatient && { ausfall: ausfallChecked }),
+  };
+
+  await db.scheduleSlots.update(slot.id, updates);
 
   document.getElementById('slot-detail-modal').classList.add('hidden');
 
@@ -2608,10 +2681,167 @@ async function saveSlotEdit(slot, source) {
   if (!shift) return;
 
   state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
+
+  // Ausfall-Roulette: first time ausfall is set
+  if (isPatient && ausfallChecked && !wasAusfall) {
+    triggerAusfallRoulette(slot, shift);
+  }
+
   if (source === 'detail') {
     renderShiftDetailBody(shift);
   } else {
     renderTimeline(shift);
+  }
+}
+
+// ─── Ausfall-Roulette ─────────────────────────────────────────────────────────
+async function triggerAusfallRoulette(slot, shift) {
+  const drop = ROULETTE_DROPS[Math.floor(Math.random() * ROULETTE_DROPS.length)];
+
+  // Apply effect
+  if (drop.flat) {
+    const newTotal = (state.profile.totalXP ?? 0) + drop.flat;
+    await db.profile.update(state.profile.id, { totalXP: newTotal });
+    state.profile.totalXP = newTotal;
+    await db.scheduleSlots.update(slot.id, { xpEarned: (slot.xpEarned||0) + drop.flat, rouletteEffect: drop.id });
+  }
+  if (drop.effect === 'freeze_streak') {
+    await db.profile.update(state.profile.id, { streakFrozenUntil: new Date().toISOString() });
+    state.profile.streakFrozenUntil = new Date().toISOString();
+  }
+  if (drop.effect === 'kaffeekoma') {
+    const until = new Date(Date.now() + drop.durationMs).toISOString();
+    await db.profile.update(state.profile.id, { kaffeeKomaUntil: until });
+    state.profile.kaffeeKomaUntil = until;
+  }
+  if (drop.effect === 'verify_boost_20') {
+    await db.profile.update(state.profile.id, { verifyBoost20: true });
+    state.profile.verifyBoost20 = true;
+  }
+  await db.scheduleSlots.update(slot.id, { rouletteEffect: drop.id });
+
+  openRouletteModal(drop);
+}
+
+function openRouletteModal(drop) {
+  const modal = document.getElementById('roulette-modal');
+  if (!modal) return;
+  document.getElementById('roulette-drop-img').src   = drop.img;
+  document.getElementById('roulette-drop-label').textContent = drop.label;
+  document.getElementById('roulette-drop-desc').textContent  = drop.desc;
+  modal.classList.remove('hidden');
+  document.getElementById('roulette-modal-close').onclick = () => modal.classList.add('hidden');
+  document.getElementById('roulette-backdrop').onclick    = () => modal.classList.add('hidden');
+}
+
+// ─── Diagnostic Verify ────────────────────────────────────────────────────────
+function openVerifyModal(slot) {
+  const modal = document.getElementById('verify-modal');
+  if (!modal) return;
+  const label = slot.patientNotes ? `„${slot.patientNotes}"` : `Slot #${slot.id}`;
+  document.getElementById('verify-modal-label').textContent = label;
+  document.getElementById('verify-suspected').textContent   = slot.suspectedCode || '(kein Verdacht)';
+  document.getElementById('verify-senior-input').value      = '';
+  modal.classList.remove('hidden');
+
+  document.getElementById('verify-backdrop').onclick = () => modal.classList.add('hidden');
+  document.getElementById('verify-cancel').onclick   = () => modal.classList.add('hidden');
+  document.getElementById('verify-save').onclick     = async () => {
+    const seniorCode = document.getElementById('verify-senior-input').value.trim().toUpperCase();
+    if (!seniorCode) { alert('Bitte Diagnose eingeben.'); return; }
+    modal.classList.add('hidden');
+    await applyVerifyXP(slot, seniorCode);
+  };
+}
+
+async function applyVerifyXP(slot, seniorCode) {
+  const suspected = (slot.suspectedCode || '').trim().toUpperCase();
+  let result;
+  if (suspected && suspected === seniorCode) {
+    result = DIAGNOSTIC_VERIFY_XP.exact;
+  } else if (suspected && seniorCode.slice(0,2) === suspected.slice(0,2)) {
+    result = DIAGNOSTIC_VERIFY_XP.partial;
+  } else {
+    result = DIAGNOSTIC_VERIFY_XP.miss;
+  }
+
+  let xp = result.xp;
+  if (state.profile.verifyBoost20) {
+    xp = Math.round(xp * 1.2);
+    await db.profile.update(state.profile.id, { verifyBoost20: false });
+    state.profile.verifyBoost20 = false;
+  }
+
+  await db.scheduleSlots.update(slot.id, {
+    seniorCode,
+    terminInterviewDone: true,
+    xpEarned: (slot.xpEarned || 0) + xp,
+  });
+
+  const newTotal = (state.profile.totalXP ?? 0) + xp;
+  await db.profile.update(state.profile.id, { totalXP: newTotal });
+  state.profile.totalXP = newTotal;
+
+  const bonuses = [{ label: result.label, xp }];
+  showXPPopup(xp, bonuses);
+
+  // Show verify result image briefly
+  const imgEl = document.getElementById('verify-result-img');
+  if (imgEl) {
+    imgEl.src = result.img;
+    imgEl.classList.remove('hidden');
+    setTimeout(() => imgEl.classList.add('hidden'), 3000);
+  }
+
+  state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(slot.shiftId).sortBy('startHour');
+  const today = new Date().toISOString().slice(0, 10);
+  renderDiagnosticReminders(today);
+  renderDashboard();
+}
+
+// ─── Rolecall Gamification Bonuses ────────────────────────────────────────────
+async function applyRolecallBonuses(shift, colleagues) {
+  // Only award once per shift (track with a flag on the shift object)
+  if (shift.rolecallBonusAwarded) return;
+
+  const present = colleagues.filter(c => c.present);
+  const bonusList = [];
+  let totalBonus = 0;
+
+  // Gefahrenzulage: +25 XP per achtung colleague
+  const gefahren = present.filter(c => (c.tags||[]).includes('achtung'));
+  if (gefahren.length) {
+    const xp = gefahren.length * 25;
+    bonusList.push({ label: `⚠️ Gefahrenzulage ×${gefahren.length}`, xp });
+    totalBonus += xp;
+  }
+
+  if (!totalBonus && !bonusList.length) {
+    // Mark as checked even with no bonus so we don't re-check
+    await db.shiftLogs.update(shift.id, { rolecallBonusAwarded: true });
+    return;
+  }
+
+  const newTotal = (state.profile.totalXP ?? 0) + totalBonus;
+  await db.profile.update(state.profile.id, { totalXP: newTotal });
+  state.profile.totalXP = newTotal;
+  await db.shiftLogs.update(shift.id, {
+    xpEarned: (shift.xpEarned || 0) + totalBonus,
+    rolecallBonusAwarded: true,
+  });
+
+  if (totalBonus > 0) showXPPopup(totalBonus, bonusList);
+
+  // Check for rolecall secret achievements
+  state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+  const newUnlocks = await checkAchievements(state, db);
+  for (const u of newUnlocks) {
+    if (u.xp) {
+      const t2 = (state.profile.totalXP ?? 0) + u.xp;
+      await db.profile.update(state.profile.id, { totalXP: t2 });
+      state.profile.totalXP = t2;
+    }
+    setTimeout(() => showXPPopup(u.xp || 0, [{ label: `${u.icon} ${u.name}` }]), 1200);
   }
 }
 
@@ -3232,7 +3462,13 @@ function catchDiagnosis() {
     }));
   }
   const normDiag = { ...selectedDiagnosis, kategorie: normalizeKat(selectedDiagnosis.kategorie) };
-  const xpResult = calculateCatchXP(normDiag, hasComorbidity, caughtCodes, caughtKats);
+  let xpResult = calculateCatchXP(normDiag, hasComorbidity, caughtCodes, caughtKats);
+  // Apply Koffein-Kick +10% if active for this shift
+  const activeShiftId = state.addToShiftContext?.shiftId ?? state.activeShift?.id ?? null;
+  if (activeShiftId && sessionStorage.getItem(`koffein-shift-${activeShiftId}`)) {
+    const boost = Math.round(xpResult.total * CONSUMABLE_XP.koffein.boost);
+    xpResult = { ...xpResult, total: xpResult.total + boost, bonuses: [...xpResult.bonuses, { label: '☕ Koffein-Kick', xp: boost }] };
+  }
 
   // Adding to an existing shift's patient (from shift detail view)
   if (state.addToShiftContext) {
@@ -3876,6 +4112,54 @@ async function refreshMissionProgress() {
 function renderSettingsTab() {
   renderHourCountersSettings();
   renderExtraHoursSettings();
+  renderSupervisionHistory();
+}
+
+// ─── Supervision Logging ──────────────────────────────────────────────────────
+async function renderSupervisionHistory() {
+  const el = document.getElementById('supervision-history');
+  if (!el) return;
+  const logs = await db.supervisionLogs.orderBy('date').reverse().limit(5).toArray();
+  if (!logs.length) { el.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:4px 0">Noch keine Supervisionen geloggt.</div>'; return; }
+  el.innerHTML = logs.map(l => `
+    <div class="supervision-log-row">
+      <span class="sl-date">${l.date}</span>
+      <span class="sl-dur">${l.duration}h</span>
+      <span class="sl-sup">${l.supervisor || '–'}</span>
+    </div>`).join('');
+}
+
+function openSupervisionModal() {
+  const modal = document.getElementById('supervision-modal');
+  if (!modal) return;
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('supervision-date').value = today;
+  document.getElementById('supervision-duration').value = '';
+  document.getElementById('supervision-supervisor').value = '';
+  modal.classList.remove('hidden');
+  document.getElementById('supervision-backdrop').onclick = () => modal.classList.add('hidden');
+  document.getElementById('supervision-cancel').onclick   = () => modal.classList.add('hidden');
+  document.getElementById('supervision-save').onclick     = saveSupervision;
+}
+
+async function saveSupervision() {
+  const date   = document.getElementById('supervision-date').value;
+  const durStr = document.getElementById('supervision-duration').value;
+  const supervisor = document.getElementById('supervision-supervisor').value.trim();
+  const duration = parseFloat(durStr);
+  if (!date || isNaN(duration) || duration <= 0) { alert('Bitte Datum und Dauer angeben.'); return; }
+
+  const xp = Math.round(250 * duration);
+  await db.supervisionLogs.add({ date, duration, supervisor: supervisor || null, notes: '', xpEarned: xp });
+
+  const newTotal = (state.profile.totalXP ?? 0) + xp;
+  await db.profile.update(state.profile.id, { totalXP: newTotal });
+  state.profile.totalXP = newTotal;
+
+  document.getElementById('supervision-modal').classList.add('hidden');
+  showXPPopup(xp, [{ label: `🎓 Supervision ${duration}h` }]);
+  renderSupervisionHistory();
+  renderDashboard();
 }
 
 // ─── Missions Strip ───────────────────────────────────────────────────────────
@@ -3989,6 +4273,69 @@ function renderHomeMissions() {
       <span class="hm-mp-pct">${pct}%</span>
     </div>`;
   }).join('');
+}
+
+// ─── Diagnostic Loop Reminders ────────────────────────────────────────────────
+async function renderDiagnosticReminders(today) {
+  const el = document.getElementById('diag-reminders');
+  if (!el) return;
+
+  // Collect all patient-contact slots that have termin dates set
+  const allSlots = await db.scheduleSlots.toArray();
+  const reminders = [];
+
+  for (const slot of allSlots) {
+    if (!SLOT_TYPES[slot.type]?.patientContact) continue;
+    const label = slot.patientNotes ? `„${slot.patientNotes}"` : `Slot #${slot.id}`;
+
+    if (slot.terminInterview && !slot.terminInterviewDone) {
+      const d = slot.terminInterview.slice(0, 10);
+      if (d <= today) {
+        reminders.push({
+          icon: '📝', urgent: d === today,
+          text: d === today
+            ? `Heute Interview mit ${label} – Zeit, den Verdacht zu prüfen!`
+            : `Überfällig: Interview mit ${label} war ${d}`,
+          slotId: slot.id,
+          action: 'interview',
+        });
+      }
+    }
+    if (slot.terminErstgespraech && !slot.seniorCode) {
+      const d = slot.terminErstgespraech.slice(0, 10);
+      if (d <= today) {
+        reminders.push({
+          icon: '🔍', urgent: d === today,
+          text: d === today
+            ? `Heute Erstgespräch mit ${label} – Akten-Check vorbereiten!`
+            : `Akten-Check: Was hat der Senior bei ${label} diagnostiziert? (${d})`,
+          slotId: slot.id,
+          action: 'verify',
+        });
+      }
+    }
+  }
+
+  if (!reminders.length) { el.innerHTML = ''; el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  el.innerHTML = reminders.map(r => `
+    <div class="diag-reminder${r.urgent ? ' diag-reminder--urgent' : ''}" data-slot-id="${r.slotId}" data-action="${r.action}">
+      <span class="diag-reminder-icon">${r.icon}</span>
+      <span class="diag-reminder-text">${r.text}</span>
+      <button class="diag-reminder-btn">Öffnen ›</button>
+    </div>`).join('');
+
+  el.querySelectorAll('[data-slot-id]').forEach(row => {
+    row.querySelector('.diag-reminder-btn').addEventListener('click', async () => {
+      const slot = await db.scheduleSlots.get(parseInt(row.dataset.slotId));
+      if (!slot) return;
+      if (row.dataset.action === 'verify') {
+        openVerifyModal(slot);
+      } else {
+        openSlotEditForm(slot, 'planner');
+      }
+    });
+  });
 }
 
 function renderMissions() {
@@ -6269,6 +6616,7 @@ function setupDashboardCardListeners() {
     e.stopPropagation();
     openXPInfoModal();
   });
+  document.getElementById('btn-log-supervision')?.addEventListener('click', openSupervisionModal);
 }
 
 // ─── Hour Counters Settings ───────────────────────────────────────────────────
