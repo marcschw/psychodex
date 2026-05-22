@@ -1332,6 +1332,7 @@ function openTeamModal(shift) {
   const avatarSrc = c => {
     if (isSenior(c)) return './assets/images/avatars/avatar_owl.png';
     const t = effectiveTeam(c);
+    if (t === 'I') return './assets/images/avatars/avatar_dragon.png';
     if (t === 'F') return './assets/images/avatars/avatar_raven.png';
     return './assets/images/avatars/avatar_wolf.png';
   };
@@ -1512,7 +1513,7 @@ function openOtherTeamsModal(working, hideIcons, onChanged) {
         <div class="team-group-header" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</div>
         ${groups[t].map(c => `
           <div class="team-colleague-row" style="cursor:default">
-            <img class="rc-avatar" src="${t === 'F' ? './assets/images/avatars/avatar_raven.png' : './assets/images/avatars/avatar_wolf.png'}" alt="" style="border-color:${TEAM_META[t].color}">
+            <img class="rc-avatar" src="${t === 'I' ? './assets/images/avatars/avatar_dragon.png' : t === 'F' ? './assets/images/avatars/avatar_raven.png' : './assets/images/avatars/avatar_wolf.png'}" alt="" style="border-color:${TEAM_META[t].color}">
             <div class="team-colleague-info">
               <div class="team-colleague-name">${c.name}</div>
               <div class="team-colleague-func">${c.funktion}</div>
