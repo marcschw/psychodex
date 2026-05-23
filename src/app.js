@@ -3156,18 +3156,25 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
 
   const planASet = new Set(zData.planAPersons || []);
 
-  // Appointment numbering (sorted by start time, then id)
+  // Appointment numbering: per-type chronological (Interview #1/#2, Erstgespräch #1, etc.)
   const terminSorted = [...zData.termine].sort((a, b) =>
     ((a.startHour ?? a.hour) - (b.startHour ?? b.hour)) || (a.id - b.id));
   const terminNum = t => terminSorted.findIndex(x => x.id === t.id) + 1;
-  const getTerminNumForCell = (personName, block) => {
+  const terminByType = {};
+  for (const type of Object.keys(TERMIN_DEFS)) {
+    terminByType[type] = terminSorted.filter(t => t.type === type);
+  }
+  const getTerminInfoForCell = (personName, block) => {
     const t = terminSorted.find(tt => {
       if (tt.personName !== personName) return false;
       const tH = tt.startHour ?? tt.hour;
       const def = TERMIN_DEFS[tt.type];
       return def && block.start >= tH && block.start < tH + def.dur;
     });
-    return t ? terminNum(t) : null;
+    if (!t) return null;
+    const def = TERMIN_DEFS[t.type];
+    const typeNum = terminByType[t.type].findIndex(x => x.id === t.id) + 1;
+    return { icon: def.icon, num: typeNum };
   };
 
   // Person color for station view
@@ -3191,9 +3198,9 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       const role = zData.assignments[key];
       const ri   = role ? ZUTEIL_ROLES[role] : null;
       const unavail = !isAvail(p, b);
-      const num = ri && role === 'termin' ? getTerminNumForCell(p.name, b) : null;
+      const terminInfo = ri && role === 'termin' ? getTerminInfoForCell(p.name, b) : null;
       const cellInner = ri
-        ? `<span class="zut-cell-icon">${ri.icon}</span><span class="zut-role-short">${ri.short}${num ? '#' + num : ''}</span>`
+        ? `<span class="zut-cell-icon">${terminInfo ? terminInfo.icon : ri.icon}</span><span class="zut-role-short">${terminInfo ? '#' + terminInfo.num : ri.short}</span>`
         : `<span class="zut-empty-dot">·</span>`;
       return `<td class="zut-cell${unavail?' zut-cell-unavail':''}">
         <button class="zut-cell-btn${ri?' has-role':''}${isPlanBRow?' plan-b-cell':''}" data-key="${key}"
@@ -3240,7 +3247,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
         return `<td class="zut-cell zut-station-cell"${needsAlert?' style="background:rgba(239,68,68,.09)"':''}>${needsAlert?'<span class="zut-station-gap">!</span>':''}</td>`;
       return `<td class="zut-cell zut-station-cell">${covering.map(p => {
         const color = personColor(p.name);
-        return `<span class="zut-station-chip" style="background:${color}33;border:1.5px solid ${color}88;color:${color}" title="${p.name}">${personInitials(p.name)}</span>`;
+        return `<span class="zut-station-chip" style="background:${color}33;border:1.5px solid ${color}88;color:${color}" data-pname="${p.name}" title="${p.name}">${personInitials(p.name)}</span>`;
       }).join('')}</td>`;
     };
     const terminTypes = [...new Set(terminSorted.map(t => t.type))];
@@ -3308,26 +3315,6 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
 
   const dateStr = new Date(shift.date+'T12:00').toLocaleDateString('de-AT',{weekday:'short',day:'numeric',month:'numeric'});
 
-  // Termin rows for person view (grouped by type, showing assigned-person chips)
-  const personViewTerminRows = (() => {
-    if (!terminSorted.length) return '';
-    const terminTypes2 = [...new Set(terminSorted.map(t => t.type))];
-    return terminTypes2.map(type => {
-      const def = TERMIN_DEFS[type];
-      const typeTermins = terminSorted.filter(t => t.type === type);
-      const cells = blocks.map(b => {
-        const terminsInBlock = typeTermins.filter(t => { const tH = t.startHour ?? t.hour; return b.start >= tH && b.start < tH + def.dur; });
-        if (!terminsInBlock.length) return `<td class="zut-cell zut-station-cell" style="background:transparent;border:none"></td>`;
-        const chips = terminsInBlock.map(t => {
-          const tColor = t.personName ? personColor(t.personName) : 'rgba(255,255,255,.3)';
-          const pInit = t.personName ? personInitials(t.personName) : '?';
-          return `<span class="zut-station-chip" style="background:${tColor}33;border:1.5px solid ${tColor}88;color:${tColor}" title="${t.personName||'Nicht zugeteilt'}">${pInit}</span>`;
-        }).join('');
-        return `<td class="zut-cell zut-station-cell">${chips}</td>`;
-      }).join('');
-      return `<tr class="zut-termin-row-person"><td class="zut-td-name zut-station-short-td">${def.icon}<span class="zut-station-role-short">${def.label}</span></td>${cells}</tr>`;
-    }).join('');
-  })();
 
   inner.innerHTML = `
     <div class="zut-header">
@@ -3539,6 +3526,13 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
 
   inner.querySelectorAll('.zut-person-clickable').forEach(el => {
     el.addEventListener('click', () => openPersonTierModal(el.dataset.pname, people, zData, saveData, render));
+  });
+
+  inner.querySelectorAll('.zut-station-chip[data-pname]').forEach(chip => {
+    chip.addEventListener('click', e => {
+      e.stopPropagation();
+      openPersonTierModal(chip.dataset.pname, people, zData, saveData, render);
+    });
   });
 }
 
@@ -3883,11 +3877,13 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
       const p = pickByScore(pref.length ? pref : pool.length ? pool : free(block, bi), 'kassa');
       if (p) assign(p, block, 'kassa');
     }
-    // Backoffice: non-trainees preferred (people fresh from termin fit well here)
-    if (!allowedPeople.some(p => result[`${p.name}::${block.key}`] === 'backoffice')) {
+    // Backoffice: up to 2 people (non-trainees preferred; post-termin people fit well here)
+    for (let slot = 0; slot < 2; slot++) {
+      if (allowedPeople.filter(p => result[`${p.name}::${block.key}`] === 'backoffice').length >= 2) break;
       const pool = free(block, bi).filter(p => !p._isTrainee);
-      const p = pickByScore(pool.length ? pool : free(block, bi), 'backoffice');
-      if (p) assign(p, block, 'backoffice');
+      const pick = pickByScore(pool.length ? pool : free(block, bi), 'backoffice');
+      if (pick) assign(pick, block, 'backoffice');
+      else break;
     }
     // 5. Stock (7+ available)
     const avail = allowedPeople.filter(p => isAvailAtBlock(p, block, bi)).length;

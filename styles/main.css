@@ -3009,8 +3009,9 @@ img{max-width:100%;display:block}
 .zut-station-cell{text-align:center;vertical-align:middle;}
 .zut-station-chip{
   display:inline-flex;align-items:center;justify-content:center;
-  width:30px;height:30px;border-radius:7px;font-size:11px;font-weight:700;
+  width:30px;height:30px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;
 }
+.zut-station-chip:active{opacity:.7}
 .zut-station-gap{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;font-size:14px;font-weight:700;color:rgba(239,68,68,.65);}
 .zut-cell{
   border-bottom:1px solid var(--border);border-left:1px solid var(--border);
