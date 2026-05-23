@@ -5118,15 +5118,78 @@ function renderHomeMissions() {
     const shiftsSince  = state.shifts.filter(s => (s.createdAt || `${s.date}T00:00:00`) >= am.activatedAt);
     const { current, target } = calcMissionProgress(def, catchesSince, shiftsSince, state.icdFlat);
     const pct = Math.min(100, Math.round((current / target) * 100));
-    return `<div class="hm-mission-pill tier-${def.tier}">
+    return `<button class="hm-mission-pill tier-${def.tier}" data-mission-id="${am.id}">
       <span class="hm-mp-emoji">${def.emoji||''}</span>
       <div class="hm-mp-body">
         <div class="hm-mp-title">${def.title}</div>
         <div class="hm-mp-bar"><div class="hm-mp-fill" style="width:${pct}%"></div></div>
       </div>
       <span class="hm-mp-pct">${pct}%</span>
-    </div>`;
+    </button>`;
   }).join('');
+  el.querySelectorAll('.hm-mission-pill[data-mission-id]').forEach(pill =>
+    pill.addEventListener('click', () => openMissionDetailModal(pill.dataset.missionId))
+  );
+}
+
+function openMissionDetailModal(activeMissionId) {
+  const am = state.missions.find(m => String(m.id) === String(activeMissionId));
+  if (!am) return;
+  const def = MISSION_POOL.find(m => m.id === am.missionId);
+  if (!def) return;
+  const catchesSince = state.catches.filter(c => c.caughtAt >= am.activatedAt);
+  const shiftsSince  = state.shifts.filter(s => (s.createdAt || `${s.date}T00:00:00`) >= am.activatedAt);
+  const { current, target } = calcMissionProgress(def, catchesSince, shiftsSince, state.icdFlat);
+  const pct = Math.min(100, Math.round((current / target) * 100));
+  const tierLabels = { 1:'Silber', 2:'Gold', 3:'Platin' };
+  const tierColors = { 1:'#9ca3af', 2:'#f59e0b', 3:'#a78bfa' };
+  const color = tierColors[def.tier] || '#9ca3af';
+  const activeDays = Math.floor((Date.now() - new Date(am.activatedAt).getTime()) / 86400000);
+
+  const inner = document.getElementById('mission-detail-inner');
+  inner.innerHTML = `
+    <div class="mdet-header">
+      <div class="mdet-emoji">${def.emoji || '🎯'}</div>
+      <div class="mdet-title">${def.title}</div>
+      <span class="mdet-tier" style="color:${color};border-color:${color}40;background:${color}12">
+        Tier ${def.tier} · ${tierLabels[def.tier] || ''}
+      </span>
+    </div>
+    <div class="mdet-desc">${def.description}</div>
+    <div class="mdet-progress-section">
+      <div class="mdet-prog-label">
+        <span>Fortschritt</span>
+        <span class="mdet-prog-nums">${current} / ${target}</span>
+      </div>
+      <div class="mdet-prog-track">
+        <div class="mdet-prog-fill tier-${def.tier}" style="width:${pct}%"></div>
+      </div>
+      <div class="mdet-prog-pct">${pct}%</div>
+    </div>
+    <div class="mdet-meta">
+      <div class="mdet-meta-item">
+        <span class="mdet-meta-icon">🏆</span>
+        <div>
+          <div class="mdet-meta-label">Belohnung</div>
+          <div class="mdet-meta-val">+${def.reward} XP</div>
+        </div>
+      </div>
+      <div class="mdet-meta-item">
+        <span class="mdet-meta-icon">📅</span>
+        <div>
+          <div class="mdet-meta-label">Aktiv seit</div>
+          <div class="mdet-meta-val">${activeDays === 0 ? 'Heute' : activeDays === 1 ? 'Gestern' : `${activeDays} Tagen`}</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn-secondary mdet-close-btn" id="mdet-close">Schließen</button>`;
+
+  const modal = document.getElementById('mission-detail-modal');
+  modal.classList.remove('hidden');
+  document.getElementById('mission-detail-backdrop').onclick = closeModal;
+  document.getElementById('mdet-close').onclick = closeModal;
+
+  function closeModal() { modal.classList.add('hidden'); }
 }
 
 // ─── Diagnostic Loop Reminders ────────────────────────────────────────────────
