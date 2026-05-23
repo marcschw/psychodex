@@ -3083,9 +3083,26 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     }).join('')}
   </tr>`;
 
-  const termineChips = zData.termine.map(t => {
-    const def = TERMIN_DEFS[t.type];
-    return `<div class="zut-termin-chip">${def.icon} ${def.label} <span class="zut-chip-time">${String(t.startHour).padStart(2,'0')}:00</span>${t.personName?` · ${t.personName}`:''} <button class="zut-termin-del" data-tid="${t.id}">✕</button></div>`;
+  const shiftH   = shiftHours(shift);
+  const tlStartH = shiftH.start[0];
+  const tlEndH   = shiftH.end[0] + (shiftH.end[1] > 0 ? 1 : 0);
+  const tlHours  = Array.from({ length: tlEndH - tlStartH }, (_, i) => tlStartH + i);
+
+  const tlCols = tlHours.map(h => {
+    const chips = zData.termine
+      .filter(t => (t.startHour ?? t.hour) === h)
+      .map(t => {
+        const def = TERMIN_DEFS[t.type];
+        const pInit = t.personName ? t.personName.split(' ').map(w=>w[0]).join('').slice(0,2) : '';
+        return `<div class="zut-tl-chip" data-tid="${t.id}" draggable="true" title="${def.label}${t.personName?' · '+t.personName:''}">
+          <span class="zut-chip-icon">${def.icon}</span>
+          ${pInit?`<span class="zut-chip-person">${pInit}</span>`:''}
+        </div>`;
+      }).join('');
+    return `<div class="zut-tl-col" data-hour="${h}">
+      <div class="zut-tl-hour">${String(h).padStart(2,'0')}</div>
+      <div class="zut-tl-dropzone">${chips}</div>
+    </div>`;
   }).join('');
 
   const dateStr = new Date(shift.date+'T12:00').toLocaleDateString('de-AT',{weekday:'short',day:'numeric',month:'numeric'});
@@ -3100,10 +3117,14 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
         <button class="zut-hdr-close" id="zut-close-btn">✕</button>
       </div>
     </div>
-    <div class="zut-termine-bar">
-      <span class="zut-bar-label">Termine</span>
-      ${Object.entries(TERMIN_DEFS).map(([type,def])=>`<button class="zut-termin-add-btn" data-type="${type}">${def.icon} ${def.label}</button>`).join('')}
-      ${termineChips}
+    <div class="zut-termin-section">
+      <div class="zut-termin-add-row">
+        <span class="zut-bar-label">Termine</span>
+        <button class="zut-termin-add-btn" data-type="anmeldung" title="Anmeldung hinzufügen">📝 +</button>
+        <button class="zut-termin-add-btn" data-type="erstgesprach" title="Erstgespräch hinzufügen">💬 +</button>
+        <button class="zut-termin-add-btn" data-type="interview" title="Interview hinzufügen">🎤 +</button>
+      </div>
+      <div class="zut-tl-scroll">${tlCols}</div>
     </div>
     <div class="zut-grid-wrap">
       <table class="zut-table">
@@ -3138,16 +3159,85 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     zData.assignments = autoAssignZuteilung(getZuteilBlocks(shift, zData.blockSize), people, zData);
     saveData(); render();
   };
+  // + buttons: add at smart default hour, no popup needed
   inner.querySelectorAll('.zut-termin-add-btn').forEach(btn => {
-    btn.onclick = () => openZuteilAddTermin(btn.dataset.type, getZuteilBlocks(shift, zData.blockSize), people, zData, saveData, pushUndo, render);
-  });
-  inner.querySelectorAll('.zut-termin-del').forEach(btn => {
     btn.onclick = () => {
+      const type  = btn.dataset.type;
+      const baseH = type === 'anmeldung' ? tlStartH : tlStartH + 2;
+      const used  = zData.termine.filter(t => t.type === type).map(t => t.startHour ?? t.hour);
+      let h = baseH;
+      while (used.includes(h) && h < tlEndH) h++;
+      if (h >= tlEndH) h = tlEndH - 1;
       pushUndo();
-      zData.termine = zData.termine.filter(t => t.id !== parseInt(btn.dataset.tid));
+      zData.termine.push({ id: Date.now(), type, startHour: h, personName: null });
       saveData(); render();
     };
   });
+
+  // Termin chip: touch drag to move hour, tap to edit
+  inner.querySelectorAll('.zut-tl-chip').forEach(chip => {
+    let touchStart = null;
+    chip.addEventListener('touchstart', e => {
+      touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      chip.classList.add('zut-chip-dragging');
+    }, { passive: true });
+    chip.addEventListener('touchmove', e => {
+      if (!touchStart) return;
+      const { clientX, clientY } = e.touches[0];
+      const dx = clientX - touchStart.x, dy = clientY - touchStart.y;
+      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) chip.dataset.moved = '1';
+      inner.querySelectorAll('.zut-tl-col').forEach(c => c.classList.remove('zut-drop-target'));
+      document.elementFromPoint(clientX, clientY)?.closest('.zut-tl-col')?.classList.add('zut-drop-target');
+    }, { passive: true });
+    chip.addEventListener('touchend', e => {
+      chip.classList.remove('zut-chip-dragging');
+      inner.querySelectorAll('.zut-tl-col').forEach(c => c.classList.remove('zut-drop-target'));
+      const wasDrag = chip.dataset.moved === '1';
+      delete chip.dataset.moved; touchStart = null;
+      const tid = parseInt(chip.dataset.tid);
+      const t = zData.termine.find(t => t.id === tid);
+      if (!t) return;
+      if (!wasDrag) { openZuteilEditTermin(t, tlHours, people, zData, saveData, pushUndo, render); return; }
+      const { clientX, clientY } = e.changedTouches[0];
+      const col = document.elementFromPoint(clientX, clientY)?.closest('.zut-tl-col');
+      if (!col) { render(); return; }
+      const newH = parseInt(col.dataset.hour);
+      if ((t.startHour ?? t.hour) !== newH) { pushUndo(); t.startHour = newH; saveData(); }
+      render();
+    });
+    // Desktop drag
+    chip.addEventListener('dragstart', e => {
+      chip.dataset.dragging = '1';
+      e.dataTransfer.setData('text/plain', chip.dataset.tid);
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => chip.classList.add('zut-chip-dragging'), 0);
+    });
+    chip.addEventListener('dragend', () => { chip.classList.remove('zut-chip-dragging'); delete chip.dataset.dragging; });
+    chip.addEventListener('click', e => {
+      if (chip.dataset.dragging) return;
+      e.stopPropagation();
+      const t = zData.termine.find(t => t.id === parseInt(chip.dataset.tid));
+      if (t) openZuteilEditTermin(t, tlHours, people, zData, saveData, pushUndo, render);
+    });
+  });
+  // Desktop drop onto hour columns
+  inner.querySelectorAll('.zut-tl-col').forEach(col => {
+    col.addEventListener('dragover', e => {
+      e.preventDefault();
+      inner.querySelectorAll('.zut-tl-col').forEach(c => c.classList.remove('zut-drop-target'));
+      col.classList.add('zut-drop-target');
+    });
+    col.addEventListener('dragleave', () => col.classList.remove('zut-drop-target'));
+    col.addEventListener('drop', e => {
+      e.preventDefault();
+      col.classList.remove('zut-drop-target');
+      const tid = parseInt(e.dataTransfer.getData('text/plain'));
+      const t = zData.termine.find(t => t.id === tid);
+      const newH = parseInt(col.dataset.hour);
+      if (t && (t.startHour ?? t.hour) !== newH) { pushUndo(); t.startHour = newH; saveData(); render(); }
+    });
+  });
+
   inner.querySelectorAll('.zut-ps-btn').forEach(btn => {
     btn.onclick = e => { e.stopPropagation(); openZuteilPersonState(btn.dataset.pname, zData, saveData, pushUndo, render); };
   });
@@ -3210,34 +3300,44 @@ function openZuteilPersonState(personName, zData, saveData, pushUndo, render) {
   };
 }
 
-function openZuteilAddTermin(type, blocks, people, zData, saveData, pushUndo, render) {
+function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo, render) {
   document.querySelectorAll('.zut-popup').forEach(p => p.remove());
-  const def = TERMIN_DEFS[type];
-  const presentPeople = people.filter(p => {
-    if (!p.present) return false;
-    return !(zData.personStates[p.name]||{}).notYetPresent;
-  });
-  const hours = blocks.length ? Array.from({length: blocks[blocks.length-1].start - blocks[0].start + 1}, (_,i) => blocks[0].start + i) : [];
+  const def = TERMIN_DEFS[termin.type];
+  const cur  = termin.startHour ?? termin.hour;
+  const presentPeople = people.filter(p => p.present && !(zData.personStates[p.name]||{}).notYetPresent);
   const popup = document.createElement('div');
   popup.className = 'zut-popup';
   popup.innerHTML = `
-    <div class="zut-popup-title">${def.icon} ${def.label} hinzufügen</div>
+    <div class="zut-popup-title">${def.icon} ${def.label}</div>
     <div class="zut-popup-row"><span>Uhrzeit</span>
       <select id="zp-thour" class="form-input" style="flex:1">
-        ${hours.map(h=>`<option value="${h}">${String(h).padStart(2,'0')}:00</option>`).join('')}
+        ${tlHours.map(h=>`<option value="${h}"${h===cur?' selected':''}>${String(h).padStart(2,'0')}:00</option>`).join('')}
       </select></div>
     <div class="zut-popup-row"><span>Person</span>
       <select id="zp-tperson" class="form-input" style="flex:1">
-        <option value="">– optional –</option>
-        ${presentPeople.map(p=>`<option value="${p.name}">${p.name}</option>`).join('')}
+        <option value=""${!termin.personName?' selected':''}>– optional –</option>
+        ${presentPeople.map(p=>`<option value="${p.name}"${p.name===termin.personName?' selected':''}>${p.name}</option>`).join('')}
       </select></div>
-    <div class="zut-popup-btns"><button class="btn-primary" id="zp-tsave">Hinzufügen</button><button class="btn-secondary" id="zp-tcancel">Abbrechen</button></div>`;
+    <div class="zut-popup-btns">
+      <button class="btn-primary" id="zp-tsave">Speichern</button>
+      <button class="btn-secondary" id="zp-tcancel">Abbrechen</button>
+    </div>
+    <button class="btn-secondary" id="zp-tdel" style="width:100%;margin-top:6px;color:#f87171;border-color:rgba(248,113,113,.4)">🗑 Löschen</button>`;
   document.getElementById('zuteilung-modal').appendChild(popup);
   const close = () => popup.remove();
   popup.querySelector('#zp-tcancel').onclick = close;
+  popup.querySelector('#zp-tdel').onclick = () => {
+    pushUndo();
+    zData.termine = zData.termine.filter(t => t.id !== termin.id);
+    close(); saveData(); render();
+  };
   popup.querySelector('#zp-tsave').onclick = () => {
     pushUndo();
-    zData.termine.push({ id:Date.now(), type, startHour:parseInt(popup.querySelector('#zp-thour').value), personName:popup.querySelector('#zp-tperson').value||null });
+    const idx = zData.termine.findIndex(t => t.id === termin.id);
+    if (idx >= 0) {
+      zData.termine[idx].startHour  = parseInt(popup.querySelector('#zp-thour').value);
+      zData.termine[idx].personName = popup.querySelector('#zp-tperson').value || null;
+    }
     close(); saveData(); render();
   };
 }
@@ -3260,11 +3360,12 @@ function autoAssignZuteilung(blocks, people, zData) {
   for (const t of termine) {
     if (!t.personName) continue;
     const def = TERMIN_DEFS[t.type];
+    const tHour = t.startHour ?? t.hour;
     for (const b of blocks) {
-      if (b.start >= t.startHour && b.start < t.startHour + def.dur)
+      if (b.start >= tHour && b.start < tHour + def.dur)
         result[`${t.personName}::${b.key}`] = 'termin';
     }
-    const sysStart = t.startHour + def.dur;
+    const sysStart = tHour + def.dur;
     const sysBlock = blocks.find(b => b.start >= sysStart && b.start < sysStart + blockSize);
     if (sysBlock && !result[`${t.personName}::${sysBlock.key}`])
       result[`${t.personName}::${sysBlock.key}`] = 'system';
