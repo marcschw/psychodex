@@ -931,6 +931,7 @@ async function renderHomeTab() {
           ${teamInfoHTML}
           <div class="home-team-btns">
             <button class="home-team-btn" id="btn-home-team" title="Rolecall">👥 ${teamButtonPreviewHTML(colleaguesWithSelf)}</button>
+            <button class="home-team-btn home-zut-btn" id="btn-home-zut" title="Zuteilung">📋</button>
             <button class="home-icons-toggle" id="btn-icons-toggle" title="${hideIcons ? 'Tag-Icons zeigen' : 'Tag-Icons ausblenden'}">${hideIcons ? '◎' : '◉'}</button>
           </div>
         </div>` : ''}
@@ -955,6 +956,7 @@ async function renderHomeTab() {
       openRescheduleModal(shift));
     const teamBtn = document.getElementById('btn-home-team');
     if (teamBtn) teamBtn.addEventListener('click', () => openTeamModal(shift));
+    document.getElementById('btn-home-zut')?.addEventListener('click', () => openZuteilungScreen(shift));
     const iconsToggle = document.getElementById('btn-icons-toggle');
     if (iconsToggle) iconsToggle.addEventListener('click', () => {
       localStorage.setItem('hide-team-icons', hideIcons ? '' : '1');
@@ -1484,6 +1486,16 @@ function openTeamModal(shift) {
     modal.classList.add('hidden');
     await applyRolecallBonuses(shift, working);
     renderHomeTab();
+  };
+  document.getElementById('team-modal-zuteilung').onclick = async () => {
+    body.querySelectorAll('.team-colleague-check').forEach(cb => {
+      const wi = parseInt(cb.dataset.wi);
+      if (wi >= 0 && wi < working.length) working[wi].present = cb.checked;
+    });
+    await db.shiftLogs.update(shift.id, { colleagues: working });
+    state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+    modal.classList.add('hidden');
+    openZuteilungScreen(shift);
   };
 }
 
@@ -2948,6 +2960,372 @@ async function openRecallPatientModal(targetSlot, shift) {
       }
     });
   });
+}
+
+// ─── Zuteilung ─────────────────────────────────────────────────────────────────
+
+const ZUTEIL_ROLES = {
+  kassa:      { label:'Kassa',      short:'K',   icon:'💰', color:'#f59e0b', burden:3 },
+  backoffice: { label:'Backoffice', short:'BO',  icon:'🖥️',  color:'#3b82f6', burden:2 },
+  '5stock':   { label:'5. Stock',   short:'5F',  icon:'🏥', color:'#10b981', burden:2 },
+  termin:     { label:'Termin',     short:'T',   icon:'📋', color:'#8b5cf6', burden:3 },
+  system:     { label:'Ins System', short:'Sy',  icon:'💾', color:'#6366f1', burden:1 },
+  pause:      { label:'Pause',      short:'P',   icon:'☕', color:'#6b7280', burden:0 },
+};
+
+const TERMIN_DEFS = {
+  anmeldung:    { label:'Anmeldung',    icon:'📝', dur:1 },
+  interview:    { label:'Interview',    icon:'🎤', dur:2 },
+  erstgesprach: { label:'Erstgespräch', icon:'💬', dur:1 },
+};
+
+function getZuteilBlocks(shift, blockSize) {
+  const h = shiftHours(shift);
+  const startH = Math.ceil((h.start[0]*60+h.start[1]) / (blockSize*60)) * blockSize;
+  const endH   = Math.floor((h.end[0]*60+h.end[1]) / (blockSize*60)) * blockSize;
+  const blocks = [];
+  for (let s = startH; s < endH; s += blockSize) {
+    blocks.push({ key:`${s}-${s+blockSize}`, start:s, end:s+blockSize,
+      label:`${String(s).padStart(2,'0')}–${String(s+blockSize).padStart(2,'0')}` });
+  }
+  return blocks;
+}
+
+async function openZuteilungScreen(shift) {
+  const modal = document.getElementById('zuteilung-modal');
+  const inner = document.getElementById('zut-inner');
+  const fresh = await db.shiftLogs.get(shift.id);
+  if (!fresh) return;
+
+  const userName = localStorage.getItem('psychodex-user-name') || '';
+  const people = [];
+  if (userName) people.push({ name:userName, funktion:fresh.category==='senior'?'Seniorassistent':'Assistent', present:true, _self:true });
+  for (const c of (fresh.colleagues||[])) {
+    if ((effectiveTeam(c)==='D'||effectiveTeam(c)==='T') && c.name.toLowerCase()!==userName.toLowerCase())
+      people.push(c);
+  }
+
+  let zData = fresh.zuteilung ? JSON.parse(JSON.stringify(fresh.zuteilung)) : {};
+  zData.blockSize    = zData.blockSize    || 2;
+  zData.assignments  = zData.assignments  || {};
+  zData.personStates = zData.personStates || {};
+  zData.termine      = zData.termine      || [];
+  zData.undoStack    = zData.undoStack    || [];
+
+  const saveData = () =>
+    db.shiftLogs.update(fresh.id, { zuteilung: JSON.parse(JSON.stringify({
+      ...zData, undoStack: zData.undoStack.slice(-20)
+    })) });
+
+  const pushUndo = () => {
+    zData.undoStack.push(JSON.parse(JSON.stringify({
+      assignments: zData.assignments, personStates: zData.personStates, termine: zData.termine,
+    })));
+    if (zData.undoStack.length > 20) zData.undoStack.shift();
+  };
+
+  const render = () => renderZuteilGrid(inner, fresh, zData, people, { saveData, pushUndo, render });
+  modal.classList.remove('hidden');
+  render();
+  document.getElementById('zut-backdrop').onclick = () => modal.classList.add('hidden');
+}
+
+function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, render }) {
+  const blocks = getZuteilBlocks(shift, zData.blockSize);
+
+  const isAvail = (p, block) => {
+    if (!p.present) return false;
+    const ps = zData.personStates[p.name] || {};
+    if (ps.notYetPresent) return false;
+    if (ps.earlyLeave) {
+      const [lh] = ps.earlyLeave.split(':').map(Number);
+      if (block.start >= lh) return false;
+    }
+    return true;
+  };
+
+  const presentCount = people.filter(p => {
+    const ps = zData.personStates[p.name] || {};
+    return p.present && !ps.notYetPresent;
+  }).length;
+
+  const bodyRows = people.map(p => {
+    const ps = zData.personStates[p.name] || {};
+    const earlyMark = ps.earlyLeave ? `<span class="zut-early-tag">⏰${ps.earlyLeave}</span>` : '';
+    const absent = !p.present;
+    const cells = blocks.map(b => {
+      const key = `${p.name}::${b.key}`;
+      const role = zData.assignments[key];
+      const ri   = role ? ZUTEIL_ROLES[role] : null;
+      const unavail = !isAvail(p, b);
+      return `<td class="zut-cell${unavail?' zut-cell-unavail':''}">
+        <button class="zut-cell-btn${ri?' has-role':''}" data-key="${key}"
+                style="${ri?`background:${ri.color}1a;border-color:${ri.color}55;color:${ri.color}`:''}"
+                ${unavail?'disabled':''}>
+          ${ri?`<span class="zut-cell-icon">${ri.icon}</span><span class="zut-role-short">${ri.short}</span>`:`<span class="zut-empty-dot">·</span>`}
+        </button></td>`;
+    }).join('');
+    return `<tr class="zut-row${absent?' zut-row-absent':''}">
+      <td class="zut-td-name">
+        <div class="zut-person-name">${p.name}${p._self?` <span class="team-self-badge">Ich</span>`:''}</div>
+        <div class="zut-person-sub">${earlyMark}<button class="zut-ps-btn" data-pname="${p.name}">⚙️</button></div>
+      </td>${cells}</tr>`;
+  }).join('');
+
+  const covRow = `<tr class="zut-cov-row">
+    <td class="zut-td-name"><span class="zut-cov-label">Abdeckung</span></td>
+    ${blocks.map(b => {
+      const roles = people.map(p => zData.assignments[`${p.name}::${b.key}`]).filter(Boolean);
+      const hasK = roles.includes('kassa'), hasB = roles.includes('backoffice');
+      return `<td class="zut-cell" style="text-align:center;padding:4px 2px">
+        <span style="color:${hasK?'#10b981':'#ef4444'};font-size:11px;font-weight:700">K</span>
+        <span style="color:${hasB?'#10b981':'#ef4444'};font-size:11px;font-weight:700">B</span></td>`;
+    }).join('')}
+  </tr>`;
+
+  const termineChips = zData.termine.map(t => {
+    const def = TERMIN_DEFS[t.type];
+    return `<div class="zut-termin-chip">${def.icon} ${def.label} <span class="zut-chip-time">${String(t.startHour).padStart(2,'0')}:00</span>${t.personName?` · ${t.personName}`:''} <button class="zut-termin-del" data-tid="${t.id}">✕</button></div>`;
+  }).join('');
+
+  const dateStr = new Date(shift.date+'T12:00').toLocaleDateString('de-AT',{weekday:'short',day:'numeric',month:'numeric'});
+
+  inner.innerHTML = `
+    <div class="zut-header">
+      <div><div class="zut-title">📋 Zuteilung</div><div class="zut-subtitle">${dateStr} · ${shiftLabel(shift.type)}</div></div>
+      <div class="zut-header-actions">
+        <button class="zut-hdr-btn" id="zut-undo-btn"${!zData.undoStack.length?' disabled':''} title="Rückgängig">↩</button>
+        <button class="zut-hdr-btn" id="zut-reset-btn" title="Zurücksetzen">🔄</button>
+        <button class="zut-hdr-btn" id="zut-size-btn" title="Blockgröße umschalten">${zData.blockSize}h</button>
+        <button class="zut-hdr-close" id="zut-close-btn">✕</button>
+      </div>
+    </div>
+    <div class="zut-termine-bar">
+      <span class="zut-bar-label">Termine</span>
+      ${Object.entries(TERMIN_DEFS).map(([type,def])=>`<button class="zut-termin-add-btn" data-type="${type}">${def.icon} ${def.label}</button>`).join('')}
+      ${termineChips}
+    </div>
+    <div class="zut-grid-wrap">
+      <table class="zut-table">
+        <thead><tr>
+          <th class="zut-th-name">Person (${presentCount})</th>
+          ${blocks.map(b=>`<th class="zut-th-block">${b.label}</th>`).join('')}
+        </tr></thead>
+        <tbody>${bodyRows}${covRow}</tbody>
+      </table>
+    </div>
+    <div class="zut-footer">
+      <div class="zut-present-label">${presentCount} anwesend · ${people.length} gesamt</div>
+      <button class="btn-primary" id="zut-auto-btn">⚡ Auto-Zuteilung</button>
+    </div>`;
+
+  inner.querySelector('#zut-close-btn').onclick = () =>
+    document.getElementById('zuteilung-modal').classList.add('hidden');
+  inner.querySelector('#zut-undo-btn').onclick = () => {
+    if (!zData.undoStack.length) return;
+    const snap = zData.undoStack.pop();
+    Object.assign(zData, snap); saveData(); render();
+  };
+  inner.querySelector('#zut-reset-btn').onclick = () => {
+    if (!confirm('Alle Zuteilungen zurücksetzen?')) return;
+    pushUndo(); zData.assignments = {}; saveData(); render();
+  };
+  inner.querySelector('#zut-size-btn').onclick = () => {
+    zData.blockSize = zData.blockSize === 2 ? 1 : 2; saveData(); render();
+  };
+  inner.querySelector('#zut-auto-btn').onclick = () => {
+    pushUndo();
+    zData.assignments = autoAssignZuteilung(getZuteilBlocks(shift, zData.blockSize), people, zData);
+    saveData(); render();
+  };
+  inner.querySelectorAll('.zut-termin-add-btn').forEach(btn => {
+    btn.onclick = () => openZuteilAddTermin(btn.dataset.type, getZuteilBlocks(shift, zData.blockSize), people, zData, saveData, pushUndo, render);
+  });
+  inner.querySelectorAll('.zut-termin-del').forEach(btn => {
+    btn.onclick = () => {
+      pushUndo();
+      zData.termine = zData.termine.filter(t => t.id !== parseInt(btn.dataset.tid));
+      saveData(); render();
+    };
+  });
+  inner.querySelectorAll('.zut-ps-btn').forEach(btn => {
+    btn.onclick = e => { e.stopPropagation(); openZuteilPersonState(btn.dataset.pname, zData, saveData, pushUndo, render); };
+  });
+  inner.querySelectorAll('.zut-cell-btn:not([disabled])').forEach(btn => {
+    btn.onclick = e => { e.stopPropagation(); showZuteilPicker(btn, btn.dataset.key, zData, saveData, pushUndo, render); };
+  });
+}
+
+function showZuteilPicker(triggerBtn, cellKey, zData, saveData, pushUndo, render) {
+  document.querySelectorAll('.zut-picker').forEach(p => p.remove());
+  const picker = document.createElement('div');
+  picker.className = 'zut-picker';
+  const cur = zData.assignments[cellKey];
+  const entries = [...Object.entries(ZUTEIL_ROLES), ['', { label:'Leer', icon:'✕', short:'' }]];
+  picker.innerHTML = entries.map(([key,r]) =>
+    `<button class="zut-picker-btn${cur===key?' active':''}" data-role="${key}">
+       <span class="zut-picker-icon">${r.icon}</span>
+       <span class="zut-picker-lbl">${r.label}</span></button>`
+  ).join('');
+  document.body.appendChild(picker);
+  const rect = triggerBtn.getBoundingClientRect();
+  const ph = 230;
+  const top  = rect.bottom + 4 + ph > window.innerHeight ? rect.top - ph - 4 : rect.bottom + 4;
+  const left = Math.min(Math.max(rect.left - 60, 8), window.innerWidth - 218);
+  picker.style.cssText = `position:fixed;top:${Math.max(4,top)}px;left:${left}px`;
+  picker.querySelectorAll('.zut-picker-btn').forEach(btn => {
+    btn.onclick = e => {
+      e.stopPropagation();
+      pushUndo();
+      if (btn.dataset.role === '') delete zData.assignments[cellKey];
+      else zData.assignments[cellKey] = btn.dataset.role;
+      picker.remove(); saveData(); render();
+    };
+  });
+  requestAnimationFrame(() =>
+    document.addEventListener('click', () => picker.remove(), { once:true })
+  );
+}
+
+function openZuteilPersonState(personName, zData, saveData, pushUndo, render) {
+  document.querySelectorAll('.zut-popup').forEach(p => p.remove());
+  const ps = zData.personStates[personName] || {};
+  const popup = document.createElement('div');
+  popup.className = 'zut-popup';
+  popup.innerHTML = `
+    <div class="zut-popup-title">⚙️ ${personName}</div>
+    <label class="zut-popup-row"><span>Noch nicht da</span><input type="checkbox" id="zp-nochda" ${ps.notYetPresent?'checked':''}></label>
+    <div class="zut-popup-row"><span>Frühgang um</span><input type="time" id="zp-early" value="${ps.earlyLeave||''}" class="form-input" style="width:90px;padding:4px 8px"></div>
+    <div class="zut-popup-btns"><button class="btn-primary" id="zp-save">OK</button><button class="btn-secondary" id="zp-cancel">Abbrechen</button></div>`;
+  document.getElementById('zuteilung-modal').appendChild(popup);
+  const close = () => popup.remove();
+  popup.querySelector('#zp-cancel').onclick = close;
+  popup.querySelector('#zp-save').onclick = () => {
+    pushUndo();
+    zData.personStates[personName] = { ...ps,
+      notYetPresent: popup.querySelector('#zp-nochda').checked,
+      earlyLeave:    popup.querySelector('#zp-early').value || null,
+    };
+    close(); saveData(); render();
+  };
+}
+
+function openZuteilAddTermin(type, blocks, people, zData, saveData, pushUndo, render) {
+  document.querySelectorAll('.zut-popup').forEach(p => p.remove());
+  const def = TERMIN_DEFS[type];
+  const presentPeople = people.filter(p => {
+    if (!p.present) return false;
+    return !(zData.personStates[p.name]||{}).notYetPresent;
+  });
+  const hours = blocks.length ? Array.from({length: blocks[blocks.length-1].start - blocks[0].start + 1}, (_,i) => blocks[0].start + i) : [];
+  const popup = document.createElement('div');
+  popup.className = 'zut-popup';
+  popup.innerHTML = `
+    <div class="zut-popup-title">${def.icon} ${def.label} hinzufügen</div>
+    <div class="zut-popup-row"><span>Uhrzeit</span>
+      <select id="zp-thour" class="form-input" style="flex:1">
+        ${hours.map(h=>`<option value="${h}">${String(h).padStart(2,'0')}:00</option>`).join('')}
+      </select></div>
+    <div class="zut-popup-row"><span>Person</span>
+      <select id="zp-tperson" class="form-input" style="flex:1">
+        <option value="">– optional –</option>
+        ${presentPeople.map(p=>`<option value="${p.name}">${p.name}</option>`).join('')}
+      </select></div>
+    <div class="zut-popup-btns"><button class="btn-primary" id="zp-tsave">Hinzufügen</button><button class="btn-secondary" id="zp-tcancel">Abbrechen</button></div>`;
+  document.getElementById('zuteilung-modal').appendChild(popup);
+  const close = () => popup.remove();
+  popup.querySelector('#zp-tcancel').onclick = close;
+  popup.querySelector('#zp-tsave').onclick = () => {
+    pushUndo();
+    zData.termine.push({ id:Date.now(), type, startHour:parseInt(popup.querySelector('#zp-thour').value), personName:popup.querySelector('#zp-tperson').value||null });
+    close(); saveData(); render();
+  };
+}
+
+function autoAssignZuteilung(blocks, people, zData) {
+  const { termine, personStates, blockSize } = zData;
+  const result = {};
+
+  const isAvail = (p, block) => {
+    if (!p.present) return false;
+    const ps = personStates[p.name] || {};
+    if (ps.notYetPresent) return false;
+    if (ps.earlyLeave) {
+      const [lh] = ps.earlyLeave.split(':').map(Number);
+      if (block.start >= lh) return false;
+    }
+    return true;
+  };
+
+  for (const t of termine) {
+    if (!t.personName) continue;
+    const def = TERMIN_DEFS[t.type];
+    for (const b of blocks) {
+      if (b.start >= t.startHour && b.start < t.startHour + def.dur)
+        result[`${t.personName}::${b.key}`] = 'termin';
+    }
+    const sysStart = t.startHour + def.dur;
+    const sysBlock = blocks.find(b => b.start >= sysStart && b.start < sysStart + blockSize);
+    if (sysBlock && !result[`${t.personName}::${sysBlock.key}`])
+      result[`${t.personName}::${sysBlock.key}`] = 'system';
+  }
+
+  const burden = Object.fromEntries(people.map(p => [p.name, 0]));
+  for (const [key, role] of Object.entries(result)) {
+    const [name] = key.split('::');
+    burden[name] = (burden[name]||0) + (ZUTEIL_ROLES[role]?.burden||0);
+  }
+
+  const paused = new Set();
+  const midIdx = Math.floor(blocks.length / 2);
+
+  const pickByBurden = pool => [...pool].sort((a,b) => (burden[a.name]||0) - (burden[b.name]||0))[0];
+  const assign = (p, block, role) => {
+    result[`${p.name}::${block.key}`] = role;
+    burden[p.name] = (burden[p.name]||0) + (ZUTEIL_ROLES[role]?.burden||0);
+    if (role === 'pause') paused.add(p.name);
+  };
+  const free = block => people.filter(p => isAvail(p, block) && !result[`${p.name}::${block.key}`]);
+
+  for (const [bi, block] of blocks.entries()) {
+    if (!people.some(p => result[`${p.name}::${block.key}`] === 'kassa')) {
+      const p = pickByBurden(free(block)); if (p) assign(p, block, 'kassa');
+    }
+    if (!people.some(p => result[`${p.name}::${block.key}`] === 'backoffice')) {
+      const p = pickByBurden(free(block)); if (p) assign(p, block, 'backoffice');
+    }
+    const avail = people.filter(p => isAvail(p, block)).length;
+    if (avail >= 7 && !people.some(p => result[`${p.name}::${block.key}`] === '5stock')) {
+      const p = pickByBurden(free(block)); if (p) assign(p, block, '5stock');
+    }
+    if (bi >= midIdx - 1 && bi <= midIdx + 1) {
+      const candidates = free(block).filter(p => !paused.has(p.name));
+      if (candidates.length) {
+        const p = [...candidates].sort((a,b) => (burden[b.name]||0) - (burden[a.name]||0))[0];
+        assign(p, block, 'pause');
+      }
+    }
+    for (const p of free(block)) assign(p, block, 'backoffice');
+  }
+
+  for (const p of people) {
+    if (paused.has(p.name) || !p.present) continue;
+    const ps = personStates[p.name] || {};
+    if (ps.notYetPresent) continue;
+    for (const block of blocks) {
+      const key = `${p.name}::${block.key}`;
+      const role = result[key];
+      if (!role || role === 'backoffice') {
+        const kassaOK = people.some(q => q.name !== p.name && result[`${q.name}::${block.key}`] === 'kassa');
+        const boOK    = people.some(q => q.name !== p.name && result[`${q.name}::${block.key}`] === 'backoffice');
+        if (kassaOK && (boOK || role !== 'backoffice')) {
+          result[key] = 'pause'; paused.add(p.name); break;
+        }
+      }
+    }
+  }
+
+  return result;
 }
 
 // ─── Rolecall Gamification Bonuses ────────────────────────────────────────────

@@ -756,6 +756,7 @@
       <div class="sheet-body" id="team-modal-body"></div>
       <div class="sheet-footer">
         <button class="btn-secondary" id="team-modal-cancel">Schließen</button>
+        <button class="btn-secondary" id="team-modal-zuteilung">📋 Zuteilung</button>
         <button class="btn-primary" id="team-modal-save">✓ Speichern</button>
       </div>
     </div>
@@ -941,6 +942,14 @@
 
 <!-- Verify result image (brief overlay) -->
 <img id="verify-result-img" src="" alt="" class="hidden" style="position:fixed;bottom:80px;right:16px;width:90px;height:90px;object-fit:contain;border-radius:12px;z-index:300;pointer-events:none;opacity:.9">
+
+<!-- ── Zuteilung Modal ─────────────────────────────────────── -->
+<div id="zuteilung-modal" class="modal hidden">
+  <div class="modal-backdrop" id="zut-backdrop"></div>
+  <div class="modal-sheet zut-sheet">
+    <div id="zut-inner"></div>
+  </div>
+</div>
 
 </body>
 </html>
