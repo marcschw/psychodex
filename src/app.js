@@ -3264,7 +3264,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       }).join('');
       return `<tr><td class="zut-td-name zut-station-name-td zut-station-short-td">${def.icon}<span class="zut-station-role-short">${def.label}</span></td>${cells}</tr>`;
     }).join('');
-    const roleRows = ['kassa','backoffice','5stock','system','pause'].map(rk => {
+    const roleRows = ['kassa','backoffice','5stock','pause'].map(rk => {
       const ri = ZUTEIL_ROLES[rk];
       if (!ri) return '';
       const cells = blocks.map(b => {
@@ -3360,7 +3360,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
           <th class="zut-th-name">Person (${presentCount})</th>
           ${blocks.map(b=>`<th class="zut-th-block">${b.label}</th>`).join('')}
         </tr></thead>
-        <tbody>${personViewTerminRows}${bodyRows}${covRow}</tbody>
+        <tbody>${bodyRows}${covRow}</tbody>
       </table>`}
     </div>
     <div class="zut-footer">
@@ -3437,6 +3437,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     zData.planB          = result.planB;
     zData.dualPlanActive = result.dualPlanActive;
     zData.planAPersons   = result.planAPersons;
+    zData.termine        = result.resolvedTermine ?? zData.termine;
     saveData(); render();
   };
 
@@ -3777,7 +3778,7 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
 
     const avail = nonTrainees.filter(p => {
       if (!isAvailAtHour(p, tHour)) return false;
-      // Termin + system doc must complete before early leave
+      // Termin + follow-up block must fit before early leave
       const ps = personStates[p.name] || {};
       if (ps.earlyLeave) {
         const [lh] = ps.earlyLeave.split(':').map(Number);
@@ -3798,7 +3799,7 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
     return { ...t, personName: pick.name };
   });
 
-  // ── Step 2: Apply termin + system blocks ──────────────────────────────────
+  // ── Step 2: Apply termin blocks ───────────────────────────────────────────
   for (const t of resolvedTermine) {
     if (!t.personName) continue;
     const def = TERMIN_DEFS[t.type];
@@ -3807,10 +3808,6 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
       if (b.start >= tHour && b.start < tHour + def.dur)
         result[`${t.personName}::${b.key}`] = 'termin';
     }
-    const sysStart = tHour + def.dur;
-    const sysBlock = blocks.find(b => b.start >= sysStart && b.start < sysStart + blockSize);
-    if (sysBlock && !result[`${t.personName}::${sysBlock.key}`])
-      result[`${t.personName}::${sysBlock.key}`] = 'system';
   }
 
   // ── Step 3: Init burden + roleCounts ──────────────────────────────────────
@@ -3871,11 +3868,11 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
   const free = (block, bi) =>
     allowedPeople.filter(p => isAvailAtBlock(p, block, bi) && !result[`${p.name}::${block.key}`]);
 
-  // True if person did termin/system in the immediately preceding block
+  // True if person did termin in the immediately preceding block
   const hadTerminRecently = (p, bi) => {
     if (bi === 0) return false;
     const r = result[`${p.name}::${blocks[bi - 1].key}`];
-    return r === 'termin' || r === 'system';
+    return r === 'termin';
   };
 
   for (const [bi, block] of blocks.entries()) {
@@ -3931,7 +3928,7 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
     }
   }
 
-  return result;
+  return { assignments: result, resolvedTermine };
 }
 
 function autoAssignZuteilung(blocks, people, zData) {
@@ -3945,22 +3942,23 @@ function autoAssignZuteilung(blocks, people, zData) {
     return !p.present || ps.notYetPresent;
   });
 
-  const planA = runAutoAssign(presentPeople, blocks, termine, personStates, blockSize, { personTiers: zData.personTiers || {} });
+  const { assignments: planA, resolvedTermine } = runAutoAssign(presentPeople, blocks, termine, personStates, blockSize, { personTiers: zData.personTiers || {} });
 
   if (absentPeople.length > 0) {
-    const planB = runAutoAssign(people, blocks, termine, personStates, blockSize, { planBMode: true, personTiers: zData.personTiers || {} });
+    const { assignments: planBAssign } = runAutoAssign(people, blocks, termine, personStates, blockSize, { planBMode: true, personTiers: zData.personTiers || {} });
     const merged = { ...planA };
     for (const p of absentPeople) {
       for (const b of blocks) {
         const key = `${p.name}::${b.key}`;
-        if (planB[key]) merged[key] = planB[key];
+        if (planBAssign[key]) merged[key] = planBAssign[key];
       }
     }
     return {
       assignments: merged,
-      planB,
+      planB: planBAssign,
       dualPlanActive: true,
       planAPersons: presentPeople.map(p => p.name),
+      resolvedTermine,
     };
   }
 
@@ -3969,6 +3967,7 @@ function autoAssignZuteilung(blocks, people, zData) {
     planB: null,
     dualPlanActive: false,
     planAPersons: presentPeople.map(p => p.name),
+    resolvedTermine,
   };
 }
 
