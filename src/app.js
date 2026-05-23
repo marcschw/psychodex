@@ -44,6 +44,8 @@ const state = {
   swipeDir: null,
 };
 
+let _editingSuspectedCodes = []; // working copy while slot-edit form is open
+
 // ─── Team / Colleague Constants ───────────────────────────────────────────────
 const TAG_ICONS = {
   'favorit-a': '♥',
@@ -854,6 +856,9 @@ async function renderHomeTab() {
     if (notifBanner) notifBanner.classList.add('hidden');
     renderDiagnosticReminders(today);
   } else {
+    // Clear stale timeline immediately before the async slot load to prevent
+    // a previous shift's content from persisting during navigation
+    tlEl.innerHTML = '';
     state.plannerShiftId = shift.id;
     state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
 
@@ -926,6 +931,7 @@ async function renderHomeTab() {
           ${teamInfoHTML}
           <div class="home-team-btns">
             <button class="home-team-btn" id="btn-home-team" title="Rolecall">👥 ${teamButtonPreviewHTML(colleaguesWithSelf)}</button>
+            <button class="home-team-btn home-zut-btn" id="btn-home-zut" title="Zuteilung">📋</button>
             <button class="home-icons-toggle" id="btn-icons-toggle" title="${hideIcons ? 'Tag-Icons zeigen' : 'Tag-Icons ausblenden'}">${hideIcons ? '◎' : '◉'}</button>
           </div>
         </div>` : ''}
@@ -950,6 +956,7 @@ async function renderHomeTab() {
       openRescheduleModal(shift));
     const teamBtn = document.getElementById('btn-home-team');
     if (teamBtn) teamBtn.addEventListener('click', () => openTeamModal(shift));
+    document.getElementById('btn-home-zut')?.addEventListener('click', () => openZuteilungScreen(shift));
     const iconsToggle = document.getElementById('btn-icons-toggle');
     if (iconsToggle) iconsToggle.addEventListener('click', () => {
       localStorage.setItem('hide-team-icons', hideIcons ? '' : '1');
@@ -1329,7 +1336,8 @@ function openTeamModal(shift) {
   const avatarSrc = c => {
     if (isSenior(c)) return './assets/images/avatars/avatar_owl.png';
     const t = effectiveTeam(c);
-    if (t === 'I' || t === 'F') return './assets/images/avatars/avatar_raven.png';
+    if (t === 'I') return './assets/images/avatars/avatar_dragon.png';
+    if (t === 'F') return './assets/images/avatars/avatar_raven.png';
     return './assets/images/avatars/avatar_wolf.png';
   };
 
@@ -1424,7 +1432,10 @@ function openTeamModal(shift) {
       btn.addEventListener('click', e => {
         e.preventDefault();
         const wi = parseInt(btn.dataset.wi);
-        if (wi >= 0) { working.splice(wi, 1); if (editingIdx === wi) editingIdx = null; }
+        if (wi < 0) return;
+        if (!confirm(`„${working[wi].name}" aus der Liste entfernen?`)) return;
+        working.splice(wi, 1);
+        if (editingIdx === wi) editingIdx = null;
         renderBody();
       });
     });
@@ -1476,6 +1487,16 @@ function openTeamModal(shift) {
     await applyRolecallBonuses(shift, working);
     renderHomeTab();
   };
+  document.getElementById('team-modal-zuteilung').onclick = async () => {
+    body.querySelectorAll('.team-colleague-check').forEach(cb => {
+      const wi = parseInt(cb.dataset.wi);
+      if (wi >= 0 && wi < working.length) working[wi].present = cb.checked;
+    });
+    await db.shiftLogs.update(shift.id, { colleagues: working });
+    state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+    modal.classList.add('hidden');
+    openZuteilungScreen(shift);
+  };
 }
 
 function setupTeamModal() {
@@ -1506,7 +1527,7 @@ function openOtherTeamsModal(working, hideIcons, onChanged) {
         <div class="team-group-header" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</div>
         ${groups[t].map(c => `
           <div class="team-colleague-row" style="cursor:default">
-            <img class="rc-avatar" src="${(t === 'I' || t === 'F') ? './assets/images/avatars/avatar_raven.png' : './assets/images/avatars/avatar_wolf.png'}" alt="" style="border-color:${TEAM_META[t].color}">
+            <img class="rc-avatar" src="${t === 'I' ? './assets/images/avatars/avatar_dragon.png' : t === 'F' ? './assets/images/avatars/avatar_raven.png' : './assets/images/avatars/avatar_wolf.png'}" alt="" style="border-color:${TEAM_META[t].color}">
             <div class="team-colleague-info">
               <div class="team-colleague-name">${c.name}</div>
               <div class="team-colleague-func">${c.funktion}</div>
@@ -1536,7 +1557,9 @@ function openOtherTeamsModal(working, hideIcons, onChanged) {
     }));
     body.querySelectorAll('.rc-del-btn').forEach(btn => btn.addEventListener('click', () => {
       const wi = parseInt(btn.dataset.wi);
-      if (wi >= 0) working.splice(wi, 1);
+      if (wi < 0) return;
+      if (!confirm(`„${working[wi].name}" aus der Liste entfernen?`)) return;
+      working.splice(wi, 1);
       otherEditIdx = null; renderOther(); onChanged();
     }));
     body.querySelector('#rc-other-save')?.addEventListener('click', () => {
@@ -1768,10 +1791,13 @@ function renderTimeline(shift) {
       ).join('');
       const diagListHtml = slotCatches.length
         ? `<div class="tl-inline-diag-list">${diagCards}</div>` : '';
+      const hasVerifyPending = (slot.suspectedCodes?.length > 0) && !slot.seniorCode;
       detailHtml = `<div class="tl-slot-detail${isExpanded ? '' : ' tl-slot-detail--hidden'}">
         ${diagListHtml}
         <div class="tl-inline-actions">
           <button class="tl-inline-btn tl-inline-add-diag" title="Diagnose hinzufügen">➕</button>
+          ${hasVerifyPending ? '<button class="tl-inline-btn tl-inline-verify" title="Senior-Diagnose prüfen">🔍</button>' : ''}
+          <button class="tl-inline-btn tl-inline-recall" title="Patient aus früherem Dienst">📋</button>
           ${hasTips ? '<button class="tl-inline-btn tl-inline-tips" title="Checkliste">✅</button>' : ''}
           <button class="tl-inline-btn tl-inline-edit" title="Bearbeiten">✏️</button>
           <button class="tl-inline-btn tl-inline-move" title="Verschieben">↕️</button>
@@ -1847,6 +1873,12 @@ function renderTimeline(shift) {
     if (!slot) return;
     el.querySelector('.tl-inline-add-diag')?.addEventListener('click', e => {
       e.stopPropagation(); openSlotDiagCatch(slot, 'planner');
+    });
+    el.querySelector('.tl-inline-verify')?.addEventListener('click', e => {
+      e.stopPropagation(); openVerifyModal(slot);
+    });
+    el.querySelector('.tl-inline-recall')?.addEventListener('click', e => {
+      e.stopPropagation(); openRecallPatientModal(slot, shift);
     });
     el.querySelector('.tl-inline-tips')?.addEventListener('click', e => {
       e.stopPropagation(); openSlotTipsModal(slot);
@@ -2290,7 +2322,6 @@ async function saveSlot() {
   await db.profile.update(state.profile.id, { totalXP: newXP });
   state.profile.totalXP = newXP;
   state.shifts  = await db.shiftLogs.orderBy('date').reverse().toArray();
-  state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(ctx.shiftId).sortBy('startHour');
 
   document.getElementById('slot-add-modal').classList.add('hidden');
   showXPPopup(xp, [{ label: def.label, xp }]);
@@ -2302,7 +2333,8 @@ async function saveSlot() {
   if (updatedShift) {
     if (ctx.source === 'detail') {
       renderShiftDetailBody(updatedShift);
-    } else {
+    } else if (state.plannerShiftId === ctx.shiftId) {
+      state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(ctx.shiftId).sortBy('startHour');
       updatePlannerXP(updatedShift);
       renderTimeline(updatedShift);
     }
@@ -2342,13 +2374,13 @@ async function deleteSlot(slotId, shift, source = 'planner') {
   await db.profile.update(state.profile.id, { totalXP: newXP });
   state.profile.totalXP = newXP;
   state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
-  state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
   updateHeader();
   const updatedShift = state.shifts.find(s => s.id === shift.id);
   if (!updatedShift) return;
   if (source === 'detail') {
     renderShiftDetailBody(updatedShift);
-  } else {
+  } else if (state.plannerShiftId === shift.id) {
+    state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
     updatePlannerXP(updatedShift);
     renderTimeline(updatedShift);
   }
@@ -2548,7 +2580,7 @@ async function deleteSlotCatch(catchId, slot, source) {
   updateHeader();
   if (source === 'planner') {
     const freshShift = state.shifts.find(s => s.id === slot.shiftId);
-    if (freshShift) renderTimeline(freshShift);
+    if (freshShift && state.plannerShiftId === freshShift.id) renderTimeline(freshShift);
   } else {
     const freshSlot = await db.scheduleSlots.get(slot.id);
     if (freshSlot) openSlotDetailModal(freshSlot, source);
@@ -2584,9 +2616,14 @@ function openSlotEditForm(slot, source) {
       <label class="form-label">🔖 Kürzel / Notiz</label>
       <input type="text" id="slot-edit-notes" class="form-input" placeholder="Codename…" value="${(slot.patientNotes || '').replace(/"/g,'&quot;')}">
     </div>
-    <div class="form-row">
-      <label class="form-label">🔬 Verdachtsdiagnose</label>
-      <input type="text" id="slot-edit-suspected" class="form-input" placeholder="ICD-Code, z.B. F32.1" value="${slot.suspectedCode || ''}">
+    <div class="form-row" style="flex-direction:column;align-items:stretch;gap:8px">
+      <label class="form-label">🔬 Verdachtsdiagnosen</label>
+      <div class="susp-chips-wrap" id="susp-chips-wrap"></div>
+      <div class="susp-inline-wrap hidden" id="susp-search-wrap">
+        <input type="text" id="susp-search-q" class="form-input" placeholder="Diagnose suchen…" autocomplete="off">
+        <div id="susp-search-res" class="susp-search-results"></div>
+      </div>
+      <button type="button" class="btn-secondary" id="btn-susp-add">＋ Verdacht hinzufügen</button>
     </div>
     ${terminInterviewField}
     ${terminErstgespraechField}
@@ -2629,6 +2666,62 @@ function openSlotEditForm(slot, source) {
       btn.addEventListener('click', e => e.currentTarget.classList.toggle('active')));
   }
 
+  if (isPatient) {
+    _editingSuspectedCodes = [...(slot.suspectedCodes || [])];
+
+    const renderSuspChips = () => {
+      const wrap = document.getElementById('susp-chips-wrap');
+      if (!wrap) return;
+      wrap.innerHTML = _editingSuspectedCodes.map((c, i) =>
+        `<span class="susp-chip">
+          <span class="susp-chip-code">${c.code}</span>
+          <span class="susp-chip-title">${c.title || ''}</span>
+          <button type="button" class="susp-chip-rm" data-idx="${i}">✕</button>
+        </span>`
+      ).join('');
+      wrap.querySelectorAll('.susp-chip-rm').forEach(btn =>
+        btn.addEventListener('click', e => {
+          e.preventDefault();
+          _editingSuspectedCodes.splice(parseInt(btn.dataset.idx), 1);
+          renderSuspChips();
+        })
+      );
+    };
+    renderSuspChips();
+
+    document.getElementById('btn-susp-add')?.addEventListener('click', e => {
+      e.preventDefault();
+      const wrap = document.getElementById('susp-search-wrap');
+      wrap?.classList.toggle('hidden');
+      if (!wrap?.classList.contains('hidden'))
+        document.getElementById('susp-search-q')?.focus();
+    });
+
+    document.getElementById('susp-search-q')?.addEventListener('input', e => {
+      const q = e.target.value.trim();
+      const res = document.getElementById('susp-search-res');
+      if (!res) return;
+      if (q.length < 2) { res.innerHTML = ''; return; }
+      const results = searchDiagnoses(state.icdFlat, q).slice(0, 8);
+      res.innerHTML = results.map(d =>
+        `<div class="susp-search-item" data-code="${d.code}" data-title="${(d.name||'').replace(/"/g,'&quot;')}">
+          <span class="susp-si-code">${d.code}</span>
+          <span class="susp-si-title">${d.name}</span>
+        </div>`
+      ).join('');
+      res.querySelectorAll('.susp-search-item').forEach(item =>
+        item.addEventListener('click', () => {
+          if (!_editingSuspectedCodes.some(c => c.code === item.dataset.code))
+            _editingSuspectedCodes.push({ code: item.dataset.code, title: item.dataset.title });
+          document.getElementById('susp-search-q').value = '';
+          res.innerHTML = '';
+          document.getElementById('susp-search-wrap')?.classList.add('hidden');
+          renderSuspChips();
+        })
+      );
+    });
+  }
+
   document.getElementById('btn-slot-edit-cancel').addEventListener('click', () => {
     if (source === 'planner') {
       document.getElementById('slot-detail-modal').classList.add('hidden');
@@ -2659,7 +2752,7 @@ async function saveSlotEdit(slot, source) {
 
   const isPatient = !!SLOT_TYPES[slot.type]?.patientContact;
   const patientNotes = isPatient ? (document.getElementById('slot-edit-notes')?.value.trim() || null) : undefined;
-  const suspectedCode = isPatient ? (document.getElementById('slot-edit-suspected')?.value.trim().toUpperCase() || null) : undefined;
+  const suspectedCodes = isPatient ? [..._editingSuspectedCodes] : undefined;
   const terminInterview = document.getElementById('slot-edit-termin-interview')?.value || undefined;
   const terminErstgespraech = document.getElementById('slot-edit-termin-erst')?.value || undefined;
   const ausfallChecked = document.getElementById('slot-edit-ausfall')?.checked ?? false;
@@ -2671,7 +2764,7 @@ async function saveSlotEdit(slot, source) {
     comment: comment || null,
     flags,
     ...(patientNotes !== undefined && { patientNotes }),
-    ...(suspectedCode !== undefined && { suspectedCode }),
+    ...(suspectedCodes !== undefined && { suspectedCodes }),
     ...(terminInterview !== undefined && { terminInterview }),
     ...(terminErstgespraech !== undefined && { terminErstgespraech }),
     ...(isPatient && { ausfall: ausfallChecked }),
@@ -2684,8 +2777,6 @@ async function saveSlotEdit(slot, source) {
   const shift = state.shifts.find(s => s.id === slot.shiftId);
   if (!shift) return;
 
-  state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
-
   // Ausfall-Roulette: first time ausfall is set
   if (isPatient && ausfallChecked && !wasAusfall) {
     triggerAusfallRoulette(slot, shift);
@@ -2693,7 +2784,8 @@ async function saveSlotEdit(slot, source) {
 
   if (source === 'detail') {
     renderShiftDetailBody(shift);
-  } else {
+  } else if (state.plannerShiftId === shift.id) {
+    state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
     renderTimeline(shift);
   }
 }
@@ -2744,7 +2836,10 @@ function openVerifyModal(slot) {
   if (!modal) return;
   const label = slot.patientNotes ? `„${slot.patientNotes}"` : `Slot #${slot.id}`;
   document.getElementById('verify-modal-label').textContent = label;
-  document.getElementById('verify-suspected').textContent   = slot.suspectedCode || '(kein Verdacht)';
+  const suspCodes = slot.suspectedCodes || [];
+  document.getElementById('verify-suspected').innerHTML = suspCodes.length
+    ? suspCodes.map(c => `<span class="susp-chip"><span class="susp-chip-code">${c.code}</span><span class="susp-chip-title">${c.title||''}</span></span>`).join('')
+    : '<span style="color:var(--text-dim);font-size:13px">(kein Verdacht)</span>';
   document.getElementById('verify-senior-input').value      = '';
   modal.classList.remove('hidden');
 
@@ -2759,11 +2854,14 @@ function openVerifyModal(slot) {
 }
 
 async function applyVerifyXP(slot, seniorCode) {
-  const suspected = (slot.suspectedCode || '').trim().toUpperCase();
+  const codes = (slot.suspectedCodes || []).map(c => c.code.trim().toUpperCase());
+  const senior = seniorCode.trim().toUpperCase();
   let result;
-  if (suspected && suspected === seniorCode) {
+  if (codes.includes(senior)) {
     result = DIAGNOSTIC_VERIFY_XP.exact;
-  } else if (suspected && seniorCode.slice(0,2) === suspected.slice(0,2)) {
+  } else if (codes.some(c => c.slice(0, 3) === senior.slice(0, 3))) {
+    result = DIAGNOSTIC_VERIFY_XP.partial;
+  } else if (codes.some(c => c.slice(0, 2) === senior.slice(0, 2))) {
     result = DIAGNOSTIC_VERIFY_XP.partial;
   } else {
     result = DIAGNOSTIC_VERIFY_XP.miss;
@@ -2801,6 +2899,631 @@ async function applyVerifyXP(slot, seniorCode) {
   const today = new Date().toISOString().slice(0, 10);
   renderDiagnosticReminders(today);
   renderDashboard();
+}
+
+// ─── Recall Patient Modal ─────────────────────────────────────────────────────
+async function openRecallPatientModal(targetSlot, shift) {
+  const allSlots = await db.scheduleSlots.toArray();
+  const patients = allSlots
+    .filter(s => s.type === 'patient' && s.shiftId !== shift.id && s.patientNotes)
+    .sort((a, b) => b.shiftId - a.shiftId);
+
+  const existing = document.getElementById('recall-modal');
+  if (existing) existing.remove();
+
+  const itemsHtml = patients.length
+    ? patients.map(p => {
+        const chips = (p.suspectedCodes || []).map(c =>
+          `<span class="susp-chip"><span class="susp-chip-code">${c.code}</span></span>`
+        ).join('');
+        return `<div class="recall-item" data-id="${p.id}">
+          <div class="recall-item-name">${p.patientNotes}</div>
+          <div class="recall-item-chips">${chips}</div>
+        </div>`;
+      }).join('')
+    : '<div style="color:var(--text-dim);font-size:13px;padding:16px 0">Keine früheren Patienten gefunden.</div>';
+
+  const modal = document.createElement('div');
+  modal.id = 'recall-modal';
+  modal.innerHTML = `
+    <div class="modal-backdrop" id="recall-backdrop"></div>
+    <div class="modal-sheet">
+      <div class="sheet-header">
+        <div class="modal-title">📋 Früheren Patienten übernehmen</div>
+      </div>
+      <div class="sheet-body" style="padding:12px 16px;display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto">
+        ${itemsHtml}
+      </div>
+      <div style="padding:12px 16px;border-top:1px solid rgba(255,255,255,.07)">
+        <button id="recall-cancel" class="btn-secondary" style="width:100%">Abbrechen</button>
+      </div>
+    </div>`;
+  modal.className = 'modal';
+  document.body.appendChild(modal);
+
+  const close = () => modal.remove();
+  document.getElementById('recall-backdrop').onclick = close;
+  document.getElementById('recall-cancel').onclick   = close;
+
+  modal.querySelectorAll('.recall-item').forEach(item => {
+    item.addEventListener('click', async () => {
+      const src = patients.find(p => p.id === parseInt(item.dataset.id));
+      if (!src) return;
+      close();
+      await db.scheduleSlots.update(targetSlot.id, {
+        patientNotes:   src.patientNotes,
+        suspectedCodes: src.suspectedCodes || [],
+      });
+      if (state.plannerShiftId === shift.id) {
+        state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
+        renderTimeline(shift);
+      }
+    });
+  });
+}
+
+// ─── Zuteilung ─────────────────────────────────────────────────────────────────
+
+const ZUTEIL_ROLES = {
+  kassa:      { label:'Kassa',      short:'K',   icon:'💰', color:'#f59e0b', burden:3 },
+  backoffice: { label:'Backoffice', short:'BO',  icon:'🖥️',  color:'#3b82f6', burden:2 },
+  '5stock':   { label:'5. Stock',   short:'5F',  icon:'🏥', color:'#10b981', burden:2 },
+  termin:     { label:'Termin',     short:'T',   icon:'📋', color:'#8b5cf6', burden:3 },
+  system:     { label:'Ins System', short:'Sy',  icon:'💾', color:'#6366f1', burden:1 },
+  pause:      { label:'Pause',      short:'P',   icon:'☕', color:'#6b7280', burden:0 },
+};
+
+const TERMIN_DEFS = {
+  anmeldung:    { label:'Anmeldung',    icon:'📝', dur:1 },
+  interview:    { label:'Interview',    icon:'🎤', dur:2 },
+  erstgesprach: { label:'Erstgespräch', icon:'💬', dur:1 },
+};
+
+function getZuteilBlocks(shift, blockSize) {
+  const h = shiftHours(shift);
+  const startH = Math.ceil((h.start[0]*60+h.start[1]) / (blockSize*60)) * blockSize;
+  const endH   = Math.floor((h.end[0]*60+h.end[1]) / (blockSize*60)) * blockSize;
+  const blocks = [];
+  for (let s = startH; s < endH; s += blockSize) {
+    blocks.push({ key:`${s}-${s+blockSize}`, start:s, end:s+blockSize,
+      label:`${String(s).padStart(2,'0')}–${String(s+blockSize).padStart(2,'0')}` });
+  }
+  return blocks;
+}
+
+async function openZuteilungScreen(shift) {
+  const modal = document.getElementById('zuteilung-modal');
+  const inner = document.getElementById('zut-inner');
+  const fresh = await db.shiftLogs.get(shift.id);
+  if (!fresh) return;
+
+  const userName = localStorage.getItem('psychodex-user-name') || '';
+  const people = [];
+  if (userName) people.push({ name:userName, funktion:fresh.category==='senior'?'Seniorassistent':'Assistent', present:true, _self:true });
+  for (const c of (fresh.colleagues||[])) {
+    if ((effectiveTeam(c)==='D'||effectiveTeam(c)==='T') && c.name.toLowerCase()!==userName.toLowerCase())
+      people.push(c);
+  }
+
+  let zData = fresh.zuteilung ? JSON.parse(JSON.stringify(fresh.zuteilung)) : {};
+  zData.blockSize    = zData.blockSize    || 2;
+  zData.assignments  = zData.assignments  || {};
+  zData.personStates = zData.personStates || {};
+  zData.termine      = zData.termine      || [];
+  zData.undoStack    = zData.undoStack    || [];
+  zData.planB        = zData.planB        || null;
+  zData.dualPlanActive = zData.dualPlanActive || false;
+  zData.planAPersons   = zData.planAPersons   || null;
+
+  const saveData = () =>
+    db.shiftLogs.update(fresh.id, { zuteilung: JSON.parse(JSON.stringify({
+      ...zData, undoStack: zData.undoStack.slice(-20)
+    })) });
+
+  const pushUndo = () => {
+    zData.undoStack.push(JSON.parse(JSON.stringify({
+      assignments: zData.assignments, personStates: zData.personStates, termine: zData.termine,
+      planB: zData.planB, dualPlanActive: zData.dualPlanActive, planAPersons: zData.planAPersons,
+    })));
+    if (zData.undoStack.length > 20) zData.undoStack.shift();
+  };
+
+  const render = () => renderZuteilGrid(inner, fresh, zData, people, { saveData, pushUndo, render });
+  modal.classList.remove('hidden');
+  render();
+
+  // Notify if people from planB have since arrived (checked in rolecall after auto-assign ran)
+  if (zData.dualPlanActive && zData.planAPersons) {
+    const nowPresent = people.filter(p => {
+      const ps = zData.personStates[p.name] || {};
+      return p.present && !ps.notYetPresent;
+    }).map(p => p.name);
+    const newArrivals = nowPresent.filter(n => !zData.planAPersons.includes(n));
+    if (newArrivals.length > 0) {
+      const banner = document.createElement('div');
+      banner.className = 'zut-arrival-banner';
+      banner.textContent = `🔔 ${newArrivals.join(', ')} ${newArrivals.length === 1 ? 'ist' : 'sind'} angekommen – Auto-Zuteilung neu ausführen!`;
+      inner.prepend(banner);
+      setTimeout(() => banner.remove(), 6000);
+    }
+  }
+
+  document.getElementById('zut-backdrop').onclick = () => modal.classList.add('hidden');
+}
+
+function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, render }) {
+  const blocks = getZuteilBlocks(shift, zData.blockSize);
+
+  const isAvail = (p, block) => {
+    if (!p.present) return false;
+    const ps = zData.personStates[p.name] || {};
+    if (ps.notYetPresent) return false;
+    if (ps.earlyLeave) {
+      const [lh] = ps.earlyLeave.split(':').map(Number);
+      if (block.start >= lh) return false;
+    }
+    return true;
+  };
+
+  const presentCount = people.filter(p => {
+    const ps = zData.personStates[p.name] || {};
+    return p.present && !ps.notYetPresent;
+  }).length;
+
+  const planASet = new Set(zData.planAPersons || []);
+
+  const bodyRows = people.map(p => {
+    const ps = zData.personStates[p.name] || {};
+    const earlyMark = ps.earlyLeave ? `<span class="zut-early-tag">⏰${ps.earlyLeave}</span>` : '';
+    const absent = !p.present;
+    const isPlanBRow = zData.dualPlanActive && (!p.present || ps.notYetPresent);
+    const cells = blocks.map(b => {
+      const key = `${p.name}::${b.key}`;
+      const role = zData.assignments[key];
+      const ri   = role ? ZUTEIL_ROLES[role] : null;
+      const unavail = !isAvail(p, b);
+      return `<td class="zut-cell${unavail?' zut-cell-unavail':''}">
+        <button class="zut-cell-btn${ri?' has-role':''}${isPlanBRow?' plan-b-cell':''}" data-key="${key}"
+                style="${ri?`background:${ri.color}1a;border-color:${ri.color}55;color:${ri.color}`:''}"
+                ${unavail?'disabled':''}>
+          ${ri?`<span class="zut-cell-icon">${ri.icon}</span><span class="zut-role-short">${ri.short}</span>`:`<span class="zut-empty-dot">·</span>`}
+        </button></td>`;
+    }).join('');
+    return `<tr class="zut-row${absent?' zut-row-absent':''}">
+      <td class="zut-td-name">
+        <div class="zut-person-name">${p.name}${p._self?` <span class="team-self-badge">Ich</span>`:''}${isPlanBRow?` <span class="zut-planb-tag">Plan B</span>`:''}</div>
+        <div class="zut-person-sub">${earlyMark}<button class="zut-ps-btn" data-pname="${p.name}">⚙️</button></div>
+      </td>${cells}</tr>`;
+  }).join('');
+
+  const covRow = `<tr class="zut-cov-row">
+    <td class="zut-td-name"><span class="zut-cov-label">Abdeckung</span></td>
+    ${blocks.map(b => {
+      const roles = people
+        .filter(p => !zData.dualPlanActive || planASet.has(p.name))
+        .map(p => zData.assignments[`${p.name}::${b.key}`]).filter(Boolean);
+      const hasK = roles.includes('kassa'), hasB = roles.includes('backoffice');
+      return `<td class="zut-cell" style="text-align:center;padding:4px 2px">
+        <span style="color:${hasK?'#10b981':'#ef4444'};font-size:11px;font-weight:700">K</span>
+        <span style="color:${hasB?'#10b981':'#ef4444'};font-size:11px;font-weight:700">B</span></td>`;
+    }).join('')}
+  </tr>`;
+
+  const shiftH   = shiftHours(shift);
+  const tlStartH = shiftH.start[0];
+  const tlEndH   = shiftH.end[0] + (shiftH.end[1] > 0 ? 1 : 0);
+  const tlHours  = Array.from({ length: tlEndH - tlStartH }, (_, i) => tlStartH + i);
+
+  const tlCols = tlHours.map(h => {
+    const chips = zData.termine
+      .filter(t => (t.startHour ?? t.hour) === h)
+      .map(t => {
+        const def = TERMIN_DEFS[t.type];
+        const pInit = t.personName ? t.personName.split(' ').map(w=>w[0]).join('').slice(0,2) : '';
+        return `<div class="zut-tl-chip" data-tid="${t.id}" draggable="true" title="${def.label}${t.personName?' · '+t.personName:''}">
+          <span class="zut-chip-icon">${def.icon}</span>
+          ${pInit?`<span class="zut-chip-person">${pInit}</span>`:''}
+        </div>`;
+      }).join('');
+    return `<div class="zut-tl-col" data-hour="${h}">
+      <div class="zut-tl-hour">${String(h).padStart(2,'0')}</div>
+      <div class="zut-tl-dropzone">${chips}</div>
+    </div>`;
+  }).join('');
+
+  const dateStr = new Date(shift.date+'T12:00').toLocaleDateString('de-AT',{weekday:'short',day:'numeric',month:'numeric'});
+
+  inner.innerHTML = `
+    <div class="zut-header">
+      <div><div class="zut-title">📋 Zuteilung</div><div class="zut-subtitle">${dateStr} · ${shiftLabel(shift.type)}</div></div>
+      <div class="zut-header-actions">
+        <button class="zut-hdr-btn" id="zut-undo-btn"${!zData.undoStack.length?' disabled':''} title="Rückgängig">↩</button>
+        <button class="zut-hdr-btn" id="zut-reset-btn" title="Zurücksetzen">🔄</button>
+        <button class="zut-hdr-btn" id="zut-size-btn" title="Blockgröße umschalten">${zData.blockSize}h</button>
+        <button class="zut-hdr-close" id="zut-close-btn">✕</button>
+      </div>
+    </div>
+    <div class="zut-termin-section">
+      <div class="zut-termin-add-row">
+        <span class="zut-bar-label">Termine</span>
+        <button class="zut-termin-add-btn" data-type="anmeldung" title="Anmeldung hinzufügen">📝 +</button>
+        <button class="zut-termin-add-btn" data-type="erstgesprach" title="Erstgespräch hinzufügen">💬 +</button>
+        <button class="zut-termin-add-btn" data-type="interview" title="Interview hinzufügen">🎤 +</button>
+      </div>
+      <div class="zut-tl-scroll">${tlCols}</div>
+    </div>
+    ${zData.dualPlanActive ? `<div class="zut-dual-banner">⚠️ Backup-Plan aktiv · ${people.length - (zData.planAPersons?.length || 0)} Person(en) fehlen noch</div>` : ''}
+    <div class="zut-grid-wrap">
+      <table class="zut-table">
+        <thead><tr>
+          <th class="zut-th-name">Person (${presentCount})</th>
+          ${blocks.map(b=>`<th class="zut-th-block">${b.label}</th>`).join('')}
+        </tr></thead>
+        <tbody>${bodyRows}${covRow}</tbody>
+      </table>
+    </div>
+    <div class="zut-footer">
+      <div class="zut-present-label">${presentCount} anwesend · ${people.length} gesamt</div>
+      <button class="btn-primary" id="zut-auto-btn">⚡ Auto-Zuteilung</button>
+    </div>`;
+
+  inner.querySelector('#zut-close-btn').onclick = () =>
+    document.getElementById('zuteilung-modal').classList.add('hidden');
+  inner.querySelector('#zut-undo-btn').onclick = () => {
+    if (!zData.undoStack.length) return;
+    const snap = zData.undoStack.pop();
+    Object.assign(zData, snap); saveData(); render();
+  };
+  inner.querySelector('#zut-reset-btn').onclick = () => {
+    if (!confirm('Alle Zuteilungen zurücksetzen?')) return;
+    pushUndo(); zData.assignments = {}; saveData(); render();
+  };
+  inner.querySelector('#zut-size-btn').onclick = () => {
+    zData.blockSize = zData.blockSize === 2 ? 1 : 2; saveData(); render();
+  };
+  inner.querySelector('#zut-auto-btn').onclick = () => {
+    pushUndo();
+    const result = autoAssignZuteilung(getZuteilBlocks(shift, zData.blockSize), people, zData);
+    zData.assignments    = result.assignments;
+    zData.planB          = result.planB;
+    zData.dualPlanActive = result.dualPlanActive;
+    zData.planAPersons   = result.planAPersons;
+    saveData(); render();
+  };
+  // + buttons: add at smart default hour, no popup needed
+  inner.querySelectorAll('.zut-termin-add-btn').forEach(btn => {
+    btn.onclick = () => {
+      const type  = btn.dataset.type;
+      const baseH = type === 'anmeldung' ? tlStartH : tlStartH + 2;
+      const used  = zData.termine.filter(t => t.type === type).map(t => t.startHour ?? t.hour);
+      let h = baseH;
+      while (used.includes(h) && h < tlEndH) h++;
+      if (h >= tlEndH) h = tlEndH - 1;
+      pushUndo();
+      zData.termine.push({ id: Date.now(), type, startHour: h, personName: null });
+      saveData(); render();
+    };
+  });
+
+  // Termin chip: touch drag to move hour, tap to edit
+  inner.querySelectorAll('.zut-tl-chip').forEach(chip => {
+    let touchStart = null;
+    chip.addEventListener('touchstart', e => {
+      touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      chip.classList.add('zut-chip-dragging');
+    }, { passive: true });
+    chip.addEventListener('touchmove', e => {
+      if (!touchStart) return;
+      const { clientX, clientY } = e.touches[0];
+      const dx = clientX - touchStart.x, dy = clientY - touchStart.y;
+      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) chip.dataset.moved = '1';
+      inner.querySelectorAll('.zut-tl-col').forEach(c => c.classList.remove('zut-drop-target'));
+      document.elementFromPoint(clientX, clientY)?.closest('.zut-tl-col')?.classList.add('zut-drop-target');
+    }, { passive: true });
+    chip.addEventListener('touchend', e => {
+      chip.classList.remove('zut-chip-dragging');
+      inner.querySelectorAll('.zut-tl-col').forEach(c => c.classList.remove('zut-drop-target'));
+      const wasDrag = chip.dataset.moved === '1';
+      delete chip.dataset.moved; touchStart = null;
+      const tid = parseInt(chip.dataset.tid);
+      const t = zData.termine.find(t => t.id === tid);
+      if (!t) return;
+      if (!wasDrag) { openZuteilEditTermin(t, tlHours, people, zData, saveData, pushUndo, render); return; }
+      const { clientX, clientY } = e.changedTouches[0];
+      const col = document.elementFromPoint(clientX, clientY)?.closest('.zut-tl-col');
+      if (!col) { render(); return; }
+      const newH = parseInt(col.dataset.hour);
+      if ((t.startHour ?? t.hour) !== newH) { pushUndo(); t.startHour = newH; saveData(); }
+      render();
+    });
+    // Desktop drag
+    chip.addEventListener('dragstart', e => {
+      chip.dataset.dragging = '1';
+      e.dataTransfer.setData('text/plain', chip.dataset.tid);
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => chip.classList.add('zut-chip-dragging'), 0);
+    });
+    chip.addEventListener('dragend', () => { chip.classList.remove('zut-chip-dragging'); delete chip.dataset.dragging; });
+    chip.addEventListener('click', e => {
+      if (chip.dataset.dragging) return;
+      e.stopPropagation();
+      const t = zData.termine.find(t => t.id === parseInt(chip.dataset.tid));
+      if (t) openZuteilEditTermin(t, tlHours, people, zData, saveData, pushUndo, render);
+    });
+  });
+  // Desktop drop onto hour columns
+  inner.querySelectorAll('.zut-tl-col').forEach(col => {
+    col.addEventListener('dragover', e => {
+      e.preventDefault();
+      inner.querySelectorAll('.zut-tl-col').forEach(c => c.classList.remove('zut-drop-target'));
+      col.classList.add('zut-drop-target');
+    });
+    col.addEventListener('dragleave', () => col.classList.remove('zut-drop-target'));
+    col.addEventListener('drop', e => {
+      e.preventDefault();
+      col.classList.remove('zut-drop-target');
+      const tid = parseInt(e.dataTransfer.getData('text/plain'));
+      const t = zData.termine.find(t => t.id === tid);
+      const newH = parseInt(col.dataset.hour);
+      if (t && (t.startHour ?? t.hour) !== newH) { pushUndo(); t.startHour = newH; saveData(); render(); }
+    });
+  });
+
+  inner.querySelectorAll('.zut-ps-btn').forEach(btn => {
+    btn.onclick = e => { e.stopPropagation(); openZuteilPersonState(btn.dataset.pname, zData, saveData, pushUndo, render); };
+  });
+  inner.querySelectorAll('.zut-cell-btn:not([disabled])').forEach(btn => {
+    btn.onclick = e => { e.stopPropagation(); showZuteilPicker(btn, btn.dataset.key, zData, saveData, pushUndo, render); };
+  });
+}
+
+function showZuteilPicker(triggerBtn, cellKey, zData, saveData, pushUndo, render) {
+  document.querySelectorAll('.zut-picker').forEach(p => p.remove());
+  const picker = document.createElement('div');
+  picker.className = 'zut-picker';
+  const cur = zData.assignments[cellKey];
+  const entries = [...Object.entries(ZUTEIL_ROLES), ['', { label:'Leer', icon:'✕', short:'' }]];
+  picker.innerHTML = entries.map(([key,r]) =>
+    `<button class="zut-picker-btn${cur===key?' active':''}" data-role="${key}">
+       <span class="zut-picker-icon">${r.icon}</span>
+       <span class="zut-picker-lbl">${r.label}</span></button>`
+  ).join('');
+  document.body.appendChild(picker);
+  const rect = triggerBtn.getBoundingClientRect();
+  const ph = 230;
+  const top  = rect.bottom + 4 + ph > window.innerHeight ? rect.top - ph - 4 : rect.bottom + 4;
+  const left = Math.min(Math.max(rect.left - 60, 8), window.innerWidth - 218);
+  picker.style.cssText = `position:fixed;top:${Math.max(4,top)}px;left:${left}px`;
+  picker.querySelectorAll('.zut-picker-btn').forEach(btn => {
+    btn.onclick = e => {
+      e.stopPropagation();
+      pushUndo();
+      if (btn.dataset.role === '') delete zData.assignments[cellKey];
+      else zData.assignments[cellKey] = btn.dataset.role;
+      picker.remove(); saveData(); render();
+    };
+  });
+  requestAnimationFrame(() =>
+    document.addEventListener('click', () => picker.remove(), { once:true })
+  );
+}
+
+function openZuteilPersonState(personName, zData, saveData, pushUndo, render) {
+  document.querySelectorAll('.zut-popup').forEach(p => p.remove());
+  const ps = zData.personStates[personName] || {};
+  const popup = document.createElement('div');
+  popup.className = 'zut-popup';
+  popup.innerHTML = `
+    <div class="zut-popup-title">⚙️ ${personName}</div>
+    <label class="zut-popup-row"><span>Noch nicht da</span><input type="checkbox" id="zp-nochda" ${ps.notYetPresent?'checked':''}></label>
+    <div class="zut-popup-row"><span>Frühgang um</span><input type="time" id="zp-early" value="${ps.earlyLeave||''}" class="form-input" style="width:90px;padding:4px 8px"></div>
+    <div class="zut-popup-btns"><button class="btn-primary" id="zp-save">OK</button><button class="btn-secondary" id="zp-cancel">Abbrechen</button></div>`;
+  document.getElementById('zuteilung-modal').appendChild(popup);
+  const close = () => popup.remove();
+  popup.querySelector('#zp-cancel').onclick = close;
+  popup.querySelector('#zp-save').onclick = () => {
+    pushUndo();
+    zData.personStates[personName] = { ...ps,
+      notYetPresent: popup.querySelector('#zp-nochda').checked,
+      earlyLeave:    popup.querySelector('#zp-early').value || null,
+    };
+    close(); saveData(); render();
+  };
+}
+
+function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo, render) {
+  document.querySelectorAll('.zut-popup').forEach(p => p.remove());
+  const def = TERMIN_DEFS[termin.type];
+  const cur  = termin.startHour ?? termin.hour;
+  const presentPeople = people.filter(p => p.present && !(zData.personStates[p.name]||{}).notYetPresent);
+  const popup = document.createElement('div');
+  popup.className = 'zut-popup';
+  popup.innerHTML = `
+    <div class="zut-popup-title">${def.icon} ${def.label}</div>
+    <div class="zut-popup-row"><span>Uhrzeit</span>
+      <select id="zp-thour" class="form-input" style="flex:1">
+        ${tlHours.map(h=>`<option value="${h}"${h===cur?' selected':''}>${String(h).padStart(2,'0')}:00</option>`).join('')}
+      </select></div>
+    <div class="zut-popup-row"><span>Person</span>
+      <select id="zp-tperson" class="form-input" style="flex:1">
+        <option value=""${!termin.personName?' selected':''}>– optional –</option>
+        ${presentPeople.map(p=>`<option value="${p.name}"${p.name===termin.personName?' selected':''}>${p.name}</option>`).join('')}
+      </select></div>
+    <div class="zut-popup-btns">
+      <button class="btn-primary" id="zp-tsave">Speichern</button>
+      <button class="btn-secondary" id="zp-tcancel">Abbrechen</button>
+    </div>
+    <button class="btn-secondary" id="zp-tdel" style="width:100%;margin-top:6px;color:#f87171;border-color:rgba(248,113,113,.4)">🗑 Löschen</button>`;
+  document.getElementById('zuteilung-modal').appendChild(popup);
+  const close = () => popup.remove();
+  popup.querySelector('#zp-tcancel').onclick = close;
+  popup.querySelector('#zp-tdel').onclick = () => {
+    pushUndo();
+    zData.termine = zData.termine.filter(t => t.id !== termin.id);
+    close(); saveData(); render();
+  };
+  popup.querySelector('#zp-tsave').onclick = () => {
+    pushUndo();
+    const idx = zData.termine.findIndex(t => t.id === termin.id);
+    if (idx >= 0) {
+      zData.termine[idx].startHour  = parseInt(popup.querySelector('#zp-thour').value);
+      zData.termine[idx].personName = popup.querySelector('#zp-tperson').value || null;
+    }
+    close(); saveData(); render();
+  };
+}
+
+function runAutoAssign(allowedPeople, blocks, termine, personStates, blockSize) {
+  const result = {};
+  const terminCount = Object.fromEntries(allowedPeople.map(p => [p.name, 0]));
+
+  const isAvail = (p, block) => {
+    if (!p.present) return false;
+    const ps = personStates[p.name] || {};
+    if (ps.notYetPresent) return false;
+    if (ps.earlyLeave) {
+      const [lh] = ps.earlyLeave.split(':').map(Number);
+      if (block.start >= lh) return false;
+    }
+    return true;
+  };
+
+  // Auto-assign unassigned termine round-robin by terminCount among allowedPeople
+  const resolvedTermine = termine.map(t => {
+    if (t.personName && allowedPeople.some(p => p.name === t.personName)) return t;
+    const tHour = t.startHour ?? t.hour;
+    const avail = allowedPeople.filter(p => {
+      if (!p.present) return false;
+      const ps = personStates[p.name] || {};
+      if (ps.notYetPresent) return false;
+      if (ps.earlyLeave) {
+        const [lh] = ps.earlyLeave.split(':').map(Number);
+        if (tHour >= lh) return false;
+      }
+      return true;
+    });
+    if (!avail.length) return t;
+    const pick = avail.slice().sort((a, b) => terminCount[a.name] - terminCount[b.name])[0];
+    terminCount[pick.name]++;
+    return { ...t, personName: pick.name };
+  });
+
+  for (const t of resolvedTermine) {
+    if (!t.personName) continue;
+    const def = TERMIN_DEFS[t.type];
+    const tHour = t.startHour ?? t.hour;
+    for (const b of blocks) {
+      if (b.start >= tHour && b.start < tHour + def.dur)
+        result[`${t.personName}::${b.key}`] = 'termin';
+    }
+    const sysStart = tHour + def.dur;
+    const sysBlock = blocks.find(b => b.start >= sysStart && b.start < sysStart + blockSize);
+    if (sysBlock && !result[`${t.personName}::${sysBlock.key}`])
+      result[`${t.personName}::${sysBlock.key}`] = 'system';
+  }
+
+  const burden    = Object.fromEntries(allowedPeople.map(p => [p.name, 0]));
+  const roleCounts = Object.fromEntries(allowedPeople.map(p => [p.name, {}]));
+  for (const [key, role] of Object.entries(result)) {
+    const [name] = key.split('::');
+    if (burden[name] === undefined) continue;
+    burden[name] += ZUTEIL_ROLES[role]?.burden || 0;
+    roleCounts[name][role] = (roleCounts[name][role] || 0) + 1;
+  }
+
+  const paused = new Set();
+  const midIdx = Math.floor(blocks.length / 2);
+
+  const getScore = (p, roleKey) =>
+    (burden[p.name] || 0) + (roleCounts[p.name][roleKey] || 0) * (ZUTEIL_ROLES[roleKey]?.burden || 1);
+  const pickByScore = (pool, roleKey) =>
+    pool.slice().sort((a, b) => getScore(a, roleKey) - getScore(b, roleKey))[0];
+
+  const assign = (p, block, role) => {
+    result[`${p.name}::${block.key}`] = role;
+    burden[p.name] += ZUTEIL_ROLES[role]?.burden || 0;
+    roleCounts[p.name][role] = (roleCounts[p.name][role] || 0) + 1;
+    if (role === 'pause') paused.add(p.name);
+  };
+  const free = block => allowedPeople.filter(p => isAvail(p, block) && !result[`${p.name}::${block.key}`]);
+
+  for (const [bi, block] of blocks.entries()) {
+    if (!allowedPeople.some(p => result[`${p.name}::${block.key}`] === 'kassa')) {
+      const p = pickByScore(free(block), 'kassa'); if (p) assign(p, block, 'kassa');
+    }
+    if (!allowedPeople.some(p => result[`${p.name}::${block.key}`] === 'backoffice')) {
+      const p = pickByScore(free(block), 'backoffice'); if (p) assign(p, block, 'backoffice');
+    }
+    const avail = allowedPeople.filter(p => isAvail(p, block)).length;
+    if (avail >= 7 && !allowedPeople.some(p => result[`${p.name}::${block.key}`] === '5stock')) {
+      const p = pickByScore(free(block), '5stock'); if (p) assign(p, block, '5stock');
+    }
+    if (bi >= midIdx - 1 && bi <= midIdx + 1) {
+      const candidates = free(block).filter(p => !paused.has(p.name));
+      if (candidates.length) {
+        const p = candidates.slice().sort((a, b) => (burden[b.name] || 0) - (burden[a.name] || 0))[0];
+        assign(p, block, 'pause');
+      }
+    }
+    for (const p of free(block)) assign(p, block, 'backoffice');
+  }
+
+  for (const p of allowedPeople) {
+    if (paused.has(p.name)) continue;
+    const ps = personStates[p.name] || {};
+    if (!p.present || ps.notYetPresent) continue;
+    for (const block of blocks) {
+      const key = `${p.name}::${block.key}`;
+      const role = result[key];
+      if (!role || role === 'backoffice') {
+        const kassaOK = allowedPeople.some(q => q.name !== p.name && result[`${q.name}::${block.key}`] === 'kassa');
+        const boOK    = allowedPeople.some(q => q.name !== p.name && result[`${q.name}::${block.key}`] === 'backoffice');
+        if (kassaOK && (boOK || role !== 'backoffice')) {
+          result[key] = 'pause'; paused.add(p.name); break;
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
+function autoAssignZuteilung(blocks, people, zData) {
+  const { termine, personStates, blockSize } = zData;
+  const presentPeople = people.filter(p => {
+    const ps = personStates[p.name] || {};
+    return p.present && !ps.notYetPresent;
+  });
+  const absentPeople = people.filter(p => {
+    const ps = personStates[p.name] || {};
+    return !p.present || ps.notYetPresent;
+  });
+
+  const planA = runAutoAssign(presentPeople, blocks, termine, personStates, blockSize);
+
+  if (absentPeople.length > 0) {
+    const planB = runAutoAssign(people, blocks, termine, personStates, blockSize);
+    const merged = { ...planA };
+    for (const p of absentPeople) {
+      for (const b of blocks) {
+        const key = `${p.name}::${b.key}`;
+        if (planB[key]) merged[key] = planB[key];
+      }
+    }
+    return {
+      assignments: merged,
+      planB,
+      dualPlanActive: true,
+      planAPersons: presentPeople.map(p => p.name),
+    };
+  }
+
+  return {
+    assignments: planA,
+    planB: null,
+    dualPlanActive: false,
+    planAPersons: presentPeople.map(p => p.name),
+  };
 }
 
 // ─── Rolecall Gamification Bonuses ────────────────────────────────────────────
@@ -3306,8 +4029,8 @@ function closeDiagnosisModal() {
   state.searchContext = { patientIndex: null, selectedDiagnosis: null, standalone: false };
   state.addToShiftContext = null;
   state.diagCatchStack = [];
-  // If we came from the planner timeline, refresh it
-  if (slotSrc === 'planner' && slotShiftId != null) {
+  // If we came from the planner timeline, refresh it (only if still on same shift)
+  if (slotSrc === 'planner' && slotShiftId != null && state.plannerShiftId === slotShiftId) {
     const freshShift = state.shifts.find(s => s.id === slotShiftId);
     if (freshShift) renderTimeline(freshShift);
   }
@@ -5473,13 +6196,15 @@ async function saveToExistingShiftPatient(diagnosis, hasComorbidity, xpResult, s
 
   if (fromSlotId) {
     if (fromSlotSrc === 'planner') {
-      // Stay in planner – close diag modal and re-render timeline
+      // Stay in planner – close diag modal and re-render timeline (only if still on same shift)
       document.getElementById('diagnosis-modal').classList.add('hidden');
       state.addToShiftContext = null;
       state.diagCatchStack = [];
-      state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shiftId).sortBy('startHour');
-      const freshShift = state.shifts.find(s => s.id === shiftId);
-      if (freshShift) renderTimeline(freshShift);
+      if (state.plannerShiftId === shiftId) {
+        state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shiftId).sortBy('startHour');
+        const freshShift = state.shifts.find(s => s.id === shiftId);
+        if (freshShift) renderTimeline(freshShift);
+      }
     } else {
       const freshSlot = await db.scheduleSlots.get(fromSlotId);
       if (freshSlot) openSlotDetailModal(freshSlot, fromSlotSrc);
