@@ -2256,7 +2256,7 @@ img{max-width:100%;display:block}
 
 /* ── Home Tab: Calendar ─────────────────────────────────────────────────────── */
 .home-cal-section{margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08)}
-.cal-nav-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.cal-nav-row{display:flex;align-items:center;gap:8px;position:sticky;top:-16px;z-index:2;background:var(--bg-card);margin:-16px -16px 10px;padding:16px 16px 10px;}
 .cal-nav-btn{width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;transition:background .15s;flex-shrink:0}
 .cal-nav-btn:active{background:rgba(255,255,255,.12)}
 .cal-nav-center{flex:1;text-align:center}
