@@ -3760,15 +3760,19 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
   };
 
   // ── Step 1: Resolve termine (auto-assign person if unset) ─────────────────
-  const resolvedTermine = termine.map(t => {
+  // Process chronologically so earlier appointments are assigned first
+  const termineSorted1 = [...termine].sort((a, b) =>
+    ((a.startHour ?? a.hour) - (b.startHour ?? b.hour)) || (a.id - b.id));
+  const resolvedTermine = [];
+  for (const t of termineSorted1) {
     const tHour = t.startHour ?? t.hour;
     const def = TERMIN_DEFS[t.type];
 
     // International demos: DEU team doesn't do them (trainees may still assist)
-    if (t.isInternational) return { ...t, personName: null };
+    if (t.isInternational) { resolvedTermine.push({ ...t, personName: null }); continue; }
 
     // Manually assigned to a valid non-trainee: keep it
-    if (t.personName && nonTrainees.some(p => p.name === t.personName)) return t;
+    if (t.personName && nonTrainees.some(p => p.name === t.personName)) { resolvedTermine.push(t); continue; }
 
     const avail = nonTrainees.filter(p => {
       if (!isAvailAtHour(p, tHour)) return false;
@@ -3778,20 +3782,25 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
         const [lh] = ps.earlyLeave.split(':').map(Number);
         if (tHour + def.dur + blockSize > lh) return false;
       }
-      return true;
+      // Don't assign if person already has a conflicting termin
+      return !resolvedTermine.some(rt => {
+        if (rt.personName !== p.name) return false;
+        const rtH = rt.startHour ?? rt.hour;
+        const rtDef = TERMIN_DEFS[rt.type];
+        return rtDef && tHour < rtH + rtDef.dur && tHour + def.dur > rtH;
+      });
     }).sort((a, b) => {
       // Round-robin: score = terminCount * 8 + tierNum
-      // → tier1 gets 1st termin, tier2 gets 2nd, …, after a full round tier1 goes again
       const ta = personTiers[a.name] ?? (a._isSenior ? 1 : 4);
       const tb = personTiers[b.name] ?? (b._isSenior ? 1 : 4);
       return (terminCount[a.name] * 8 + ta) - (terminCount[b.name] * 8 + tb);
     });
 
-    if (!avail.length) return t;
+    if (!avail.length) { resolvedTermine.push(t); continue; }
     const pick = avail[0];
     terminCount[pick.name]++;
-    return { ...t, personName: pick.name };
-  });
+    resolvedTermine.push({ ...t, personName: pick.name });
+  }
 
   // ── Step 2: Apply termin blocks ───────────────────────────────────────────
   for (const t of resolvedTermine) {
@@ -3900,8 +3909,11 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
         assign(p, block, 'pause');
       }
     }
-    // Fill remaining (including trainees without assist) with backoffice
-    for (const p of free(block, bi)) assign(p, block, 'backoffice');
+    // Fill remaining with backoffice (hard cap 2); extras stay empty for second-pass pause
+    for (const p of free(block, bi)) {
+      if (allowedPeople.filter(q => result[`${q.name}::${block.key}`] === 'backoffice').length < 2)
+        assign(p, block, 'backoffice');
+    }
   }
 
   // ── Step 6: Second-pass pause for anyone who didn't get one ───────────────
