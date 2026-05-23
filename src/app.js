@@ -5169,15 +5169,22 @@ function renderMissionsStrip() {
   document.getElementById('btn-mission-history')?.addEventListener('click', openChallengeHistoryModal);
 }
 
-function openMissionDetailModal(am) {
+let _missionModalAm    = null;
+let _missionSwipeActive = false;
+
+function _renderMissionDetailBody(am) {
   const def = MISSION_POOL.find(m => m.id === am.missionId);
   if (!def) return;
-  const modal = document.getElementById('mission-detail-modal');
-  const body  = document.getElementById('mission-detail-body');
+  const body = document.getElementById('mission-detail-body');
   const catchesSince = state.catches.filter(c => c.caughtAt >= am.activatedAt);
   const shiftsSince  = state.shifts.filter(s => (s.createdAt || `${s.date}T00:00:00`) >= am.activatedAt);
   const { current, target } = calcMissionProgress(def, catchesSince, shiftsSince, state.icdFlat);
   const cbsModal = missionCheckboxes(current, target, def.tier);
+  const active = state.missions.filter(m => !m.completedAt).sort((a, b) => a.slotIndex - b.slotIndex);
+  const idx = active.findIndex(m => m.id === am.id);
+  const dotsHtml = active.length > 1
+    ? `<div class="mm-dots-row">${active.map((_, i) => `<span class="mm-dot${i === idx ? ' mm-dot--active' : ''}"></span>`).join('')}</div>`
+    : '';
   body.innerHTML = `
     <div style="text-align:center;margin-bottom:18px">
       <div class="mission-modal-icon tier-${def.tier}">${def.emoji || '🎯'}</div>
@@ -5190,8 +5197,47 @@ function openMissionDetailModal(am) {
     ${cbsModal ? `<div style="margin:18px 0 4px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;font-size:15px">${cbsModal}</div>` : ''}
     <div class="mission-modal-reward tier-${def.tier}">+${def.reward.toLocaleString('de-AT')} XP</div>
     ${def.badge ? `<div class="mission-modal-badge">${def.badge}</div>` : ''}
-    <div class="mission-modal-meta">Aktiv seit ${new Date(am.activatedAt).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'2-digit'})}</div>`;
-  modal.classList.remove('hidden');
+    <div class="mission-modal-meta">Aktiv seit ${new Date(am.activatedAt).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'2-digit'})}</div>
+    ${dotsHtml}`;
+}
+
+function openMissionDetailModal(am) {
+  _missionModalAm = am;
+  _renderMissionDetailBody(am);
+  const card = document.querySelector('.mission-modal-card');
+  if (card) { card.style.cssText = ''; }
+  document.getElementById('mission-detail-modal').classList.remove('hidden');
+}
+
+function _navigateMission(dir) {
+  if (_missionSwipeActive) return;
+  const active = state.missions.filter(m => !m.completedAt).sort((a, b) => a.slotIndex - b.slotIndex);
+  if (active.length <= 1) return;
+  const idx = active.findIndex(m => m.id === _missionModalAm?.id);
+  if (idx < 0) return;
+  const newAm = active[((idx + dir) + active.length) % active.length];
+  _missionSwipeActive = true;
+  const card = document.querySelector('.mission-modal-card');
+  if (!card) { _missionSwipeActive = false; return; }
+  const outX = dir > 0 ? 'calc(-50% - 110vw)' : 'calc(-50% + 110vw)';
+  const inX  = dir > 0 ? 'calc(-50% + 110vw)' : 'calc(-50% - 110vw)';
+  card.style.animation = 'none';
+  card.style.transition = 'transform 0.2s cubic-bezier(.4,0,.2,1),opacity 0.18s';
+  card.style.transform = `translate(${outX},-50%)`;
+  card.style.opacity = '0';
+  setTimeout(() => {
+    _missionModalAm = newAm;
+    _renderMissionDetailBody(newAm);
+    card.style.transition = 'none';
+    card.style.transform = `translate(${inX},-50%)`;
+    card.style.opacity = '0';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      card.style.transition = 'transform 0.2s cubic-bezier(.4,0,.2,1),opacity 0.18s';
+      card.style.transform = 'translate(-50%,-50%)';
+      card.style.opacity = '1';
+      setTimeout(() => { _missionSwipeActive = false; }, 220);
+    }));
+  }, 200);
 }
 
 function openChallengeHistoryModal() {
@@ -5226,14 +5272,20 @@ const missionCheckboxes = (current, target, tier = 3) => {
 };
 
 function setupMissionModals() {
-  document.getElementById('mission-detail-close').addEventListener('click', () =>
-    document.getElementById('mission-detail-modal').classList.add('hidden'));
-  document.getElementById('mission-detail-backdrop').addEventListener('click', () =>
-    document.getElementById('mission-detail-modal').classList.add('hidden'));
+  const mModal = document.getElementById('mission-detail-modal');
+  document.getElementById('mission-detail-close').addEventListener('click', () => mModal.classList.add('hidden'));
+  document.getElementById('mission-detail-backdrop').addEventListener('click', () => mModal.classList.add('hidden'));
   document.getElementById('challenge-history-close').addEventListener('click', () =>
     document.getElementById('challenge-history-modal').classList.add('hidden'));
   document.getElementById('challenge-history-backdrop').addEventListener('click', () =>
     document.getElementById('challenge-history-modal').classList.add('hidden'));
+  // Swipe between missions
+  let _swipeX0 = 0;
+  mModal.addEventListener('touchstart', e => { _swipeX0 = e.touches[0].clientX; }, { passive: true });
+  mModal.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - _swipeX0;
+    if (Math.abs(dx) > 50) _navigateMission(dx < 0 ? 1 : -1);
+  }, { passive: true });
 }
 
 function renderHomeMissions() {
@@ -7046,6 +7098,7 @@ function renderDiagInfoBody(code, catchId) {
       heroImg.style.filter    = `blur(${Math.min(14, p * 18)}px)`;
     };
     body.addEventListener('scroll', body._heroScroll, { passive: true });
+    heroImg.addEventListener('click', () => openDiagLightbox(heroImg.src));
   }
   initSymptomCounters(body, interactive);
   if (interactive && catchRecord) {
@@ -7077,6 +7130,14 @@ function openDiagInfoModal(code, catchId) {
   state.diagInfoCurrentCode = null;
   renderDiagInfoBody(code, catchId);
   document.getElementById('diag-info-modal').classList.remove('hidden');
+}
+
+function openDiagLightbox(src) {
+  const lb = document.createElement('div');
+  lb.className = 'diag-lightbox';
+  lb.innerHTML = `<img src="${src}" class="diag-lightbox-img" alt="">`;
+  document.body.appendChild(lb);
+  lb.addEventListener('click', () => lb.remove());
 }
 
 // ─── Streak Modal ──────────────────────────────────────────────────────────────
