@@ -96,6 +96,8 @@ img{max-width:100%;display:block}
   font-family:'Cinzel',serif;font-size:15px;font-weight:600;
   color:var(--accent);letter-spacing:.04em;
 }
+.tab-home-active .app-header{display:none}
+.home-header-logo{font-family:'Cinzel',serif;font-size:14px;font-weight:600;color:var(--accent);letter-spacing:.04em;flex-shrink:0;white-space:nowrap;line-height:1}
 
 /* ── Tab Container ─────────────────────────────────────────────────────────── */
 .tab-container{
@@ -1389,13 +1391,16 @@ img{max-width:100%;display:block}
 .mission-card.tier-3{border-color:rgba(167,139,250,.3)}
 
 /* ── Mission card two-column layout ─────────────────────────────────────────── */
-.mission-card{display:flex;align-items:flex-start;gap:12px}
-.mc-left{flex-shrink:0;display:flex;align-items:center;padding-top:2px}
-.mc-emoji{font-size:40px;line-height:1}
+.mission-card{display:flex;align-items:center;gap:12px}
+.mc-left{flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.mc-icon-circle{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.tier-1 .mc-icon-circle{background:rgba(156,163,175,.12);border:1px solid rgba(156,163,175,.25)}
+.tier-2 .mc-icon-circle{background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.3)}
+.tier-3 .mc-icon-circle{background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.35)}
+.mc-emoji{font-size:28px;line-height:1}
 .mc-right{flex:1;min-width:0}
 .mission-card--done{opacity:.55}
 .mission-card--done .mc-emoji{filter:grayscale(.6)}
-.mission-card--done .mission-prog-fill{background:#6b7280!important}
 
 .mission-card-header{
   display:flex;justify-content:space-between;align-items:center;
@@ -2255,7 +2260,7 @@ img{max-width:100%;display:block}
 .home-snav-arrow-right{flex-direction:row-reverse}
 .home-snav-arrow-icon{font-size:18px;color:var(--text-dim);flex-shrink:0}
 .home-snav-date{font-size:12px;font-weight:600;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.home-snav-cal{flex-shrink:0;background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.35);border-radius:var(--r);padding:10px 14px;cursor:pointer;color:var(--accent);font-size:13px;font-weight:600;-webkit-tap-highlight-color:transparent;white-space:nowrap;transition:background .15s}
+.home-snav-cal{flex-shrink:0;background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.35);border-radius:var(--r);padding:10px 12px;cursor:pointer;color:var(--accent);font-size:18px;-webkit-tap-highlight-color:transparent;transition:background .15s}
 .home-snav-cal:active{background:rgba(124,58,237,.3)}
 
 /* ── Calendar Modal ─────────────────────────────────────────────────────────── */
@@ -2724,16 +2729,19 @@ img{max-width:100%;display:block}
 .hm-mission-pill{
   flex:1;min-width:0;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:4px;padding:8px 4px;height:76px;
+  gap:4px;padding:8px 6px;height:76px;
   border-radius:10px;
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
   overflow:hidden;
 }
 .hm-mission-pill.tier-2{border-color:rgba(96,165,250,.2)}
 .hm-mission-pill.tier-3{border-color:rgba(167,139,250,.25)}
-.hm-mp-emoji{font-size:20px;flex-shrink:0;line-height:1}
-.hm-mp-title{font-size:10px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;width:100%;padding:0 3px}
-.hm-mp-dots{font-size:9px;color:var(--accent);letter-spacing:1px;text-align:center}
+.hm-mp-dots{font-size:9px;color:var(--accent);letter-spacing:1px;text-align:center;flex-shrink:0}
+.hm-mp-body{display:flex;align-items:center;gap:4px;width:100%;min-height:0}
+.hm-mp-emoji{font-size:14px;flex-shrink:0;line-height:1}
+.hm-mp-title{font-size:10px;font-weight:600;color:var(--text);line-height:1.3;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  text-align:left;word-break:break-word}
 .mc-dots{font-size:10px;letter-spacing:1px}
 
 .mission-history-pill{display:flex;align-items:center;justify-content:center;min-width:36px;font-size:18px;background:var(--bg-raised);border:1px solid var(--border);border-radius:10px;padding:6px 8px;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0;transition:background .15s}

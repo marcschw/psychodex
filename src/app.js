@@ -562,6 +562,7 @@ function navigateTo(tab) {
   state.currentTab = tab;
   document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.body.classList.toggle('tab-home-active', tab === 'home');
   const tabEl = document.getElementById(`tab-${tab}`);
   const btnEl = document.querySelector(`.nav-btn[data-tab="${tab}"]`);
   if (tabEl) tabEl.classList.add('active');
@@ -1783,8 +1784,8 @@ function renderTimeline(shift) {
         .sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999));
       const diagCards = slotCatches.map(c =>
         `<div class="tl-diag-card" data-catch-id="${c.id}" data-code="${c.code}">
-          <div class="tl-diag-imgbg" style="background-image:url('assets/images/diagnoses/${c.code}.png')"></div>
-          <img class="tl-diag-thumb" src="assets/images/diagnoses/${c.code}.png" alt="" onerror="this.style.display='none'" loading="lazy">
+          <div class="tl-diag-imgbg" style="background-image:url('assets/images/diagnoses/${c.code.toLowerCase()}.png')"></div>
+          <img class="tl-diag-thumb" src="assets/images/diagnoses/${c.code.toLowerCase()}.png" alt="" onerror="this.style.display='none'" loading="lazy">
           <div class="tl-diag-content">
             <span class="tl-diag-code">${c.code}</span>
             <span class="tl-diag-name">${c.name}</span>
@@ -1906,7 +1907,7 @@ function renderTimeline(shift) {
     el.querySelectorAll('.tl-diag-card').forEach(card => {
       card.addEventListener('click', e => {
         if (e.target.closest('.tl-diag-del')) return;
-        openDiagInfoModal(card.dataset.code);
+        openDiagInfoModal(card.dataset.code, parseInt(card.dataset.catchId));
       });
     });
   });
@@ -5251,9 +5252,11 @@ function renderHomeMissions() {
     const { current, target } = calcMissionProgress(def, catchesSince, shiftsSince, state.icdFlat);
     const pct = Math.min(100, Math.round((current / target) * 100));
     return `<button class="hm-mission-pill tier-${def.tier}" data-mission-id="${am.id}">
-      <span class="hm-mp-emoji">${def.emoji||''}</span>
-      <div class="hm-mp-title">${def.title}</div>
       <div class="hm-mp-dots">${missionDots(pct)}</div>
+      <div class="hm-mp-body">
+        <span class="hm-mp-emoji">${def.emoji||''}</span>
+        <div class="hm-mp-title">${def.title}</div>
+      </div>
     </button>`;
   }).join('');
   el.querySelectorAll('.hm-mission-pill[data-mission-id]').forEach(pill =>
@@ -5341,7 +5344,9 @@ function renderMissions() {
     return `
       <div class="mission-card tier-${mDef.tier}${done ? ' mission-card--done' : ''}">
         <div class="mc-left">
-          <span class="mc-emoji">${mDef.emoji || '🎯'}</span>
+          <div class="mc-icon-circle">
+            <span class="mc-emoji">${mDef.emoji || '🎯'}</span>
+          </div>
         </div>
         <div class="mc-right">
           <div class="mission-card-header">
@@ -5349,11 +5354,8 @@ function renderMissions() {
             <span class="mission-reward">${done ? '✓ ' : ''}+${mDef.reward.toLocaleString('de-AT')} XP</span>
           </div>
           <div class="mission-title">${mDef.title}</div>
-          ${done ? '' : `<div class="mission-desc">${mDef.description}</div>`}
+          <div class="mission-desc">${mDef.description}</div>
           <div class="mission-progress-row">
-            <div class="mission-prog-track" style="overflow:hidden">
-              <div class="mission-prog-fill" style="width:${pct}%;background:${barColor}"></div>
-            </div>
             <span class="mission-prog-text mc-dots">${done ? (dateStr || '✓') : missionDots(pct)}</span>
           </div>
         </div>
@@ -6983,14 +6985,18 @@ function renderLinkedChips(items, currentCode) {
   }).join('');
 }
 
-function renderDiagInfoBody(code) {
+function renderDiagInfoBody(code, catchId) {
   const diag = state.icdFlat.find(d => d.code === code);
   if (!diag) return;
   state.diagInfoCurrentCode = code;
   const isCaught = new Set(state.catches.map(c => c.code)).has(code);
   const base     = 20 * diag.seltenheit_score;
-  const lastCatch = state.catches.find(c => c.code === code);
-  const savedChecked = lastCatch?.checkedSymptoms || [];
+  const catchRecord = catchId
+    ? state.catches.find(c => c.id === catchId)
+    : state.catches.find(c => c.code === code);
+  const savedChecked = catchRecord?.checkedSymptoms || [];
+  const interactive = !!catchId;
+  const kind = interactive ? 'catch' : 'view';
   const pflicht  = diag.diagnose_kriterien?.pflicht_symptome || [];
   const optional = diag.diagnose_kriterien?.optionale_symptome || [];
   document.getElementById('diag-info-title').textContent = diag.code;
@@ -7012,11 +7018,11 @@ function renderDiagInfoBody(code) {
     </div>
     <div class="diag-detail-section">
       <div class="diag-detail-label diag-label-pflicht">🔴 Pflicht-Symptome</div>
-      <ul class="symptom-list">${renderSymptomCheckboxes(pflicht, 'view', savedChecked, 'symptom-pflicht')}</ul>
+      <ul class="symptom-list">${renderSymptomCheckboxes(pflicht, kind, savedChecked, 'symptom-pflicht')}</ul>
     </div>
     <div class="diag-detail-section">
       <div class="diag-detail-label diag-label-optional">💡 Optionale Symptome</div>
-      <ul class="symptom-list">${renderSymptomCheckboxes(optional, 'view', savedChecked, 'symptom-optional')}</ul>
+      <ul class="symptom-list">${renderSymptomCheckboxes(optional, kind, savedChecked, 'symptom-optional')}</ul>
     </div>
     <div class="diag-detail-section">
       <div class="diag-detail-label">Häufige Komorbiditäten</div>
@@ -7027,12 +7033,21 @@ function renderDiagInfoBody(code) {
       <div class="komorbid-chips" id="diag-info-diff">${renderLinkedChips(diag.differentialdiagnose, code)}</div>
     </div>
     ${!isCaught ? `<button class="btn-catch" id="diag-info-catch-btn">🎯 Jetzt fangen!</button>` : ''}`;
-  initSymptomCounters(document.getElementById('diag-info-body'), false);
+  const body = document.getElementById('diag-info-body');
+  initSymptomCounters(body, interactive);
+  if (interactive && catchRecord) {
+    const saveSymptoms = async () => {
+      const checked = [...body.querySelectorAll('.sym-cb:checked')].map(cb => cb.dataset.key);
+      await db.caughtDiagnoses.update(catchRecord.id, { checkedSymptoms: checked });
+      catchRecord.checkedSymptoms = checked;
+    };
+    body.querySelectorAll('.sym-cb').forEach(cb => cb.addEventListener('change', saveSymptoms));
+  }
   document.getElementById('diag-info-back-btn')?.addEventListener('click', () => {
     const prev = state.diagInfoStack.pop();
     if (prev) renderDiagInfoBody(prev);
   });
-  document.getElementById('diag-info-body').querySelectorAll('.linked-chip').forEach(btn =>
+  body.querySelectorAll('.linked-chip').forEach(btn =>
     btn.addEventListener('click', () => navigateDiagInfoTo(btn.dataset.code)));
   document.getElementById('diag-info-catch-btn')?.addEventListener('click', () => {
     closeDiagInfoModal(); openStandaloneCatch(diag);
@@ -7044,10 +7059,10 @@ function navigateDiagInfoTo(code) {
   renderDiagInfoBody(code);
 }
 
-function openDiagInfoModal(code) {
+function openDiagInfoModal(code, catchId) {
   state.diagInfoStack = [];
   state.diagInfoCurrentCode = null;
-  renderDiagInfoBody(code);
+  renderDiagInfoBody(code, catchId);
   document.getElementById('diag-info-modal').classList.remove('hidden');
 }
 
