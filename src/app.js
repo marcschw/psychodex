@@ -3517,7 +3517,8 @@ function openZuteilEarlyLeave(personName, zData, saveData, pushUndo, render) {
   document.getElementById('zuteilung-modal').appendChild(popup);
   const close = () => popup.remove();
   popup.querySelector('#zp-cancel').onclick = close;
-  popup.querySelector('#zp-clear')?.onclick = () => {
+  const clearBtn = popup.querySelector('#zp-clear');
+  if (clearBtn) clearBtn.onclick = () => {
     pushUndo();
     zData.personStates[personName] = { ...ps, earlyLeave: null };
     close(); saveData(); render();
