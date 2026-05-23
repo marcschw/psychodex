@@ -2631,27 +2631,44 @@ img{max-width:100%;display:block}
 
 /* ── Stats Sub-tabs ──────────────────────────────────────────────────────────── */
 .stats-subtabs{
-  display:flex;gap:0;overflow-x:auto;padding:8px 0 0;
+  display:flex;gap:0;overflow-x:auto;padding:0;
   scrollbar-width:none;-webkit-overflow-scrolling:touch;flex-shrink:0;
   border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:10;
+  background:rgba(8,8,15,.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  margin:0 -16px;padding:0 4px;
 }
 .stats-subtabs::-webkit-scrollbar{display:none}
 .stats-subtab{
-  display:flex;flex-direction:column;align-items:center;gap:1px;
-  padding:8px 14px 10px;flex-shrink:0;cursor:pointer;
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:10px 6px 11px;flex-shrink:0;cursor:pointer;
   background:transparent;border:none;border-bottom:2px solid transparent;
   margin-bottom:-1px;
   -webkit-tap-highlight-color:transparent;transition:all .15s;
 }
-.stats-subtab.active{
-  border-bottom-color:var(--accent);
-}
-.subtab-name{font-size:12px;font-weight:700;color:var(--text-dim);line-height:1.2}
+.stats-subtab.active{border-bottom-color:var(--accent)}
+.subtab-icon{font-size:20px;line-height:1}
 .subtab-stat{font-size:10px;color:var(--text-dim);opacity:.6;white-space:nowrap;line-height:1.2}
-.stats-subtab.active .subtab-name{color:var(--accent)}
+.stats-subtab.active .subtab-icon{filter:none}
 .stats-subtab.active .subtab-stat{color:rgba(167,139,250,.7);opacity:1}
 .stats-panel{padding-top:12px}
 .stats-panel-hidden{display:none}
+/* ── Supervision stats section ───────────────────────────────────────────────── */
+.sup-stats-section{margin:16px 0 4px}
+.sup-stats-header{display:flex;align-items:center;justify-content:space-between}
+.sup-add-btn{font-size:12px;font-weight:600;color:var(--accent);background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.25);border-radius:20px;padding:4px 12px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.sup-add-btn:active{background:rgba(167,139,250,.2)}
+.sup-bar-wrap{display:flex;align-items:center;gap:10px;margin:10px 0 12px}
+.sup-bar-track{flex:1;height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden}
+.sup-bar-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .4s}
+.sup-bar-label{font-size:11px;color:var(--text-dim);white-space:nowrap;flex-shrink:0}
+.sup-log-row{display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);margin-bottom:6px}
+.sup-log-main{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.sup-log-date{font-size:13px;font-weight:600;color:var(--text)}
+.sup-log-dur{font-size:12px;color:var(--accent);font-weight:700}
+.sup-log-sup{font-size:12px;color:var(--text-dim)}
+.sup-log-actions{display:flex;gap:4px;flex-shrink:0}
+.sup-empty{font-size:12px;color:var(--text-dim);padding:8px 0}
 
 /* ── Badge Lightbox ──────────────────────────────────────────────────────────── */
 .badge-lightbox{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center}

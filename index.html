@@ -147,19 +147,19 @@
         <!-- Sub-tab chips -->
         <div class="stats-subtabs" id="stats-subtab-bar">
           <button class="stats-subtab active" data-subtab="overview">
-            <span class="subtab-name">📊 Übersicht</span>
+            <span class="subtab-icon">📊</span>
             <span class="subtab-stat" id="sstab-overview-stat">Rang 1</span>
           </button>
           <button class="stats-subtab" data-subtab="dienste">
-            <span class="subtab-name">🎯 Missionen</span>
+            <span class="subtab-icon">🎯</span>
             <span class="subtab-stat" id="sstab-dienste-stat">0 aktiv</span>
           </button>
           <button class="stats-subtab" data-subtab="diagnosen">
-            <span class="subtab-name">🔬 Diagnosen</span>
+            <span class="subtab-icon">🔬</span>
             <span class="subtab-stat" id="sstab-diagnosen-stat">0</span>
           </button>
           <button class="stats-subtab" data-subtab="badges">
-            <span class="subtab-name">🏆 Achievements</span>
+            <span class="subtab-icon">🏆</span>
             <span class="subtab-stat" id="sstab-badges-stat">0/25</span>
           </button>
         </div>
@@ -203,6 +203,30 @@
             </div>
           </div>
           <div id="hours-counters"></div>
+          <!-- Supervision -->
+          <div class="sup-stats-section">
+            <div class="sup-stats-header">
+              <span class="section-header" style="margin:0">🎓 Supervisionen</span>
+              <button class="sup-add-btn" id="btn-sup-add">＋ Hinzufügen</button>
+            </div>
+            <div class="stats-row" style="margin-top:10px">
+              <div class="stat-card stat-clickable" id="stat-supervision-card">
+                <div class="stat-icon">🎓</div>
+                <div class="stat-value" id="supervision-count">0</div>
+                <div class="stat-label">Supervisionen</div>
+              </div>
+              <div class="stat-card stat-clickable" id="stat-sup-hours-card">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-value" id="supervision-hours">0h</div>
+                <div class="stat-label">Stunden gesamt</div>
+              </div>
+            </div>
+            <div class="sup-bar-wrap">
+              <div class="sup-bar-track"><div class="sup-bar-fill" id="sup-bar-fill" style="width:0%"></div></div>
+              <span class="sup-bar-label" id="sup-bar-label">0 / 20 Ziel</span>
+            </div>
+            <div id="sup-log-list"></div>
+          </div>
           <div class="section-header" id="heatmap-section-header">Dienst-Aktivität</div>
           <div class="heatmap-scroll">
             <div id="heatmap" class="heatmap"></div>
@@ -250,11 +274,6 @@
             <label class="setting-label">Extra-Stunden</label>
             <div id="extra-hours-section"></div>
           </div>
-        </div>
-        <div class="setting-item setting-wide">
-          <label class="setting-label">Supervision</label>
-          <div id="supervision-history"></div>
-          <button id="btn-log-supervision" class="io-btn" style="margin-top:8px;width:100%">🎓 Supervision loggen (+250 XP/h)</button>
         </div>
         <div class="section-header">Daten &amp; Backup</div>
         <div class="backup-section-wrap">
@@ -889,9 +908,10 @@
   <div class="modal-backdrop" id="supervision-backdrop"></div>
   <div class="modal-sheet">
     <div class="sheet-header">
-      <div class="modal-title">🎓 Supervision loggen</div>
+      <div class="modal-title" id="supervision-modal-title">🎓 Supervision eintragen</div>
     </div>
     <div class="sheet-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+      <input type="hidden" id="supervision-edit-id" value="">
       <div class="form-row">
         <label class="form-label">Datum</label>
         <input type="date" id="supervision-date" class="form-input">
@@ -905,7 +925,7 @@
         <input type="text" id="supervision-supervisor" class="form-input" placeholder="Kürzel…">
       </div>
       <div style="display:flex;gap:8px;margin-top:4px">
-        <button id="supervision-save"   class="btn-primary"   style="flex:1">Speichern (+250 XP/h)</button>
+        <button id="supervision-save"   class="btn-primary"   style="flex:1">Speichern</button>
         <button id="supervision-cancel" class="btn-secondary">Abbrechen</button>
       </div>
     </div>

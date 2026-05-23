@@ -5008,30 +5008,71 @@ async function refreshMissionProgress() {
 function renderSettingsTab() {
   renderHourCountersSettings();
   renderExtraHoursSettings();
-  renderSupervisionHistory();
 }
 
 // ─── Supervision Logging ──────────────────────────────────────────────────────
-async function renderSupervisionHistory() {
-  const el = document.getElementById('supervision-history');
-  if (!el) return;
-  const logs = await db.supervisionLogs.orderBy('date').reverse().limit(5).toArray();
-  if (!logs.length) { el.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:4px 0">Noch keine Supervisionen geloggt.</div>'; return; }
-  el.innerHTML = logs.map(l => `
-    <div class="supervision-log-row">
-      <span class="sl-date">${l.date}</span>
-      <span class="sl-dur">${l.duration}h</span>
-      <span class="sl-sup">${l.supervisor || '–'}</span>
-    </div>`).join('');
+async function renderSupervisionStats() {
+  const logs = await db.supervisionLogs.orderBy('date').reverse().toArray();
+  const total = logs.length;
+  const hours = logs.reduce((s, l) => s + (l.duration || 0), 0);
+  const goal  = 20;
+  const pct   = Math.min(100, Math.round((total / goal) * 100));
+
+  const elCount = document.getElementById('supervision-count');
+  const elHours = document.getElementById('supervision-hours');
+  const elFill  = document.getElementById('sup-bar-fill');
+  const elLabel = document.getElementById('sup-bar-label');
+  if (elCount) elCount.textContent = total;
+  if (elHours) elHours.textContent = `${hours}h`;
+  if (elFill)  elFill.style.width  = `${pct}%`;
+  if (elLabel) elLabel.textContent = `${total} / ${goal} Ziel`;
+
+  const list = document.getElementById('sup-log-list');
+  if (!list) return;
+  if (!logs.length) {
+    list.innerHTML = '<div class="sup-empty">Noch keine Supervisionen eingetragen.</div>';
+    return;
+  }
+  list.innerHTML = logs.map(l => {
+    const d = new Date(l.date + 'T12:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'2-digit' });
+    return `<div class="sup-log-row" data-id="${l.id}">
+      <div class="sup-log-main">
+        <span class="sup-log-date">${d}</span>
+        <span class="sup-log-dur">${l.duration}h</span>
+        ${l.supervisor ? `<span class="sup-log-sup">${l.supervisor}</span>` : ''}
+      </div>
+      <div class="sup-log-actions">
+        <button class="btn-icon sup-edit-btn" data-id="${l.id}" title="Bearbeiten">✏️</button>
+        <button class="btn-icon sup-del-btn btn-danger-sm" data-id="${l.id}" title="Löschen">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.sup-edit-btn').forEach(btn =>
+    btn.addEventListener('click', async () => {
+      const log = logs.find(l => l.id === parseInt(btn.dataset.id));
+      if (log) openSupervisionModal(log);
+    })
+  );
+  list.querySelectorAll('.sup-del-btn').forEach(btn =>
+    btn.addEventListener('click', async () => {
+      const log = logs.find(l => l.id === parseInt(btn.dataset.id));
+      if (!log) return;
+      if (!confirm(`Supervision vom ${log.date} (${log.duration}h) löschen?`)) return;
+      await deleteSupervision(log);
+    })
+  );
 }
 
-function openSupervisionModal() {
+function openSupervisionModal(editLog = null) {
   const modal = document.getElementById('supervision-modal');
   if (!modal) return;
   const today = new Date().toISOString().slice(0, 10);
-  document.getElementById('supervision-date').value = today;
-  document.getElementById('supervision-duration').value = '';
-  document.getElementById('supervision-supervisor').value = '';
+  document.getElementById('supervision-edit-id').value    = editLog ? editLog.id : '';
+  document.getElementById('supervision-modal-title').textContent = editLog ? '🎓 Supervision bearbeiten' : '🎓 Supervision eintragen';
+  document.getElementById('supervision-date').value       = editLog ? editLog.date : today;
+  document.getElementById('supervision-duration').value   = editLog ? editLog.duration : '';
+  document.getElementById('supervision-supervisor').value = editLog?.supervisor ?? '';
   modal.classList.remove('hidden');
   document.getElementById('supervision-backdrop').onclick = () => modal.classList.add('hidden');
   document.getElementById('supervision-cancel').onclick   = () => modal.classList.add('hidden');
@@ -5039,22 +5080,44 @@ function openSupervisionModal() {
 }
 
 async function saveSupervision() {
-  const date   = document.getElementById('supervision-date').value;
-  const durStr = document.getElementById('supervision-duration').value;
+  const date       = document.getElementById('supervision-date').value;
+  const durStr     = document.getElementById('supervision-duration').value;
   const supervisor = document.getElementById('supervision-supervisor').value.trim();
-  const duration = parseFloat(durStr);
+  const duration   = parseFloat(durStr);
+  const editId     = document.getElementById('supervision-edit-id').value;
   if (!date || isNaN(duration) || duration <= 0) { alert('Bitte Datum und Dauer angeben.'); return; }
 
   const xp = Math.round(250 * duration);
-  await db.supervisionLogs.add({ date, duration, supervisor: supervisor || null, notes: '', xpEarned: xp });
 
-  const newTotal = (state.profile.totalXP ?? 0) + xp;
-  await db.profile.update(state.profile.id, { totalXP: newTotal });
-  state.profile.totalXP = newTotal;
+  if (editId) {
+    const old = await db.supervisionLogs.get(parseInt(editId));
+    const oldXP = old?.xpEarned ?? 0;
+    await db.supervisionLogs.update(parseInt(editId), { date, duration, supervisor: supervisor || null, xpEarned: xp });
+    const delta = xp - oldXP;
+    if (delta !== 0) {
+      const newTotal = (state.profile.totalXP ?? 0) + delta;
+      await db.profile.update(state.profile.id, { totalXP: newTotal });
+      state.profile.totalXP = newTotal;
+    }
+  } else {
+    await db.supervisionLogs.add({ date, duration, supervisor: supervisor || null, notes: '', xpEarned: xp });
+    const newTotal = (state.profile.totalXP ?? 0) + xp;
+    await db.profile.update(state.profile.id, { totalXP: newTotal });
+    state.profile.totalXP = newTotal;
+    showXPPopup(xp, [{ label: `🎓 Supervision ${duration}h` }]);
+  }
 
   document.getElementById('supervision-modal').classList.add('hidden');
-  showXPPopup(xp, [{ label: `🎓 Supervision ${duration}h` }]);
-  renderSupervisionHistory();
+  renderSupervisionStats();
+  renderDashboard();
+}
+
+async function deleteSupervision(log) {
+  await db.supervisionLogs.delete(log.id);
+  const newTotal = Math.max(0, (state.profile.totalXP ?? 0) - (log.xpEarned || 0));
+  await db.profile.update(state.profile.id, { totalXP: newTotal });
+  state.profile.totalXP = newTotal;
+  renderSupervisionStats();
   renderDashboard();
 }
 
@@ -5623,6 +5686,11 @@ function renderStats() {
   if (el('sstab-dienste-stat'))   el('sstab-dienste-stat').textContent   = `${activeMissionCount} aktiv`;
   if (el('sstab-diagnosen-stat')) el('sstab-diagnosen-stat').textContent = `${state.catches.length} gefangen`;
   if (el('sstab-badges-stat'))    el('sstab-badges-stat').textContent    = `${earnedBadges} / ${totalBadges}`;
+
+  renderSupervisionStats();
+
+  // Wire supervision add button
+  document.getElementById('btn-sup-add')?.addEventListener('click', () => openSupervisionModal());
 
   // Apply current sub-tab visibility
   switchStatsSubTab(state.statsSubTab);
@@ -7522,7 +7590,6 @@ function setupDashboardCardListeners() {
     e.stopPropagation();
     openXPInfoModal();
   });
-  document.getElementById('btn-log-supervision')?.addEventListener('click', openSupervisionModal);
 }
 
 // ─── Hour Counters Settings ───────────────────────────────────────────────────
