@@ -2904,22 +2904,48 @@ async function applyVerifyXP(slot, seniorCode) {
 // ─── Recall Patient Modal ─────────────────────────────────────────────────────
 async function openRecallPatientModal(targetSlot, shift) {
   const allSlots = await db.scheduleSlots.toArray();
+  const shiftMap = Object.fromEntries(state.shifts.map(s => [s.id, s]));
+
   const patients = allSlots
-    .filter(s => (s.type === 'patient' || SLOT_TYPES[s.type]?.patientContact) && s.shiftId !== shift.id)
-    .sort((a, b) => b.shiftId - a.shiftId);
+    .filter(s => (s.type === 'patient' || SLOT_TYPES[s.type]?.patientContact) && s.shiftId !== shift.id);
+
+  const returnDate = p => p.terminInterview || p.terminErstgespraech || null;
+  const priority = p => {
+    const rd = returnDate(p);
+    if (rd && rd.slice(0, 10) === shift.date) return 0;
+    if (rd || p.suspectedCodes?.length) return 1;
+    return 2;
+  };
+  patients.sort((a, b) => priority(a) - priority(b) || b.shiftId - a.shiftId);
 
   const existing = document.getElementById('recall-modal');
   if (existing) existing.remove();
 
+  const fmtD = str => str
+    ? new Date(str).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: '2-digit' })
+    : null;
+
   const itemsHtml = patients.length
     ? patients.map(p => {
-        const chips = (p.suspectedCodes || []).map(c =>
+        const slotShift  = shiftMap[p.shiftId];
+        const dateStr    = fmtD(slotShift?.date) ?? '—';
+        const timeStr    = `${String(p.startHour ?? 0).padStart(2,'0')}:${String(p.startMinute ?? 0).padStart(2,'0')}`;
+        const typeLbl    = SLOT_TYPES[p.type]?.label ?? p.type;
+        const kuerzel    = p.patientNotes || '(kein Kürzel)';
+        const rd         = returnDate(p);
+        const rdStr      = fmtD(rd);
+        const isToday    = rd && rd.slice(0, 10) === shift.date;
+        const chips      = (p.suspectedCodes || []).map(c =>
           `<span class="susp-chip"><span class="susp-chip-code">${c.code}</span></span>`
         ).join('');
-        const label = p.patientNotes || (SLOT_TYPES[p.type]?.label ?? p.type);
-        return `<div class="recall-item" data-id="${p.id}">
-          <div class="recall-item-name">${label}</div>
-          <div class="recall-item-chips">${chips}</div>
+        return `<div class="recall-item${isToday ? ' recall-item--today' : ''}" data-id="${p.id}">
+          <div class="recall-item-header">
+            <span class="recall-item-kuerzel">${kuerzel}</span>
+            ${isToday ? '<span class="recall-today-tag">↩ Heute</span>' : ''}
+          </div>
+          <div class="recall-item-session">${typeLbl} · ${dateStr} · ${timeStr}</div>
+          ${rdStr ? `<div class="recall-item-return">↩ Zurückkommen: ${rdStr}</div>` : ''}
+          ${chips ? `<div class="recall-item-chips" style="margin-top:5px">${chips}</div>` : ''}
         </div>`;
       }).join('')
     : '<div style="color:var(--text-dim);font-size:13px;padding:16px 0">Keine früheren Patienten gefunden.</div>';
