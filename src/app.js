@@ -663,8 +663,10 @@ function renderDashboard() {
   // Stat card clicks
   const hoursCard  = document.getElementById('stat-hours-card');
   const streakCard = document.getElementById('stat-streak-card');
+  const supCard    = document.getElementById('stat-sup-hours-card');
   if (hoursCard)  hoursCard.onclick  = openHoursModal;
   if (streakCard) streakCard.onclick = openStreakModal;
+  if (supCard)    supCard.onclick    = openSupervisionSheet;
 }
 
 // ─── Hours Counters ───────────────────────────────────────────────────────────
@@ -5013,55 +5015,69 @@ function renderSettingsTab() {
 // ─── Supervision Logging ──────────────────────────────────────────────────────
 async function renderSupervisionStats() {
   const logs = await db.supervisionLogs.orderBy('date').reverse().toArray();
-  const total = logs.length;
   const hours = logs.reduce((s, l) => s + (l.duration || 0), 0);
-  const goal  = 20;
-  const pct   = Math.min(100, Math.round((total / goal) * 100));
-
-  const elCount = document.getElementById('supervision-count');
   const elHours = document.getElementById('supervision-hours');
-  const elFill  = document.getElementById('sup-bar-fill');
-  const elLabel = document.getElementById('sup-bar-label');
-  if (elCount) elCount.textContent = total;
   if (elHours) elHours.textContent = `${hours}h`;
-  if (elFill)  elFill.style.width  = `${pct}%`;
-  if (elLabel) elLabel.textContent = `${total} / ${goal} Ziel`;
+}
 
-  const list = document.getElementById('sup-log-list');
-  if (!list) return;
-  if (!logs.length) {
-    list.innerHTML = '<div class="sup-empty">Noch keine Supervisionen eingetragen.</div>';
-    return;
-  }
-  list.innerHTML = logs.map(l => {
-    const d = new Date(l.date + 'T12:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'2-digit' });
-    return `<div class="sup-log-row" data-id="${l.id}">
-      <div class="sup-log-main">
-        <span class="sup-log-date">${d}</span>
-        <span class="sup-log-dur">${l.duration}h</span>
-        ${l.supervisor ? `<span class="sup-log-sup">${l.supervisor}</span>` : ''}
+async function openSupervisionSheet() {
+  const logs = await db.supervisionLogs.orderBy('date').reverse().toArray();
+  const existing = document.getElementById('sup-sheet-modal');
+  if (existing) existing.remove();
+
+  const renderRows = (container, logs) => {
+    if (!logs.length) {
+      container.innerHTML = '<div class="sup-empty">Noch keine Supervisionen eingetragen.</div>';
+      return;
+    }
+    container.innerHTML = logs.map(l => {
+      const d = new Date(l.date + 'T12:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'2-digit' });
+      return `<div class="sup-log-row" data-id="${l.id}">
+        <div class="sup-log-main">
+          <span class="sup-log-date">${d}</span>
+          <span class="sup-log-dur">${l.duration}h</span>
+          ${l.supervisor ? `<span class="sup-log-sup">${l.supervisor}</span>` : ''}
+        </div>
+        <div class="sup-log-actions">
+          <button class="btn-icon sup-edit-btn" data-id="${l.id}">✏️</button>
+          <button class="btn-icon sup-del-btn btn-danger-sm" data-id="${l.id}">🗑</button>
+        </div>
+      </div>`;
+    }).join('');
+    container.querySelectorAll('.sup-edit-btn').forEach(btn =>
+      btn.addEventListener('click', async () => {
+        const log = logs.find(l => l.id === parseInt(btn.dataset.id));
+        if (log) { modal.remove(); openSupervisionModal(log); }
+      })
+    );
+    container.querySelectorAll('.sup-del-btn').forEach(btn =>
+      btn.addEventListener('click', async () => {
+        const log = logs.find(l => l.id === parseInt(btn.dataset.id));
+        if (!log || !confirm(`Supervision vom ${log.date} (${log.duration}h) löschen?`)) return;
+        await deleteSupervision(log);
+        modal.remove();
+      })
+    );
+  };
+
+  const hours = logs.reduce((s, l) => s + (l.duration || 0), 0);
+  const modal = document.createElement('div');
+  modal.id = 'sup-sheet-modal';
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-backdrop" id="sup-sheet-backdrop"></div>
+    <div class="modal-sheet modal-sheet-tall">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="modal-title">🎓 Supervisionen · ${hours}h gesamt</div>
+        <button class="sup-add-btn" id="sup-sheet-add-btn">＋ Hinzufügen</button>
       </div>
-      <div class="sup-log-actions">
-        <button class="btn-icon sup-edit-btn" data-id="${l.id}" title="Bearbeiten">✏️</button>
-        <button class="btn-icon sup-del-btn btn-danger-sm" data-id="${l.id}" title="Löschen">🗑</button>
-      </div>
+      <div class="sheet-body" style="padding:12px 16px;overflow-y:auto;display:flex;flex-direction:column;gap:0" id="sup-sheet-body"></div>
     </div>`;
-  }).join('');
-
-  list.querySelectorAll('.sup-edit-btn').forEach(btn =>
-    btn.addEventListener('click', async () => {
-      const log = logs.find(l => l.id === parseInt(btn.dataset.id));
-      if (log) openSupervisionModal(log);
-    })
-  );
-  list.querySelectorAll('.sup-del-btn').forEach(btn =>
-    btn.addEventListener('click', async () => {
-      const log = logs.find(l => l.id === parseInt(btn.dataset.id));
-      if (!log) return;
-      if (!confirm(`Supervision vom ${log.date} (${log.duration}h) löschen?`)) return;
-      await deleteSupervision(log);
-    })
-  );
+  document.body.appendChild(modal);
+  renderRows(modal.querySelector('#sup-sheet-body'), logs);
+  document.getElementById('sup-sheet-backdrop').onclick = () => modal.remove();
+  document.getElementById('sup-sheet-add-btn').onclick  = () => { modal.remove(); openSupervisionModal(); };
 }
 
 function openSupervisionModal(editLog = null) {
@@ -5205,6 +5221,11 @@ function openChallengeHistoryModal() {
   modal.classList.remove('hidden');
 }
 
+const missionDots = (pct, n = 5) => {
+  const f = Math.round(pct * n / 100);
+  return '●'.repeat(f) + '○'.repeat(n - f);
+};
+
 function setupMissionModals() {
   document.getElementById('mission-detail-close').addEventListener('click', () =>
     document.getElementById('mission-detail-modal').classList.add('hidden'));
@@ -5231,11 +5252,8 @@ function renderHomeMissions() {
     const pct = Math.min(100, Math.round((current / target) * 100));
     return `<button class="hm-mission-pill tier-${def.tier}" data-mission-id="${am.id}">
       <span class="hm-mp-emoji">${def.emoji||''}</span>
-      <div class="hm-mp-body">
-        <div class="hm-mp-title">${def.title}</div>
-        <div class="hm-mp-bar"><div class="hm-mp-fill" style="width:${pct}%"></div></div>
-      </div>
-      <span class="hm-mp-pct">${pct}%</span>
+      <div class="hm-mp-title">${def.title}</div>
+      <div class="hm-mp-dots">${missionDots(pct)}</div>
     </button>`;
   }).join('');
   el.querySelectorAll('.hm-mission-pill[data-mission-id]').forEach(pill =>
@@ -5336,7 +5354,7 @@ function renderMissions() {
             <div class="mission-prog-track" style="overflow:hidden">
               <div class="mission-prog-fill" style="width:${pct}%;background:${barColor}"></div>
             </div>
-            <span class="mission-prog-text">${done ? (dateStr || '✓') : `${current} / ${target}`}</span>
+            <span class="mission-prog-text mc-dots">${done ? (dateStr || '✓') : missionDots(pct)}</span>
           </div>
         </div>
       </div>`;
@@ -5710,9 +5728,6 @@ function renderStats() {
   if (el('sstab-badges-stat'))    el('sstab-badges-stat').textContent    = `${earnedBadges} / ${totalBadges}`;
 
   renderSupervisionStats();
-
-  // Wire supervision add button
-  document.getElementById('btn-sup-add')?.addEventListener('click', () => openSupervisionModal());
 
   // Apply current sub-tab visibility
   switchStatsSubTab(state.statsSubTab);
