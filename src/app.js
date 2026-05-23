@@ -3057,10 +3057,10 @@ async function openZuteilungScreen(shift) {
   const people = [];
   if (userName) people.push({
     name: userName,
-    funktion: fresh.category === 'senior' ? 'Seniorassistent' : 'Assistent',
+    funktion: fresh.category === 'senior' ? 'Seniorassistent' : fresh.category === 'training' ? 'Training' : 'Assistent',
     present: true, _self: true,
     _isSenior: fresh.category === 'senior',
-    _isTrainee: false,
+    _isTrainee: fresh.category === 'training',
   });
   for (const c of (fresh.colleagues||[])) {
     const team = effectiveTeam(c);
@@ -3251,9 +3251,11 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
         const covering = [];
         for (const t of typeTermins) {
           const tH = t.startHour ?? t.hour;
-          if (b.start >= tH && b.start < tH + def.dur) {
-            const persons = people.filter(p => zData.assignments[`${p.name}::${b.key}`] === 'termin' && t.personName === p.name);
-            covering.push(...persons);
+          if (b.start < tH || b.start >= tH + def.dur) continue;
+          // Use t.personName directly (set by auto-assign or manually)
+          if (t.personName) {
+            const person = people.find(p => p.name === t.personName);
+            if (person && !covering.some(c => c.name === person.name)) covering.push(person);
           }
         }
         const anyInRange = typeTermins.some(t => { const tH = t.startHour ?? t.hour; return b.start >= tH && b.start < tH + def.dur; });
@@ -3417,6 +3419,19 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
 
   inner.querySelector('#zut-auto-btn').onclick = () => {
     pushUndo();
+    // Re-shuffle tiers on every auto-assign (senior stays tier 1)
+    {
+      const newTiers = {};
+      people.filter(p => p._isSenior).forEach(p => { newTiers[p.name] = 1; });
+      const nonSeniorNames = people.filter(p => !p._isSenior).map(p => p.name);
+      const pool = [2,3,4,5,6,7];
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      nonSeniorNames.forEach((n, i) => { newTiers[n] = pool[i] ?? (i + 2); });
+      zData.personTiers = newTiers;
+    }
     const result = autoAssignZuteilung(getZuteilBlocks(shift, zData.blockSize), people, zData);
     zData.assignments    = result.assignments;
     zData.planB          = result.planB;
@@ -3770,10 +3785,11 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
       }
       return true;
     }).sort((a, b) => {
+      // Round-robin: score = terminCount * 8 + tierNum
+      // → tier1 gets 1st termin, tier2 gets 2nd, …, after a full round tier1 goes again
       const ta = personTiers[a.name] ?? (a._isSenior ? 1 : 4);
       const tb = personTiers[b.name] ?? (b._isSenior ? 1 : 4);
-      if (ta !== tb) return ta - tb;
-      return terminCount[a.name] - terminCount[b.name];
+      return (terminCount[a.name] * 8 + ta) - (terminCount[b.name] * 8 + tb);
     });
 
     if (!avail.length) return t;
