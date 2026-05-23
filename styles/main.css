@@ -108,9 +108,8 @@ img{max-width:100%;display:block}
   overflow-y:auto;overflow-x:hidden;padding:16px 16px calc(var(--nav-h)+16px);
 }
 .tab-view.active{display:block}
-.tab-view::-webkit-scrollbar{width:4px}
-.tab-view::-webkit-scrollbar-track{background:transparent}
-.tab-view::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+.tab-view{scrollbar-width:none}
+.tab-view::-webkit-scrollbar{display:none}
 
 /* ── Bottom Nav ────────────────────────────────────────────────────────────── */
 .bottom-nav{
@@ -1456,16 +1455,13 @@ img{max-width:100%;display:block}
 
 /* ── Mission checkboxes ──────────────────────────────────────────────────────── */
 .m-cb{
-  display:inline-flex;align-items:center;justify-content:center;
-  width:1.4em;height:1.4em;min-width:12px;min-height:12px;
-  border:1.5px solid rgba(255,255,255,.22);
-  border-radius:3px;vertical-align:middle;
+  display:inline-block;
+  width:9px;height:9px;
+  border-radius:50%;
+  border:1.5px solid rgba(255,255,255,.25);
   flex-shrink:0;margin:0 2px;
-  font-size:inherit;line-height:1;
-  color:transparent;
-  transition:background .15s,border-color .15s;
+  vertical-align:middle;
 }
-.m-cb--done{color:rgba(0,0,0,.85);font-size:75%}
 .m-done-date{font-size:11px;color:var(--text-dim);display:block;margin-top:4px}
 
 /* ── Extra Hours Settings ──────────────────────────────────────────────────── */
@@ -2277,6 +2273,7 @@ img{max-width:100%;display:block}
 
 /* ── Home Tab: Shift Mini-Nav ───────────────────────────────────────────────── */
 .home-sticky-header{position:sticky;top:0;z-index:21;background:rgba(8,8,15,.95);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);margin:0 -16px;border-bottom:1px solid rgba(255,255,255,.07);}
+.tab-home-active .home-sticky-header{padding-top:env(safe-area-inset-top,0px)}
 .home-shift-nav{display:flex;align-items:center;gap:6px;padding:6px 12px;}
 .home-snav-arrow{flex-shrink:0;display:flex;align-items:center;gap:4px;background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--r);padding:5px 8px;cursor:pointer;color:var(--text);-webkit-tap-highlight-color:transparent;transition:background .15s}
 .home-snav-arrow:disabled{opacity:.35;cursor:default}
@@ -2755,7 +2752,7 @@ img{max-width:100%;display:block}
 }
 .hm-mission-pill.tier-2{border-color:rgba(96,165,250,.2)}
 .hm-mission-pill.tier-3{border-color:rgba(167,139,250,.25)}
-.hm-mp-dots{font-size:10px;letter-spacing:1px;text-align:center;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:2px}
+.hm-mp-dots{height:14px;display:flex;align-items:center;justify-content:center;gap:3px;flex-shrink:0}
 .hm-mp-body{display:flex;align-items:center;gap:4px;width:100%;min-height:0}
 .hm-mp-emoji{font-size:14px;flex-shrink:0;line-height:1}
 .hm-mp-title{font-size:10px;font-weight:600;color:var(--text);line-height:1.3;

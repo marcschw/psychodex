@@ -5221,7 +5221,7 @@ const missionCheckboxes = (current, target, tier = 3) => {
   const color = MISSION_TIER_COLORS[tier] || 'var(--accent)';
   return Array.from({length: target}, (_, i) => {
     const done = i < current;
-    return `<span class="m-cb${done ? ' m-cb--done' : ''}"${done ? ` style="background:${color};border-color:${color}"` : ''}>${done ? '✓' : ''}</span>`;
+    return `<span class="m-cb${done ? ' m-cb--done' : ''}"${done ? ` style="background:${color};border-color:${color}"` : ''}></span>`;
   }).join('');
 };
 
@@ -5250,7 +5250,7 @@ function renderHomeMissions() {
     const { current, target } = calcMissionProgress(def, catchesSince, shiftsSince, state.icdFlat);
     const cbs = missionCheckboxes(current, target, def.tier);
     return `<button class="hm-mission-pill tier-${def.tier}" data-mission-id="${am.id}">
-      ${cbs ? `<div class="hm-mp-dots">${cbs}</div>` : ''}
+      <div class="hm-mp-dots">${cbs}</div>
       <div class="hm-mp-body">
         <span class="hm-mp-emoji">${def.emoji||''}</span>
         <div class="hm-mp-title">${def.title}</div>
