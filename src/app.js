@@ -3067,17 +3067,23 @@ async function openZuteilungScreen(shift) {
   zData.planB        = zData.planB        || null;
   zData.dualPlanActive = zData.dualPlanActive || false;
   zData.planAPersons   = zData.planAPersons   || null;
+  zData.redoStack      = [];                        // in-memory only, not persisted
+  zData.stationView    = zData.stationView    || false;
 
-  const saveData = () =>
-    db.shiftLogs.update(fresh.id, { zuteilung: JSON.parse(JSON.stringify({
-      ...zData, undoStack: zData.undoStack.slice(-20)
+  const saveData = () => {
+    const { redoStack, ...saveable } = zData;
+    return db.shiftLogs.update(fresh.id, { zuteilung: JSON.parse(JSON.stringify({
+      ...saveable, undoStack: saveable.undoStack.slice(-20)
     })) });
+  };
 
   const pushUndo = () => {
     zData.undoStack.push(JSON.parse(JSON.stringify({
       assignments: zData.assignments, personStates: zData.personStates, termine: zData.termine,
       planB: zData.planB, dualPlanActive: zData.dualPlanActive, planAPersons: zData.planAPersons,
+      blockSize: zData.blockSize,
     })));
+    zData.redoStack = [];
     if (zData.undoStack.length > 20) zData.undoStack.shift();
   };
 
@@ -3125,27 +3131,64 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
 
   const planASet = new Set(zData.planAPersons || []);
 
+  // Appointment numbering (sorted by start time, then id)
+  const terminSorted = [...zData.termine].sort((a, b) =>
+    ((a.startHour ?? a.hour) - (b.startHour ?? b.hour)) || (a.id - b.id));
+  const terminNum = t => terminSorted.findIndex(x => x.id === t.id) + 1;
+  const getTerminNumForCell = (personName, block) => {
+    const t = terminSorted.find(tt => {
+      if (tt.personName !== personName) return false;
+      const tH = tt.startHour ?? tt.hour;
+      const def = TERMIN_DEFS[tt.type];
+      return def && block.start >= tH && block.start < tH + def.dur;
+    });
+    return t ? terminNum(t) : null;
+  };
+
+  // Person color for station view
+  const PERSON_COLORS = ['#f59e0b','#10b981','#3b82f6','#ec4899','#8b5cf6','#06b6d4','#f97316','#a3e635'];
+  const personColor = name => {
+    let h = 0;
+    for (const c of name) h = ((h << 5) - h + c.charCodeAt(0)) | 0;
+    return PERSON_COLORS[Math.abs(h) % PERSON_COLORS.length];
+  };
+  const personInitials = name => name.split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
+
+  // ── Person view grid ────────────────────────────────────────────────────────
   const bodyRows = people.map(p => {
     const ps = zData.personStates[p.name] || {};
     const earlyMark = ps.earlyLeave ? `<span class="zut-early-tag">⏰${ps.earlyLeave}</span>` : '';
     const absent = !p.present;
     const isPlanBRow = zData.dualPlanActive && (!p.present || ps.notYetPresent);
+    const firstName = p.name.split(' ')[0];
     const cells = blocks.map(b => {
       const key = `${p.name}::${b.key}`;
       const role = zData.assignments[key];
       const ri   = role ? ZUTEIL_ROLES[role] : null;
       const unavail = !isAvail(p, b);
+      const num = ri && role === 'termin' ? getTerminNumForCell(p.name, b) : null;
+      const cellInner = ri
+        ? `<span class="zut-cell-icon">${ri.icon}</span><span class="zut-role-short">${ri.short}${num ? '#' + num : ''}</span>`
+        : `<span class="zut-empty-dot">·</span>`;
       return `<td class="zut-cell${unavail?' zut-cell-unavail':''}">
         <button class="zut-cell-btn${ri?' has-role':''}${isPlanBRow?' plan-b-cell':''}" data-key="${key}"
                 style="${ri?`background:${ri.color}1a;border-color:${ri.color}55;color:${ri.color}`:''}"
-                ${unavail?'disabled':''}>
-          ${ri?`<span class="zut-cell-icon">${ri.icon}</span><span class="zut-role-short">${ri.short}</span>`:`<span class="zut-empty-dot">·</span>`}
-        </button></td>`;
+                ${unavail?'disabled':''}>${cellInner}</button></td>`;
     }).join('');
-    return `<tr class="zut-row${absent?' zut-row-absent':''}">
+    const badges = [
+      p._self ? '<span class="team-self-badge">Ich</span>' : '',
+      p._isSenior ? '<span class="zut-senior-tag">★</span>' : '',
+      p._isTrainee ? '<span class="zut-trainee-tag">🎓</span>' : '',
+      isPlanBRow ? '<span class="zut-planb-tag">Plan B</span>' : '',
+    ].filter(Boolean).join('');
+    return `<tr class="zut-row${absent?' zut-row-absent':''}${ps.notYetPresent&&!absent?' zut-row-notyet':''}">
       <td class="zut-td-name">
-        <div class="zut-person-name">${p.name}${p._self?` <span class="team-self-badge">Ich</span>`:''}${p._isSenior?` <span class="zut-senior-tag">★</span>`:''}${p._isTrainee?` <span class="zut-trainee-tag">🎓</span>`:''}${isPlanBRow?` <span class="zut-planb-tag">Plan B</span>`:''}</div>
-        <div class="zut-person-sub">${earlyMark}<button class="zut-ps-btn" data-pname="${p.name}">⚙️</button></div>
+        <div class="zut-person-name" title="${p.name}">${firstName}${badges?' '+badges:''}</div>
+        <div class="zut-person-sub">
+          ${!absent?`<button class="zut-checkin-btn${ps.notYetPresent?' absent':' present'}" data-pname="${p.name}">${ps.notYetPresent?'⏳':'✓'}</button>`:''}
+          ${earlyMark}
+          ${!absent?`<button class="zut-early-btn${ps.earlyLeave?' active':''}" data-pname="${p.name}" title="Frühgang">⏰</button>`:''}
+        </div>
       </td>${cells}</tr>`;
   }).join('');
 
@@ -3162,21 +3205,62 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     }).join('')}
   </tr>`;
 
+  // ── Station view grid ───────────────────────────────────────────────────────
+  const stationGridHtml = (() => {
+    const chipCell = (covering, needsAlert) => {
+      if (!covering.length)
+        return `<td class="zut-cell zut-station-cell"${needsAlert?' style="background:rgba(239,68,68,.09)"':''}>${needsAlert?'<span class="zut-station-gap">!</span>':''}</td>`;
+      return `<td class="zut-cell zut-station-cell">${covering.map(p => {
+        const color = personColor(p.name);
+        return `<span class="zut-station-chip" style="background:${color}33;border:1.5px solid ${color}88;color:${color}" title="${p.name}">${personInitials(p.name)}</span>`;
+      }).join('')}</td>`;
+    };
+    const terminRows = terminSorted.map((t, i) => {
+      const def = TERMIN_DEFS[t.type];
+      const tH = t.startHour ?? t.hour;
+      const cells = blocks.map(b => {
+        const inRange = b.start >= tH && b.start < tH + def.dur;
+        if (!inRange) return `<td class="zut-cell zut-station-cell"></td>`;
+        const covering = people.filter(p =>
+          zData.assignments[`${p.name}::${b.key}`] === 'termin' && t.personName === p.name);
+        return chipCell(covering, !t.isInternational && covering.length === 0);
+      }).join('');
+      return `<tr><td class="zut-td-name zut-station-name-td">
+        ${def.icon} <span class="zut-station-role-label">${def.label} #${i+1}</span>
+      </td>${cells}</tr>`;
+    }).join('');
+    const roleRows = ['kassa','backoffice','5stock','system','pause','assist'].map(rk => {
+      const ri = ZUTEIL_ROLES[rk];
+      if (!ri) return '';
+      const cells = blocks.map(b => {
+        const covering = people.filter(p => zData.assignments[`${p.name}::${b.key}`] === rk);
+        return chipCell(covering, (rk === 'kassa' || rk === 'backoffice') && covering.length === 0);
+      }).join('');
+      return `<tr><td class="zut-td-name zut-station-name-td">${ri.icon} <span class="zut-station-role-label">${ri.label}</span></td>${cells}</tr>`;
+    }).filter(Boolean).join('');
+    return `<table class="zut-table"><thead><tr>
+        <th class="zut-th-name" style="min-width:100px">Station</th>
+        ${blocks.map(b=>`<th class="zut-th-block">${b.label}</th>`).join('')}
+      </tr></thead><tbody>${terminRows}${roleRows}</tbody></table>`;
+  })();
+
   const shiftH   = shiftHours(shift);
   const tlStartH = shiftH.start[0];
   const tlEndH   = shiftH.end[0] + (shiftH.end[1] > 0 ? 1 : 0);
   const tlHours  = Array.from({ length: tlEndH - tlStartH }, (_, i) => tlStartH + i);
 
   const tlCols = tlHours.map(h => {
-    const chips = zData.termine
+    const chips = terminSorted
       .filter(t => (t.startHour ?? t.hour) === h)
       .map(t => {
         const def = TERMIN_DEFS[t.type];
-        const pInit = t.personName ? t.personName.split(' ').map(w=>w[0]).join('').slice(0,2) : '';
+        const num = terminNum(t);
+        const pInit = t.personName ? personInitials(t.personName) : '';
         const badges = `${t.isInternational ? '<span class="zut-chip-badge">INT</span>' : t.isDemo ? '<span class="zut-chip-badge">D</span>' : ''}`;
         const titleParts = [def.label, t.personName, t.isDemo&&!t.isInternational?'Demo':null, t.isInternational?'International':null].filter(Boolean);
         return `<div class="zut-tl-chip${t.isInternational?' zut-chip-intl':''}" data-tid="${t.id}" draggable="true" title="${titleParts.join(' · ')}">
           <span class="zut-chip-icon">${def.icon}</span>
+          <span class="zut-chip-num">#${num}</span>
           ${pInit?`<span class="zut-chip-person">${pInit}</span>`:''}
           ${badges}
         </div>`;
@@ -3194,6 +3278,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       <div><div class="zut-title">📋 Zuteilung</div><div class="zut-subtitle">${dateStr} · ${shiftLabel(shift.type)}</div></div>
       <div class="zut-header-actions">
         <button class="zut-hdr-btn" id="zut-undo-btn"${!zData.undoStack.length?' disabled':''} title="Rückgängig">↩</button>
+        <button class="zut-hdr-btn" id="zut-redo-btn"${!zData.redoStack?.length?' disabled':''} title="Wiederholen">↪</button>
         <button class="zut-hdr-btn" id="zut-reset-btn" title="Zurücksetzen">🔄</button>
         <button class="zut-hdr-btn" id="zut-size-btn" title="Blockgröße umschalten">${zData.blockSize}h</button>
         <button class="zut-hdr-close" id="zut-close-btn">✕</button>
@@ -3202,41 +3287,80 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     <div class="zut-termin-section">
       <div class="zut-termin-add-row">
         <span class="zut-bar-label">Termine</span>
-        <button class="zut-termin-add-btn" data-type="anmeldung" title="Anmeldung hinzufügen">📝 +</button>
-        <button class="zut-termin-add-btn" data-type="erstgesprach" title="Erstgespräch hinzufügen">💬 +</button>
-        <button class="zut-termin-add-btn" data-type="interview" title="Interview hinzufügen">🎤 +</button>
+        <button class="zut-termin-add-btn" data-type="anmeldung" title="Anmeldung">📝+</button>
+        <button class="zut-termin-add-btn" data-type="erstgesprach" title="Erstgespräch">💬+</button>
+        <button class="zut-termin-add-btn" data-type="interview" title="Interview">🎤+</button>
       </div>
       <div class="zut-tl-scroll">${tlCols}</div>
     </div>
     ${zData.dualPlanActive ? `<div class="zut-dual-banner">⚠️ Backup-Plan aktiv · ${people.length - (zData.planAPersons?.length || 0)} Person(en) fehlen noch</div>` : ''}
+    <div class="zut-view-toggle-row">
+      <button class="zut-view-tab${!zData.stationView?' active':''}" id="zut-view-person">👤 Personen</button>
+      <button class="zut-view-tab${zData.stationView?' active':''}" id="zut-view-station">🏥 Stationen</button>
+    </div>
     <div class="zut-grid-wrap">
-      <table class="zut-table">
+      ${zData.stationView ? stationGridHtml : `<table class="zut-table">
         <thead><tr>
           <th class="zut-th-name">Person (${presentCount})</th>
           ${blocks.map(b=>`<th class="zut-th-block">${b.label}</th>`).join('')}
         </tr></thead>
         <tbody>${bodyRows}${covRow}</tbody>
-      </table>
+      </table>`}
     </div>
     <div class="zut-footer">
       <div class="zut-present-label">${presentCount} anwesend · ${people.length} gesamt</div>
       <button class="btn-primary" id="zut-auto-btn">⚡ Auto-Zuteilung</button>
     </div>`;
 
+  // ── Event handlers ──────────────────────────────────────────────────────────
   inner.querySelector('#zut-close-btn').onclick = () =>
     document.getElementById('zuteilung-modal').classList.add('hidden');
+
   inner.querySelector('#zut-undo-btn').onclick = () => {
     if (!zData.undoStack.length) return;
+    const cur = JSON.parse(JSON.stringify({ assignments: zData.assignments, personStates: zData.personStates,
+      termine: zData.termine, planB: zData.planB, dualPlanActive: zData.dualPlanActive, planAPersons: zData.planAPersons, blockSize: zData.blockSize }));
+    (zData.redoStack = zData.redoStack || []).push(cur);
     const snap = zData.undoStack.pop();
     Object.assign(zData, snap); saveData(); render();
   };
+
+  inner.querySelector('#zut-redo-btn').onclick = () => {
+    if (!zData.redoStack?.length) return;
+    const cur = JSON.parse(JSON.stringify({ assignments: zData.assignments, personStates: zData.personStates,
+      termine: zData.termine, planB: zData.planB, dualPlanActive: zData.dualPlanActive, planAPersons: zData.planAPersons, blockSize: zData.blockSize }));
+    zData.undoStack.push(cur);
+    const snap = zData.redoStack.pop();
+    Object.assign(zData, snap); saveData(); render();
+  };
+
   inner.querySelector('#zut-reset-btn').onclick = () => {
     if (!confirm('Alle Zuteilungen zurücksetzen?')) return;
     pushUndo(); zData.assignments = {}; saveData(); render();
   };
+
   inner.querySelector('#zut-size-btn').onclick = () => {
-    zData.blockSize = zData.blockSize === 2 ? 1 : 2; saveData(); render();
+    pushUndo();
+    const oldSize = zData.blockSize, newSize = oldSize === 2 ? 1 : 2;
+    const oldBlocks = getZuteilBlocks(shift, oldSize);
+    const newBlocks = getZuteilBlocks(shift, newSize);
+    const newAsgn = {};
+    for (const [key, role] of Object.entries(zData.assignments)) {
+      const [name, bk] = key.split('::');
+      const ob = oldBlocks.find(b => b.key === bk);
+      if (!ob) continue;
+      for (const nb of newBlocks) {
+        if (nb.start >= ob.start && nb.end <= ob.end) {
+          const nk = `${name}::${nb.key}`;
+          if (!newAsgn[nk]) newAsgn[nk] = role;
+        }
+      }
+    }
+    zData.blockSize = newSize;
+    zData.assignments = newAsgn;
+    saveData(); render();
   };
+
   inner.querySelector('#zut-auto-btn').onclick = () => {
     pushUndo();
     const result = autoAssignZuteilung(getZuteilBlocks(shift, zData.blockSize), people, zData);
@@ -3246,7 +3370,10 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     zData.planAPersons   = result.planAPersons;
     saveData(); render();
   };
-  // + buttons: add at smart default hour, no popup needed
+
+  inner.querySelector('#zut-view-person').onclick = () => { zData.stationView = false; saveData(); render(); };
+  inner.querySelector('#zut-view-station').onclick = () => { zData.stationView = true; saveData(); render(); };
+
   inner.querySelectorAll('.zut-termin-add-btn').forEach(btn => {
     btn.onclick = () => {
       const type  = btn.dataset.type;
@@ -3261,7 +3388,6 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     };
   });
 
-  // Termin chip: touch drag to move hour, tap to edit
   inner.querySelectorAll('.zut-tl-chip').forEach(chip => {
     let touchStart = null;
     chip.addEventListener('touchstart', e => {
@@ -3292,7 +3418,6 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       if ((t.startHour ?? t.hour) !== newH) { pushUndo(); t.startHour = newH; saveData(); }
       render();
     });
-    // Desktop drag
     chip.addEventListener('dragstart', e => {
       chip.dataset.dragging = '1';
       e.dataTransfer.setData('text/plain', chip.dataset.tid);
@@ -3307,7 +3432,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       if (t) openZuteilEditTermin(t, tlHours, people, zData, saveData, pushUndo, render);
     });
   });
-  // Desktop drop onto hour columns
+
   inner.querySelectorAll('.zut-tl-col').forEach(col => {
     col.addEventListener('dragover', e => {
       e.preventDefault();
@@ -3325,9 +3450,19 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     });
   });
 
-  inner.querySelectorAll('.zut-ps-btn').forEach(btn => {
-    btn.onclick = e => { e.stopPropagation(); openZuteilPersonState(btn.dataset.pname, zData, saveData, pushUndo, render); };
+  inner.querySelectorAll('.zut-checkin-btn').forEach(btn => {
+    btn.onclick = e => {
+      e.stopPropagation(); pushUndo();
+      const ps = zData.personStates[btn.dataset.pname] || {};
+      zData.personStates[btn.dataset.pname] = { ...ps, notYetPresent: !ps.notYetPresent };
+      saveData(); render();
+    };
   });
+
+  inner.querySelectorAll('.zut-early-btn').forEach(btn => {
+    btn.onclick = e => { e.stopPropagation(); openZuteilEarlyLeave(btn.dataset.pname, zData, saveData, pushUndo, render); };
+  });
+
   inner.querySelectorAll('.zut-cell-btn:not([disabled])').forEach(btn => {
     btn.onclick = e => { e.stopPropagation(); showZuteilPicker(btn, btn.dataset.key, zData, saveData, pushUndo, render); };
   });
@@ -3364,25 +3499,32 @@ function showZuteilPicker(triggerBtn, cellKey, zData, saveData, pushUndo, render
   );
 }
 
-function openZuteilPersonState(personName, zData, saveData, pushUndo, render) {
+function openZuteilEarlyLeave(personName, zData, saveData, pushUndo, render) {
   document.querySelectorAll('.zut-popup').forEach(p => p.remove());
   const ps = zData.personStates[personName] || {};
   const popup = document.createElement('div');
   popup.className = 'zut-popup';
   popup.innerHTML = `
-    <div class="zut-popup-title">⚙️ ${personName}</div>
-    <label class="zut-popup-row"><span>Noch nicht da</span><input type="checkbox" id="zp-nochda" ${ps.notYetPresent?'checked':''}></label>
-    <div class="zut-popup-row"><span>Frühgang um</span><input type="time" id="zp-early" value="${ps.earlyLeave||''}" class="form-input" style="width:90px;padding:4px 8px"></div>
-    <div class="zut-popup-btns"><button class="btn-primary" id="zp-save">OK</button><button class="btn-secondary" id="zp-cancel">Abbrechen</button></div>`;
+    <div class="zut-popup-title">⏰ Frühgang · ${personName.split(' ')[0]}</div>
+    <div class="zut-popup-row"><span>Uhrzeit</span>
+      <input type="time" id="zp-early" value="${ps.earlyLeave||''}" class="form-input" style="width:90px;padding:4px 8px">
+    </div>
+    <div class="zut-popup-btns">
+      <button class="btn-primary" id="zp-save">OK</button>
+      ${ps.earlyLeave?'<button class="btn-secondary" id="zp-clear">Löschen</button>':''}
+      <button class="btn-secondary" id="zp-cancel">Abbrechen</button>
+    </div>`;
   document.getElementById('zuteilung-modal').appendChild(popup);
   const close = () => popup.remove();
   popup.querySelector('#zp-cancel').onclick = close;
+  popup.querySelector('#zp-clear')?.onclick = () => {
+    pushUndo();
+    zData.personStates[personName] = { ...ps, earlyLeave: null };
+    close(); saveData(); render();
+  };
   popup.querySelector('#zp-save').onclick = () => {
     pushUndo();
-    zData.personStates[personName] = { ...ps,
-      notYetPresent: popup.querySelector('#zp-nochda').checked,
-      earlyLeave:    popup.querySelector('#zp-early').value || null,
-    };
+    zData.personStates[personName] = { ...ps, earlyLeave: popup.querySelector('#zp-early').value || null };
     close(); saveData(); render();
   };
 }
@@ -3457,7 +3599,13 @@ function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo
   };
 }
 
-function runAutoAssign(allowedPeople, blocks, termine, personStates, blockSize, { planBMode = false } = {}) {
+function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize, { planBMode = false } = {}) {
+  // Shuffle for variety on each call
+  const allowedPeople = [...allowedPeopleIn];
+  for (let i = allowedPeople.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [allowedPeople[i], allowedPeople[j]] = [allowedPeople[j], allowedPeople[i]];
+  }
   const result = {};
   const terminCount = Object.fromEntries(allowedPeople.map(p => [p.name, 0]));
   const trainees    = allowedPeople.filter(p => p._isTrainee);

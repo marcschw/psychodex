@@ -99,7 +99,7 @@ img{max-width:100%;display:block}
   color:var(--accent);letter-spacing:.04em;
 }
 .tab-home-active .app-header{display:none}
-.home-header-logo{font-family:'Cinzel',serif;font-size:14px;font-weight:600;color:var(--accent);letter-spacing:.04em;flex:1;white-space:nowrap;line-height:1}
+.home-header-logo{font-family:'Cinzel',serif;font-size:14px;font-weight:600;color:var(--accent);letter-spacing:.04em;flex:1;white-space:nowrap;line-height:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
 
 /* ── Tab Container ─────────────────────────────────────────────────────────── */
 .tab-container{
@@ -2978,11 +2978,40 @@ img{max-width:100%;display:block}
 .zut-person-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;}
 .zut-person-sub{display:flex;align-items:center;gap:4px;margin-top:2px;}
 .zut-early-tag{font-size:10px;color:#f59e0b;font-weight:600;}
-.zut-ps-btn{
-  background:none;border:none;font-size:12px;cursor:pointer;
-  padding:0;line-height:1;opacity:.6;
-}
+.zut-ps-btn{background:none;border:none;font-size:12px;cursor:pointer;padding:0;line-height:1;opacity:.6;}
 .zut-ps-btn:hover{opacity:1;}
+/* Inline check-in toggle */
+.zut-checkin-btn{
+  width:20px;height:20px;border-radius:50%;
+  border:1.5px solid rgba(255,255,255,.22);background:transparent;
+  font-size:11px;display:inline-flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:background .15s,border-color .15s;padding:0;flex-shrink:0;
+}
+.zut-checkin-btn.present{background:rgba(16,185,129,.2);border-color:rgba(16,185,129,.6);color:#10b981;}
+.zut-checkin-btn.absent{background:rgba(107,114,128,.12);border-color:rgba(107,114,128,.3);color:var(--text-dim);}
+.zut-early-btn{font-size:12px;background:none;border:none;cursor:pointer;opacity:.35;padding:0;line-height:1;}
+.zut-early-btn.active{opacity:1;color:#f59e0b;}
+.zut-row-notyet .zut-td-name{opacity:.55;}
+/* View toggle tabs */
+.zut-view-toggle-row{display:flex;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--bg);}
+.zut-view-tab{
+  padding:7px 16px;font-size:13px;font-weight:600;
+  border:none;border-bottom:2px solid transparent;
+  background:transparent;color:var(--text-dim);cursor:pointer;
+  transition:color .15s,border-color .15s;margin-bottom:-1px;
+}
+.zut-view-tab.active{color:var(--text);border-bottom-color:var(--accent);}
+/* Appointment number badge in chip */
+.zut-chip-num{font-size:9px;font-weight:700;color:rgba(255,255,255,.65);background:rgba(139,92,246,.35);border-radius:3px;padding:0 3px;line-height:1.4;}
+/* Station view */
+.zut-station-name-td{font-size:12px;white-space:nowrap;background:var(--bg);}
+.zut-station-role-label{font-weight:600;}
+.zut-station-cell{text-align:center;vertical-align:middle;}
+.zut-station-chip{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;border-radius:7px;font-size:11px;font-weight:700;
+}
+.zut-station-gap{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;font-size:14px;font-weight:700;color:rgba(239,68,68,.65);}
 .zut-cell{
   border-bottom:1px solid var(--border);border-left:1px solid var(--border);
   padding:4px;text-align:center;
