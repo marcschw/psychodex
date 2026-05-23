@@ -5222,9 +5222,10 @@ function openChallengeHistoryModal() {
   modal.classList.remove('hidden');
 }
 
-const missionDots = (pct, n = 5) => {
-  const f = Math.round(pct * n / 100);
-  return '●'.repeat(f) + '○'.repeat(n - f);
+const missionDots = (current, target) => {
+  if (target <= 1) return '';
+  const filled = Math.min(current, target);
+  return '●'.repeat(filled) + '○'.repeat(target - filled);
 };
 
 function setupMissionModals() {
@@ -5250,9 +5251,9 @@ function renderHomeMissions() {
     const catchesSince = state.catches.filter(c => c.caughtAt >= am.activatedAt);
     const shiftsSince  = state.shifts.filter(s => (s.createdAt || `${s.date}T00:00:00`) >= am.activatedAt);
     const { current, target } = calcMissionProgress(def, catchesSince, shiftsSince, state.icdFlat);
-    const pct = Math.min(100, Math.round((current / target) * 100));
+    const dots = missionDots(current, target);
     return `<button class="hm-mission-pill tier-${def.tier}" data-mission-id="${am.id}">
-      <div class="hm-mp-dots">${missionDots(pct)}</div>
+      ${dots ? `<div class="hm-mp-dots">${dots}</div>` : ''}
       <div class="hm-mp-body">
         <span class="hm-mp-emoji">${def.emoji||''}</span>
         <div class="hm-mp-title">${def.title}</div>
@@ -5336,8 +5337,7 @@ function renderMissions() {
   const activeMissions = state.missions.filter(m => !m.completedAt).sort((a, b) => a.slotIndex - b.slotIndex);
   const tierColors = { 1:'#9ca3af', 2:'#60a5fa', 3:'#a78bfa' };
 
-  const missionCardHtml = (am, mDef, pct, current, target, done = false) => {
-    const barColor = tierColors[mDef.tier] || 'var(--accent)';
+  const missionCardHtml = (am, mDef, _pct, current, target, done = false) => {
     const dateStr = done && am.completedAt
       ? new Date(am.completedAt).toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'2-digit' })
       : null;
@@ -5355,9 +5355,7 @@ function renderMissions() {
           </div>
           <div class="mission-title">${mDef.title}</div>
           <div class="mission-desc">${mDef.description}</div>
-          <div class="mission-progress-row">
-            <span class="mission-prog-text mc-dots">${done ? (dateStr || '✓') : missionDots(pct)}</span>
-          </div>
+          ${(() => { const d = done ? (dateStr || '✓') : missionDots(current, target); return d ? `<div class="mission-progress-row"><span class="mission-prog-text mc-dots">${d}</span></div>` : ''; })()}
         </div>
       </div>`;
   };
