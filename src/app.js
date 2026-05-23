@@ -3165,8 +3165,15 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     terminByType[type] = terminSorted.filter(t => t.type === type);
   }
   const getTerminInfoForCell = (personName, block) => {
-    const t = terminSorted.find(tt => {
+    // Prefer exact personName match (reliable after auto-assign write-back)
+    let t = terminSorted.find(tt => {
       if (tt.personName !== personName) return false;
+      const tH = tt.startHour ?? tt.hour;
+      const def = TERMIN_DEFS[tt.type];
+      return def && block.start >= tH && block.start < tH + def.dur;
+    });
+    // Fallback: match by block time alone (works before personName is written back)
+    if (!t) t = terminSorted.find(tt => {
       const tH = tt.startHour ?? tt.hour;
       const def = TERMIN_DEFS[tt.type];
       return def && block.start >= tH && block.start < tH + def.dur;
@@ -3178,7 +3185,11 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
   };
 
   // Person color for station view
-  const PERSON_COLORS = ['#f59e0b','#10b981','#3b82f6','#ec4899','#8b5cf6','#06b6d4','#f97316','#a3e635'];
+  const PERSON_COLORS = [
+    '#f59e0b','#10b981','#3b82f6','#ec4899','#8b5cf6','#06b6d4','#f97316','#a3e635',
+    '#ef4444','#84cc16','#14b8a6','#6366f1','#f43f5e','#22d3ee','#d946ef','#fb923c',
+    '#e879f9','#34d399','#60a5fa','#fbbf24','#a78bfa','#2dd4bf','#f87171','#86efac',
+  ];
   const personColor = name => {
     let h = 0;
     for (const c of name) h = ((h << 5) - h + c.charCodeAt(0)) | 0;
@@ -3296,7 +3307,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       .filter(t => (t.startHour ?? t.hour) === h)
       .map(t => {
         const def = TERMIN_DEFS[t.type];
-        const num = terminNum(t);
+        const num = terminByType[t.type].findIndex(x => x.id === t.id) + 1;
         const pInit = t.personName ? personInitials(t.personName) : '';
         const badges = `${t.isInternational ? '<span class="zut-chip-badge">INT</span>' : t.isDemo ? '<span class="zut-chip-badge">D</span>' : ''}`;
         const titleParts = [def.label, t.personName, t.isDemo&&!t.isInternational?'Demo':null, t.isInternational?'International':null].filter(Boolean);
@@ -3434,11 +3445,20 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
   inner.querySelectorAll('.zut-termin-add-btn').forEach(btn => {
     btn.onclick = () => {
       const type  = btn.dataset.type;
+      const dur   = TERMIN_DEFS[type]?.dur ?? 1;
+      const sameType = zData.termine.filter(t => t.type === type);
       const baseH = type === 'anmeldung' ? tlStartH : tlStartH + 2;
-      const used  = zData.termine.filter(t => t.type === type).map(t => t.startHour ?? t.hour);
       let h = baseH;
-      while (used.includes(h) && h < tlEndH) h++;
-      if (h >= tlEndH) h = tlEndH - 1;
+      // Find first slot that doesn't overlap any existing termin of the same type
+      while (h < tlEndH) {
+        const overlaps = sameType.some(t => {
+          const tH = t.startHour ?? t.hour;
+          return h < tH + dur && h + dur > tH;
+        });
+        if (!overlaps) break;
+        h += dur;
+      }
+      if (h + dur > tlEndH) h = Math.max(baseH, tlEndH - dur);
       pushUndo();
       zData.termine.push({ id: Date.now(), type, startHour: h, personName: null });
       saveData(); render();
@@ -3541,7 +3561,13 @@ function showZuteilPicker(triggerBtn, cellKey, zData, saveData, pushUndo, render
   const picker = document.createElement('div');
   picker.className = 'zut-picker';
   const cur = zData.assignments[cellKey];
-  const entries = [...Object.entries(ZUTEIL_ROLES), ['', { label:'Leer', icon:'✕', short:'' }]];
+  const entries = [
+    ...Object.entries(ZUTEIL_ROLES).filter(([k]) => k !== 'system' && k !== 'termin'),
+    ['termin', { label:'Anmeldung',    icon: TERMIN_DEFS.anmeldung.icon    }],
+    ['termin', { label:'Interview',    icon: TERMIN_DEFS.interview.icon     }],
+    ['termin', { label:'Erstgespräch', icon: TERMIN_DEFS.erstgesprach.icon  }],
+    ['', { label:'Leer', icon:'✕' }],
+  ];
   picker.innerHTML = entries.map(([key,r]) =>
     `<button class="zut-picker-btn${cur===key?' active':''}" data-role="${key}">
        <span class="zut-picker-icon">${r.icon}</span>
