@@ -2823,6 +2823,9 @@ img{max-width:100%;display:block}
 .zut-tl-chip.zut-chip-dragging{opacity:.35;cursor:grabbing}
 .zut-chip-icon{font-size:17px;line-height:1}
 .zut-chip-person{font-size:9px;color:var(--text-dim);font-weight:700;line-height:1}
+.zut-chip-badge{font-size:8px;font-weight:800;line-height:1;padding:1px 3px;border-radius:3px;background:#ec489920;color:#ec4899}
+.zut-chip-intl .zut-chip-badge{background:#3b82f620;color:#3b82f6}
+.zut-chip-intl{border-color:rgba(59,130,246,.35);background:rgba(59,130,246,.12)}
 .zut-grid-wrap{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;}
 .zut-table{border-collapse:collapse;min-width:100%;}
 .zut-th-name{
@@ -2906,3 +2909,24 @@ img{max-width:100%;display:block}
   border-radius:var(--r);cursor:pointer;color:var(--text);
   display:flex;align-items:center;justify-content:center;height:44px;
 }
+.zut-dual-banner{
+  background:#f59e0b22;border-bottom:1px solid #f59e0b55;
+  color:#92400e;padding:6px 16px;font-size:13px;font-weight:600;flex-shrink:0;
+}
+.zut-arrival-banner{
+  position:absolute;top:60px;left:16px;right:16px;z-index:100;
+  background:#3b82f6;color:#fff;border-radius:10px;
+  padding:10px 14px;font-size:13px;font-weight:600;
+  box-shadow:0 4px 16px rgba(0,0,0,.2);animation:slideDown .3s ease;
+}
+@keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.plan-b-cell{
+  opacity:.45;border-style:dashed!important;
+}
+.zut-planb-tag{
+  font-size:10px;font-weight:600;color:#6b7280;
+  background:#6b728020;border:1px solid #6b728040;border-radius:4px;
+  padding:1px 4px;margin-left:4px;vertical-align:middle;
+}
+.zut-senior-tag{font-size:11px;color:#f59e0b;margin-left:2px;vertical-align:middle;}
+.zut-trainee-tag{font-size:11px;margin-left:2px;vertical-align:middle;}

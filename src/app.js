@@ -2971,6 +2971,7 @@ const ZUTEIL_ROLES = {
   termin:     { label:'Termin',     short:'T',   icon:'📋', color:'#8b5cf6', burden:3 },
   system:     { label:'Ins System', short:'Sy',  icon:'💾', color:'#6366f1', burden:1 },
   pause:      { label:'Pause',      short:'P',   icon:'☕', color:'#6b7280', burden:0 },
+  assist:     { label:'Assistenz',  short:'As',  icon:'👥', color:'#ec4899', burden:1 },
 };
 
 const TERMIN_DEFS = {
@@ -2999,10 +3000,17 @@ async function openZuteilungScreen(shift) {
 
   const userName = localStorage.getItem('psychodex-user-name') || '';
   const people = [];
-  if (userName) people.push({ name:userName, funktion:fresh.category==='senior'?'Seniorassistent':'Assistent', present:true, _self:true });
+  if (userName) people.push({
+    name: userName,
+    funktion: fresh.category === 'senior' ? 'Seniorassistent' : 'Assistent',
+    present: true, _self: true,
+    _isSenior: fresh.category === 'senior',
+    _isTrainee: false,
+  });
   for (const c of (fresh.colleagues||[])) {
-    if ((effectiveTeam(c)==='D'||effectiveTeam(c)==='T') && c.name.toLowerCase()!==userName.toLowerCase())
-      people.push(c);
+    const team = effectiveTeam(c);
+    if ((team === 'D' || team === 'T') && c.name.toLowerCase() !== userName.toLowerCase())
+      people.push({ ...c, _isTrainee: team === 'T', _isSenior: c.funktion?.toLowerCase().includes('senior') ?? false });
   }
 
   let zData = fresh.zuteilung ? JSON.parse(JSON.stringify(fresh.zuteilung)) : {};
@@ -3011,6 +3019,9 @@ async function openZuteilungScreen(shift) {
   zData.personStates = zData.personStates || {};
   zData.termine      = zData.termine      || [];
   zData.undoStack    = zData.undoStack    || [];
+  zData.planB        = zData.planB        || null;
+  zData.dualPlanActive = zData.dualPlanActive || false;
+  zData.planAPersons   = zData.planAPersons   || null;
 
   const saveData = () =>
     db.shiftLogs.update(fresh.id, { zuteilung: JSON.parse(JSON.stringify({
@@ -3020,6 +3031,7 @@ async function openZuteilungScreen(shift) {
   const pushUndo = () => {
     zData.undoStack.push(JSON.parse(JSON.stringify({
       assignments: zData.assignments, personStates: zData.personStates, termine: zData.termine,
+      planB: zData.planB, dualPlanActive: zData.dualPlanActive, planAPersons: zData.planAPersons,
     })));
     if (zData.undoStack.length > 20) zData.undoStack.shift();
   };
@@ -3027,6 +3039,23 @@ async function openZuteilungScreen(shift) {
   const render = () => renderZuteilGrid(inner, fresh, zData, people, { saveData, pushUndo, render });
   modal.classList.remove('hidden');
   render();
+
+  // Notify if people from planB have since arrived (checked in rolecall after auto-assign ran)
+  if (zData.dualPlanActive && zData.planAPersons) {
+    const nowPresent = people.filter(p => {
+      const ps = zData.personStates[p.name] || {};
+      return p.present && !ps.notYetPresent;
+    }).map(p => p.name);
+    const newArrivals = nowPresent.filter(n => !zData.planAPersons.includes(n));
+    if (newArrivals.length > 0) {
+      const banner = document.createElement('div');
+      banner.className = 'zut-arrival-banner';
+      banner.textContent = `🔔 ${newArrivals.join(', ')} ${newArrivals.length === 1 ? 'ist' : 'sind'} angekommen – Auto-Zuteilung neu ausführen!`;
+      inner.prepend(banner);
+      setTimeout(() => banner.remove(), 6000);
+    }
+  }
+
   document.getElementById('zut-backdrop').onclick = () => modal.classList.add('hidden');
 }
 
@@ -3049,17 +3078,20 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     return p.present && !ps.notYetPresent;
   }).length;
 
+  const planASet = new Set(zData.planAPersons || []);
+
   const bodyRows = people.map(p => {
     const ps = zData.personStates[p.name] || {};
     const earlyMark = ps.earlyLeave ? `<span class="zut-early-tag">⏰${ps.earlyLeave}</span>` : '';
     const absent = !p.present;
+    const isPlanBRow = zData.dualPlanActive && (!p.present || ps.notYetPresent);
     const cells = blocks.map(b => {
       const key = `${p.name}::${b.key}`;
       const role = zData.assignments[key];
       const ri   = role ? ZUTEIL_ROLES[role] : null;
       const unavail = !isAvail(p, b);
       return `<td class="zut-cell${unavail?' zut-cell-unavail':''}">
-        <button class="zut-cell-btn${ri?' has-role':''}" data-key="${key}"
+        <button class="zut-cell-btn${ri?' has-role':''}${isPlanBRow?' plan-b-cell':''}" data-key="${key}"
                 style="${ri?`background:${ri.color}1a;border-color:${ri.color}55;color:${ri.color}`:''}"
                 ${unavail?'disabled':''}>
           ${ri?`<span class="zut-cell-icon">${ri.icon}</span><span class="zut-role-short">${ri.short}</span>`:`<span class="zut-empty-dot">·</span>`}
@@ -3067,7 +3099,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     }).join('');
     return `<tr class="zut-row${absent?' zut-row-absent':''}">
       <td class="zut-td-name">
-        <div class="zut-person-name">${p.name}${p._self?` <span class="team-self-badge">Ich</span>`:''}</div>
+        <div class="zut-person-name">${p.name}${p._self?` <span class="team-self-badge">Ich</span>`:''}${p._isSenior?` <span class="zut-senior-tag">★</span>`:''}${p._isTrainee?` <span class="zut-trainee-tag">🎓</span>`:''}${isPlanBRow?` <span class="zut-planb-tag">Plan B</span>`:''}</div>
         <div class="zut-person-sub">${earlyMark}<button class="zut-ps-btn" data-pname="${p.name}">⚙️</button></div>
       </td>${cells}</tr>`;
   }).join('');
@@ -3075,7 +3107,9 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
   const covRow = `<tr class="zut-cov-row">
     <td class="zut-td-name"><span class="zut-cov-label">Abdeckung</span></td>
     ${blocks.map(b => {
-      const roles = people.map(p => zData.assignments[`${p.name}::${b.key}`]).filter(Boolean);
+      const roles = people
+        .filter(p => !zData.dualPlanActive || planASet.has(p.name))
+        .map(p => zData.assignments[`${p.name}::${b.key}`]).filter(Boolean);
       const hasK = roles.includes('kassa'), hasB = roles.includes('backoffice');
       return `<td class="zut-cell" style="text-align:center;padding:4px 2px">
         <span style="color:${hasK?'#10b981':'#ef4444'};font-size:11px;font-weight:700">K</span>
@@ -3094,9 +3128,12 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       .map(t => {
         const def = TERMIN_DEFS[t.type];
         const pInit = t.personName ? t.personName.split(' ').map(w=>w[0]).join('').slice(0,2) : '';
-        return `<div class="zut-tl-chip" data-tid="${t.id}" draggable="true" title="${def.label}${t.personName?' · '+t.personName:''}">
+        const badges = `${t.isInternational ? '<span class="zut-chip-badge">INT</span>' : t.isDemo ? '<span class="zut-chip-badge">D</span>' : ''}`;
+        const titleParts = [def.label, t.personName, t.isDemo&&!t.isInternational?'Demo':null, t.isInternational?'International':null].filter(Boolean);
+        return `<div class="zut-tl-chip${t.isInternational?' zut-chip-intl':''}" data-tid="${t.id}" draggable="true" title="${titleParts.join(' · ')}">
           <span class="zut-chip-icon">${def.icon}</span>
           ${pInit?`<span class="zut-chip-person">${pInit}</span>`:''}
+          ${badges}
         </div>`;
       }).join('');
     return `<div class="zut-tl-col" data-hour="${h}">
@@ -3126,6 +3163,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       </div>
       <div class="zut-tl-scroll">${tlCols}</div>
     </div>
+    ${zData.dualPlanActive ? `<div class="zut-dual-banner">⚠️ Backup-Plan aktiv · ${people.length - (zData.planAPersons?.length || 0)} Person(en) fehlen noch</div>` : ''}
     <div class="zut-grid-wrap">
       <table class="zut-table">
         <thead><tr>
@@ -3156,7 +3194,11 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
   };
   inner.querySelector('#zut-auto-btn').onclick = () => {
     pushUndo();
-    zData.assignments = autoAssignZuteilung(getZuteilBlocks(shift, zData.blockSize), people, zData);
+    const result = autoAssignZuteilung(getZuteilBlocks(shift, zData.blockSize), people, zData);
+    zData.assignments    = result.assignments;
+    zData.planB          = result.planB;
+    zData.dualPlanActive = result.dualPlanActive;
+    zData.planAPersons   = result.planAPersons;
     saveData(); render();
   };
   // + buttons: add at smart default hour, no popup needed
@@ -3304,7 +3346,8 @@ function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo
   document.querySelectorAll('.zut-popup').forEach(p => p.remove());
   const def = TERMIN_DEFS[termin.type];
   const cur  = termin.startHour ?? termin.hour;
-  const presentPeople = people.filter(p => p.present && !(zData.personStates[p.name]||{}).notYetPresent);
+  const presentPeople = people.filter(p => p.present && !(zData.personStates[p.name]||{}).notYetPresent && !p._isTrainee);
+  const isEG = termin.type === 'erstgesprach';
   const popup = document.createElement('div');
   popup.className = 'zut-popup';
   popup.innerHTML = `
@@ -3313,10 +3356,16 @@ function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo
       <select id="zp-thour" class="form-input" style="flex:1">
         ${tlHours.map(h=>`<option value="${h}"${h===cur?' selected':''}>${String(h).padStart(2,'0')}:00</option>`).join('')}
       </select></div>
-    <div class="zut-popup-row"><span>Person</span>
+    ${isEG ? `
+    <label class="zut-popup-row"><span>Demo-Termin</span>
+      <input type="checkbox" id="zp-demo" ${termin.isDemo?'checked':''}></label>
+    <label class="zut-popup-row" id="zp-intl-row" style="${!termin.isDemo?'display:none':''}"><span>🌍 International</span>
+      <input type="checkbox" id="zp-intl" ${termin.isInternational?'checked':''}></label>
+    ` : ''}
+    <div class="zut-popup-row" id="zp-person-row" style="${termin.isInternational?'display:none':''}"><span>Person</span>
       <select id="zp-tperson" class="form-input" style="flex:1">
         <option value=""${!termin.personName?' selected':''}>– optional –</option>
-        ${presentPeople.map(p=>`<option value="${p.name}"${p.name===termin.personName?' selected':''}>${p.name}</option>`).join('')}
+        ${presentPeople.map(p=>`<option value="${p.name}"${p.name===termin.personName?' selected':''}>${p.name}${p._isSenior?' ★':''}</option>`).join('')}
       </select></div>
     <div class="zut-popup-btns">
       <button class="btn-primary" id="zp-tsave">Speichern</button>
@@ -3324,6 +3373,19 @@ function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo
     </div>
     <button class="btn-secondary" id="zp-tdel" style="width:100%;margin-top:6px;color:#f87171;border-color:rgba(248,113,113,.4)">🗑 Löschen</button>`;
   document.getElementById('zuteilung-modal').appendChild(popup);
+
+  // Demo toggle shows/hides International + person row
+  if (isEG) {
+    popup.querySelector('#zp-demo').onchange = e => {
+      popup.querySelector('#zp-intl-row').style.display = e.target.checked ? '' : 'none';
+      if (!e.target.checked) popup.querySelector('#zp-intl').checked = false;
+      popup.querySelector('#zp-person-row').style.display = '';
+    };
+    popup.querySelector('#zp-intl').onchange = e => {
+      popup.querySelector('#zp-person-row').style.display = e.target.checked ? 'none' : '';
+    };
+  }
+
   const close = () => popup.remove();
   popup.querySelector('#zp-tcancel').onclick = close;
   popup.querySelector('#zp-tdel').onclick = () => {
@@ -3335,21 +3397,35 @@ function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo
     pushUndo();
     const idx = zData.termine.findIndex(t => t.id === termin.id);
     if (idx >= 0) {
-      zData.termine[idx].startHour  = parseInt(popup.querySelector('#zp-thour').value);
-      zData.termine[idx].personName = popup.querySelector('#zp-tperson').value || null;
+      zData.termine[idx].startHour = parseInt(popup.querySelector('#zp-thour').value);
+      if (isEG) {
+        const isDemo  = popup.querySelector('#zp-demo').checked;
+        const isIntl  = popup.querySelector('#zp-intl').checked;
+        zData.termine[idx].isDemo         = isDemo;
+        zData.termine[idx].isInternational = isIntl;
+        zData.termine[idx].personName     = isIntl ? null : (popup.querySelector('#zp-tperson').value || null);
+      } else {
+        zData.termine[idx].personName = popup.querySelector('#zp-tperson').value || null;
+      }
     }
     close(); saveData(); render();
   };
 }
 
-function autoAssignZuteilung(blocks, people, zData) {
-  const { termine, personStates, blockSize } = zData;
+function runAutoAssign(allowedPeople, blocks, termine, personStates, blockSize, { planBMode = false } = {}) {
   const result = {};
+  const terminCount = Object.fromEntries(allowedPeople.map(p => [p.name, 0]));
+  const trainees    = allowedPeople.filter(p => p._isTrainee);
+  const nonTrainees = allowedPeople.filter(p => !p._isTrainee);
 
-  const isAvail = (p, block) => {
+  // Availability helpers
+  const isAvailAtBlock = (p, block, bi) => {
     if (!p.present) return false;
     const ps = personStates[p.name] || {};
-    if (ps.notYetPresent) return false;
+    if (ps.notYetPresent) {
+      if (!planBMode) return false;
+      if (bi === 0) return false; // late arrivals skip first block in planB
+    }
     if (ps.earlyLeave) {
       const [lh] = ps.earlyLeave.split(':').map(Number);
       if (block.start >= lh) return false;
@@ -3357,7 +3433,55 @@ function autoAssignZuteilung(blocks, people, zData) {
     return true;
   };
 
-  for (const t of termine) {
+  const isAvailAtHour = (p, hour) => {
+    if (!p.present) return false;
+    const ps = personStates[p.name] || {};
+    if (ps.notYetPresent) {
+      if (!planBMode) return false;
+      if (blocks[1] && hour < blocks[1].start) return false;
+    }
+    if (ps.earlyLeave) {
+      const [lh] = ps.earlyLeave.split(':').map(Number);
+      if (hour >= lh) return false;
+    }
+    return true;
+  };
+
+  // ── Step 1: Resolve termine (auto-assign person if unset) ─────────────────
+  const resolvedTermine = termine.map(t => {
+    const tHour = t.startHour ?? t.hour;
+    const def = TERMIN_DEFS[t.type];
+
+    // International demos: DEU team doesn't do them (trainees may still assist)
+    if (t.isInternational) return { ...t, personName: null };
+
+    // Manually assigned to a valid non-trainee: keep it
+    if (t.personName && nonTrainees.some(p => p.name === t.personName)) return t;
+
+    const avail = nonTrainees.filter(p => {
+      if (!isAvailAtHour(p, tHour)) return false;
+      // Termin + system doc must complete before early leave
+      const ps = personStates[p.name] || {};
+      if (ps.earlyLeave) {
+        const [lh] = ps.earlyLeave.split(':').map(Number);
+        if (tHour + def.dur + blockSize > lh) return false;
+      }
+      return true;
+    }).sort((a, b) => {
+      // Seniors preferred for patient services
+      const sa = a._isSenior ? 0 : 1, sb = b._isSenior ? 0 : 1;
+      if (sa !== sb) return sa - sb;
+      return terminCount[a.name] - terminCount[b.name];
+    });
+
+    if (!avail.length) return t;
+    const pick = avail[0];
+    terminCount[pick.name]++;
+    return { ...t, personName: pick.name };
+  });
+
+  // ── Step 2: Apply termin + system blocks ──────────────────────────────────
+  for (const t of resolvedTermine) {
     if (!t.personName) continue;
     const def = TERMIN_DEFS[t.type];
     const tHour = t.startHour ?? t.hour;
@@ -3371,54 +3495,116 @@ function autoAssignZuteilung(blocks, people, zData) {
       result[`${t.personName}::${sysBlock.key}`] = 'system';
   }
 
-  const burden = Object.fromEntries(people.map(p => [p.name, 0]));
+  // ── Step 3: Init burden + roleCounts ──────────────────────────────────────
+  const burden     = Object.fromEntries(allowedPeople.map(p => [p.name, 0]));
+  const roleCounts = Object.fromEntries(allowedPeople.map(p => [p.name, {}]));
   for (const [key, role] of Object.entries(result)) {
     const [name] = key.split('::');
-    burden[name] = (burden[name]||0) + (ZUTEIL_ROLES[role]?.burden||0);
+    if (burden[name] === undefined) continue;
+    burden[name] += ZUTEIL_ROLES[role]?.burden || 0;
+    roleCounts[name][role] = (roleCounts[name][role] || 0) + 1;
   }
 
+  // ── Step 4: Assign trainee assists (round-robin) ───────────────────────────
+  let assistIdx = 0;
+  for (const t of resolvedTermine) {
+    if (!trainees.length) break;
+    // Erstgespräch: only assist if Demo or International (observational)
+    if (t.type === 'erstgesprach' && !t.isDemo && !t.isInternational) continue;
+    const tHour = t.startHour ?? t.hour;
+    const def = TERMIN_DEFS[t.type];
+    const tBlocks = blocks.filter(b => b.start >= tHour && b.start < tHour + def.dur);
+    if (!tBlocks.length) continue;
+
+    for (let attempt = 0; attempt < trainees.length; attempt++) {
+      const tr = trainees[(assistIdx + attempt) % trainees.length];
+      const canAssist = tBlocks.every(b => {
+        const bi = blocks.indexOf(b);
+        return isAvailAtBlock(tr, b, bi) && !result[`${tr.name}::${b.key}`];
+      });
+      if (canAssist) {
+        for (const b of tBlocks) {
+          result[`${tr.name}::${b.key}`] = 'assist';
+          burden[tr.name] += ZUTEIL_ROLES.assist?.burden || 1;
+          roleCounts[tr.name].assist = (roleCounts[tr.name].assist || 0) + 1;
+        }
+        assistIdx = (assistIdx + attempt + 1) % trainees.length;
+        break;
+      }
+    }
+  }
+
+  // ── Step 5: Main assignment loop ───────────────────────────────────────────
   const paused = new Set();
   const midIdx = Math.floor(blocks.length / 2);
 
-  const pickByBurden = pool => [...pool].sort((a,b) => (burden[a.name]||0) - (burden[b.name]||0))[0];
+  const getScore = (p, roleKey) =>
+    (burden[p.name] || 0) + (roleCounts[p.name][roleKey] || 0) * (ZUTEIL_ROLES[roleKey]?.burden || 1);
+  const pickByScore = (pool, roleKey) =>
+    pool.slice().sort((a, b) => getScore(a, roleKey) - getScore(b, roleKey))[0];
+
   const assign = (p, block, role) => {
     result[`${p.name}::${block.key}`] = role;
-    burden[p.name] = (burden[p.name]||0) + (ZUTEIL_ROLES[role]?.burden||0);
+    burden[p.name] += ZUTEIL_ROLES[role]?.burden || 0;
+    roleCounts[p.name][role] = (roleCounts[p.name][role] || 0) + 1;
     if (role === 'pause') paused.add(p.name);
   };
-  const free = block => people.filter(p => isAvail(p, block) && !result[`${p.name}::${block.key}`]);
+  const free = (block, bi) =>
+    allowedPeople.filter(p => isAvailAtBlock(p, block, bi) && !result[`${p.name}::${block.key}`]);
+
+  // True if person did termin/system in the immediately preceding block
+  const hadTerminRecently = (p, bi) => {
+    if (bi === 0) return false;
+    const r = result[`${p.name}::${blocks[bi - 1].key}`];
+    return r === 'termin' || r === 'system';
+  };
 
   for (const [bi, block] of blocks.entries()) {
-    if (!people.some(p => result[`${p.name}::${block.key}`] === 'kassa')) {
-      const p = pickByBurden(free(block)); if (p) assign(p, block, 'kassa');
+    // Kassa: non-trainees only; buffer after termin
+    if (!allowedPeople.some(p => result[`${p.name}::${block.key}`] === 'kassa')) {
+      const pool = free(block, bi).filter(p => !p._isTrainee);
+      const pref = pool.filter(p => !hadTerminRecently(p, bi));
+      const p = pickByScore(pref.length ? pref : pool.length ? pool : free(block, bi), 'kassa');
+      if (p) assign(p, block, 'kassa');
     }
-    if (!people.some(p => result[`${p.name}::${block.key}`] === 'backoffice')) {
-      const p = pickByBurden(free(block)); if (p) assign(p, block, 'backoffice');
+    // Backoffice: non-trainees preferred (people fresh from termin fit well here)
+    if (!allowedPeople.some(p => result[`${p.name}::${block.key}`] === 'backoffice')) {
+      const pool = free(block, bi).filter(p => !p._isTrainee);
+      const p = pickByScore(pool.length ? pool : free(block, bi), 'backoffice');
+      if (p) assign(p, block, 'backoffice');
     }
-    const avail = people.filter(p => isAvail(p, block)).length;
-    if (avail >= 7 && !people.some(p => result[`${p.name}::${block.key}`] === '5stock')) {
-      const p = pickByBurden(free(block)); if (p) assign(p, block, '5stock');
+    // 5. Stock (7+ available)
+    const avail = allowedPeople.filter(p => isAvailAtBlock(p, block, bi)).length;
+    if (avail >= 7 && !allowedPeople.some(p => result[`${p.name}::${block.key}`] === '5stock')) {
+      const pool = free(block, bi).filter(p => !p._isTrainee);
+      const p = pickByScore(pool.length ? pool : free(block, bi), '5stock');
+      if (p) assign(p, block, '5stock');
     }
+    // Pause (middle blocks, highest-burden person not yet paused)
     if (bi >= midIdx - 1 && bi <= midIdx + 1) {
-      const candidates = free(block).filter(p => !paused.has(p.name));
+      const candidates = free(block, bi).filter(p => !paused.has(p.name));
       if (candidates.length) {
-        const p = [...candidates].sort((a,b) => (burden[b.name]||0) - (burden[a.name]||0))[0];
+        const p = candidates.slice().sort((a, b) => (burden[b.name] || 0) - (burden[a.name] || 0))[0];
         assign(p, block, 'pause');
       }
     }
-    for (const p of free(block)) assign(p, block, 'backoffice');
+    // Fill remaining (including trainees without assist) with backoffice
+    for (const p of free(block, bi)) assign(p, block, 'backoffice');
   }
 
-  for (const p of people) {
-    if (paused.has(p.name) || !p.present) continue;
+  // ── Step 6: Second-pass pause for anyone who didn't get one ───────────────
+  for (const p of allowedPeople) {
+    if (paused.has(p.name)) continue;
     const ps = personStates[p.name] || {};
-    if (ps.notYetPresent) continue;
-    for (const block of blocks) {
+    if (!p.present) continue;
+    if (ps.notYetPresent && !planBMode) continue;
+    for (const [bi, block] of blocks.entries()) {
+      if (!isAvailAtBlock(p, block, bi)) continue;
       const key = `${p.name}::${block.key}`;
       const role = result[key];
       if (!role || role === 'backoffice') {
-        const kassaOK = people.some(q => q.name !== p.name && result[`${q.name}::${block.key}`] === 'kassa');
-        const boOK    = people.some(q => q.name !== p.name && result[`${q.name}::${block.key}`] === 'backoffice');
+        const kassaOK = allowedPeople.some(q => q.name !== p.name && result[`${q.name}::${block.key}`] === 'kassa');
+        const boOK    = allowedPeople.some(q => q.name !== p.name && result[`${q.name}::${block.key}`] === 'backoffice');
         if (kassaOK && (boOK || role !== 'backoffice')) {
           result[key] = 'pause'; paused.add(p.name); break;
         }
@@ -3427,6 +3613,44 @@ function autoAssignZuteilung(blocks, people, zData) {
   }
 
   return result;
+}
+
+function autoAssignZuteilung(blocks, people, zData) {
+  const { termine, personStates, blockSize } = zData;
+  const presentPeople = people.filter(p => {
+    const ps = personStates[p.name] || {};
+    return p.present && !ps.notYetPresent;
+  });
+  const absentPeople = people.filter(p => {
+    const ps = personStates[p.name] || {};
+    return !p.present || ps.notYetPresent;
+  });
+
+  const planA = runAutoAssign(presentPeople, blocks, termine, personStates, blockSize);
+
+  if (absentPeople.length > 0) {
+    const planB = runAutoAssign(people, blocks, termine, personStates, blockSize, { planBMode: true });
+    const merged = { ...planA };
+    for (const p of absentPeople) {
+      for (const b of blocks) {
+        const key = `${p.name}::${b.key}`;
+        if (planB[key]) merged[key] = planB[key];
+      }
+    }
+    return {
+      assignments: merged,
+      planB,
+      dualPlanActive: true,
+      planAPersons: presentPeople.map(p => p.name),
+    };
+  }
+
+  return {
+    assignments: planA,
+    planB: null,
+    dualPlanActive: false,
+    planAPersons: presentPeople.map(p => p.name),
+  };
 }
 
 // ─── Rolecall Gamification Bonuses ────────────────────────────────────────────
