@@ -2617,13 +2617,13 @@ function openSlotEditForm(slot, source) {
       <input type="text" id="slot-edit-notes" class="form-input" placeholder="Codename…" value="${(slot.patientNotes || '').replace(/"/g,'&quot;')}">
     </div>
     <div class="form-row" style="flex-direction:column;align-items:stretch;gap:8px">
-      <label class="form-label">🔬 Verdachtsdiagnosen</label>
+      <label class="form-label">🎯 Diagnosen</label>
       <div class="susp-chips-wrap" id="susp-chips-wrap"></div>
       <div class="susp-inline-wrap hidden" id="susp-search-wrap">
         <input type="text" id="susp-search-q" class="form-input" placeholder="Diagnose suchen…" autocomplete="off">
         <div id="susp-search-res" class="susp-search-results"></div>
       </div>
-      <button type="button" class="btn-secondary" id="btn-susp-add">＋ Verdacht hinzufügen</button>
+      <button type="button" class="btn-secondary" id="btn-susp-add">＋ Diagnose hinzufügen</button>
     </div>
     ${terminInterviewField}
     ${terminErstgespraechField}
@@ -2905,7 +2905,7 @@ async function applyVerifyXP(slot, seniorCode) {
 async function openRecallPatientModal(targetSlot, shift) {
   const allSlots = await db.scheduleSlots.toArray();
   const patients = allSlots
-    .filter(s => SLOT_TYPES[s.type]?.patientContact && s.shiftId !== shift.id && s.patientNotes)
+    .filter(s => (s.type === 'patient' || SLOT_TYPES[s.type]?.patientContact) && s.shiftId !== shift.id)
     .sort((a, b) => b.shiftId - a.shiftId);
 
   const existing = document.getElementById('recall-modal');
@@ -2916,8 +2916,9 @@ async function openRecallPatientModal(targetSlot, shift) {
         const chips = (p.suspectedCodes || []).map(c =>
           `<span class="susp-chip"><span class="susp-chip-code">${c.code}</span></span>`
         ).join('');
+        const label = p.patientNotes || (SLOT_TYPES[p.type]?.label ?? p.type);
         return `<div class="recall-item" data-id="${p.id}">
-          <div class="recall-item-name">${p.patientNotes}</div>
+          <div class="recall-item-name">${label}</div>
           <div class="recall-item-chips">${chips}</div>
         </div>`;
       }).join('')
