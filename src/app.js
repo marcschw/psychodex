@@ -2905,7 +2905,7 @@ async function applyVerifyXP(slot, seniorCode) {
 async function openRecallPatientModal(targetSlot, shift) {
   const allSlots = await db.scheduleSlots.toArray();
   const patients = allSlots
-    .filter(s => s.type === 'patient' && s.shiftId !== shift.id && s.patientNotes)
+    .filter(s => SLOT_TYPES[s.type]?.patientContact && s.shiftId !== shift.id && s.patientNotes)
     .sort((a, b) => b.shiftId - a.shiftId);
 
   const existing = document.getElementById('recall-modal');

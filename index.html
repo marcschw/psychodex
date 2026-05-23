@@ -41,22 +41,21 @@
       <!-- ── Home ──────────────────────────────────────────────────────────── -->
       <section id="tab-home" class="tab-view active">
 
-        <!-- Shift mini-navigator (top) -->
-        <div class="home-shift-nav" id="home-shift-nav">
-          <button class="home-snav-arrow" id="btn-snav-prev">
-            <span class="home-snav-arrow-icon">‹</span>
-            <span class="home-snav-date" id="snav-prev-date">—</span>
-          </button>
-          <button class="home-snav-cal" id="btn-open-cal">📅 Kalender</button>
-          <button class="home-snav-arrow home-snav-arrow-right" id="btn-snav-next">
-            <span class="home-snav-date" id="snav-next-date">—</span>
-            <span class="home-snav-arrow-icon">›</span>
-          </button>
+        <!-- Sticky header: shift nav + missions strip -->
+        <div class="home-sticky-header">
+          <div class="home-shift-nav" id="home-shift-nav">
+            <button class="home-snav-arrow" id="btn-snav-prev">
+              <span class="home-snav-arrow-icon">‹</span>
+              <span class="home-snav-date" id="snav-prev-date">—</span>
+            </button>
+            <button class="home-snav-cal" id="btn-open-cal">📅 Kalender</button>
+            <button class="home-snav-arrow home-snav-arrow-right" id="btn-snav-next">
+              <span class="home-snav-date" id="snav-next-date">—</span>
+              <span class="home-snav-arrow-icon">›</span>
+            </button>
+          </div>
+          <div id="home-missions-mini" class="home-missions-mini hidden"></div>
         </div>
-
-        <!-- Animated content wrapper -->
-        <!-- Mini missions strip – sticky top, shown when active missions exist -->
-        <div id="home-missions-mini" class="home-missions-mini hidden"></div>
 
         <div id="home-view-content">
 
