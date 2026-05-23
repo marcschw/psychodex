@@ -5160,14 +5160,40 @@ async function refreshMissionProgress() {
 function renderSettingsTab() {
   renderHourCountersSettings();
   renderExtraHoursSettings();
+  // Supervision target
+  const supEl = document.getElementById('setting-sup-target');
+  if (supEl) {
+    supEl.value = state.profile?.supervisionTarget ?? 30;
+    supEl.onchange = async (e) => {
+      const val = parseFloat(e.target.value);
+      if (val > 0) {
+        await db.profile.update(state.profile.id, { supervisionTarget: val });
+        state.profile.supervisionTarget = val;
+        renderSupervisionStats();
+      }
+    };
+  }
 }
 
 // ─── Supervision Logging ──────────────────────────────────────────────────────
 async function renderSupervisionStats() {
   const logs = await db.supervisionLogs.orderBy('date').reverse().toArray();
   const hours = logs.reduce((s, l) => s + (l.duration || 0), 0);
+  const target = state.profile?.supervisionTarget ?? 30;
   const elHours = document.getElementById('supervision-hours');
   if (elHours) elHours.textContent = `${hours}h`;
+  const secEl = document.getElementById('sup-progress-section');
+  if (secEl) {
+    secEl.style.display = '';
+    const pct = Math.min(100, (hours / target) * 100);
+    const barEl = document.getElementById('sup-progress-bar');
+    if (barEl) {
+      barEl.style.width = `${pct}%`;
+      barEl.style.background = pct >= 100 ? '#10b981' : pct >= 60 ? '#f59e0b' : '#ef4444';
+    }
+    const lblEl = document.getElementById('sup-progress-label');
+    if (lblEl) lblEl.textContent = `${hours} / ${target} Stunden Supervision`;
+  }
 }
 
 async function openSupervisionSheet() {
@@ -5935,7 +5961,26 @@ function renderHeatmap() {
   const el    = document.getElementById('heatmap');
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
-  const shiftSet = new Set(state.shifts.map(s => s.date));
+  // Build date → color map based on activity fraction
+  const shiftColorMap = new Map();
+  for (const shift of state.shifts) {
+    const asgn = shift.zuteilung?.assignments;
+    let fraction;
+    if (asgn && Object.keys(asgn).length > 0) {
+      const vals = Object.values(asgn);
+      const nonPause = vals.filter(v => v !== 'pause').length;
+      fraction = nonPause / vals.length;
+    } else {
+      // Fallback: use shift duration ratio (max 8h = full green)
+      try {
+        const h = shiftHours(shift);
+        const durMins = (h.end[0]*60 + h.end[1]) - (h.start[0]*60 + h.start[1]);
+        fraction = Math.min(1, durMins / 480);
+      } catch { fraction = 1; }
+    }
+    const hue = Math.round(fraction * 110); // 0=red, 110=green
+    shiftColorMap.set(shift.date, `hsl(${hue},70%,48%)`);
+  }
 
   // Find earliest shift date
   const firstShiftDate = state.shifts.length
@@ -5971,15 +6016,20 @@ function renderHeatmap() {
       const date = new Date(start);
       date.setDate(start.getDate() + w * 7 + d);
       const ds = date.toISOString().split('T')[0];
-      const cls = ['heatmap-cell', shiftSet.has(ds) ? 'hm-active' : '',
+      const color = shiftColorMap.get(ds);
+      const cls = ['heatmap-cell', color ? 'hm-active' : '',
         ds === todayStr ? 'hm-today' : '', date > today ? 'hm-future' : ''].filter(Boolean).join(' ');
-      html += `<div class="${cls}" title="${ds}"></div>`;
+      const styleAttr = color && ds !== todayStr ? ` style="background:${color};box-shadow:0 0 5px ${color}66"` : '';
+      html += `<div class="${cls}"${styleAttr} title="${ds}"></div>`;
     }
     html += '</div>';
   }
   el.innerHTML = html;
-  el.querySelectorAll('.heatmap-cell.hm-active').forEach(cell =>
-    cell.addEventListener('click', () => showHeatmapDetail(cell.title)));
+  el.querySelectorAll('.heatmap-cell[title]').forEach(cell => {
+    if (shiftColorMap.has(cell.title)) {
+      cell.addEventListener('click', () => showHeatmapDetail(cell.title));
+    }
+  });
 
   return startStr; // return for header label
 }

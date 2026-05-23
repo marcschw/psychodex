@@ -212,6 +212,12 @@
               <div class="stat-label">Supervision</div>
             </div>
           </div>
+          <div id="sup-progress-section" class="sup-progress-section" style="display:none">
+            <div class="sup-progress-bar-track">
+              <div id="sup-progress-bar" class="sup-progress-bar-fill"></div>
+            </div>
+            <div id="sup-progress-label" class="sup-progress-label"></div>
+          </div>
           <div id="hours-counters"></div>
           <div class="section-header" id="heatmap-section-header">Dienst-Aktivität</div>
           <div class="heatmap-scroll">
@@ -253,6 +259,13 @@
           <div class="setting-item setting-wide">
             <label class="setting-label">Stunden-Zähler</label>
             <div id="hour-counters-settings"></div>
+          </div>
+          <div class="setting-item setting-wide">
+            <label class="setting-label">Supervision-Ziel (Stunden)</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" id="setting-sup-target" class="setting-input" min="1" max="1000" step="1" style="width:80px" placeholder="30">
+              <span style="color:var(--text-dim);font-size:13px">h Ziel</span>
+            </div>
           </div>
           <div class="setting-item setting-wide">
             <label class="setting-label">Extra-Stunden</label>
