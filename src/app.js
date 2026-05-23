@@ -2939,8 +2939,12 @@ async function openRecallPatientModal(targetSlot, shift) {
           p.terminErstgespraech ? `Termin für Erstgespräch: ${fmtD(p.terminErstgespraech)}` : null,
         ].filter(Boolean);
         const slotDiags  = state.catches.filter(c => c.slotId === p.id);
-        const chips      = slotDiags.map(c =>
-          `<span class="susp-chip"><span class="susp-chip-code">${c.code}</span><span class="susp-chip-title" style="max-width:100px">${c.name}</span></span>`
+        const diagRows   = slotDiags.map(c =>
+          `<div class="recall-diag-row">
+            <img class="recall-diag-img" src="assets/images/diagnoses/${c.code}.png" alt="" onerror="this.style.display='none'">
+            <span class="recall-diag-code">${c.code}</span>
+            <span class="recall-diag-name">${c.name}</span>
+          </div>`
         ).join('');
         return `<div class="recall-item${isToday ? ' recall-item--today' : ''}" data-id="${p.id}">
           <div class="recall-item-header">
@@ -2949,7 +2953,7 @@ async function openRecallPatientModal(targetSlot, shift) {
           </div>
           <div class="recall-item-session">${typeLbl} · ${dateStr} · ${timeStr}</div>
           ${termins.map(t => `<div class="recall-item-return">📅 ${t}</div>`).join('')}
-          ${chips ? `<div class="recall-item-chips" style="margin-top:5px">${chips}</div>` : ''}
+          ${diagRows ? `<div class="recall-diag-list">${diagRows}</div>` : ''}
         </div>`;
       }).join('')
     : '<div style="color:var(--text-dim);font-size:13px;padding:16px 0">Keine früheren Patienten gefunden.</div>';
