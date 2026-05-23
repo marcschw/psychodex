@@ -5058,20 +5058,22 @@ function openMissionDetailModal(am) {
   const { current, target } = calcMissionProgress(def, catchesSince, shiftsSince, state.icdFlat);
   const pct = Math.min(100, Math.round((current / target) * 100));
   body.innerHTML = `
-    <div class="mission-card tier-${def.tier}" style="margin-bottom:12px">
-      <div class="mission-card-header">
-        <span class="mission-tier-badge">${TIER_LABELS[def.tier]}</span>
-        <span class="mission-reward">+${def.reward.toLocaleString('de-AT')} XP</span>
-      </div>
-      <div class="mission-title">${def.title}</div>
-      <div class="mission-desc">${def.description}</div>
-      <div class="mission-progress-row">
-        <div class="mission-prog-track"><div class="mission-prog-fill" style="width:${pct}%"></div></div>
-        <span class="mission-prog-text">${current} / ${target}</span>
-      </div>
-      ${def.badge ? `<div style="font-size:32px;text-align:center;margin-top:12px">${def.badge}</div>` : ''}
+    <div style="text-align:center;margin-bottom:20px">
+      <div class="mission-modal-icon tier-${def.tier}">${def.emoji || '🎯'}</div>
+      <div class="mission-modal-tier-badge tier-${def.tier}">${TIER_LABELS[def.tier]}</div>
     </div>
-    <div style="font-size:12px;color:var(--text-dim)">Aktiv seit ${new Date(am.activatedAt).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'2-digit'})}</div>`;
+    <div class="mission-modal-title">${def.title}</div>
+    <div class="mission-modal-desc">${def.description}</div>
+    <div style="margin:18px 0 6px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;color:var(--text-dim);font-weight:500">Fortschritt</span>
+      <span style="font-size:13px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums">${current} / ${target}</span>
+    </div>
+    <div class="mission-prog-track" style="height:7px;border-radius:4px">
+      <div class="mission-prog-fill tier-${def.tier}" style="width:${pct}%;height:100%;border-radius:4px"></div>
+    </div>
+    <div class="mission-modal-reward tier-${def.tier}">+${def.reward.toLocaleString('de-AT')} XP</div>
+    ${def.badge ? `<div class="mission-modal-badge">${def.badge}</div>` : ''}
+    <div class="mission-modal-meta">Aktiv seit ${new Date(am.activatedAt).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'2-digit'})}</div>`;
   modal.classList.remove('hidden');
 }
 
