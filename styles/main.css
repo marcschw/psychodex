@@ -103,7 +103,7 @@ img{max-width:100%;display:block}
 }
 .tab-view{
   display:none;position:absolute;inset:0;
-  overflow-y:auto;padding:16px 16px calc(var(--nav-h)+16px);
+  overflow-y:auto;overflow-x:hidden;padding:16px 16px calc(var(--nav-h)+16px);
 }
 .tab-view.active{display:block}
 .tab-view::-webkit-scrollbar{width:4px}
