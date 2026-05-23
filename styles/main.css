@@ -2699,33 +2699,9 @@ img{max-width:100%;display:block}
 
 .mission-history-pill{display:flex;align-items:center;justify-content:center;min-width:36px;font-size:18px;background:var(--bg-raised);border:1px solid var(--border);border-radius:10px;padding:6px 8px;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0;transition:background .15s}
 .mission-history-pill:active{background:var(--bg-hover)}
-/* ── Mission detail modal ──────────────────────────────────────────────────── */
+/* ── Mission pills (home strip) ────────────────────────────────────────────── */
 .hm-mission-pill{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s}
 .hm-mission-pill:active{background:rgba(255,255,255,.1)}
-.mission-detail-sheet{
-  padding:20px 20px 32px;display:flex;flex-direction:column;gap:0;
-  max-height:80vh;overflow-y:auto;
-}
-.mdet-header{display:flex;flex-direction:column;align-items:center;gap:6px;padding-bottom:16px;border-bottom:1px solid var(--border)}
-.mdet-emoji{font-size:48px;line-height:1;margin-bottom:4px}
-.mdet-title{font-size:20px;font-weight:700;color:var(--text);text-align:center}
-.mdet-tier{font-size:11px;font-weight:700;letter-spacing:.04em;border:1px solid;border-radius:20px;padding:2px 10px}
-.mdet-desc{font-size:14px;color:var(--text-dim);line-height:1.5;padding:16px 0;border-bottom:1px solid var(--border)}
-.mdet-progress-section{padding:16px 0;border-bottom:1px solid var(--border)}
-.mdet-prog-label{display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim);margin-bottom:8px}
-.mdet-prog-nums{font-weight:600;color:var(--text)}
-.mdet-prog-track{height:8px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden}
-.mdet-prog-fill{height:100%;border-radius:4px;transition:width .4s ease}
-.mdet-prog-fill.tier-1{background:#9ca3af}
-.mdet-prog-fill.tier-2{background:#f59e0b}
-.mdet-prog-fill.tier-3{background:var(--accent)}
-.mdet-prog-pct{text-align:right;font-size:13px;font-weight:700;color:var(--text);margin-top:6px}
-.mdet-meta{display:flex;gap:12px;padding:16px 0;border-bottom:1px solid var(--border)}
-.mdet-meta-item{flex:1;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
-.mdet-meta-icon{font-size:20px;flex-shrink:0}
-.mdet-meta-label{font-size:11px;color:var(--text-dim)}
-.mdet-meta-val{font-size:14px;font-weight:700;color:var(--text)}
-.mdet-close-btn{width:100%;margin-top:16px}
 /* Challenge history */
 .ch-row{display:flex;align-items:flex-start;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
 .ch-row:last-child{border-bottom:none}
