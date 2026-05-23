@@ -1780,8 +1780,9 @@ function renderTimeline(shift) {
       const slotCatches = state.catches.filter(c => c.slotId === slot.id)
         .sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999));
       const diagCards = slotCatches.map(c =>
-        `<div class="tl-diag-card" data-catch-id="${c.id}">
+        `<div class="tl-diag-card" data-catch-id="${c.id}" data-code="${c.code}">
           <div class="tl-diag-imgbg" style="background-image:url('assets/images/diagnoses/${c.code}.png')"></div>
+          <img class="tl-diag-thumb" src="assets/images/diagnoses/${c.code}.png" alt="" onerror="this.style.display='none'" loading="lazy">
           <div class="tl-diag-content">
             <span class="tl-diag-code">${c.code}</span>
             <span class="tl-diag-name">${c.name}</span>
@@ -1898,6 +1899,12 @@ function renderTimeline(shift) {
       btn.addEventListener('click', async e => {
         e.stopPropagation();
         await deleteSlotCatch(parseInt(btn.dataset.catchId), slot, 'planner');
+      });
+    });
+    el.querySelectorAll('.tl-diag-card').forEach(card => {
+      card.addEventListener('click', e => {
+        if (e.target.closest('.tl-diag-del')) return;
+        openDiagInfoModal(card.dataset.code);
       });
     });
   });
