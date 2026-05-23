@@ -2936,7 +2936,7 @@ async function openRecallPatientModal(targetSlot, shift) {
         const rdStr      = fmtD(rd);
         const isToday    = rd && rd.slice(0, 10) === shift.date;
         const chips      = (p.suspectedCodes || []).map(c =>
-          `<span class="susp-chip"><span class="susp-chip-code">${c.code}</span></span>`
+          `<span class="susp-chip"><span class="susp-chip-code">${c.code}</span>${c.title ? `<span class="susp-chip-title" style="max-width:100px">${c.title}</span>` : ''}</span>`
         ).join('');
         return `<div class="recall-item${isToday ? ' recall-item--today' : ''}" data-id="${p.id}">
           <div class="recall-item-header">
