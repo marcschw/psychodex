@@ -97,7 +97,7 @@ img{max-width:100%;display:block}
   color:var(--accent);letter-spacing:.04em;
 }
 .tab-home-active .app-header{display:none}
-.home-header-logo{font-family:'Cinzel',serif;font-size:14px;font-weight:600;color:var(--accent);letter-spacing:.04em;flex-shrink:0;white-space:nowrap;line-height:1}
+.home-header-logo{font-family:'Cinzel',serif;font-size:14px;font-weight:600;color:var(--accent);letter-spacing:.04em;flex:1;white-space:nowrap;line-height:1}
 
 /* ── Tab Container ─────────────────────────────────────────────────────────── */
 .tab-container{
@@ -1429,7 +1429,7 @@ img{max-width:100%;display:block}
   line-height:1.45;margin-bottom:11px;
 }
 .mission-progress-row{
-  display:flex;align-items:center;gap:8px;
+  display:flex;align-items:center;gap:4px;margin-top:6px;flex-wrap:wrap;font-size:11px;
 }
 .mission-prog-track{
   flex:1;height:5px;
@@ -1453,6 +1453,20 @@ img{max-width:100%;display:block}
   font-size:10px;color:var(--accent);
   letter-spacing:.02em;
 }
+
+/* ── Mission checkboxes ──────────────────────────────────────────────────────── */
+.m-cb{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:1.4em;height:1.4em;min-width:12px;min-height:12px;
+  border:1.5px solid rgba(255,255,255,.22);
+  border-radius:3px;vertical-align:middle;
+  flex-shrink:0;margin:0 2px;
+  font-size:inherit;line-height:1;
+  color:transparent;
+  transition:background .15s,border-color .15s;
+}
+.m-cb--done{color:rgba(0,0,0,.85);font-size:75%}
+.m-done-date{font-size:11px;color:var(--text-dim);display:block;margin-top:4px}
 
 /* ── Extra Hours Settings ──────────────────────────────────────────────────── */
 .setting-wide{
@@ -2253,14 +2267,14 @@ img{max-width:100%;display:block}
 
 /* ── Home Tab: Shift Mini-Nav ───────────────────────────────────────────────── */
 .home-sticky-header{position:sticky;top:0;z-index:21;background:rgba(8,8,15,.95);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);margin:0 -16px;border-bottom:1px solid rgba(255,255,255,.07);}
-.home-shift-nav{display:flex;align-items:stretch;gap:8px;padding:10px 16px;}
-.home-snav-arrow{flex:1;display:flex;align-items:center;gap:6px;background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;cursor:pointer;color:var(--text);font-size:13px;-webkit-tap-highlight-color:transparent;transition:background .15s;min-width:0}
+.home-shift-nav{display:flex;align-items:center;gap:6px;padding:6px 12px;}
+.home-snav-arrow{flex-shrink:0;display:flex;align-items:center;gap:4px;background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--r);padding:5px 8px;cursor:pointer;color:var(--text);-webkit-tap-highlight-color:transparent;transition:background .15s}
 .home-snav-arrow:disabled{opacity:.35;cursor:default}
 .home-snav-arrow:not(:disabled):active{background:rgba(255,255,255,.08)}
 .home-snav-arrow-right{flex-direction:row-reverse}
-.home-snav-arrow-icon{font-size:18px;color:var(--text-dim);flex-shrink:0}
-.home-snav-date{font-size:12px;font-weight:600;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.home-snav-cal{flex-shrink:0;background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.35);border-radius:var(--r);padding:10px 12px;cursor:pointer;color:var(--accent);font-size:18px;-webkit-tap-highlight-color:transparent;transition:background .15s}
+.home-snav-arrow-icon{font-size:15px;color:var(--text-dim);flex-shrink:0}
+.home-snav-date{font-size:11px;font-weight:600;color:var(--text-dim);white-space:nowrap;max-width:60px;overflow:hidden;text-overflow:ellipsis}
+.home-snav-cal{flex-shrink:0;background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.35);border-radius:var(--r);padding:5px 9px;cursor:pointer;color:var(--accent);font-size:16px;-webkit-tap-highlight-color:transparent;transition:background .15s}
 .home-snav-cal:active{background:rgba(124,58,237,.3)}
 
 /* ── Calendar Modal ─────────────────────────────────────────────────────────── */
@@ -2736,7 +2750,7 @@ img{max-width:100%;display:block}
 }
 .hm-mission-pill.tier-2{border-color:rgba(96,165,250,.2)}
 .hm-mission-pill.tier-3{border-color:rgba(167,139,250,.25)}
-.hm-mp-dots{font-size:9px;color:var(--accent);letter-spacing:1px;text-align:center;flex-shrink:0}
+.hm-mp-dots{font-size:10px;letter-spacing:1px;text-align:center;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:2px}
 .hm-mp-body{display:flex;align-items:center;gap:4px;width:100%;min-height:0}
 .hm-mp-emoji{font-size:14px;flex-shrink:0;line-height:1}
 .hm-mp-title{font-size:10px;font-weight:600;color:var(--text);line-height:1.3;

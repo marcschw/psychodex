@@ -576,6 +576,7 @@ function navigateTo(tab) {
 // ─── Render ───────────────────────────────────────────────────────────────────
 function renderApp() {
   loadICDFCollection();
+  document.body.classList.add('tab-home-active');
   renderHomeTab();
   updateHeader();
 }
@@ -5177,9 +5178,7 @@ function openMissionDetailModal(am) {
   const catchesSince = state.catches.filter(c => c.caughtAt >= am.activatedAt);
   const shiftsSince  = state.shifts.filter(s => (s.createdAt || `${s.date}T00:00:00`) >= am.activatedAt);
   const { current, target } = calcMissionProgress(def, catchesSince, shiftsSince, state.icdFlat);
-  const pct = Math.min(100, Math.round((current / target) * 100));
-  const tierColors = { 1:'#9ca3af', 2:'#60a5fa', 3:'#a78bfa' };
-  const barColor   = tierColors[def.tier] || 'var(--accent)';
+  const cbsModal = missionCheckboxes(current, target, def.tier);
   body.innerHTML = `
     <div style="text-align:center;margin-bottom:18px">
       <div class="mission-modal-icon tier-${def.tier}">${def.emoji || '🎯'}</div>
@@ -5189,13 +5188,7 @@ function openMissionDetailModal(am) {
       <div class="mission-modal-title" style="margin:0">${def.title}</div>
     </div>
     <div class="mission-modal-desc">${def.description}</div>
-    <div style="margin:18px 0 6px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:12px;color:var(--text-dim);font-weight:500">Fortschritt</span>
-      <span style="font-size:13px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums">${current} / ${target}</span>
-    </div>
-    <div style="height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden">
-      <div style="height:100%;width:${pct}%;background:${barColor};border-radius:4px;transition:width .4s"></div>
-    </div>
+    ${cbsModal ? `<div style="margin:18px 0 4px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;font-size:15px">${cbsModal}</div>` : ''}
     <div class="mission-modal-reward tier-${def.tier}">+${def.reward.toLocaleString('de-AT')} XP</div>
     ${def.badge ? `<div class="mission-modal-badge">${def.badge}</div>` : ''}
     <div class="mission-modal-meta">Aktiv seit ${new Date(am.activatedAt).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'2-digit'})}</div>`;
@@ -5222,10 +5215,15 @@ function openChallengeHistoryModal() {
   modal.classList.remove('hidden');
 }
 
-const missionDots = (current, target) => {
+const MISSION_TIER_COLORS = { 1:'#9ca3af', 2:'#60a5fa', 3:'#a78bfa' };
+
+const missionCheckboxes = (current, target, tier = 3) => {
   if (target <= 1) return '';
-  const filled = Math.min(current, target);
-  return '●'.repeat(filled) + '○'.repeat(target - filled);
+  const color = MISSION_TIER_COLORS[tier] || 'var(--accent)';
+  return Array.from({length: target}, (_, i) => {
+    const done = i < current;
+    return `<span class="m-cb${done ? ' m-cb--done' : ''}"${done ? ` style="background:${color};border-color:${color}"` : ''}>${done ? '✓' : ''}</span>`;
+  }).join('');
 };
 
 function setupMissionModals() {
@@ -5251,9 +5249,9 @@ function renderHomeMissions() {
     const catchesSince = state.catches.filter(c => c.caughtAt >= am.activatedAt);
     const shiftsSince  = state.shifts.filter(s => (s.createdAt || `${s.date}T00:00:00`) >= am.activatedAt);
     const { current, target } = calcMissionProgress(def, catchesSince, shiftsSince, state.icdFlat);
-    const dots = missionDots(current, target);
+    const cbs = missionCheckboxes(current, target, def.tier);
     return `<button class="hm-mission-pill tier-${def.tier}" data-mission-id="${am.id}">
-      ${dots ? `<div class="hm-mp-dots">${dots}</div>` : ''}
+      ${cbs ? `<div class="hm-mp-dots">${cbs}</div>` : ''}
       <div class="hm-mp-body">
         <span class="hm-mp-emoji">${def.emoji||''}</span>
         <div class="hm-mp-title">${def.title}</div>
@@ -5335,12 +5333,12 @@ function renderMissions() {
   const gridEl = document.getElementById('missions-grid');
   if (!gridEl) return;
   const activeMissions = state.missions.filter(m => !m.completedAt).sort((a, b) => a.slotIndex - b.slotIndex);
-  const tierColors = { 1:'#9ca3af', 2:'#60a5fa', 3:'#a78bfa' };
-
   const missionCardHtml = (am, mDef, _pct, current, target, done = false) => {
     const dateStr = done && am.completedAt
       ? new Date(am.completedAt).toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'2-digit' })
       : null;
+    const cbs = done ? '' : missionCheckboxes(current, target, mDef.tier);
+    const doneLabel = done ? `<span class="m-done-date">${dateStr || '✓'}</span>` : '';
     return `
       <div class="mission-card tier-${mDef.tier}${done ? ' mission-card--done' : ''}">
         <div class="mc-left">
@@ -5355,7 +5353,7 @@ function renderMissions() {
           </div>
           <div class="mission-title">${mDef.title}</div>
           <div class="mission-desc">${mDef.description}</div>
-          ${(() => { const d = done ? (dateStr || '✓') : missionDots(current, target); return d ? `<div class="mission-progress-row"><span class="mission-prog-text mc-dots">${d}</span></div>` : ''; })()}
+          ${cbs ? `<div class="mission-progress-row">${cbs}</div>` : doneLabel}
         </div>
       </div>`;
   };
