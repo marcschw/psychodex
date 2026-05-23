@@ -682,8 +682,6 @@ img{max-width:100%;display:block}
   transition:background .2s;
 }
 .heatmap-cell.hm-active{
-  background:var(--accent);
-  box-shadow:0 0 6px rgba(124,58,237,.4);
   cursor:pointer;
 }
 .heatmap-cell.hm-today{background:var(--accent-cyan)!important;box-shadow:0 0 8px rgba(6,182,212,.5)}
@@ -1798,13 +1796,13 @@ img{max-width:100%;display:block}
 /* ── Diagnosis hero image (diag info modal) ─────────────────────────────────── */
 .diag-img-hero{
   width:calc(100% + 40px);margin:-16px -20px 0;
-  height:220px;overflow:hidden;
+  height:auto;min-height:180px;max-height:340px;overflow:hidden;
   background:#000;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
 }
 .diag-img-hero-img{
-  width:100%;height:100%;object-fit:contain;object-position:center center;
-  display:block;cursor:zoom-in;
-  will-change:transform,opacity,filter;
+  width:100%;height:auto;object-fit:contain;object-position:center center;
+  display:block;cursor:zoom-in;max-height:340px;
 }
 /* Lightbox overlay */
 .diag-lightbox{
@@ -2667,10 +2665,10 @@ img{max-width:100%;display:block}
 .recall-item-chips{display:flex;flex-wrap:wrap;gap:4px}
 .recall-item-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px}
 .recall-diag-list{display:flex;flex-direction:column;gap:5px;margin-top:7px}
-.recall-diag-row{display:flex;align-items:center;gap:8px;background:rgba(155,89,182,.1);border-radius:8px;padding:5px 8px}
-.recall-diag-img{width:28px;height:28px;border-radius:6px;object-fit:cover;flex-shrink:0;background:rgba(255,255,255,.06)}
-.recall-diag-code{font-size:11px;font-weight:700;color:var(--accent);flex-shrink:0;letter-spacing:.3px}
-.recall-diag-name{font-size:12px;color:var(--text);line-height:1.3}
+.recall-diag-row{display:flex;align-items:center;gap:8px;padding:3px 0}
+.recall-diag-img{width:32px;height:32px;border-radius:6px;object-fit:cover;flex-shrink:0;background:rgba(255,255,255,.06)}
+.recall-diag-code{font-size:11px;font-weight:700;color:var(--accent);min-width:44px}
+.recall-diag-name{font-size:12px;color:var(--text-dim);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ── Stats Sub-tabs ──────────────────────────────────────────────────────────── */
 .stats-subtabs{
@@ -3091,3 +3089,20 @@ img{max-width:100%;display:block}
 }
 .zut-senior-tag{font-size:11px;color:#f59e0b;margin-left:2px;vertical-align:middle;}
 .zut-trainee-tag{font-size:11px;margin-left:2px;vertical-align:middle;}
+/* ── Supervision progress bar ────────────────────────────────────────────────── */
+.sup-progress-section{margin:6px 0 10px;display:flex;flex-direction:column;gap:4px}
+.sup-progress-bar-track{height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}
+.sup-progress-bar-fill{height:100%;border-radius:3px;transition:width .6s ease,background .4s}
+.sup-progress-label{font-size:11px;color:var(--text-dim)}
+/* ── Animal tier badge ───────────────────────────────────────────────────────── */
+.zut-tier-badge{font-size:14px;line-height:1}
+.zut-person-clickable{cursor:pointer}
+.zut-person-clickable:active{opacity:.7}
+/* ── Person tier modal ───────────────────────────────────────────────────────── */
+.ptm-tier-btn{padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);cursor:pointer;font-size:13px;transition:all .15s}
+.ptm-tier-btn:hover{background:rgba(255,255,255,.1)}
+.ptm-tier-active{background:rgba(124,58,237,.2)!important;border-color:var(--accent)!important;color:var(--accent)}
+/* ── Station view short labels ───────────────────────────────────────────────── */
+.zut-station-short-td{min-width:55px;max-width:70px;white-space:nowrap}
+.zut-station-role-short{font-size:10px;font-weight:700;margin-left:2px}
+.zut-termin-row-person td{background:rgba(139,92,246,.04)}

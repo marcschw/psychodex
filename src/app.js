@@ -3025,6 +3025,16 @@ const TERMIN_DEFS = {
   erstgesprach: { label:'Erstgespräch', icon:'💬', dur:1 },
 };
 
+const ANIMAL_TIERS = [
+  { tier: 1, emoji: '🦁', name: 'Löwe'     },
+  { tier: 2, emoji: '🐯', name: 'Tiger'    },
+  { tier: 3, emoji: '🐺', name: 'Wolf'     },
+  { tier: 4, emoji: '🦊', name: 'Fuchs'    },
+  { tier: 5, emoji: '🦝', name: 'Waschbär' },
+  { tier: 6, emoji: '🐱', name: 'Katze'    },
+  { tier: 7, emoji: '🐭', name: 'Maus'     },
+];
+
 function getZuteilBlocks(shift, blockSize) {
   const h = shiftHours(shift);
   const startH = Math.ceil((h.start[0]*60+h.start[1]) / (blockSize*60)) * blockSize;
@@ -3069,6 +3079,7 @@ async function openZuteilungScreen(shift) {
   zData.planAPersons   = zData.planAPersons   || null;
   zData.redoStack      = [];                        // in-memory only, not persisted
   zData.stationView    = zData.stationView    || false;
+  zData.personTiers    = zData.personTiers    || null;
 
   const saveData = () => {
     const { redoStack, ...saveable } = zData;
@@ -3081,11 +3092,25 @@ async function openZuteilungScreen(shift) {
     zData.undoStack.push(JSON.parse(JSON.stringify({
       assignments: zData.assignments, personStates: zData.personStates, termine: zData.termine,
       planB: zData.planB, dualPlanActive: zData.dualPlanActive, planAPersons: zData.planAPersons,
-      blockSize: zData.blockSize,
+      blockSize: zData.blockSize, personTiers: zData.personTiers,
     })));
     zData.redoStack = [];
     if (zData.undoStack.length > 20) zData.undoStack.shift();
   };
+
+  // Init tiers on first open
+  if (!zData.personTiers) {
+    zData.personTiers = {};
+    const nonSeniors = people.filter(p => !p._isSenior);
+    people.filter(p => p._isSenior).forEach(p => { zData.personTiers[p.name] = 1; });
+    const remainTiers = [2,3,4,5,6,7];
+    for (let i = remainTiers.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [remainTiers[i], remainTiers[j]] = [remainTiers[j], remainTiers[i]];
+    }
+    nonSeniors.forEach((p, i) => { zData.personTiers[p.name] = remainTiers[i] ?? (i + 2); });
+    saveData();
+  }
 
   const render = () => renderZuteilGrid(inner, fresh, zData, people, { saveData, pushUndo, render });
   modal.classList.remove('hidden');
@@ -3175,7 +3200,10 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
                 style="${ri?`background:${ri.color}1a;border-color:${ri.color}55;color:${ri.color}`:''}"
                 ${unavail?'disabled':''}>${cellInner}</button></td>`;
     }).join('');
+    const tierNum = zData.personTiers?.[p.name];
+    const tierInfo = tierNum ? ANIMAL_TIERS[tierNum - 1] : null;
     const badges = [
+      tierInfo ? `<span class="zut-tier-badge" title="${tierInfo.name} (Tier ${tierInfo.tier})">${tierInfo.emoji}</span>` : '',
       p._self ? '<span class="team-self-badge">Ich</span>' : '',
       p._isSenior ? '<span class="zut-senior-tag">★</span>' : '',
       p._isTrainee ? '<span class="zut-trainee-tag">🎓</span>' : '',
@@ -3183,7 +3211,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     ].filter(Boolean).join('');
     return `<tr class="zut-row${absent?' zut-row-absent':''}${ps.notYetPresent&&!absent?' zut-row-notyet':''}">
       <td class="zut-td-name">
-        <div class="zut-person-name" title="${p.name}">${firstName}${badges?' '+badges:''}</div>
+        <div class="zut-person-name zut-person-clickable" data-pname="${p.name}" title="${p.name}">${firstName}${badges?' '+badges:''}</div>
         <div class="zut-person-sub">
           ${!absent?`<button class="zut-checkin-btn${ps.notYetPresent?' absent':' present'}" data-pname="${p.name}">${ps.notYetPresent?'⏳':'✓'}</button>`:''}
           ${earlyMark}
@@ -3215,31 +3243,36 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
         return `<span class="zut-station-chip" style="background:${color}33;border:1.5px solid ${color}88;color:${color}" title="${p.name}">${personInitials(p.name)}</span>`;
       }).join('')}</td>`;
     };
-    const terminRows = terminSorted.map((t, i) => {
-      const def = TERMIN_DEFS[t.type];
-      const tH = t.startHour ?? t.hour;
+    const terminTypes = [...new Set(terminSorted.map(t => t.type))];
+    const terminRows = terminTypes.map(type => {
+      const def = TERMIN_DEFS[type];
+      const typeTermins = terminSorted.filter(t => t.type === type);
       const cells = blocks.map(b => {
-        const inRange = b.start >= tH && b.start < tH + def.dur;
-        if (!inRange) return `<td class="zut-cell zut-station-cell"></td>`;
-        const covering = people.filter(p =>
-          zData.assignments[`${p.name}::${b.key}`] === 'termin' && t.personName === p.name);
-        return chipCell(covering, !t.isInternational && covering.length === 0);
+        const covering = [];
+        for (const t of typeTermins) {
+          const tH = t.startHour ?? t.hour;
+          if (b.start >= tH && b.start < tH + def.dur) {
+            const persons = people.filter(p => zData.assignments[`${p.name}::${b.key}`] === 'termin' && t.personName === p.name);
+            covering.push(...persons);
+          }
+        }
+        const anyInRange = typeTermins.some(t => { const tH = t.startHour ?? t.hour; return b.start >= tH && b.start < tH + def.dur; });
+        const needsAlert = anyInRange && covering.length === 0 && typeTermins.some(t => !t.isInternational);
+        return chipCell(covering, needsAlert);
       }).join('');
-      return `<tr><td class="zut-td-name zut-station-name-td">
-        ${def.icon} <span class="zut-station-role-label">${def.label} #${i+1}</span>
-      </td>${cells}</tr>`;
+      return `<tr><td class="zut-td-name zut-station-name-td zut-station-short-td">${def.icon}<span class="zut-station-role-short">${def.label}</span></td>${cells}</tr>`;
     }).join('');
-    const roleRows = ['kassa','backoffice','5stock','system','pause','assist'].map(rk => {
+    const roleRows = ['kassa','backoffice','5stock','system','pause'].map(rk => {
       const ri = ZUTEIL_ROLES[rk];
       if (!ri) return '';
       const cells = blocks.map(b => {
         const covering = people.filter(p => zData.assignments[`${p.name}::${b.key}`] === rk);
         return chipCell(covering, (rk === 'kassa' || rk === 'backoffice') && covering.length === 0);
       }).join('');
-      return `<tr><td class="zut-td-name zut-station-name-td">${ri.icon} <span class="zut-station-role-label">${ri.label}</span></td>${cells}</tr>`;
+      return `<tr><td class="zut-td-name zut-station-name-td zut-station-short-td">${ri.icon}<span class="zut-station-role-short">${ri.short}</span></td>${cells}</tr>`;
     }).filter(Boolean).join('');
     return `<table class="zut-table"><thead><tr>
-        <th class="zut-th-name" style="min-width:100px">Station</th>
+        <th class="zut-th-name" style="min-width:70px">Station</th>
         ${blocks.map(b=>`<th class="zut-th-block">${b.label}</th>`).join('')}
       </tr></thead><tbody>${terminRows}${roleRows}</tbody></table>`;
   })();
@@ -3273,6 +3306,27 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
 
   const dateStr = new Date(shift.date+'T12:00').toLocaleDateString('de-AT',{weekday:'short',day:'numeric',month:'numeric'});
 
+  // Termin rows for person view (grouped by type, showing assigned-person chips)
+  const personViewTerminRows = (() => {
+    if (!terminSorted.length) return '';
+    const terminTypes2 = [...new Set(terminSorted.map(t => t.type))];
+    return terminTypes2.map(type => {
+      const def = TERMIN_DEFS[type];
+      const typeTermins = terminSorted.filter(t => t.type === type);
+      const cells = blocks.map(b => {
+        const terminsInBlock = typeTermins.filter(t => { const tH = t.startHour ?? t.hour; return b.start >= tH && b.start < tH + def.dur; });
+        if (!terminsInBlock.length) return `<td class="zut-cell zut-station-cell" style="background:transparent;border:none"></td>`;
+        const chips = terminsInBlock.map(t => {
+          const tColor = t.personName ? personColor(t.personName) : 'rgba(255,255,255,.3)';
+          const pInit = t.personName ? personInitials(t.personName) : '?';
+          return `<span class="zut-station-chip" style="background:${tColor}33;border:1.5px solid ${tColor}88;color:${tColor}" title="${t.personName||'Nicht zugeteilt'}">${pInit}</span>`;
+        }).join('');
+        return `<td class="zut-cell zut-station-cell">${chips}</td>`;
+      }).join('');
+      return `<tr class="zut-termin-row-person"><td class="zut-td-name zut-station-short-td">${def.icon}<span class="zut-station-role-short">${def.label}</span></td>${cells}</tr>`;
+    }).join('');
+  })();
+
   inner.innerHTML = `
     <div class="zut-header">
       <div><div class="zut-title">📋 Zuteilung</div><div class="zut-subtitle">${dateStr} · ${shiftLabel(shift.type)}</div></div>
@@ -3284,7 +3338,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
         <button class="zut-hdr-close" id="zut-close-btn">✕</button>
       </div>
     </div>
-    <div class="zut-termin-section">
+    <div class="zut-termin-section${zData.stationView?' hidden':''}">
       <div class="zut-termin-add-row">
         <span class="zut-bar-label">Termine</span>
         <button class="zut-termin-add-btn" data-type="anmeldung" title="Anmeldung">📝+</button>
@@ -3304,7 +3358,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
           <th class="zut-th-name">Person (${presentCount})</th>
           ${blocks.map(b=>`<th class="zut-th-block">${b.label}</th>`).join('')}
         </tr></thead>
-        <tbody>${bodyRows}${covRow}</tbody>
+        <tbody>${personViewTerminRows}${bodyRows}${covRow}</tbody>
       </table>`}
     </div>
     <div class="zut-footer">
@@ -3466,6 +3520,10 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
   inner.querySelectorAll('.zut-cell-btn:not([disabled])').forEach(btn => {
     btn.onclick = e => { e.stopPropagation(); showZuteilPicker(btn, btn.dataset.key, zData, saveData, pushUndo, render); };
   });
+
+  inner.querySelectorAll('.zut-person-clickable').forEach(el => {
+    el.addEventListener('click', () => openPersonTierModal(el.dataset.pname, people, zData, saveData, render));
+  });
 }
 
 function showZuteilPicker(triggerBtn, cellKey, zData, saveData, pushUndo, render) {
@@ -3497,6 +3555,56 @@ function showZuteilPicker(triggerBtn, cellKey, zData, saveData, pushUndo, render
   requestAnimationFrame(() =>
     document.addEventListener('click', () => picker.remove(), { once:true })
   );
+}
+
+function openPersonTierModal(personName, people, zData, saveData, render) {
+  const person = people.find(p => p.name === personName);
+  if (!person) return;
+  const currentTier = zData.personTiers?.[personName] ?? null;
+  const existing = document.getElementById('person-tier-modal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'person-tier-modal';
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-backdrop" id="ptm-backdrop"></div>
+    <div class="modal-sheet">
+      <div class="sheet-header">
+        <div class="modal-title">${currentTier ? ANIMAL_TIERS[currentTier-1].emoji : '👤'} ${personName}</div>
+      </div>
+      <div class="sheet-body" style="padding:16px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:12px;color:var(--text-dim)">
+          ${person._isSenior?'★ Seniorassistent · ':''}${person._isTrainee?'🎓 Ausbildung · ':''}${person._self?'(Ich)':''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label class="form-label">Tier</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${ANIMAL_TIERS.map(t => `<button class="ptm-tier-btn${t.tier===currentTier?' ptm-tier-active':''}" data-tier="${t.tier}">${t.emoji} <span style="font-size:11px">${t.name}</span></button>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="sheet-footer">
+        <button id="ptm-cancel" class="btn-secondary">Abbrechen</button>
+        <button id="ptm-save" class="btn-primary" style="flex:1">Speichern</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  let selectedTier = currentTier;
+  modal.querySelectorAll('.ptm-tier-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedTier = parseInt(btn.dataset.tier);
+      modal.querySelectorAll('.ptm-tier-btn').forEach(b => b.classList.remove('ptm-tier-active'));
+      btn.classList.add('ptm-tier-active');
+    });
+  });
+  const close = () => modal.remove();
+  document.getElementById('ptm-backdrop').onclick = close;
+  document.getElementById('ptm-cancel').onclick = close;
+  document.getElementById('ptm-save').onclick = () => {
+    if (!zData.personTiers) zData.personTiers = {};
+    if (selectedTier) zData.personTiers[personName] = selectedTier;
+    saveData(); render(); close();
+  };
 }
 
 function openZuteilEarlyLeave(personName, zData, saveData, pushUndo, render) {
@@ -3600,7 +3708,7 @@ function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo
   };
 }
 
-function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize, { planBMode = false } = {}) {
+function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize, { planBMode = false, personTiers = {} } = {}) {
   // Shuffle for variety on each call
   const allowedPeople = [...allowedPeopleIn];
   for (let i = allowedPeople.length - 1; i > 0; i--) {
@@ -3662,9 +3770,9 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
       }
       return true;
     }).sort((a, b) => {
-      // Seniors preferred for patient services
-      const sa = a._isSenior ? 0 : 1, sb = b._isSenior ? 0 : 1;
-      if (sa !== sb) return sa - sb;
+      const ta = personTiers[a.name] ?? (a._isSenior ? 1 : 4);
+      const tb = personTiers[b.name] ?? (b._isSenior ? 1 : 4);
+      if (ta !== tb) return ta - tb;
       return terminCount[a.name] - terminCount[b.name];
     });
 
@@ -3699,12 +3807,11 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
     roleCounts[name][role] = (roleCounts[name][role] || 0) + 1;
   }
 
-  // ── Step 4: Assign trainee assists (round-robin) ───────────────────────────
+  // ── Step 4: Assign trainee shadowing (round-robin, max 1 trainee per block) ─
   let assistIdx = 0;
+  const traineeBlocksUsed = new Set(); // track blocks already occupied by a trainee
   for (const t of resolvedTermine) {
     if (!trainees.length) break;
-    // Erstgespräch: only assist if Demo or International (observational)
-    if (t.type === 'erstgesprach' && !t.isDemo && !t.isInternational) continue;
     const tHour = t.startHour ?? t.hour;
     const def = TERMIN_DEFS[t.type];
     const tBlocks = blocks.filter(b => b.start >= tHour && b.start < tHour + def.dur);
@@ -3714,13 +3821,15 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
       const tr = trainees[(assistIdx + attempt) % trainees.length];
       const canAssist = tBlocks.every(b => {
         const bi = blocks.indexOf(b);
-        return isAvailAtBlock(tr, b, bi) && !result[`${tr.name}::${b.key}`];
+        return isAvailAtBlock(tr, b, bi) && !result[`${tr.name}::${b.key}`] && !traineeBlocksUsed.has(b.key);
       });
       if (canAssist) {
         for (const b of tBlocks) {
-          result[`${tr.name}::${b.key}`] = 'assist';
-          burden[tr.name] += ZUTEIL_ROLES.assist?.burden || 1;
-          roleCounts[tr.name].assist = (roleCounts[tr.name].assist || 0) + 1;
+          const targetRole = (t.personName && result[`${t.personName}::${b.key}`]) || 'termin';
+          result[`${tr.name}::${b.key}`] = targetRole;
+          burden[tr.name] += ZUTEIL_ROLES[targetRole]?.burden || 0;
+          roleCounts[tr.name][targetRole] = (roleCounts[tr.name][targetRole] || 0) + 1;
+          traineeBlocksUsed.add(b.key);
         }
         assistIdx = (assistIdx + attempt + 1) % trainees.length;
         break;
@@ -3820,10 +3929,10 @@ function autoAssignZuteilung(blocks, people, zData) {
     return !p.present || ps.notYetPresent;
   });
 
-  const planA = runAutoAssign(presentPeople, blocks, termine, personStates, blockSize);
+  const planA = runAutoAssign(presentPeople, blocks, termine, personStates, blockSize, { personTiers: zData.personTiers || {} });
 
   if (absentPeople.length > 0) {
-    const planB = runAutoAssign(people, blocks, termine, personStates, blockSize, { planBMode: true });
+    const planB = runAutoAssign(people, blocks, termine, personStates, blockSize, { planBMode: true, personTiers: zData.personTiers || {} });
     const merged = { ...planA };
     for (const p of absentPeople) {
       for (const b of blocks) {
