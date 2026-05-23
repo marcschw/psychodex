@@ -1785,7 +1785,6 @@ function renderTimeline(shift) {
         .sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999));
       const diagCards = slotCatches.map(c =>
         `<div class="tl-diag-card" data-catch-id="${c.id}" data-code="${c.code}">
-          <div class="tl-diag-imgbg" style="background-image:url('assets/images/diagnoses/${c.code.toLowerCase()}.png')"></div>
           <img class="tl-diag-thumb" src="assets/images/diagnoses/${c.code.toLowerCase()}.png" alt="" onerror="this.style.display='none'" loading="lazy">
           <div class="tl-diag-content">
             <span class="tl-diag-code">${c.code}</span>
@@ -6996,40 +6995,58 @@ function renderDiagInfoBody(code, catchId) {
   const pflicht  = diag.diagnose_kriterien?.pflicht_symptome || [];
   const optional = diag.diagnose_kriterien?.optionale_symptome || [];
   document.getElementById('diag-info-title').textContent = diag.code;
-  document.getElementById('diag-info-body').innerHTML = `
-    ${state.diagInfoStack.length > 0 ? `<button class="diag-info-back" id="diag-info-back-btn">← Zurück</button>` : ''}
-    <div class="cat-detail-img-banner">
-      <img src="assets/images/diagnoses/${diag.code.toLowerCase()}.png" class="cat-detail-img-full" alt=""
-           onerror="this.parentElement.style.display='none'">
-    </div>
-    <div class="diag-detail-header">
-      <div class="diag-code-big">${diag.code}</div>
-      <div class="diag-name-big">${diag.name}</div>
-      <div class="xp-preview-chips">
-        <span class="xp-chip base">Basis: ${base} XP · ★${diag.seltenheit_score}/10</span>
-        ${isCaught
-          ? '<span class="xp-chip" style="background:rgba(16,185,129,.15);color:var(--success);border:1px solid rgba(16,185,129,.3)">✓ Bereits gefangen</span>'
-          : '<span class="xp-chip" style="background:rgba(124,58,237,.1);color:var(--accent);border:1px solid rgba(124,58,237,.3)">Noch nicht gefangen</span>'}
-      </div>
-    </div>
-    <div class="diag-detail-section">
-      <div class="diag-detail-label diag-label-pflicht">🔴 Pflicht-Symptome</div>
-      <ul class="symptom-list">${renderSymptomCheckboxes(pflicht, kind, savedChecked, 'symptom-pflicht')}</ul>
-    </div>
-    <div class="diag-detail-section">
-      <div class="diag-detail-label diag-label-optional">💡 Optionale Symptome</div>
-      <ul class="symptom-list">${renderSymptomCheckboxes(optional, kind, savedChecked, 'symptom-optional')}</ul>
-    </div>
-    <div class="diag-detail-section">
-      <div class="diag-detail-label">Häufige Komorbiditäten</div>
-      <div class="komorbid-chips" id="diag-info-komorbid">${renderLinkedChips(diag.komorbiditaeten, code)}</div>
-    </div>
-    <div class="diag-detail-section">
-      <div class="diag-detail-label">Differentialdiagnose</div>
-      <div class="komorbid-chips" id="diag-info-diff">${renderLinkedChips(diag.differentialdiagnose, code)}</div>
-    </div>
-    ${!isCaught ? `<button class="btn-catch" id="diag-info-catch-btn">🎯 Jetzt fangen!</button>` : ''}`;
   const body = document.getElementById('diag-info-body');
+  body.scrollTop = 0;
+  body.innerHTML = `
+    <div class="diag-img-hero">
+      <img src="assets/images/diagnoses/${diag.code.toLowerCase()}.png" class="diag-img-hero-img" alt=""
+           onerror="this.closest('.diag-img-hero').style.display='none'">
+    </div>
+    <div class="diag-body-content">
+      ${state.diagInfoStack.length > 0 ? `<button class="diag-info-back" id="diag-info-back-btn">← Zurück</button>` : ''}
+      <div class="diag-detail-header">
+        <div class="diag-code-big">${diag.code}</div>
+        <div class="diag-name-big">${diag.name}</div>
+        <div class="xp-preview-chips">
+          <span class="xp-chip base">Basis: ${base} XP · ★${diag.seltenheit_score}/10</span>
+          ${isCaught
+            ? '<span class="xp-chip" style="background:rgba(16,185,129,.15);color:var(--success);border:1px solid rgba(16,185,129,.3)">✓ Bereits gefangen</span>'
+            : '<span class="xp-chip" style="background:rgba(124,58,237,.1);color:var(--accent);border:1px solid rgba(124,58,237,.3)">Noch nicht gefangen</span>'}
+        </div>
+      </div>
+      <div class="diag-detail-section">
+        <div class="diag-detail-label diag-label-pflicht">🔴 Pflicht-Symptome</div>
+        <ul class="symptom-list">${renderSymptomCheckboxes(pflicht, kind, savedChecked, 'symptom-pflicht')}</ul>
+      </div>
+      <div class="diag-detail-section">
+        <div class="diag-detail-label diag-label-optional">💡 Optionale Symptome</div>
+        <ul class="symptom-list">${renderSymptomCheckboxes(optional, kind, savedChecked, 'symptom-optional')}</ul>
+      </div>
+      <div class="diag-detail-section">
+        <div class="diag-detail-label">Häufige Komorbiditäten</div>
+        <div class="komorbid-chips" id="diag-info-komorbid">${renderLinkedChips(diag.komorbiditaeten, code)}</div>
+      </div>
+      <div class="diag-detail-section">
+        <div class="diag-detail-label">Differentialdiagnose</div>
+        <div class="komorbid-chips" id="diag-info-diff">${renderLinkedChips(diag.differentialdiagnose, code)}</div>
+      </div>
+      ${!isCaught ? `<button class="btn-catch" id="diag-info-catch-btn">🎯 Jetzt fangen!</button>` : ''}
+    </div>`;
+  // Hero parallax: translate + blur + fade as user scrolls
+  if (body._heroScroll) body.removeEventListener('scroll', body._heroScroll);
+  const heroEl  = body.querySelector('.diag-img-hero');
+  const heroImg = body.querySelector('.diag-img-hero-img');
+  if (heroImg && heroEl) {
+    body._heroScroll = () => {
+      const s = body.scrollTop;
+      const h = heroEl.offsetHeight || 220;
+      const p = Math.min(1, s / (h * 0.75));
+      heroImg.style.transform = `translateY(${s * 0.38}px) scale(${1 + p * 0.06})`;
+      heroImg.style.opacity   = String(Math.max(0, 1 - p * 1.1));
+      heroImg.style.filter    = `blur(${Math.min(14, p * 18)}px)`;
+    };
+    body.addEventListener('scroll', body._heroScroll, { passive: true });
+  }
   initSymptomCounters(body, interactive);
   if (interactive && catchRecord) {
     const saveSymptoms = async () => {
