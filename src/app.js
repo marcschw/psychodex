@@ -3164,24 +3164,26 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
   for (const type of Object.keys(TERMIN_DEFS)) {
     terminByType[type] = terminSorted.filter(t => t.type === type);
   }
-  const getTerminInfoForCell = (personName, block) => {
-    // Prefer exact personName match (reliable after auto-assign write-back)
+  const getTerminForCell = (personName, block) => {
     let t = terminSorted.find(tt => {
       if (tt.personName !== personName) return false;
       const tH = tt.startHour ?? tt.hour;
       const def = TERMIN_DEFS[tt.type];
       return def && block.start >= tH && block.start < tH + def.dur;
     });
-    // Fallback: match by block time alone (works before personName is written back)
     if (!t) t = terminSorted.find(tt => {
       const tH = tt.startHour ?? tt.hour;
       const def = TERMIN_DEFS[tt.type];
       return def && block.start >= tH && block.start < tH + def.dur;
     });
+    return t ?? null;
+  };
+  const getTerminInfoForCell = (personName, block) => {
+    const t = getTerminForCell(personName, block);
     if (!t) return null;
     const def = TERMIN_DEFS[t.type];
     const typeNum = terminByType[t.type].findIndex(x => x.id === t.id) + 1;
-    return { icon: def.icon, num: typeNum };
+    return { icon: def.icon, num: typeNum, id: t.id };
   };
 
   // Person color for station view
@@ -3213,10 +3215,11 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       const cellInner = ri
         ? `<span class="zut-cell-icon">${terminInfo ? terminInfo.icon : ri.icon}</span><span class="zut-role-short">${terminInfo ? '#' + terminInfo.num : ri.short}</span>`
         : `<span class="zut-empty-dot">·</span>`;
+      const terminDragAttrs = terminInfo ? `draggable="true" data-terminid="${terminInfo.id}"` : '';
       return `<td class="zut-cell${unavail?' zut-cell-unavail':''}">
         <button class="zut-cell-btn${ri?' has-role':''}${isPlanBRow?' plan-b-cell':''}" data-key="${key}"
                 style="${ri?`background:${ri.color}1a;border-color:${ri.color}55;color:${ri.color}`:''}"
-                ${unavail?'disabled':''}>${cellInner}</button></td>`;
+                ${unavail?'disabled':''} ${terminDragAttrs}>${cellInner}</button></td>`;
     }).join('');
     const tierNum = zData.personTiers?.[p.name];
     const tierInfo = tierNum ? ANIMAL_TIERS[tierNum - 1] : null;
@@ -3253,12 +3256,23 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
 
   // ── Station view grid ───────────────────────────────────────────────────────
   const stationGridHtml = (() => {
+    // Termin rows: static display only
     const chipCell = (covering, needsAlert) => {
       if (!covering.length)
         return `<td class="zut-cell zut-station-cell"${needsAlert?' style="background:rgba(239,68,68,.09)"':''}>${needsAlert?'<span class="zut-station-gap">!</span>':''}</td>`;
       return `<td class="zut-cell zut-station-cell">${covering.map(p => {
         const color = personColor(p.name);
         return `<span class="zut-station-chip" style="background:${color}33;border:1.5px solid ${color}88;color:${color}" data-pname="${p.name}" title="${p.name}">${personInitials(p.name)}</span>`;
+      }).join('')}</td>`;
+    };
+    // Role rows: draggable chips + droppable cells
+    const roleChipCell = (covering, needsAlert, blockKey, roleKey) => {
+      const drop = `data-blockkey="${blockKey}" data-role="${roleKey}"`;
+      if (!covering.length)
+        return `<td class="zut-cell zut-station-cell zut-station-drop" ${drop}${needsAlert?' style="background:rgba(239,68,68,.09)"':''}>${needsAlert?'<span class="zut-station-gap">!</span>':''}</td>`;
+      return `<td class="zut-cell zut-station-cell zut-station-drop" ${drop}>${covering.map(p => {
+        const color = personColor(p.name);
+        return `<span class="zut-station-chip" draggable="true" style="background:${color}33;border:1.5px solid ${color}88;color:${color}" data-pname="${p.name}" data-blockkey="${blockKey}" data-role="${roleKey}" title="${p.name}">${personInitials(p.name)}</span>`;
       }).join('')}</td>`;
     };
     const terminTypes = [...new Set(terminSorted.map(t => t.type))];
@@ -3270,7 +3284,6 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
         for (const t of typeTermins) {
           const tH = t.startHour ?? t.hour;
           if (b.start < tH || b.start >= tH + def.dur) continue;
-          // Use t.personName directly (set by auto-assign or manually)
           if (t.personName) {
             const person = people.find(p => p.name === t.personName);
             if (person && !covering.some(c => c.name === person.name)) covering.push(person);
@@ -3282,12 +3295,12 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       }).join('');
       return `<tr><td class="zut-td-name zut-station-name-td zut-station-short-td">${def.icon}<span class="zut-station-role-short">${def.label}</span></td>${cells}</tr>`;
     }).join('');
-    const roleRows = ['kassa','backoffice','5stock','pause'].map(rk => {
+    const roleRows = ['kassa','backoffice','5stock'].map(rk => {
       const ri = ZUTEIL_ROLES[rk];
       if (!ri) return '';
       const cells = blocks.map(b => {
         const covering = people.filter(p => zData.assignments[`${p.name}::${b.key}`] === rk);
-        return chipCell(covering, (rk === 'kassa' || rk === 'backoffice') && covering.length === 0);
+        return roleChipCell(covering, (rk === 'kassa' || rk === 'backoffice') && covering.length === 0, b.key, rk);
       }).join('');
       return `<tr><td class="zut-td-name zut-station-name-td zut-station-short-td">${ri.icon}<span class="zut-station-role-short">${ri.short}</span></td>${cells}</tr>`;
     }).filter(Boolean).join('');
@@ -3311,10 +3324,11 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
         const pInit = t.personName ? personInitials(t.personName) : '';
         const badges = `${t.isInternational ? '<span class="zut-chip-badge">INT</span>' : t.isDemo ? '<span class="zut-chip-badge">D</span>' : ''}`;
         const titleParts = [def.label, t.personName, t.isDemo&&!t.isInternational?'Demo':null, t.isInternational?'International':null].filter(Boolean);
-        return `<div class="zut-tl-chip${t.isInternational?' zut-chip-intl':''}" data-tid="${t.id}" draggable="true" title="${titleParts.join(' · ')}">
+        return `<div class="zut-tl-chip${t.isInternational?' zut-chip-intl':''}${t.personName?' zut-chip-ok':''}" data-tid="${t.id}" draggable="true" title="${titleParts.join(' · ')}">
           <span class="zut-chip-icon">${def.icon}</span>
           <span class="zut-chip-num">#${num}</span>
           ${pInit?`<span class="zut-chip-person">${pInit}</span>`:''}
+          ${t.personName?'<span class="zut-chip-check">✓</span>':''}
           ${badges}
         </div>`;
       }).join('');
@@ -3548,10 +3562,87 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     el.addEventListener('click', () => openPersonTierModal(el.dataset.pname, people, zData, saveData, render));
   });
 
-  inner.querySelectorAll('.zut-station-chip[data-pname]').forEach(chip => {
+  // Station chip click → person modal (only non-draggable chips in termin rows)
+  inner.querySelectorAll('.zut-station-chip[data-pname]:not([draggable])').forEach(chip => {
     chip.addEventListener('click', e => {
       e.stopPropagation();
       openPersonTierModal(chip.dataset.pname, people, zData, saveData, render);
+    });
+  });
+
+  // ── Station view drag-and-drop ─────────────────────────────────────────────
+  let stationDrag = null;
+  inner.querySelectorAll('.zut-station-chip[draggable]').forEach(chip => {
+    chip.addEventListener('dragstart', e => {
+      stationDrag = { pname: chip.dataset.pname, blockkey: chip.dataset.blockkey };
+      e.dataTransfer.setData('text/plain', chip.dataset.pname);
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => chip.classList.add('zut-chip-dragging'), 0);
+    });
+    chip.addEventListener('dragend', () => chip.classList.remove('zut-chip-dragging'));
+    chip.addEventListener('click', e => {
+      e.stopPropagation();
+      openPersonTierModal(chip.dataset.pname, people, zData, saveData, render);
+    });
+  });
+  inner.querySelectorAll('.zut-station-drop').forEach(cell => {
+    cell.addEventListener('dragover', e => { e.preventDefault(); cell.classList.add('zut-drop-target'); });
+    cell.addEventListener('dragleave', e => { if (!cell.contains(e.relatedTarget)) cell.classList.remove('zut-drop-target'); });
+    cell.addEventListener('drop', e => {
+      e.preventDefault(); cell.classList.remove('zut-drop-target');
+      if (!stationDrag) return;
+      const { pname, blockkey: fromBlock } = stationDrag;
+      const toBlock = cell.dataset.blockkey;
+      const toRole  = cell.dataset.role;
+      stationDrag = null;
+      if (fromBlock === toBlock) return;
+      pushUndo();
+      delete zData.assignments[`${pname}::${fromBlock}`];
+      zData.assignments[`${pname}::${toBlock}`] = toRole;
+      saveData(); render();
+    });
+  });
+
+  // ── Person view: termin cell drag to reassign appointment ──────────────────
+  let terminDrag = null;
+  inner.querySelectorAll('.zut-cell-btn[data-terminid]').forEach(btn => {
+    btn.addEventListener('dragstart', e => {
+      const tid = parseInt(btn.dataset.terminid);
+      const [fromPname] = btn.dataset.key.split('::');
+      terminDrag = { tid, fromPname };
+      e.dataTransfer.setData('text/plain', String(tid));
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    btn.addEventListener('dragend', () => { terminDrag = null; });
+  });
+  inner.querySelectorAll('.zut-cell-btn:not([disabled])').forEach(btn => {
+    btn.addEventListener('dragover', e => {
+      if (!terminDrag) return;
+      const [toPname] = btn.dataset.key.split('::');
+      if (toPname !== terminDrag.fromPname) { e.preventDefault(); btn.classList.add('zut-drop-target'); }
+    });
+    btn.addEventListener('dragleave', () => btn.classList.remove('zut-drop-target'));
+    btn.addEventListener('drop', e => {
+      e.preventDefault(); btn.classList.remove('zut-drop-target');
+      if (!terminDrag) return;
+      const { tid, fromPname } = terminDrag;
+      const [toPname] = btn.dataset.key.split('::');
+      terminDrag = null;
+      if (toPname === fromPname) return;
+      const termin = zData.termine.find(t => t.id === tid);
+      if (!termin) return;
+      const def = TERMIN_DEFS[termin.type];
+      const tHour = termin.startHour ?? termin.hour;
+      pushUndo();
+      blocks.forEach(b => {
+        if (b.start >= tHour && b.start < tHour + def.dur) {
+          delete zData.assignments[`${fromPname}::${b.key}`];
+          zData.assignments[`${toPname}::${b.key}`] = 'termin';
+        }
+      });
+      const idx = zData.termine.findIndex(t => t.id === tid);
+      if (idx >= 0) zData.termine[idx].personName = toPname;
+      saveData(); render();
     });
   });
 }
@@ -3880,9 +3971,6 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
   }
 
   // ── Step 5: Main assignment loop ───────────────────────────────────────────
-  const paused = new Set();
-  const midIdx = Math.floor(blocks.length / 2);
-
   const getScore = (p, roleKey) =>
     (burden[p.name] || 0) + (roleCounts[p.name][roleKey] || 0) * (ZUTEIL_ROLES[roleKey]?.burden || 1);
   const pickByScore = (pool, roleKey) =>
@@ -3892,73 +3980,47 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
     result[`${p.name}::${block.key}`] = role;
     burden[p.name] += ZUTEIL_ROLES[role]?.burden || 0;
     roleCounts[p.name][role] = (roleCounts[p.name][role] || 0) + 1;
-    if (role === 'pause') paused.add(p.name);
   };
   const free = (block, bi) =>
     allowedPeople.filter(p => isAvailAtBlock(p, block, bi) && !result[`${p.name}::${block.key}`]);
 
-  // True if person did termin in the immediately preceding block
   const hadTerminRecently = (p, bi) => {
     if (bi === 0) return false;
-    const r = result[`${p.name}::${blocks[bi - 1].key}`];
-    return r === 'termin';
+    return result[`${p.name}::${blocks[bi - 1].key}`] === 'termin';
   };
+  const prevRole = (bi, role) =>
+    bi > 0 ? allowedPeople.filter(p => result[`${p.name}::${blocks[bi-1].key}`] === role) : [];
 
   for (const [bi, block] of blocks.entries()) {
-    // Kassa: non-trainees only; buffer after termin
+    // Kassa: 1 non-trainee; prefer same person as prev block (2-block ≈ :30 stints); buffer after termin
     if (!allowedPeople.some(p => result[`${p.name}::${block.key}`] === 'kassa')) {
       const pool = free(block, bi).filter(p => !p._isTrainee);
-      const pref = pool.filter(p => !hadTerminRecently(p, bi));
+      const prev = prevRole(bi, 'kassa').filter(p => pool.includes(p) && !hadTerminRecently(p, bi));
+      const pref = prev.length ? prev : pool.filter(p => !hadTerminRecently(p, bi));
       const p = pickByScore(pref.length ? pref : pool.length ? pool : free(block, bi), 'kassa');
       if (p) assign(p, block, 'kassa');
     }
-    // Backoffice: up to 2 people (non-trainees preferred; post-termin people fit well here)
+    // Backoffice: up to 2; prefer same people as prev block
+    const prevBO = prevRole(bi, 'backoffice');
     for (let slot = 0; slot < 2; slot++) {
       if (allowedPeople.filter(p => result[`${p.name}::${block.key}`] === 'backoffice').length >= 2) break;
       const pool = free(block, bi).filter(p => !p._isTrainee);
-      const pick = pickByScore(pool.length ? pool : free(block, bi), 'backoffice');
+      const pref = prevBO.filter(p => pool.includes(p));
+      const pick = pickByScore(pref.length ? pref : pool.length ? pool : free(block, bi), 'backoffice');
       if (pick) assign(pick, block, 'backoffice');
       else break;
     }
-    // 5. Stock (7+ available)
-    const avail = allowedPeople.filter(p => isAvailAtBlock(p, block, bi)).length;
-    if (avail >= 7 && !allowedPeople.some(p => result[`${p.name}::${block.key}`] === '5stock')) {
+    // 5. Stock: always assign when someone is free; prefer same person as prev block
+    if (!allowedPeople.some(p => result[`${p.name}::${block.key}`] === '5stock')) {
       const pool = free(block, bi).filter(p => !p._isTrainee);
-      const p = pickByScore(pool.length ? pool : free(block, bi), '5stock');
+      const prev5 = prevRole(bi, '5stock').filter(p => pool.includes(p));
+      const p = pickByScore(prev5.length ? prev5 : pool.length ? pool : free(block, bi), '5stock');
       if (p) assign(p, block, '5stock');
     }
-    // Pause (middle blocks, highest-burden person not yet paused)
-    if (bi >= midIdx - 1 && bi <= midIdx + 1) {
-      const candidates = free(block, bi).filter(p => !paused.has(p.name));
-      if (candidates.length) {
-        const p = candidates.slice().sort((a, b) => (burden[b.name] || 0) - (burden[a.name] || 0))[0];
-        assign(p, block, 'pause');
-      }
-    }
-    // Fill remaining with backoffice (hard cap 2); extras stay empty for second-pass pause
+    // Fill remaining with backoffice (cap 2); extras left empty (Leer)
     for (const p of free(block, bi)) {
       if (allowedPeople.filter(q => result[`${q.name}::${block.key}`] === 'backoffice').length < 2)
         assign(p, block, 'backoffice');
-    }
-  }
-
-  // ── Step 6: Second-pass pause for anyone who didn't get one ───────────────
-  for (const p of allowedPeople) {
-    if (paused.has(p.name)) continue;
-    const ps = personStates[p.name] || {};
-    if (!p.present) continue;
-    if (ps.notYetPresent && !planBMode) continue;
-    for (const [bi, block] of blocks.entries()) {
-      if (!isAvailAtBlock(p, block, bi)) continue;
-      const key = `${p.name}::${block.key}`;
-      const role = result[key];
-      if (!role || role === 'backoffice') {
-        const kassaOK = allowedPeople.some(q => q.name !== p.name && result[`${q.name}::${block.key}`] === 'kassa');
-        const boOK    = allowedPeople.some(q => q.name !== p.name && result[`${q.name}::${block.key}`] === 'backoffice');
-        if (kassaOK && (boOK || role !== 'backoffice')) {
-          result[key] = 'pause'; paused.add(p.name); break;
-        }
-      }
     }
   }
 
