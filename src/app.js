@@ -2909,21 +2909,22 @@ async function openRecallPatientModal(targetSlot, shift) {
   const patients = allSlots
     .filter(s => (s.type === 'patient' || SLOT_TYPES[s.type]?.patientContact) && s.shiftId !== shift.id);
 
-  const returnDate = p => p.terminInterview || p.terminErstgespraech || null;
+  const fmtD = str => str
+    ? new Date(str).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: '2-digit' })
+    : null;
+
+  const earliestTermin = p => p.terminInterview || p.terminErstgespraech || null;
   const priority = p => {
-    const rd = returnDate(p);
+    const rd = earliestTermin(p);
+    const slotDiags = state.catches.filter(c => c.slotId === p.id);
     if (rd && rd.slice(0, 10) === shift.date) return 0;
-    if (rd || p.suspectedCodes?.length) return 1;
+    if (rd || slotDiags.length) return 1;
     return 2;
   };
   patients.sort((a, b) => priority(a) - priority(b) || b.shiftId - a.shiftId);
 
   const existing = document.getElementById('recall-modal');
   if (existing) existing.remove();
-
-  const fmtD = str => str
-    ? new Date(str).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: '2-digit' })
-    : null;
 
   const itemsHtml = patients.length
     ? patients.map(p => {
@@ -2932,11 +2933,14 @@ async function openRecallPatientModal(targetSlot, shift) {
         const timeStr    = `${String(p.startHour ?? 0).padStart(2,'0')}:${String(p.startMinute ?? 0).padStart(2,'0')}`;
         const typeLbl    = SLOT_TYPES[p.type]?.label ?? p.type;
         const kuerzel    = p.patientNotes || '(kein Kürzel)';
-        const rd         = returnDate(p);
-        const rdStr      = fmtD(rd);
-        const isToday    = rd && rd.slice(0, 10) === shift.date;
-        const chips      = (p.suspectedCodes || []).map(c =>
-          `<span class="susp-chip"><span class="susp-chip-code">${c.code}</span>${c.title ? `<span class="susp-chip-title" style="max-width:100px">${c.title}</span>` : ''}</span>`
+        const isToday    = p.terminInterview?.slice(0,10) === shift.date || p.terminErstgespraech?.slice(0,10) === shift.date;
+        const termins    = [
+          p.terminInterview     ? `Termin für Interview: ${fmtD(p.terminInterview)}` : null,
+          p.terminErstgespraech ? `Termin für Erstgespräch: ${fmtD(p.terminErstgespraech)}` : null,
+        ].filter(Boolean);
+        const slotDiags  = state.catches.filter(c => c.slotId === p.id);
+        const chips      = slotDiags.map(c =>
+          `<span class="susp-chip"><span class="susp-chip-code">${c.code}</span><span class="susp-chip-title" style="max-width:100px">${c.name}</span></span>`
         ).join('');
         return `<div class="recall-item${isToday ? ' recall-item--today' : ''}" data-id="${p.id}">
           <div class="recall-item-header">
@@ -2944,7 +2948,7 @@ async function openRecallPatientModal(targetSlot, shift) {
             ${isToday ? '<span class="recall-today-tag">↩ Heute</span>' : ''}
           </div>
           <div class="recall-item-session">${typeLbl} · ${dateStr} · ${timeStr}</div>
-          ${rdStr ? `<div class="recall-item-return">↩ Zurückkommen: ${rdStr}</div>` : ''}
+          ${termins.map(t => `<div class="recall-item-return">📅 ${t}</div>`).join('')}
           ${chips ? `<div class="recall-item-chips" style="margin-top:5px">${chips}</div>` : ''}
         </div>`;
       }).join('')
