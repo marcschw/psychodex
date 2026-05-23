@@ -33,7 +33,11 @@
       "Bash(del update_icd.py)",
       "Bash(*)",
       "Edit(*)",
-      "Write(*)"
+      "Write(*)",
+      "mcp__152ac5d0-d35b-49ff-95a3-4fc53d8ba45e__list_teams",
+      "mcp__152ac5d0-d35b-49ff-95a3-4fc53d8ba45e__list_projects",
+      "mcp__152ac5d0-d35b-49ff-95a3-4fc53d8ba45e__list_deployments",
+      "mcp__152ac5d0-d35b-49ff-95a3-4fc53d8ba45e__deploy_to_vercel"
     ]
   }
 }
