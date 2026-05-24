@@ -1803,7 +1803,7 @@ function renderTimeline(shift) {
         ${diagListHtml}
         <div class="tl-inline-actions">
           <button class="tl-inline-btn tl-inline-add-diag" title="Diagnose hinzufügen">➕</button>
-          ${hasVerifyPending ? '<button class="tl-inline-btn tl-inline-verify" title="Senior-Diagnose prüfen">🔍</button>' : ''}
+          ${hasVerifyPending ? '<button class="tl-inline-btn tl-inline-verify" title="Therapeut*In Diagnose prüfen">🔍</button>' : ''}
           <button class="tl-inline-btn tl-inline-recall" title="Patient aus früherem Dienst">📋</button>
           ${hasTips ? '<button class="tl-inline-btn tl-inline-tips" title="Checkliste">✅</button>' : ''}
           <button class="tl-inline-btn tl-inline-edit" title="Bearbeiten">✏️</button>
@@ -2844,6 +2844,8 @@ function openRouletteModal(drop) {
 }
 
 // ─── Diagnostic Verify ────────────────────────────────────────────────────────
+let _verifyTherapistCodes = [];
+
 function openVerifyModal(slot) {
   const modal = document.getElementById('verify-modal');
   if (!modal) return;
@@ -2853,28 +2855,78 @@ function openVerifyModal(slot) {
   document.getElementById('verify-suspected').innerHTML = suspCodes.length
     ? suspCodes.map(c => `<span class="susp-chip"><span class="susp-chip-code">${c.code}</span><span class="susp-chip-title">${c.title||''}</span></span>`).join('')
     : '<span style="color:var(--text-dim);font-size:13px">(kein Verdacht)</span>';
-  document.getElementById('verify-senior-input').value      = '';
+
+  document.getElementById('verify-therapist-name').value = '';
+  _verifyTherapistCodes = [];
+
+  const renderVerifyChips = () => {
+    const wrap = document.getElementById('verify-therapist-chips');
+    if (!wrap) return;
+    wrap.innerHTML = _verifyTherapistCodes.map((c, i) =>
+      `<span class="susp-chip"><span class="susp-chip-code">${c.code}</span><span class="susp-chip-title">${c.title || ''}</span><button type="button" class="susp-chip-rm" data-idx="${i}">✕</button></span>`
+    ).join('');
+    wrap.querySelectorAll('.susp-chip-rm').forEach(btn =>
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        _verifyTherapistCodes.splice(parseInt(btn.dataset.idx), 1);
+        renderVerifyChips();
+      })
+    );
+  };
+  renderVerifyChips();
+
+  document.getElementById('btn-verify-therapist-add').onclick = e => {
+    e.preventDefault();
+    const wrap = document.getElementById('verify-therapist-search-wrap');
+    wrap?.classList.toggle('hidden');
+    if (!wrap?.classList.contains('hidden'))
+      document.getElementById('verify-therapist-search-q')?.focus();
+  };
+
+  document.getElementById('verify-therapist-search-q').oninput = e => {
+    const q = e.target.value.trim();
+    const res = document.getElementById('verify-therapist-search-res');
+    if (!res) return;
+    if (q.length < 2) { res.innerHTML = ''; return; }
+    const results = searchDiagnoses(state.icdFlat, q).slice(0, 8);
+    res.innerHTML = results.map(d =>
+      `<div class="susp-search-item" data-code="${d.code}" data-title="${(d.name||'').replace(/"/g,'&quot;')}">
+        <span class="susp-si-code">${d.code}</span><span class="susp-si-title">${d.name}</span>
+      </div>`
+    ).join('');
+    res.querySelectorAll('.susp-search-item').forEach(item =>
+      item.addEventListener('click', () => {
+        if (!_verifyTherapistCodes.some(c => c.code === item.dataset.code))
+          _verifyTherapistCodes.push({ code: item.dataset.code, title: item.dataset.title });
+        document.getElementById('verify-therapist-search-q').value = '';
+        res.innerHTML = '';
+        document.getElementById('verify-therapist-search-wrap')?.classList.add('hidden');
+        renderVerifyChips();
+      })
+    );
+  };
+
   modal.classList.remove('hidden');
 
   document.getElementById('verify-backdrop').onclick = () => modal.classList.add('hidden');
   document.getElementById('verify-cancel').onclick   = () => modal.classList.add('hidden');
   document.getElementById('verify-save').onclick     = async () => {
-    const seniorCode = document.getElementById('verify-senior-input').value.trim().toUpperCase();
-    if (!seniorCode) { alert('Bitte Diagnose eingeben.'); return; }
+    if (!_verifyTherapistCodes.length) { alert('Bitte mindestens eine Diagnose hinzufügen.'); return; }
+    const therapistName = document.getElementById('verify-therapist-name').value.trim();
     modal.classList.add('hidden');
-    await applyVerifyXP(slot, seniorCode);
+    await applyVerifyXP(slot, _verifyTherapistCodes, therapistName);
   };
 }
 
-async function applyVerifyXP(slot, seniorCode) {
-  const codes = (slot.suspectedCodes || []).map(c => c.code.trim().toUpperCase());
-  const senior = seniorCode.trim().toUpperCase();
+async function applyVerifyXP(slot, therapistCodes, therapistName) {
+  const susp    = (slot.suspectedCodes || []).map(c => c.code.trim().toUpperCase());
+  const thCodes = therapistCodes.map(c => c.code.trim().toUpperCase());
   let result;
-  if (codes.includes(senior)) {
+  if (thCodes.some(tc => susp.includes(tc))) {
     result = DIAGNOSTIC_VERIFY_XP.exact;
-  } else if (codes.some(c => c.slice(0, 3) === senior.slice(0, 3))) {
+  } else if (thCodes.some(tc => susp.some(sc => sc.slice(0, 3) === tc.slice(0, 3)))) {
     result = DIAGNOSTIC_VERIFY_XP.partial;
-  } else if (codes.some(c => c.slice(0, 2) === senior.slice(0, 2))) {
+  } else if (thCodes.some(tc => susp.some(sc => sc.slice(0, 2) === tc.slice(0, 2)))) {
     result = DIAGNOSTIC_VERIFY_XP.partial;
   } else {
     result = DIAGNOSTIC_VERIFY_XP.miss;
@@ -2887,8 +2939,11 @@ async function applyVerifyXP(slot, seniorCode) {
     state.profile.verifyBoost20 = false;
   }
 
+  const seniorCode = thCodes[0] || '';
   await db.scheduleSlots.update(slot.id, {
     seniorCode,
+    therapistCodes,
+    ...(therapistName && { therapistName }),
     terminInterviewDone: true,
     xpEarned: (slot.xpEarned || 0) + xp,
   });

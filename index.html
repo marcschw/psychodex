@@ -934,15 +934,24 @@
   <div class="modal-backdrop" id="verify-backdrop"></div>
   <div class="modal-sheet">
     <div class="sheet-header">
-      <div class="modal-title">🔍 Senior-Diagnose verifizieren</div>
+      <div class="modal-title">🔍 Therapeut*In Diagnose</div>
     </div>
     <div class="sheet-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
       <div style="font-size:13px;color:var(--text-dim)">Patient: <span id="verify-modal-label" style="color:var(--text);font-weight:600"></span></div>
       <div style="font-size:13px;margin-bottom:2px">Dein Verdacht:</div>
       <div id="verify-suspected" class="susp-chips-wrap" style="min-height:28px"></div>
       <div class="form-row">
-        <label class="form-label">Senior-Diagnose (ICD-Code)</label>
-        <input type="text" id="verify-senior-input" class="form-input" placeholder="z.B. F32.1" style="text-transform:uppercase">
+        <label class="form-label">Name der Therapeut*In</label>
+        <input type="text" id="verify-therapist-name" class="form-input" placeholder="z.B. Dr. Müller">
+      </div>
+      <div class="form-row" style="flex-direction:column;align-items:stretch;gap:8px">
+        <label class="form-label">Diagnosen der Therapeut*In</label>
+        <div class="susp-chips-wrap" id="verify-therapist-chips" style="min-height:28px"></div>
+        <div class="susp-inline-wrap hidden" id="verify-therapist-search-wrap">
+          <input type="text" id="verify-therapist-search-q" class="form-input" placeholder="Diagnose suchen…" autocomplete="off">
+          <div id="verify-therapist-search-res" class="susp-search-results"></div>
+        </div>
+        <button type="button" class="btn-secondary" id="btn-verify-therapist-add">＋ Diagnose hinzufügen</button>
       </div>
       <div style="display:flex;gap:8px;margin-top:4px">
         <button id="verify-save"   class="btn-primary"   style="flex:1">Vergleichen &amp; XP</button>
