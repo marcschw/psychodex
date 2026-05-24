@@ -574,6 +574,7 @@ function navigateTo(tab) {
   if (tab === 'icdf') renderICDFTab();
   if (tab === 'stats') renderStats();
   if (tab === 'settings') renderSettingsTab();
+  if (tab === 'patienten') renderPatientenTab();
 }
 
 // ─── Render ───────────────────────────────────────────────────────────────────
@@ -3009,6 +3010,8 @@ async function openRecallPatientModal(targetSlot, shift) {
   const patients = allSlots
     .filter(s => (s.type === 'patient' || SLOT_TYPES[s.type]?.patientContact) && s.shiftId !== shift.id);
 
+  const patientsWithTermin = patients.filter(p => p.terminInterview || p.terminErstgespraech);
+
   const fmtD = str => str
     ? new Date(str).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: '2-digit' })
     : null;
@@ -3022,12 +3025,13 @@ async function openRecallPatientModal(targetSlot, shift) {
     return 2;
   };
   patients.sort((a, b) => priority(a) - priority(b) || b.shiftId - a.shiftId);
+  patientsWithTermin.sort((a, b) => priority(a) - priority(b) || b.shiftId - a.shiftId);
 
   const existing = document.getElementById('recall-modal');
   if (existing) existing.remove();
 
-  const itemsHtml = patients.length
-    ? patients.map(p => {
+  const buildItemsHtml = list => list.length
+    ? list.map(p => {
         const slotShift  = shiftMap[p.shiftId];
         const dateStr    = fmtD(slotShift?.date) ?? '—';
         const timeStr    = `${String(p.startHour ?? 0).padStart(2,'0')}:${String(p.startMinute ?? 0).padStart(2,'0')}`;
@@ -3066,8 +3070,12 @@ async function openRecallPatientModal(targetSlot, shift) {
       <div class="sheet-header">
         <div class="modal-title">📋 Früheren Patienten übernehmen</div>
       </div>
-      <div class="sheet-body" style="padding:12px 16px;display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto">
-        ${itemsHtml}
+      <div style="padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:8px">
+        <input type="checkbox" id="recall-filter-termin" checked style="width:16px;height:16px;accent-color:var(--accent)">
+        <label for="recall-filter-termin" style="font-size:13px;color:var(--text-muted);cursor:pointer">Nur mit Termin</label>
+      </div>
+      <div class="sheet-body" id="recall-list-body" style="padding:12px 16px;display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto">
+        ${buildItemsHtml(patientsWithTermin)}
       </div>
       <div style="padding:12px 16px;border-top:1px solid rgba(255,255,255,.07)">
         <button id="recall-cancel" class="btn-secondary" style="width:100%">Abbrechen</button>
@@ -3080,21 +3088,134 @@ async function openRecallPatientModal(targetSlot, shift) {
   document.getElementById('recall-backdrop').onclick = close;
   document.getElementById('recall-cancel').onclick   = close;
 
-  modal.querySelectorAll('.recall-item').forEach(item => {
-    item.addEventListener('click', async () => {
-      const src = patients.find(p => p.id === parseInt(item.dataset.id));
-      if (!src) return;
-      close();
-      await db.scheduleSlots.update(targetSlot.id, {
-        patientNotes:   src.patientNotes,
-        suspectedCodes: src.suspectedCodes || [],
+  const renderItems = showAll => {
+    const listBody = document.getElementById('recall-list-body');
+    if (!listBody) return;
+    const list = showAll ? patients : patientsWithTermin;
+    listBody.innerHTML = buildItemsHtml(list);
+    listBody.querySelectorAll('.recall-item').forEach(item => {
+      item.addEventListener('click', async () => {
+        const src = (showAll ? patients : patientsWithTermin).find(p => p.id === parseInt(item.dataset.id));
+        if (!src) return;
+        close();
+        await db.scheduleSlots.update(targetSlot.id, {
+          patientNotes:   src.patientNotes,
+          suspectedCodes: src.suspectedCodes || [],
+        });
+        const srcCatches = state.catches.filter(c => c.slotId === src.id);
+        for (const c of srcCatches) {
+          const { id: _ignore, ...rest } = c;
+          await db.caughtDiagnoses.add({ ...rest, slotId: targetSlot.id, xpEarned: 0 });
+        }
+        state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
+        if (state.plannerShiftId === shift.id) {
+          state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
+          renderTimeline(shift);
+        }
       });
-      if (state.plannerShiftId === shift.id) {
-        state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).sortBy('startHour');
-        renderTimeline(shift);
-      }
     });
+  };
+
+  document.getElementById('recall-filter-termin').addEventListener('change', e => {
+    renderItems(!e.target.checked);
   });
+
+  // Wire initial click handlers on the already-rendered list
+  renderItems(false);
+}
+
+// ─── Patienten Tab ────────────────────────────────────────────────────────────
+async function renderPatientenTab() {
+  const el = document.getElementById('patienten-tab-content');
+  if (!el) return;
+  el.innerHTML = '<div class="empty-state">Laden…</div>';
+
+  const allSlots  = await db.scheduleSlots.toArray();
+  const patSlots  = allSlots.filter(s => SLOT_TYPES[s.type]?.patientContact || s.type === 'patient');
+  const shiftMap  = Object.fromEntries(state.shifts.map(s => [s.id, s]));
+  const catchMap  = {};
+  state.catches.forEach(c => {
+    if (!catchMap[c.slotId]) catchMap[c.slotId] = [];
+    catchMap[c.slotId].push(c);
+  });
+
+  // Sort by most recent shift first
+  patSlots.sort((a, b) => {
+    const da = shiftMap[a.shiftId]?.date || '';
+    const db2 = shiftMap[b.shiftId]?.date || '';
+    return db2.localeCompare(da);
+  });
+
+  const fmtD = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'2-digit' }) : '–';
+
+  state._patientenFilter = state._patientenFilter || 'all';
+
+  const filtered = patSlots.filter(s => {
+    if (state._patientenFilter === 'offen')      return !s.seniorCode;
+    if (state._patientenFilter === 'verglichen') return !!s.seniorCode;
+    return true;
+  });
+
+  const counts = {
+    all:        patSlots.length,
+    offen:      patSlots.filter(s => !s.seniorCode).length,
+    verglichen: patSlots.filter(s => !!s.seniorCode).length,
+  };
+
+  const rows = filtered.map(s => {
+    const shift   = shiftMap[s.shiftId];
+    const catches = catchMap[s.id] || [];
+    const verified = !!s.seniorCode;
+    const typeIcon = SLOT_TYPES[s.type]?.icon || '👤';
+    const diagHtml = catches.length
+      ? catches.map(c => `
+          <div class="pt-diag-row">
+            <img class="recall-diag-img" src="assets/images/diagnoses/${c.code}.png" alt="" onerror="this.style.display='none'">
+            <span class="recall-diag-code">${c.code}</span>
+            <span class="recall-diag-name">${c.name}</span>
+          </div>`).join('')
+      : '';
+    const termins = [
+      s.terminInterview     ? `📅 Interview: ${fmtD(s.terminInterview)}` : null,
+      s.terminErstgespraech ? `📅 Erstgespräch: ${fmtD(s.terminErstgespraech)}` : null,
+    ].filter(Boolean);
+    const verifyBadge = verified
+      ? `<span class="pt-badge pt-badge-done">✓ Verglichen</span>`
+      : (s.terminErstgespraech ? `<span class="pt-badge pt-badge-open">⏳ Offen</span>` : '');
+    return `
+      <div class="pt-item" data-slot-id="${s.id}" data-shift-id="${s.shiftId}">
+        <div class="pt-item-header">
+          <span class="pt-icon">${typeIcon}</span>
+          <span class="pt-kuerzel">${s.patientNotes || '(kein Kürzel)'}</span>
+          <span class="pt-date">${fmtD(shift?.date)}</span>
+          ${verifyBadge}
+        </div>
+        ${termins.map(t => `<div class="pt-termin">${t}</div>`).join('')}
+        ${diagHtml ? `<div class="recall-diag-list">${diagHtml}</div>` : ''}
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="section-header" style="position:sticky;top:0;z-index:5;background:var(--bg)">Patienten-Übersicht</div>
+    <div class="pt-filter-bar">
+      <button class="pt-filter-btn${state._patientenFilter==='all'?' active':''}" data-f="all">Alle (${counts.all})</button>
+      <button class="pt-filter-btn${state._patientenFilter==='offen'?' active':''}" data-f="offen">Offen (${counts.offen})</button>
+      <button class="pt-filter-btn${state._patientenFilter==='verglichen'?' active':''}" data-f="verglichen">Verglichen (${counts.verglichen})</button>
+    </div>
+    <div class="pt-list">${rows || '<div class="empty-state" style="padding:24px 16px">Keine Einträge.</div>'}</div>`;
+
+  el.querySelectorAll('.pt-filter-btn').forEach(btn =>
+    btn.addEventListener('click', () => {
+      state._patientenFilter = btn.dataset.f;
+      renderPatientenTab();
+    }));
+
+  el.querySelectorAll('.pt-item').forEach(item =>
+    item.addEventListener('click', () => {
+      const shiftId = parseInt(item.dataset.shiftId);
+      navigateTo('home');
+      openShiftDetailModal(shiftId);
+    }));
 }
 
 // ─── Zuteilung ─────────────────────────────────────────────────────────────────
