@@ -7304,39 +7304,45 @@ function calcCompletionEstimates(targetH, pastItems, getH, getDateStr) {
   const today    = new Date();
   const todayStr = today.toISOString().slice(0, 10);
   const fmtD     = d => d.toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const fmtSpd   = hpd => `${(hpd * 7).toFixed(1)} h/Wo`;
 
-  // Only count actually completed hours (pastItems = items with date ≤ today)
   const pastH     = pastItems.reduce((s, it) => s + getH(it), 0);
   const remaining = targetH - pastH;
 
-  if (remaining <= 0) return { overallEst: '🎉 Erreicht', monthEst: '🎉 Erreicht' };
-  if (!pastItems.length) return { overallEst: '–', monthEst: '–' };
+  if (remaining <= 0) return {
+    overallEst: '🎉 Erreicht', overallSpeed: '',
+    monthEst:   '🎉 Erreicht', monthSpeed:   '',
+  };
+  if (!pastItems.length) return {
+    overallEst: '–', overallSpeed: '',
+    monthEst:   '–', monthSpeed:   '',
+  };
 
-  // 1) Overall pace: h/week since first past item
-  let overallEst = '–';
-  const sorted   = [...pastItems].sort((a, b) => getDateStr(a).localeCompare(getDateStr(b)));
-  const firstD   = new Date(getDateStr(sorted[0]) + 'T12:00:00');
-  const weeksEl  = Math.max(1 / 7, (today - firstD) / (7 * 86400000));
-  const hPerWeek = pastH / weeksEl;
-  if (hPerWeek > 0) {
-    const weeksNeeded = remaining / hPerWeek;
-    overallEst = fmtD(new Date(today.getTime() + weeksNeeded * 7 * 86400000));
+  // 1) Seit erstem Dienst: pastH / Tage seit erstem Dienst = h/Tag
+  let overallEst = '–', overallSpeed = '';
+  const sorted  = [...pastItems].sort((a, b) => getDateStr(a).localeCompare(getDateStr(b)));
+  const firstD  = new Date(getDateStr(sorted[0]) + 'T12:00:00');
+  const daysEl  = Math.max(1, (today - firstD) / 86400000);
+  const hPerDay = pastH / daysEl;
+  if (hPerDay > 0) {
+    overallSpeed = fmtSpd(hPerDay);
+    overallEst   = fmtD(new Date(today.getTime() + (remaining / hPerDay) * 86400000));
   }
 
-  // 2) Last-4-weeks pace: h/week over last 28 days
-  let monthEst = '–';
+  // 2) Letzte 4 Wochen: Stunden in letzten 28 Tagen / 28 Tage = h/Tag
+  let monthEst = '–', monthSpeed = '';
   const cutoff      = new Date(today.getTime() - 28 * 86400000).toISOString().slice(0, 10);
   const recentItems = pastItems.filter(it => getDateStr(it) >= cutoff && getDateStr(it) <= todayStr);
   if (recentItems.length) {
-    const recentH     = recentItems.reduce((s, it) => s + getH(it), 0);
-    const hPerWeekM   = recentH / 4;
-    if (hPerWeekM > 0) {
-      const weeksNeeded = remaining / hPerWeekM;
-      monthEst = fmtD(new Date(today.getTime() + weeksNeeded * 7 * 86400000));
+    const recentH    = recentItems.reduce((s, it) => s + getH(it), 0);
+    const hPerDay28  = recentH / 28;
+    if (hPerDay28 > 0) {
+      monthSpeed = fmtSpd(hPerDay28);
+      monthEst   = fmtD(new Date(today.getTime() + (remaining / hPerDay28) * 86400000));
     }
   }
 
-  return { overallEst, monthEst };
+  return { overallEst, overallSpeed, monthEst, monthSpeed };
 }
 
 function buildSupervisionHistogram(logs) {
@@ -7385,7 +7391,7 @@ function renderHoursModalBody() {
     const pct       = Math.min(100, Math.round((hours / target) * 100));
     const todayStr  = new Date().toISOString().slice(0, 10);
     const pastLogs  = logs.filter(l => l.date <= todayStr);
-    const { overallEst, monthEst } = calcCompletionEstimates(
+    const { overallEst, overallSpeed, monthEst, monthSpeed } = calcCompletionEstimates(
       target, pastLogs, l => l.duration || 0, l => l.date
     );
 
@@ -7419,8 +7425,8 @@ function renderHoursModalBody() {
       </div>
       <div class="completion-estimates">
         <div class="ce-title">Prognose bis ${target}h</div>
-        <div class="ce-row"><span class="ce-label">Ø seit Start</span><span class="ce-date">${overallEst}</span></div>
-        <div class="ce-row"><span class="ce-label">Ø letzte 4 Wochen</span><span class="ce-date">${monthEst}</span></div>
+        <div class="ce-row"><span class="ce-label">Ø seit Start</span><span class="ce-speed">${overallSpeed}</span><span class="ce-date">${overallEst}</span></div>
+        <div class="ce-row"><span class="ce-label">Ø letzte 4 Wochen</span><span class="ce-speed">${monthSpeed}</span><span class="ce-date">${monthEst}</span></div>
       </div>
       ${buildSupervisionHistogram(logs)}
       <div class="hours-list">
@@ -7483,7 +7489,7 @@ function renderHoursModalBody() {
 
   const todayStr = new Date().toISOString().slice(0, 10);
   const pastShifts = all.filter(s => s.date <= todayStr);
-  const { overallEst, monthEst } = calcCompletionEstimates(
+  const { overallEst, overallSpeed, monthEst, monthSpeed } = calcCompletionEstimates(
     targetH, pastShifts, sh => calcShiftHours(sh), sh => sh.date
   );
 
@@ -7517,8 +7523,8 @@ function renderHoursModalBody() {
     </div>
     <div class="completion-estimates">
       <div class="ce-title">Prognose bis ${targetH}h</div>
-      <div class="ce-row"><span class="ce-label">Ø seit Start</span><span class="ce-date">${overallEst}</span></div>
-      <div class="ce-row"><span class="ce-label">Ø letzte 4 Wochen</span><span class="ce-date">${monthEst}</span></div>
+      <div class="ce-row"><span class="ce-label">Ø seit Start</span><span class="ce-speed">${overallSpeed}</span><span class="ce-date">${overallEst}</span></div>
+      <div class="ce-row"><span class="ce-label">Ø letzte 4 Wochen</span><span class="ce-speed">${monthSpeed}</span><span class="ce-date">${monthEst}</span></div>
     </div>
     <div class="hours-filter-row">
       <button class="hours-filter-btn${state.hoursFilter==='all'?' active':''}" data-filter="all">Alle (${all.length})</button>
