@@ -1032,6 +1032,13 @@ img{max-width:100%;display:block}
 .hct-btn{background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;color:var(--text-muted);padding:6px 12px;font-size:12px;cursor:pointer}
 .hct-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(124,58,237,.1)}
 
+/* ── Completion date estimates ─────────────────────────────────────────────── */
+.completion-estimates{background:var(--bg-raised);border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.ce-title{font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px}
+.ce-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:13px}
+.ce-label{color:var(--text-muted)}
+.ce-date{font-weight:600;color:var(--text)}
+
 /* ── Counter settings ────────────────────────────────────────────────────── */
 .hcs-item{background:var(--bg-raised);border-radius:10px;padding:10px 12px;margin-bottom:8px}
 .hcs-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}

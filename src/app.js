@@ -42,6 +42,8 @@ const state = {
   mealModalIcon: '☕',
   statsSubTab: 'overview',
   swipeDir: null,
+  supLogs: [],
+  supHours: 0,
 };
 
 let _editingSuspectedCodes = []; // working copy while slot-edit form is open
@@ -669,7 +671,7 @@ function renderDashboard() {
   const supCard    = document.getElementById('stat-sup-hours-card');
   if (hoursCard)  hoursCard.onclick  = openHoursModal;
   if (streakCard) streakCard.onclick = openStreakModal;
-  if (supCard)    supCard.onclick    = openSupervisionSheet;
+  if (supCard)    supCard.onclick    = () => openHoursModal('supervision');
 }
 
 // ─── Hours Counters ───────────────────────────────────────────────────────────
@@ -677,7 +679,12 @@ function renderHoursCounters() {
   const el = document.getElementById('hours-counters');
   if (!el) return;
   const counters = state.profile?.hourCounters || [];
-  el.innerHTML = counters.map(c => {
+  const supHours  = state.supHours ?? 0;
+  const supTarget = state.profile?.supervisionTarget ?? 30;
+  const supPct    = Math.min(100, Math.round((supHours / supTarget) * 100));
+  const supColor  = supPct >= 100 ? '#10b981' : supPct >= 60 ? '#f59e0b' : '#ef4444';
+
+  const counterCards = counters.map(c => {
     const h = calcCounterHours(c);
     const t = c.targetHours || 480;
     const pct = Math.min(100, Math.round((h / t) * 100));
@@ -699,12 +706,27 @@ function renderHoursCounters() {
         <div class="hc-abs">${h.toFixed(1).replace('.0','')}h / ${t}h${fromTxt ? ` · ${fromTxt}` : ''}</div>
       </div>`;
   }).join('');
-  el.querySelectorAll('.hours-counter-card').forEach(card => {
+
+  const supCard = `
+    <div class="hours-counter-card sup-counter-card" data-counter-id="supervision">
+      <div class="hc-top">
+        <span class="hc-name">🎓 Supervision</span>
+        <span class="hc-pct" style="color:${supColor}">${supPct}%</span>
+      </div>
+      <div class="hc-bar-wrap"><div class="hc-bar-fill" style="width:${supPct}%;background:${supColor}"></div></div>
+      <div class="hc-abs">${supHours}h / ${supTarget}h</div>
+    </div>`;
+
+  el.innerHTML = counterCards + supCard;
+
+  el.querySelectorAll('.hours-counter-card:not(.sup-counter-card)').forEach(card => {
     card.addEventListener('click', () => {
-      const cid = parseInt(card.dataset.counterId);
-      state.hoursModalCounter = cid;
+      state.hoursModalCounter = parseInt(card.dataset.counterId);
       openHoursModal();
     });
+  });
+  el.querySelector('.sup-counter-card')?.addEventListener('click', () => {
+    openHoursModal('supervision');
   });
 }
 
@@ -5455,23 +5477,14 @@ function renderSettingsTab() {
 
 // ─── Supervision Logging ──────────────────────────────────────────────────────
 async function renderSupervisionStats() {
-  const logs = await db.supervisionLogs.orderBy('date').reverse().toArray();
-  const hours = logs.reduce((s, l) => s + (l.duration || 0), 0);
-  const target = state.profile?.supervisionTarget ?? 30;
+  const logs = await db.supervisionLogs.orderBy('date').toArray();
+  state.supLogs  = logs;
+  state.supHours = logs.reduce((s, l) => s + (l.duration || 0), 0);
   const elHours = document.getElementById('supervision-hours');
-  if (elHours) elHours.textContent = `${hours}h`;
+  if (elHours) elHours.textContent = `${state.supHours}h`;
   const secEl = document.getElementById('sup-progress-section');
-  if (secEl) {
-    secEl.style.display = '';
-    const pct = Math.min(100, (hours / target) * 100);
-    const barEl = document.getElementById('sup-progress-bar');
-    if (barEl) {
-      barEl.style.width = `${pct}%`;
-      barEl.style.background = pct >= 100 ? '#10b981' : pct >= 60 ? '#f59e0b' : '#ef4444';
-    }
-    const lblEl = document.getElementById('sup-progress-label');
-    if (lblEl) lblEl.textContent = `${hours} / ${target} Stunden Supervision`;
-  }
+  if (secEl) secEl.style.display = 'none';
+  renderHoursCounters();
 }
 
 async function openSupervisionSheet() {
@@ -7199,9 +7212,11 @@ function setupHoursModalListeners() {
   document.getElementById('hours-backdrop').addEventListener('click', closeHoursModal);
 }
 
-function openHoursModal() {
+function openHoursModal(tab = null) {
   state.hoursFilter = 'all';
-  if (state.hoursModalCounter == null) {
+  if (tab === 'supervision') {
+    state.hoursModalCounter = 'supervision';
+  } else if (state.hoursModalCounter == null || state.hoursModalCounter === 'supervision') {
     const counters = state.profile?.hourCounters || [];
     state.hoursModalCounter = counters[0]?.id ?? null;
   }
@@ -7270,9 +7285,159 @@ function buildWeeklyHistogram(shifts) {
     <div class="hours-histogram-wrap"><div class="hours-histogram">${bars}</div></div>`;
 }
 
+function calcCompletionEstimates(currentH, targetH, pastItems, getH, getDateStr) {
+  if (!pastItems.length || currentH <= 0) return { overallEst: '–', monthEst: '–' };
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
+  const fmtD = d => d.toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const goalReached = currentH >= targetH;
+
+  // Overall pace
+  let overallEst = '–';
+  if (goalReached) {
+    overallEst = '🎉 Erreicht';
+  } else {
+    const sorted = [...pastItems].sort((a, b) => getDateStr(a).localeCompare(getDateStr(b)));
+    const firstD = new Date(getDateStr(sorted[0]) + 'T12:00:00');
+    const daysEl = Math.max(1, (today - firstD) / 86400000);
+    const hPerDay = currentH / daysEl;
+    if (hPerDay > 0) {
+      const daysNeeded = (targetH - currentH) / hPerDay;
+      overallEst = fmtD(new Date(today.getTime() + daysNeeded * 86400000));
+    }
+  }
+
+  // Last-30-days pace
+  let monthEst = '–';
+  if (goalReached) {
+    monthEst = '🎉 Erreicht';
+  } else {
+    const monthAgoStr = new Date(today.getTime() - 30 * 86400000).toISOString().slice(0, 10);
+    const monthItems = pastItems.filter(it => getDateStr(it) >= monthAgoStr && getDateStr(it) <= todayStr);
+    if (monthItems.length) {
+      const monthH = monthItems.reduce((s, it) => s + getH(it), 0);
+      const hPerDay = monthH / 30;
+      if (hPerDay > 0) {
+        const daysNeeded = (targetH - currentH) / hPerDay;
+        monthEst = fmtD(new Date(today.getTime() + daysNeeded * 86400000));
+      }
+    }
+  }
+
+  return { overallEst, monthEst };
+}
+
+function buildSupervisionHistogram(logs) {
+  if (!logs.length) return '';
+  const monthMap = new Map();
+  logs.forEach(l => {
+    const key = l.date.slice(0, 7); // YYYY-MM
+    if (!monthMap.has(key)) monthMap.set(key, 0);
+    monthMap.set(key, monthMap.get(key) + (l.duration || 0));
+  });
+  const months = [...monthMap.entries()].sort(([a], [b]) => a.localeCompare(b));
+  const maxH = Math.max(...months.map(([, h]) => h), 1);
+  const today = new Date().toISOString().slice(0, 7);
+  const bars = months.map(([key, hours]) => {
+    const pct = Math.max(Math.round((hours / maxH) * 100), 4);
+    const isCurrent = key === today;
+    const cls = isCurrent ? 'hh-bar hh-bar-current' : 'hh-bar';
+    const [yr, mo] = key.split('-');
+    const label = new Date(`${key}-15`).toLocaleDateString('de-AT', { month: 'short' }) + ` '${yr.slice(2)}`;
+    return `<div class="hh-col" title="${label} · ${hours}h">
+      <div class="hh-val">${hours}h</div>
+      <div class="hh-bar-wrap"><div class="${cls}" style="height:${pct}%"></div></div>
+      <div class="hh-label">${label}</div>
+    </div>`;
+  }).join('');
+  return `<div class="hours-histogram-title">Monatliche Entwicklung</div>
+    <div class="hours-histogram-wrap"><div class="hours-histogram">${bars}</div></div>`;
+}
+
 function renderHoursModalBody() {
   const body     = document.getElementById('hours-modal-body');
   const counters = state.profile?.hourCounters || [];
+  const isSup    = state.hoursModalCounter === 'supervision';
+
+  // Always show tab bar (counters + supervision)
+  const counterTabs = `
+    <div class="hours-counter-tabs">
+      ${counters.map(c => `<button class="hct-btn${c.id === state.hoursModalCounter && !isSup ? ' active' : ''}" data-cid="${c.id}">${c.name}</button>`).join('')}
+      <button class="hct-btn${isSup ? ' active' : ''}" data-cid="supervision">🎓 Supervision</button>
+    </div>`;
+
+  if (isSup) {
+    const logs      = state.supLogs || [];
+    const hours     = state.supHours ?? logs.reduce((s, l) => s + (l.duration || 0), 0);
+    const target    = state.profile?.supervisionTarget ?? 30;
+    const pct       = Math.min(100, Math.round((hours / target) * 100));
+    const todayStr  = new Date().toISOString().slice(0, 10);
+    const pastLogs  = logs.filter(l => l.date <= todayStr);
+    const { overallEst, monthEst } = calcCompletionEstimates(
+      hours, target, pastLogs, l => l.duration || 0, l => l.date
+    );
+
+    // Donut by supervisor
+    const supMap = {};
+    logs.forEach(l => {
+      const k = l.supervisor || '(ohne)';
+      supMap[k] = (supMap[k] || 0) + (l.duration || 0);
+    });
+    const supColors = ['#8b5cf6','#06b6d4','#10b981','#f59e0b','#ef4444','#6366f1'];
+    const supEntries = Object.entries(supMap);
+    const donutSegs = hours > 0 ? supEntries.map(([, h], i) => ({
+      pct: (h / hours) * 100, color: supColors[i % supColors.length]
+    })) : [];
+
+    const fmtD = d => new Date(d + 'T12:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'2-digit' });
+
+    body.innerHTML = `
+      ${counterTabs}
+      <div class="hours-summary">
+        <div class="hours-donut">${donutSegs.length ? buildDonut(donutSegs) : '<div class="donut-empty">–</div>'}</div>
+        <div class="hours-summary-info">
+          <div class="hours-total">${hours}h <span style="font-size:14px;color:var(--text-dim)">/ ${target}h</span></div>
+          <div class="hours-label">Supervision · ${pct}% erledigt</div>
+          <div class="hours-type-legend" style="margin-top:6px">
+            ${supEntries.map(([sup, h], i) =>
+              `<span style="color:${supColors[i % supColors.length]}">${sup}: ${h}h</span>`
+            ).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="completion-estimates">
+        <div class="ce-title">Prognose bis ${target}h</div>
+        <div class="ce-row"><span class="ce-label">Ø seit Start</span><span class="ce-date">${overallEst}</span></div>
+        <div class="ce-row"><span class="ce-label">Ø letzter Monat</span><span class="ce-date">${monthEst}</span></div>
+      </div>
+      ${buildSupervisionHistogram(logs)}
+      <div class="hours-list">
+        ${logs.length ? [...logs].sort((a,b)=>b.date.localeCompare(a.date)).map(l => `
+          <div class="hours-row">
+            <div class="hours-row-icon">🎓</div>
+            <div class="hours-row-info">
+              <div class="hours-row-date">${fmtD(l.date)}</div>
+              <div class="hours-row-meta">${l.supervisor ? l.supervisor : 'Supervision'}</div>
+            </div>
+            <div class="hours-row-val">${l.duration}h</div>
+          </div>`).join('')
+        : '<div class="empty-state">Noch keine Supervisionen eingetragen.</div>'}
+      </div>`;
+
+    body.querySelectorAll('.hct-btn').forEach(btn =>
+      btn.addEventListener('click', () => {
+        if (btn.dataset.cid === 'supervision') {
+          state.hoursModalCounter = 'supervision';
+        } else {
+          state.hoursModalCounter = parseInt(btn.dataset.cid);
+          state.hoursFilter = 'all';
+        }
+        renderHoursModalBody();
+      }));
+    return;
+  }
+
+  // ── Hours tab ──
   const counter  = counters.find(c => c.id === state.hoursModalCounter) || counters[0];
   const baseShifts = counter?.fromDate
     ? state.shifts.filter(s => s.date >= counter.fromDate)
@@ -7282,6 +7447,7 @@ function renderHoursModalBody() {
   const totalH   = counter ? calcCounterHours(counter) : calcTotalHours();
   const targetH  = counter?.targetHours || 480;
   const extra    = getExtraHoursTotal();
+  const pct      = Math.min(100, Math.round((totalH / targetH) * 100));
 
   const types = ['früh','spät','full','samstag','schulung'];
   const typeCounts = Object.fromEntries(types.map(t => [t, all.filter(s=>s.type===t)]));
@@ -7303,10 +7469,11 @@ function renderHoursModalBody() {
   const toDate   = all.length ? [...all].sort((a,b)=>b.date.localeCompare(a.date))[0]?.date : null;
   const fmtD = d => d ? new Date(d+'T12:00:00').toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric'}) : '–';
 
-  const counterTabs = counters.length > 1 ? `
-    <div class="hours-counter-tabs">
-      ${counters.map(c=>`<button class="hct-btn${c.id===counter?.id?' active':''}" data-cid="${c.id}">${c.name}</button>`).join('')}
-    </div>` : '';
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const pastShifts = all.filter(s => s.date <= todayStr);
+  const { overallEst, monthEst } = calcCompletionEstimates(
+    totalH, targetH, pastShifts, sh => calcShiftHours(sh), sh => sh.date
+  );
 
   body.innerHTML = `
     ${counterTabs}
@@ -7314,7 +7481,7 @@ function renderHoursModalBody() {
       <div class="hours-donut">${donutSegments.length ? buildDonut(donutSegments) : '<div class="donut-empty">–</div>'}</div>
       <div class="hours-summary-info">
         <div class="hours-total">${totalH.toFixed(1).replace('.0','')}h <span style="font-size:14px;color:var(--text-dim)">/ ${targetH}h</span></div>
-        <div class="hours-label">${counter?.name || 'Gesamt'}</div>
+        <div class="hours-label">${counter?.name || 'Gesamt'} · ${pct}% erledigt</div>
         <div class="hours-range">${fmtD(fromDate)} – ${fmtD(toDate)}</div>
         <div class="hours-type-legend">
           ${nFr ? `<span style="color:#3b82f6">🌅 ${nFr}×</span>` : ''}
@@ -7335,6 +7502,11 @@ function renderHoursModalBody() {
           }).join(' ')}</div>`;
         })()}
       </div>
+    </div>
+    <div class="completion-estimates">
+      <div class="ce-title">Prognose bis ${targetH}h</div>
+      <div class="ce-row"><span class="ce-label">Ø seit Start</span><span class="ce-date">${overallEst}</span></div>
+      <div class="ce-row"><span class="ce-label">Ø letzter Monat</span><span class="ce-date">${monthEst}</span></div>
     </div>
     <div class="hours-filter-row">
       <button class="hours-filter-btn${state.hoursFilter==='all'?' active':''}" data-filter="all">Alle (${all.length})</button>
@@ -7358,7 +7530,15 @@ function renderHoursModalBody() {
     </div>`;
 
   body.querySelectorAll('.hct-btn').forEach(btn =>
-    btn.addEventListener('click', () => { state.hoursModalCounter = parseInt(btn.dataset.cid); state.hoursFilter = 'all'; renderHoursModalBody(); }));
+    btn.addEventListener('click', () => {
+      if (btn.dataset.cid === 'supervision') {
+        state.hoursModalCounter = 'supervision';
+      } else {
+        state.hoursModalCounter = parseInt(btn.dataset.cid);
+        state.hoursFilter = 'all';
+      }
+      renderHoursModalBody();
+    }));
   body.querySelectorAll('.hours-filter-btn').forEach(btn =>
     btn.addEventListener('click', () => { state.hoursFilter = btn.dataset.filter; renderHoursModalBody(); }));
   body.querySelectorAll('.hours-row').forEach(row =>
