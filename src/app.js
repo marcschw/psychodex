@@ -574,7 +574,7 @@ function navigateTo(tab) {
   if (tab === 'icdf') renderICDFTab();
   if (tab === 'stats') renderStats();
   if (tab === 'settings') renderSettingsTab();
-  if (tab === 'patienten') renderPatientenTab();
+  if (tab === 'diagnosen') renderDiagnosenTab();
 }
 
 // ─── Render ───────────────────────────────────────────────────────────────────
@@ -3000,6 +3000,7 @@ async function applyVerifyXP(slot, therapistCodes, therapistName) {
   const today = new Date().toISOString().slice(0, 10);
   renderDiagnosticReminders(today);
   renderDashboard();
+  if (state.currentTab === 'diagnosen') renderDiagnosenTab();
 }
 
 // ─── Recall Patient Modal ─────────────────────────────────────────────────────
@@ -3124,22 +3125,40 @@ async function openRecallPatientModal(targetSlot, shift) {
   renderItems(false);
 }
 
-// ─── Patienten Tab ────────────────────────────────────────────────────────────
-async function renderPatientenTab() {
-  const el = document.getElementById('patienten-tab-content');
+// ─── Diagnosen Tab ────────────────────────────────────────────────────────────
+
+function _dxCompare(suspectedCodes, therapistCodes) {
+  const susp    = (suspectedCodes  || []).map(c => c.code.trim().toUpperCase());
+  const thCodes = (therapistCodes  || []).map(c => c.code.trim().toUpperCase());
+  const matchKind = (sc, list) => {
+    if (list.includes(sc))                                    return 'exact';
+    if (list.some(tc => tc.slice(0, 3) === sc.slice(0, 3))) return 'partial';
+    if (list.some(tc => tc.slice(0, 2) === sc.slice(0, 2))) return 'partial';
+    return 'miss';
+  };
+  const myRows = susp.map(sc => ({ code: sc, kind: matchKind(sc, thCodes) }));
+  const thRows = thCodes.map(tc => ({ code: tc, kind: matchKind(tc, susp) }));
+  const comparisons = susp.length > 0
+    ? susp.map(sc => DIAGNOSTIC_VERIFY_XP[matchKind(sc, thCodes)])
+    : [DIAGNOSTIC_VERIFY_XP.miss];
+  const xp = comparisons.reduce((s, r) => s + r.xp, 0);
+  return { myRows, thRows, xp };
+}
+
+async function renderDiagnosenTab() {
+  const el = document.getElementById('diagnosen-tab-content');
   if (!el) return;
   el.innerHTML = '<div class="empty-state">Laden…</div>';
 
-  const allSlots  = await db.scheduleSlots.toArray();
-  const patSlots  = allSlots.filter(s => SLOT_TYPES[s.type]?.patientContact || s.type === 'patient');
-  const shiftMap  = Object.fromEntries(state.shifts.map(s => [s.id, s]));
-  const catchMap  = {};
+  const allSlots = await db.scheduleSlots.toArray();
+  const patSlots = allSlots.filter(s => SLOT_TYPES[s.type]?.patientContact || s.type === 'patient');
+  const shiftMap = Object.fromEntries(state.shifts.map(s => [s.id, s]));
+  const catchMap = {};
   state.catches.forEach(c => {
     if (!catchMap[c.slotId]) catchMap[c.slotId] = [];
     catchMap[c.slotId].push(c);
   });
 
-  // Sort by most recent shift first
   patSlots.sort((a, b) => {
     const da = shiftMap[a.shiftId]?.date || '';
     const db2 = shiftMap[b.shiftId]?.date || '';
@@ -3148,67 +3167,158 @@ async function renderPatientenTab() {
 
   const fmtD = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'2-digit' }) : '–';
 
-  state._patientenFilter = state._patientenFilter || 'all';
+  state._diagnosenFilter = state._diagnosenFilter || 'all';
+
+  const isErstgesprach = s => s.type === 'erstgesprach' || s.type === 'erstgespraech';
+  const isVerified = s => !isErstgesprach(s) && !!s.seniorCode;
+  const isOffen    = s => !isErstgesprach(s) && !s.seniorCode;
 
   const filtered = patSlots.filter(s => {
-    if (state._patientenFilter === 'offen')      return !s.seniorCode;
-    if (state._patientenFilter === 'verglichen') return !!s.seniorCode;
+    if (state._diagnosenFilter === 'offen')      return isOffen(s);
+    if (state._diagnosenFilter === 'verglichen') return isVerified(s);
     return true;
   });
 
   const counts = {
     all:        patSlots.length,
-    offen:      patSlots.filter(s => !s.seniorCode).length,
-    verglichen: patSlots.filter(s => !!s.seniorCode).length,
+    offen:      patSlots.filter(s => isOffen(s)).length,
+    verglichen: patSlots.filter(s => isVerified(s)).length,
+  };
+
+  const kindColor = { exact: '#10b981', partial: '#f59e0b', miss: '#ef4444' };
+  const kindLabel = { exact: '✓', partial: '~', miss: '✗' };
+
+  const codeChip = (code, kind, fullCode) => {
+    const col = kindColor[kind];
+    const sym = kindLabel[kind];
+    return `<span class="dx-chip" style="border-color:${col};color:${col}" title="${fullCode||code}">
+      <span class="dx-chip-sym">${sym}</span><span class="dx-chip-code">${code}</span>
+    </span>`;
   };
 
   const rows = filtered.map(s => {
-    const shift   = shiftMap[s.shiftId];
-    const catches = catchMap[s.id] || [];
-    const verified = !!s.seniorCode;
-    const typeIcon = SLOT_TYPES[s.type]?.icon || '👤';
-    const diagHtml = catches.length
-      ? catches.map(c => `
-          <div class="pt-diag-row">
-            <img class="recall-diag-img" src="assets/images/diagnoses/${c.code}.png" alt="" onerror="this.style.display='none'">
-            <span class="recall-diag-code">${c.code}</span>
-            <span class="recall-diag-name">${c.name}</span>
-          </div>`).join('')
-      : '';
-    const termins = [
-      s.terminInterview     ? `📅 Interview: ${fmtD(s.terminInterview)}` : null,
-      s.terminErstgespraech ? `📅 Erstgespräch: ${fmtD(s.terminErstgespraech)}` : null,
-    ].filter(Boolean);
-    const verifyBadge = verified
+    const shift    = shiftMap[s.shiftId];
+    const catches  = catchMap[s.id] || [];
+    const typeDef  = SLOT_TYPES[s.type] || {};
+    const typeIcon = typeDef.icon || '👤';
+    const label    = s.patientNotes || '(kein Kürzel)';
+    const dateStr  = fmtD(shift?.date);
+
+    let bodyHtml = '';
+
+    if (isErstgesprach(s)) {
+      // Erstgespräch: show caught diagnoses directly (you are the therapist)
+      const diagHtml = catches.length
+        ? catches.map(c => `
+            <div class="pt-diag-row">
+              <img class="recall-diag-img" src="assets/images/diagnoses/${c.code}.png" alt="" onerror="this.style.display='none'">
+              <span class="recall-diag-code">${c.code}</span>
+              <span class="recall-diag-name">${c.name}</span>
+            </div>`).join('')
+        : '<span style="color:var(--text-dim);font-size:12px">Keine Diagnosen eingetragen</span>';
+      bodyHtml = `<div class="recall-diag-list" style="margin-top:8px">${diagHtml}</div>`;
+
+    } else if (isVerified(s)) {
+      // Verglichen: side-by-side comparison
+      const thCodes = s.therapistCodes?.length
+        ? s.therapistCodes
+        : (s.seniorCode ? [{ code: s.seniorCode }] : []);
+      const { myRows, thRows, xp } = _dxCompare(s.suspectedCodes, thCodes);
+
+      const myCol = myRows.length
+        ? myRows.map(r => codeChip(r.code, r.kind)).join('')
+        : '<span style="color:var(--text-dim);font-size:12px">–</span>';
+      const thCol = thRows.length
+        ? thRows.map(r => codeChip(r.code, r.kind)).join('')
+        : '<span style="color:var(--text-dim);font-size:12px">–</span>';
+
+      const therapistNameHtml = s.therapistName
+        ? `<div class="pt-therapist-name">Therapeut*In: ${s.therapistName}</div>` : '';
+
+      bodyHtml = `
+        ${therapistNameHtml}
+        <div class="dx-compare-grid">
+          <div class="dx-col">
+            <div class="dx-col-title">Meine Diagnosen</div>
+            <div class="dx-chips">${myCol}</div>
+          </div>
+          <div class="dx-col">
+            <div class="dx-col-title">Experten Diagnosen</div>
+            <div class="dx-chips">${thCol}</div>
+          </div>
+        </div>
+        <div class="dx-xp-row">+${xp} XP</div>`;
+
+    } else {
+      // Offen: show suspected codes + action button
+      const suspHtml = (s.suspectedCodes || []).length
+        ? (s.suspectedCodes).map(c => `
+            <div class="pt-diag-row">
+              <img class="recall-diag-img" src="assets/images/diagnoses/${c.code}.png" alt="" onerror="this.style.display='none'">
+              <span class="recall-diag-code">${c.code}</span>
+              <span class="recall-diag-name">${c.title||''}</span>
+            </div>`).join('')
+        : '<span style="color:var(--text-dim);font-size:12px">Kein Verdacht eingetragen</span>';
+      bodyHtml = `<div class="recall-diag-list" style="margin-top:6px">${suspHtml}</div>`;
+    }
+
+    const badge = isVerified(s)
       ? `<span class="pt-badge pt-badge-done">✓ Verglichen</span>`
-      : (s.terminErstgespraech ? `<span class="pt-badge pt-badge-open">⏳ Offen</span>` : '');
+      : isErstgesprach(s)
+        ? `<span class="pt-badge pt-badge-eg">💬 Erstgespräch</span>`
+        : `<span class="pt-badge pt-badge-open">⏳ Offen</span>`;
+
+    const actionBtn = isVerified(s)
+      ? `<button class="dx-action-btn" data-action="edit" data-slot-id="${s.id}">Bearbeiten</button>`
+      : isErstgesprach(s)
+        ? `<button class="dx-action-btn" data-action="shift" data-shift-id="${s.shiftId}">Dienst öffnen</button>`
+        : `<button class="dx-action-btn dx-action-btn-primary" data-action="verify" data-slot-id="${s.id}">Vergleichen</button>`;
+
     return `
       <div class="pt-item" data-slot-id="${s.id}" data-shift-id="${s.shiftId}">
         <div class="pt-item-header">
           <span class="pt-icon">${typeIcon}</span>
-          <span class="pt-kuerzel">${s.patientNotes || '(kein Kürzel)'}</span>
-          <span class="pt-date">${fmtD(shift?.date)}</span>
-          ${verifyBadge}
+          <span class="pt-kuerzel">${label}</span>
+          <span class="pt-date">${dateStr}</span>
+          ${badge}
         </div>
-        ${termins.map(t => `<div class="pt-termin">${t}</div>`).join('')}
-        ${diagHtml ? `<div class="recall-diag-list">${diagHtml}</div>` : ''}
+        ${bodyHtml}
+        <div class="dx-item-footer">${actionBtn}</div>
       </div>`;
   }).join('');
 
   el.innerHTML = `
-    <div class="section-header" style="position:sticky;top:0;z-index:5;background:var(--bg)">Patienten-Übersicht</div>
+    <div class="section-header" style="position:sticky;top:0;z-index:5;background:var(--bg)">Diagnosen-Übersicht</div>
     <div class="pt-filter-bar">
-      <button class="pt-filter-btn${state._patientenFilter==='all'?' active':''}" data-f="all">Alle (${counts.all})</button>
-      <button class="pt-filter-btn${state._patientenFilter==='offen'?' active':''}" data-f="offen">Offen (${counts.offen})</button>
-      <button class="pt-filter-btn${state._patientenFilter==='verglichen'?' active':''}" data-f="verglichen">Verglichen (${counts.verglichen})</button>
+      <button class="pt-filter-btn${state._diagnosenFilter==='all'?' active':''}" data-f="all">Alle (${counts.all})</button>
+      <button class="pt-filter-btn${state._diagnosenFilter==='offen'?' active':''}" data-f="offen">Offen (${counts.offen})</button>
+      <button class="pt-filter-btn${state._diagnosenFilter==='verglichen'?' active':''}" data-f="verglichen">Verglichen (${counts.verglichen})</button>
     </div>
     <div class="pt-list">${rows || '<div class="empty-state" style="padding:24px 16px">Keine Einträge.</div>'}</div>`;
 
   el.querySelectorAll('.pt-filter-btn').forEach(btn =>
     btn.addEventListener('click', () => {
-      state._patientenFilter = btn.dataset.f;
-      renderPatientenTab();
+      state._diagnosenFilter = btn.dataset.f;
+      renderDiagnosenTab();
     }));
+
+  el.querySelectorAll('[data-action="edit"],[data-action="verify"]').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const slotId = parseInt(btn.dataset.slotId);
+      const slot   = (await db.scheduleSlots.get(slotId));
+      if (slot) openVerifyModal(slot);
+    });
+  });
+
+  el.querySelectorAll('[data-action="shift"]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const shiftId = parseInt(btn.dataset.shiftId);
+      navigateTo('home');
+      openShiftDetailModal(shiftId);
+    });
+  });
 
   el.querySelectorAll('.pt-item').forEach(item =>
     item.addEventListener('click', () => {
