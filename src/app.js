@@ -2646,13 +2646,41 @@ function openSlotEditForm(slot, source) {
         <label class="form-label">📅 Erstgesprächs-Termin</label>
         <input type="date" id="slot-edit-termin-erst" class="form-input" value="${slot.terminErstgespraech || ''}">
       </div>` : '';
+
+  const slotCatchesForEdit = isPatient ? state.catches.filter(c => c.slotId === slot.id) : [];
+  const firstCatch = slotCatchesForEdit[0];
+  const editAgeGroup = slot.ageGroup || firstCatch?.ageGroup || '';
+  const editGender   = slot.gender   || firstCatch?.gender   || '';
+
   const patientFields = isPatient ? `
     <div class="form-row">
       <label class="form-label">🔖 Kürzel / Notiz</label>
       <input type="text" id="slot-edit-notes" class="form-input" placeholder="Codename…" value="${(slot.patientNotes || '').replace(/"/g,'&quot;')}">
     </div>
+    <div class="form-row">
+      <label class="form-label">👤 Altersgruppe</label>
+      <select id="slot-edit-agegroup" class="form-input">
+        <option value="">—</option>
+        <option value="18-30" ${editAgeGroup==='18-30'?'selected':''}>18–30 J.</option>
+        <option value="31-50" ${editAgeGroup==='31-50'?'selected':''}>31–50 J.</option>
+        <option value="51+"   ${editAgeGroup==='51+'  ?'selected':''}>51+ J.</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">⚧ Geschlecht</label>
+      <select id="slot-edit-gender" class="form-input">
+        <option value="">—</option>
+        <option value="weiblich" ${editGender==='weiblich'?'selected':''}>Weiblich</option>
+        <option value="männlich" ${editGender==='männlich'?'selected':''}>Männlich</option>
+        <option value="divers"   ${editGender==='divers'  ?'selected':''}>Divers</option>
+      </select>
+    </div>
     <div class="form-row" style="flex-direction:column;align-items:stretch;gap:8px">
-      <label class="form-label">🎯 Diagnosen</label>
+      <label class="form-label">🩺 Erfasste Diagnosen</label>
+      <div id="slot-edit-catches-wrap"></div>
+    </div>
+    <div class="form-row" style="flex-direction:column;align-items:stretch;gap:8px">
+      <label class="form-label">🎯 Verdachts-Diagnosen</label>
       <div class="susp-chips-wrap" id="susp-chips-wrap"></div>
       <div class="susp-inline-wrap hidden" id="susp-search-wrap">
         <input type="text" id="susp-search-q" class="form-input" placeholder="Diagnose suchen…" autocomplete="off">
@@ -2724,6 +2752,32 @@ function openSlotEditForm(slot, source) {
     };
     renderSuspChips();
 
+    const renderCatchChips = () => {
+      const wrap = document.getElementById('slot-edit-catches-wrap');
+      if (!wrap) return;
+      const cats = state.catches.filter(c => c.slotId === slot.id);
+      if (!cats.length) {
+        wrap.innerHTML = '<span style="color:var(--text-muted);font-size:0.85rem">(keine)</span>';
+        return;
+      }
+      wrap.innerHTML = cats.map(c =>
+        `<span class="susp-chip">
+          <span class="susp-chip-code">${c.code}</span>
+          <span class="susp-chip-title">${c.name || ''}</span>
+          <button type="button" class="susp-chip-rm" data-catch-id="${c.id}">✕</button>
+        </span>`
+      ).join('');
+      wrap.querySelectorAll('.susp-chip-rm[data-catch-id]').forEach(btn =>
+        btn.addEventListener('click', async e => {
+          e.preventDefault();
+          await db.caughtDiagnoses.delete(parseInt(btn.dataset.catchId));
+          state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
+          renderCatchChips();
+        })
+      );
+    };
+    renderCatchChips();
+
     document.getElementById('btn-susp-add')?.addEventListener('click', e => {
       e.preventDefault();
       const wrap = document.getElementById('susp-search-wrap');
@@ -2792,6 +2846,8 @@ async function saveSlotEdit(slot, source) {
   const terminErstgespraech = document.getElementById('slot-edit-termin-erst')?.value || undefined;
   const ausfallChecked = document.getElementById('slot-edit-ausfall')?.checked ?? false;
   const wasAusfall = slot.ausfall;
+  const ageGroup = isPatient ? (document.getElementById('slot-edit-agegroup')?.value || null) : undefined;
+  const gender   = isPatient ? (document.getElementById('slot-edit-gender')?.value   || null) : undefined;
 
   const updates = {
     startHour: sh, startMinute: sm,
@@ -2803,9 +2859,22 @@ async function saveSlotEdit(slot, source) {
     ...(terminInterview !== undefined && { terminInterview }),
     ...(terminErstgespraech !== undefined && { terminErstgespraech }),
     ...(isPatient && { ausfall: ausfallChecked }),
+    ...(ageGroup !== undefined && { ageGroup }),
+    ...(gender   !== undefined && { gender }),
   };
 
   await db.scheduleSlots.update(slot.id, updates);
+
+  if (isPatient && (ageGroup !== undefined || gender !== undefined)) {
+    const linkedCatches = await db.caughtDiagnoses.where('slotId').equals(slot.id).toArray();
+    for (const c of linkedCatches) {
+      await db.caughtDiagnoses.update(c.id, {
+        ...(ageGroup !== undefined && ageGroup && { ageGroup }),
+        ...(gender   !== undefined && gender   && { gender }),
+      });
+    }
+    state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
+  }
 
   document.getElementById('slot-detail-modal').classList.add('hidden');
 
@@ -6718,27 +6787,49 @@ async function renderShiftDetailBody(shift) {
       e.stopPropagation();
       body.querySelectorAll('.move-patient-menu').forEach(m => m.remove());
       const pkey = btn.dataset.pkey;
-      const candidates = state.shifts
-        .filter(s => s.id !== shift.id && !s.plannerActive)
-        .slice(0, 10);
-      if (!candidates.length) { alert('Keine anderen Dienste vorhanden.'); return; }
+      const p = patientMap.get(isNaN(pkey) ? pkey : parseInt(pkey));
+
+      const allShifts = state.shifts.slice().sort((a, b) => a.date.localeCompare(b.date));
+      const shiftOptions = allShifts.map(sh =>
+        `<option value="${sh.id}" ${sh.id === shift.id ? 'selected' : ''}>${fmtDateShort(sh.date)} ${shiftIcon(sh.type)} ${shiftLabel(sh.type)}${sh.id === shift.id ? ' (aktuell)' : ''}</option>`
+      ).join('');
+
+      const currentTimeVal = p?.patientTime != null
+        ? `${String(p.patientTime).padStart(2,'0')}:00`
+        : '';
+
       const menu = document.createElement('div');
-      menu.className = 'move-patient-menu';
-      const title = document.createElement('div');
-      title.className = 'move-patient-title';
-      title.textContent = 'Termin verschieben in:';
-      menu.appendChild(title);
-      candidates.forEach(s => {
-        const opt = document.createElement('button');
-        opt.className = 'move-diag-option';
-        opt.textContent = `→ ${fmtDateShort(s.date)} ${shiftIcon(s.type)} ${shiftLabel(s.type)}`;
-        opt.addEventListener('click', async () => {
-          menu.remove();
-          await movePatientToShift(pkey, shift, s.id, patientMap);
-        });
-        menu.appendChild(opt);
-      });
+      menu.className = 'move-patient-menu slot-move-menu';
+      menu.innerHTML = `
+        <div class="slot-move-menu-inner">
+          <div class="slot-move-row">
+            <label>Uhrzeit</label>
+            <input type="time" id="move-patient-time" value="${currentTimeVal}" placeholder="—">
+          </div>
+          <div class="slot-move-row">
+            <label>Dienst</label>
+            <select id="move-patient-shift">${shiftOptions}</select>
+          </div>
+          <div class="slot-move-actions">
+            <button class="btn-primary move-patient-confirm">Verschieben</button>
+            <button class="btn-secondary move-patient-cancel">Abbrechen</button>
+          </div>
+        </div>`;
       btn.closest('.patient-section-header').after(menu);
+
+      menu.querySelector('.move-patient-cancel').addEventListener('click', e => {
+        e.stopPropagation();
+        menu.remove();
+      });
+
+      menu.querySelector('.move-patient-confirm').addEventListener('click', async e => {
+        e.stopPropagation();
+        const timeVal    = menu.querySelector('#move-patient-time').value;
+        const newShiftId = parseInt(menu.querySelector('#move-patient-shift').value);
+        const newTime    = timeVal ? parseInt(timeVal.split(':')[0]) : null;
+        menu.remove();
+        await movePatientToShift(pkey, shift, newShiftId, patientMap, newTime);
+      });
     });
   });
 
@@ -6829,7 +6920,7 @@ async function saveShiftNote(shift, noteText) {
   }
 }
 
-async function movePatientToShift(pkey, sourceShift, targetShiftId, patientMap) {
+async function movePatientToShift(pkey, sourceShift, targetShiftId, patientMap, newPatientTime = undefined) {
   const keyVal = isNaN(pkey) ? pkey : parseInt(pkey);
   const p = patientMap.get(keyVal);
   if (!p || !p.catches.length) return;
@@ -6838,8 +6929,11 @@ async function movePatientToShift(pkey, sourceShift, targetShiftId, patientMap) 
   const targetCatches = state.catches.filter(c => c.shiftId === targetShiftId);
   const newPIdx = targetCatches.reduce((m, c) => Math.max(m, c.patientIndex ?? -1), -1) + 1;
 
+  const catchUpdates = { shiftId: targetShiftId, patientIndex: newPIdx };
+  if (newPatientTime !== undefined) catchUpdates.patientTime = newPatientTime;
+
   for (const c of p.catches) {
-    await db.caughtDiagnoses.update(c.id, { shiftId: targetShiftId, patientIndex: newPIdx });
+    await db.caughtDiagnoses.update(c.id, catchUpdates);
   }
 
   // Refresh patientCount on both shifts

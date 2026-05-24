@@ -2251,6 +2251,14 @@ img{max-width:100%;display:block}
   background:rgba(255,255,255,.03);border-radius:var(--r);margin-bottom:4px;
 }
 .move-patient-title{font-size:11px;color:var(--text-dim);font-weight:600;padding:2px 0 4px;}
+.slot-move-menu-inner{display:flex;flex-direction:column;gap:10px;}
+.slot-move-row{display:flex;align-items:center;gap:10px;}
+.slot-move-row label{font-size:12px;color:var(--text-dim);width:60px;flex-shrink:0;}
+.slot-move-row input,.slot-move-row select{
+  flex:1;padding:7px 10px;border-radius:8px;font-size:13px;color:var(--text);
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);
+}
+.slot-move-actions{display:flex;gap:8px;justify-content:flex-end;}
 
 /* ── Stats tab clickable cards ──────────────────────────────────────────────── */
 #stat-xp-card,#stat-shifts-card{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s}
