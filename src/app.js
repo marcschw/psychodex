@@ -571,6 +571,7 @@ function navigateTo(tab) {
   if (tabEl) tabEl.classList.add('active');
   if (btnEl) btnEl.classList.add('active');
   if (tab === 'home') renderHomeTab();
+  if (tab === 'diagnosen') renderDiagnosenTab();
   if (tab === 'icdf') renderICDFTab();
   if (tab === 'stats') renderStats();
   if (tab === 'settings') renderSettingsTab();
@@ -2940,15 +2941,31 @@ let _verifyTherapistCodes = [];
 function openVerifyModal(slot) {
   const modal = document.getElementById('verify-modal');
   if (!modal) return;
+  const isEdit = !!(slot.seniorCode || slot.therapistCodes?.length);
   const label = slot.patientNotes ? `„${slot.patientNotes}"` : `Slot #${slot.id}`;
   document.getElementById('verify-modal-label').textContent = label;
-  const suspCodes = slot.suspectedCodes || [];
-  document.getElementById('verify-suspected').innerHTML = suspCodes.length
-    ? suspCodes.map(c => `<span class="susp-chip"><span class="susp-chip-code">${c.code}</span><span class="susp-chip-title">${c.title||''}</span></span>`).join('')
+
+  // Show catches first, then suspectedCodes as fallback for "Dein Verdacht"
+  const slotCatches = state.catches.filter(c => c.slotId === slot.id);
+  const myDx = slotCatches.length > 0
+    ? slotCatches.map(c => ({ code: c.code, title: c.name || '' }))
+    : (slot.suspectedCodes || []);
+  document.getElementById('verify-suspected').innerHTML = myDx.length
+    ? myDx.map(c => `<span class="susp-chip"><span class="susp-chip-code">${c.code}</span><span class="susp-chip-title">${c.title||''}</span></span>`).join('')
     : '<span style="color:var(--text-dim);font-size:13px">(kein Verdacht)</span>';
 
-  document.getElementById('verify-therapist-name').value = '';
-  _verifyTherapistCodes = [];
+  if (isEdit) {
+    _verifyTherapistCodes = slot.therapistCodes?.length
+      ? [...slot.therapistCodes]
+      : (slot.seniorCode ? [{ code: slot.seniorCode, title: '' }] : []);
+    document.getElementById('verify-therapist-name').value = slot.therapistName || '';
+  } else {
+    document.getElementById('verify-therapist-name').value = '';
+    _verifyTherapistCodes = [];
+  }
+
+  const saveBtn = document.getElementById('verify-save');
+  if (saveBtn) saveBtn.textContent = isEdit ? 'Speichern' : 'Vergleichen & XP';
 
   const renderVerifyChips = () => {
     const wrap = document.getElementById('verify-therapist-chips');
@@ -3041,20 +3058,24 @@ async function applyVerifyXP(slot, therapistCodes, therapistName) {
 
   const bestResult = comparisons.reduce((best, r) => r.xp > best.xp ? r : best, comparisons[0]);
 
+  const oldVerifyXP = slot.verifyXP || 0;
+  const xpDiff = totalXP - oldVerifyXP;
+
   const seniorCode = thCodes[0] || '';
   await db.scheduleSlots.update(slot.id, {
     seniorCode,
     therapistCodes,
     ...(therapistName && { therapistName }),
     terminInterviewDone: true,
-    xpEarned: (slot.xpEarned || 0) + totalXP,
+    xpEarned: Math.max(0, (slot.xpEarned || 0) + xpDiff),
+    verifyXP: totalXP,
   });
 
-  const newTotal = (state.profile.totalXP ?? 0) + totalXP;
+  const newTotal = Math.max(0, (state.profile.totalXP ?? 0) + xpDiff);
   await db.profile.update(state.profile.id, { totalXP: newTotal });
   state.profile.totalXP = newTotal;
 
-  showXPPopup(totalXP, bonuses);
+  if (xpDiff > 0) showXPPopup(xpDiff, bonuses);
 
   // Show verify result image briefly
   const imgEl = document.getElementById('verify-result-img');
@@ -3068,6 +3089,7 @@ async function applyVerifyXP(slot, therapistCodes, therapistName) {
   const today = new Date().toISOString().slice(0, 10);
   renderDiagnosticReminders(today);
   renderDashboard();
+  if (state.currentTab === 'diagnosen') renderDiagnosenTab();
 }
 
 // ─── Recall Patient Modal ─────────────────────────────────────────────────────
@@ -5524,6 +5546,23 @@ async function refreshMissionProgress() {
     }
   }
 
+  // Auto-expire missions that are 1+ month+1day old and have >= 2 shifts since activation
+  const nowMs = Date.now();
+  for (const mission of activeMissions) {
+    if (mission.completedAt) continue; // skip already completed
+    const activatedMs = new Date(mission.activatedAt).getTime();
+    const expiryMs = activatedMs + (31 * 24 * 60 * 60 * 1000); // 31 days = 1 month + 1 day approx
+    if (nowMs >= expiryMs) {
+      const shiftsSince = state.shifts.filter(s => (s.createdAt || `${s.date}T00:00:00`) >= mission.activatedAt).length;
+      if (shiftsSince >= 2) {
+        const expiredAt = new Date().toISOString();
+        await db.missions.update(mission.id, { completedAt: expiredAt, timedOut: true });
+        mission.completedAt = expiredAt;
+        anyCompleted = true;
+      }
+    }
+  }
+
   if (anyCompleted) {
     updateHeader();
     if (state.currentTab === 'stats') renderDashboard();
@@ -5724,7 +5763,7 @@ function _renderMissionDetailBody(am) {
   const catchesSince = state.catches.filter(c => c.caughtAt >= am.activatedAt);
   const shiftsSince  = state.shifts.filter(s => (s.createdAt || `${s.date}T00:00:00`) >= am.activatedAt);
   const { current, target } = calcMissionProgress(def, catchesSince, shiftsSince, state.icdFlat);
-  const cbsModal = missionCheckboxes(current, target, def.tier);
+  const cbsModal = missionCheckboxes(current, target, def.tier, def.emoji || '🎯');
   const active = state.missions.filter(m => !m.completedAt).sort((a, b) => a.slotIndex - b.slotIndex);
   const idx = active.findIndex(m => m.id === am.id);
   const dotsHtml = active.length > 1
@@ -5807,12 +5846,12 @@ function openChallengeHistoryModal() {
 
 const MISSION_TIER_COLORS = { 1:'#9ca3af', 2:'#60a5fa', 3:'#a78bfa' };
 
-const missionCheckboxes = (current, target, tier = 3) => {
+const missionCheckboxes = (current, target, tier = 3, emoji = '🎯') => {
   if (target <= 1) return '';
   const color = MISSION_TIER_COLORS[tier] || 'var(--accent)';
   return Array.from({length: target}, (_, i) => {
     const done = i < current;
-    return `<span class="m-cb${done ? ' m-cb--done' : ''}"${done ? ` style="background:${color};border-color:${color}"` : ''}></span>`;
+    return `<span class="m-cb${done ? ' m-cb--done' : ''}" style="font-size:1.1em;${done ? `filter:none;opacity:1;` : 'filter:grayscale(1);opacity:0.35;'}">${emoji}</span>`;
   }).join('');
 };
 
@@ -5845,7 +5884,7 @@ function renderHomeMissions() {
     const catchesSince = state.catches.filter(c => c.caughtAt >= am.activatedAt);
     const shiftsSince  = state.shifts.filter(s => (s.createdAt || `${s.date}T00:00:00`) >= am.activatedAt);
     const { current, target } = calcMissionProgress(def, catchesSince, shiftsSince, state.icdFlat);
-    const cbs = missionCheckboxes(current, target, def.tier);
+    const cbs = missionCheckboxes(current, target, def.tier, def.emoji || '🎯');
     return `<button class="hm-mission-pill tier-${def.tier}" data-mission-id="${am.id}">
       <div class="hm-mp-dots">${cbs}</div>
       <div class="hm-mp-body">
@@ -5933,7 +5972,7 @@ function renderMissions() {
     const dateStr = done && am.completedAt
       ? new Date(am.completedAt).toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'2-digit' })
       : null;
-    const cbs = done ? '' : missionCheckboxes(current, target, mDef.tier);
+    const cbs = done ? '' : missionCheckboxes(current, target, mDef.tier, mDef.emoji || '🎯');
     const doneLabel = done ? `<span class="m-done-date">${dateStr || '✓'}</span>` : '';
     return `
       <div class="mission-card tier-${mDef.tier}${done ? ' mission-card--done' : ''}">
@@ -5981,6 +6020,168 @@ function renderMissions() {
         if (!mDef) return '';
         return missionCardHtml(am, mDef, 100, 1, 1, true);
       }).join('');
+}
+
+// ─── Diagnosen Tab ────────────────────────────────────────────────────────────
+function _dxMatchKind(sc, thCodes) {
+  if (thCodes.includes(sc))                                    return 'exact';
+  if (thCodes.some(tc => tc.slice(0, 3) === sc.slice(0, 3))) return 'partial';
+  if (thCodes.some(tc => tc.slice(0, 2) === sc.slice(0, 2))) return 'partial';
+  return 'miss';
+}
+
+async function renderDiagnosenTab() {
+  const el = document.getElementById('diagnosen-tab-content');
+  if (!el) return;
+
+  const filter = document.querySelector('.dx-filter-btn.active')?.dataset.filter || 'all';
+
+  // Wire filter buttons (idempotent)
+  document.querySelectorAll('.dx-filter-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.dx-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderDiagnosenTab();
+    };
+  });
+
+  const allSlots = await db.scheduleSlots.toArray();
+  const patientSlots = allSlots
+    .filter(s => !!SLOT_TYPES[s.type]?.patientContact)
+    .sort((a, b) => {
+      const shiftA = state.shifts.find(sh => sh.id === a.shiftId);
+      const shiftB = state.shifts.find(sh => sh.id === b.shiftId);
+      const dateA = shiftA?.date || '';
+      const dateB = shiftB?.date || '';
+      if (dateA !== dateB) return dateB.localeCompare(dateA);
+      return (a.startHour * 60 + (a.startMinute || 0)) - (b.startHour * 60 + (b.startMinute || 0));
+    });
+
+  const isVerified = s => !!(s.seniorCode || s.therapistCodes?.length);
+  const isOffen    = s => !isVerified(s);
+
+  const visible = patientSlots.filter(s => {
+    if (filter === 'verified') return isVerified(s);
+    if (filter === 'offen')    return isOffen(s);
+    return true;
+  });
+
+  if (!visible.length) {
+    el.innerHTML = '<div class="empty-state">Keine Patiententermine gefunden.</div>';
+    return;
+  }
+
+  const fmtD = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '–';
+
+  let html = '';
+  for (const s of visible) {
+    const def      = SLOT_TYPES[s.type] || {};
+    const shift    = state.shifts.find(sh => sh.id === s.shiftId);
+    const timeStr  = padT(s.startHour, s.startMinute ?? 0);
+    const dateStr  = shift ? fmtD(shift.date) : '–';
+    const verified = isVerified(s);
+    const kuerzel  = s.patientNotes || '';
+
+    const slotCatches = state.catches.filter(c => c.slotId === s.id);
+    const myDxObjs = slotCatches.length > 0
+      ? slotCatches.map(c => ({ code: c.code.trim().toUpperCase(), title: c.name || '' }))
+      : (s.suspectedCodes || []).map(c => ({ code: c.code.trim().toUpperCase(), title: c.title || '' }));
+
+    let bodyHtml = '';
+    if (verified) {
+      const thObjs = (s.therapistCodes || []).map(c => ({ code: c.code.trim().toUpperCase(), title: c.title || '' }));
+      if (!thObjs.length && s.seniorCode) thObjs.push({ code: s.seniorCode.trim().toUpperCase(), title: '' });
+      const thCodes = thObjs.map(o => o.code);
+      const myCodes = myDxObjs.map(o => o.code);
+
+      const myRows = myDxObjs.map(o => ({ ...o, kind: _dxMatchKind(o.code, thCodes) }));
+      const thRows = thObjs.map(o => ({ ...o, kind: _dxMatchKind(o.code, myCodes) }));
+
+      const kindClass = k => k === 'exact' ? 'dx-chip dx-chip--exact' : k === 'partial' ? 'dx-chip dx-chip--partial' : 'dx-chip dx-chip--miss';
+      const kindSym   = k => k === 'exact' ? '✓' : k === 'partial' ? '≈' : '✗';
+
+      const myChips = myRows.map(r =>
+        `<button class="${kindClass(r.kind)} dx-chip-clickable" data-code="${r.code}">
+          <span class="dx-chip-sym">${kindSym(r.kind)}</span>
+          <span class="dx-chip-code">${r.code}</span>
+          ${r.title ? `<span class="dx-chip-name">${r.title}</span>` : ''}
+        </button>`
+      ).join('') || '<span class="dx-empty-label">keine</span>';
+
+      const thChips = thRows.map(r =>
+        `<button class="${kindClass(r.kind)} dx-chip-clickable" data-code="${r.code}">
+          <span class="dx-chip-sym">${kindSym(r.kind)}</span>
+          <span class="dx-chip-code">${r.code}</span>
+          ${r.title ? `<span class="dx-chip-name">${r.title}</span>` : ''}
+        </button>`
+      ).join('') || '<span class="dx-empty-label">keine</span>';
+
+      bodyHtml = `
+        <div class="dx-compare-grid">
+          <div class="dx-col">
+            <div class="dx-col-title">Meine Diagnosen</div>
+            <div class="dx-chips">${myChips}</div>
+          </div>
+          <div class="dx-col">
+            <div class="dx-col-title">Therapeut${s.therapistName ? ` · ${s.therapistName}` : ''}</div>
+            <div class="dx-chips">${thChips}</div>
+          </div>
+        </div>
+        <div class="dx-item-footer">
+          <button class="dx-action-btn" data-action="edit" data-slot-id="${s.id}">Bearbeiten</button>
+        </div>`;
+    } else {
+      const catchChips = slotCatches.map(c =>
+        `<button class="dx-chip dx-chip-clickable" data-code="${c.code}">
+          <span class="dx-chip-code">${c.code}</span>
+          <span class="dx-chip-name">${c.name || ''}</span>
+        </button>`
+      ).join('') || '<span class="dx-empty-label">keine Diagnosen erfasst</span>';
+
+      bodyHtml = `
+        <div class="dx-chips" style="margin:8px 0">${catchChips}</div>
+        <div class="dx-item-footer">
+          <button class="dx-action-btn dx-action-btn-primary" data-action="verify" data-slot-id="${s.id}">Vergleichen</button>
+        </div>`;
+    }
+
+    html += `<div class="dx-item">
+      <div class="dx-item-header">
+        <div>
+          <span class="dx-item-type">${def.icon} ${def.label}</span>
+          <span class="dx-item-date">${dateStr} · ${timeStr}</span>
+          ${kuerzel ? `<span class="dx-item-kuerzel">„${kuerzel}"</span>` : ''}
+        </div>
+        <span class="dx-badge ${verified ? 'dx-badge--done' : 'dx-badge--offen'}">${verified ? '✓' : '–'}</span>
+      </div>
+      ${bodyHtml}
+    </div>`;
+  }
+
+  el.innerHTML = html;
+
+  el.querySelectorAll('.dx-chip-clickable[data-code]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      openDiagInfoModal(btn.dataset.code);
+    });
+  });
+
+  el.querySelectorAll('[data-action="verify"][data-slot-id]').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const slot = await db.scheduleSlots.get(parseInt(btn.dataset.slotId));
+      if (slot) openVerifyModal(slot);
+    });
+  });
+
+  el.querySelectorAll('[data-action="edit"][data-slot-id]').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const slot = await db.scheduleSlots.get(parseInt(btn.dataset.slotId));
+      if (slot) openVerifyModal(slot);
+    });
+  });
 }
 
 // ─── ICD-F Tab ────────────────────────────────────────────────────────────────
@@ -7475,7 +7676,7 @@ function renderHoursModalBody() {
   const counterTabs = `
     <div class="hours-counter-tabs">
       ${counters.map(c => `<button class="hct-btn${c.id === state.hoursModalCounter && !isSup ? ' active' : ''}" data-cid="${c.id}">${c.name}</button>`).join('')}
-      <button class="hct-btn${isSup ? ' active' : ''}" data-cid="supervision">🎓 Supervision</button>
+      <button class="hct-btn${isSup ? ' active' : ''}" data-cid="supervision">Supervision</button>
     </div>`;
 
   if (isSup) {
@@ -7587,6 +7788,27 @@ function renderHoursModalBody() {
     targetH, pastShifts, sh => calcShiftHours(sh), sh => sh.date
   );
 
+  // "Mit geplanten" indicator: include future planned shifts
+  const futureShifts = all.filter(s => s.date > todayStr);
+  const plannedH = futureShifts.reduce((sum, s) => sum + calcShiftHours(s), 0);
+  const withPlannedH = totalH + plannedH;
+  let withPlannedHtml = '';
+  if (plannedH > 0) {
+    if (withPlannedH >= targetH) {
+      const allSorted = [...all].sort((a, b) => a.date.localeCompare(b.date));
+      let cumH = 0;
+      let reachDate = null;
+      for (const sh of allSorted) {
+        cumH += calcShiftHours(sh);
+        if (cumH >= targetH) { reachDate = sh.date; break; }
+      }
+      withPlannedHtml = `<div class="hours-planned" style="font-size:12px;color:var(--text-dim);margin-top:4px">Prognose mit Geplanten: ${reachDate ? fmtD(reachDate) : '–'}</div>`;
+    } else {
+      const withPct = Math.round((withPlannedH / targetH) * 100);
+      withPlannedHtml = `<div class="hours-planned" style="font-size:12px;color:var(--text-dim);margin-top:4px">Mit Geplanten: ${withPlannedH.toFixed(1)}h (${withPct}%)</div>`;
+    }
+  }
+
   body.innerHTML = `
     ${counterTabs}
     <div class="hours-summary">
@@ -7594,6 +7816,7 @@ function renderHoursModalBody() {
       <div class="hours-summary-info">
         <div class="hours-total">${totalH.toFixed(1).replace('.0','')}h <span style="font-size:14px;color:var(--text-dim)">/ ${targetH}h</span></div>
         <div class="hours-label">${counter?.name || 'Gesamt'} · ${pct}% erledigt</div>
+        ${withPlannedHtml}
         <div class="hours-range">${fmtD(fromDate)} – ${fmtD(toDate)}</div>
         <div class="hours-type-legend">
           ${nFr ? `<span style="color:#3b82f6">🌅 ${nFr}×</span>` : ''}

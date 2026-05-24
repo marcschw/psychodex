@@ -97,6 +97,16 @@
         </div>
       </section>
 
+      <!-- ── Diagnosen ─────────────────────────────────────────────────────── -->
+      <section id="tab-diagnosen" class="tab-view">
+        <div class="diagnosen-filter-row" id="diagnosen-filter-row">
+          <button class="dx-filter-btn active" data-filter="all">Alle</button>
+          <button class="dx-filter-btn" data-filter="offen">Offen</button>
+          <button class="dx-filter-btn" data-filter="verified">Verglichen</button>
+        </div>
+        <div id="diagnosen-tab-content"></div>
+      </section>
+
       <!-- ── ICD-F ──────────────────────────────────────────────────────────── -->
       <section id="tab-icdf" class="tab-view">
 
@@ -296,6 +306,10 @@
       <button class="nav-btn active" data-tab="home">
         <span class="nav-icon">📅</span>
         <span class="nav-label">Home</span>
+      </button>
+      <button class="nav-btn" data-tab="diagnosen">
+        <span class="nav-icon">🩺</span>
+        <span class="nav-label">Diagnosen</span>
       </button>
       <button class="nav-btn" data-tab="icdf">
         <span class="nav-icon">◉</span>
