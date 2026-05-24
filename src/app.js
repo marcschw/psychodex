@@ -3354,17 +3354,14 @@ async function renderDiagnosenTab() {
   el.querySelectorAll('[data-action="shift"]').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
-      const shiftId = parseInt(btn.dataset.shiftId);
-      navigateTo('home');
-      openShiftDetailModal(shiftId);
+      openShiftDetailModal(parseInt(btn.dataset.shiftId));
     });
   });
 
   el.querySelectorAll('.pt-item').forEach(item =>
-    item.addEventListener('click', () => {
-      const shiftId = parseInt(item.dataset.shiftId);
-      navigateTo('home');
-      openShiftDetailModal(shiftId);
+    item.addEventListener('click', e => {
+      if (e.target.closest('[data-action]')) return;
+      openShiftDetailModal(parseInt(item.dataset.shiftId));
     }));
 }
 
