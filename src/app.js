@@ -6725,23 +6725,44 @@ async function renderShiftDetailBody(shift) {
   const body = document.getElementById('shift-detail-body');
   const shiftCatches = state.catches.filter(c => c.shiftId === shift.id);
 
+  // Load planner slots early so we can use their times in the patient map
+  const shiftSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).toArray();
+  shiftSlots.sort((a, b) => {
+    if (a.sortOrder != null && b.sortOrder != null) return a.sortOrder - b.sortOrder;
+    return (a.startHour * 60 + (a.startMinute || 0)) - (b.startHour * 60 + (b.startMinute || 0));
+  });
+  const slotMap = new Map(shiftSlots.map(s => [s.id, s]));
+  const catchesBySlot = new Map();
+  shiftCatches.forEach(c => {
+    if (c.slotId != null) {
+      if (!catchesBySlot.has(c.slotId)) catchesBySlot.set(c.slotId, []);
+      catchesBySlot.get(c.slotId).push(c);
+    }
+  });
+
   // Group by patientIndex (or fallback to demo combo)
   const patientMap = new Map();
   shiftCatches.forEach(c => {
     const key = c.patientIndex != null ? c.patientIndex : `${c.ageGroup}-${c.gender}-${c.patientType}`;
     if (!patientMap.has(key)) {
+      const slot = c.slotId != null ? slotMap.get(c.slotId) : null;
       patientMap.set(key, {
         ageGroup: c.ageGroup || '?', gender: c.gender || '?',
         patientType: c.patientType || 'erstgespraech',
         patientTime: c.patientTime ?? null,
+        slotStartH: slot ? slot.startHour : null,
+        slotStartM: slot ? (slot.startMinute ?? 0) : null,
         catches: [], index: key
       });
     }
     patientMap.get(key).catches.push(c);
   });
-  // Sort patients chronologically by time, unknown time last
+  // Sort patients by slot time or patientTime, unknown last
+  const toSortMins = p => p.slotStartH != null
+    ? p.slotStartH * 60 + p.slotStartM
+    : p.patientTime != null ? p.patientTime * 60 : 99999;
   const sortedPatients = [...patientMap.entries()]
-    .sort(([, a], [, b]) => (a.patientTime ?? 9999) - (b.patientTime ?? 9999));
+    .sort(([, a], [, b]) => toSortMins(a) - toSortMins(b));
 
   const extMins  = shift.extensionMinutes || 0;
   const shiftH   = calcShiftHours(shift).toFixed(1).replace('.0','');
@@ -6787,12 +6808,19 @@ async function renderShiftDetailBody(shift) {
 
   let pNum = 1;
   for (const [, p] of sortedPatients) {
-    const timeStr  = p.patientTime != null ? `${String(p.patientTime).padStart(2,'0')}:00 Uhr · ` : '';
-    const typeLabel = p.patientType === 'erstgespraech' ? 'Erstgespräch' : 'Interview';
-    const termLabel = p.patientTime != null
-      ? `Termin ${String(p.patientTime).padStart(2,'0')}:00`
-      : `Termin ${pNum}`;
-    const demoLabel = `${timeStr}${p.ageGroup} J · ${p.gender} · ${typeLabel}`;
+    const timeStr = p.slotStartH != null
+      ? `${padT(p.slotStartH, p.slotStartM)} Uhr · `
+      : p.patientTime != null
+        ? `${String(p.patientTime).padStart(2,'0')}:00 Uhr · `
+        : '';
+    const timeKey = p.slotStartH != null
+      ? padT(p.slotStartH, p.slotStartM)
+      : p.patientTime != null ? `${String(p.patientTime).padStart(2,'0')}:00` : null;
+    const typeLabel  = p.patientType === 'erstgespraech' ? 'Erstgespräch' : 'Interview';
+    const termLabel  = timeKey ? `Termin ${timeKey}` : `Termin ${pNum}`;
+    const ageStr     = (p.ageGroup && p.ageGroup !== 'unbekannt') ? `${p.ageGroup} J · ` : '';
+    const genderStr  = (p.gender  && p.gender  !== 'unbekannt') ? `${p.gender} · ` : '';
+    const demoLabel  = `${timeStr}${ageStr}${genderStr}${typeLabel}`;
     html += `<div class="patient-section" data-pkey="${p.index}">
       <div class="patient-section-header">
         <div>
@@ -6833,33 +6861,65 @@ async function renderShiftDetailBody(shift) {
     + Neuer Termin & Diagnose
   </button>`;
 
-  // Planner slots section — always show for any shift that has slots or plannerShift flag
-  const shiftSlots = await db.scheduleSlots.where('shiftId').equals(shift.id).toArray();
-  shiftSlots.sort((a, b) => {
-    if (a.sortOrder != null && b.sortOrder != null) return a.sortOrder - b.sortOrder;
-    return (a.startHour * 60 + (a.startMinute || 0)) - (b.startHour * 60 + (b.startMinute || 0));
-  });
+  // Planner slots section — shiftSlots already loaded above
   if (shiftSlots.length || shift.plannerShift) {
+    const slotRowsHtml = shiftSlots.length ? shiftSlots.map(sl => {
+      const def       = SLOT_TYPES[sl.type] || {};
+      const isPatient = !!def.patientContact;
+      const slotCatches = (catchesBySlot.get(sl.id) || [])
+        .sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999));
+
+      const suspHtml = isPatient && (sl.suspectedCodes || []).length
+        ? `<div class="dsd-row-chips">${sl.suspectedCodes.map(c =>
+            `<span class="dsd-chip dsd-chip-susp" title="${c.title||''}">${c.code}</span>`).join('')}</div>`
+        : '';
+
+      const thCodes = sl.therapistCodes?.length
+        ? sl.therapistCodes
+        : (sl.seniorCode ? [{ code: sl.seniorCode }] : []);
+      const thHtml = isPatient && thCodes.length
+        ? `<div class="dsd-row-chips">${thCodes.map(c =>
+            `<span class="dsd-chip dsd-chip-th" title="${c.title||''}">${c.code}</span>`).join('')}
+          ${sl.therapistName ? `<span class="dsd-therapist">${sl.therapistName}</span>` : ''}
+          </div>`
+        : '';
+
+      const catchesHtml = isPatient && slotCatches.length
+        ? `<div class="dsd-catches">${slotCatches.map(c => `
+            <div class="dsd-catch-row">
+              <img class="recall-diag-img" src="assets/images/diagnoses/${c.code}.png" alt="" onerror="this.style.display='none'">
+              <span class="dsd-catch-code">${c.code}</span>
+              <span class="dsd-catch-name">${c.name}</span>
+            </div>`).join('')}</div>`
+        : '';
+
+      const kuerzel = sl.patientNotes
+        ? `<span class="dsd-kuerzel">${sl.patientNotes}</span>` : '';
+
+      return `<div class="detail-slot-row" data-slot-id="${sl.id}" data-sid="${sl.id}">
+        <span class="drag-handle" data-drag title="Verschieben">⠿</span>
+        <div class="detail-slot-info dsd-full">
+          <div class="dsd-header">
+            <span class="detail-slot-icon">${def.icon || '📌'}</span>
+            <span class="detail-slot-label">${def.label || sl.type}</span>
+            <span class="detail-slot-time">${padT(sl.startHour,sl.startMinute)}–${padT(sl.endHour,sl.endMinute)} · +${sl.xpEarned} XP</span>
+            ${kuerzel}
+            <button class="btn-icon detail-slot-del" data-slot-id="${sl.id}" style="margin-left:auto">🗑</button>
+          </div>
+          ${sl.comment ? `<span class="detail-slot-comment">${sl.comment}</span>` : ''}
+          ${suspHtml}
+          ${catchesHtml}
+          ${thHtml}
+        </div>
+      </div>`;
+    }).join('') : '<div class="detail-slots-empty">Keine Einträge</div>';
+
     html += `<div class="detail-slots-section">
       <div class="detail-slots-header">
         <span class="detail-slots-title">📋 Planer-Einträge</span>
         <button class="btn-secondary detail-add-slot-btn" id="btn-detail-add-slot">+ Eintrag</button>
       </div>
-      <div class="detail-slots-list" id="detail-slots-sortable">
-        ${shiftSlots.length ? shiftSlots.map(sl => {
-          const def = SLOT_TYPES[sl.type] || {};
-          return `<div class="detail-slot-row" data-slot-id="${sl.id}" data-sid="${sl.id}">
-            <span class="drag-handle" data-drag title="Verschieben">⠿</span>
-            <span class="detail-slot-icon">${def.icon || '📌'}</span>
-            <div class="detail-slot-info">
-              <span class="detail-slot-label">${def.label || sl.type}</span>
-              <span class="detail-slot-time">${padT(sl.startHour,sl.startMinute)}–${padT(sl.endHour,sl.endMinute)} · +${sl.xpEarned} XP</span>
-              ${sl.comment ? `<span class="detail-slot-comment">${sl.comment}</span>` : ''}
-            </div>
-            <button class="btn-icon detail-slot-del" data-slot-id="${sl.id}">🗑</button>
-          </div>`;
-        }).join('') : '<div class="detail-slots-empty">Keine Einträge</div>'}
-      </div>
+      <div class="detail-slots-list" id="detail-slots-sortable">${slotRowsHtml}</div>
     </div>`;
   }
 
@@ -7124,8 +7184,11 @@ function togglePatientEditRow(pkey, shiftId, patientMap) {
       // Update display in patient section header
       const demoEl = section.querySelector('.patient-section-demo');
       if (demoEl) {
-        const timeStr  = p.patientTime != null ? ` · ${String(p.patientTime).padStart(2,'0')}:00 Uhr` : '';
-        demoEl.textContent = `${p.ageGroup} J · ${p.gender} · ${p.patientType === 'erstgespraech' ? 'Erstgespräch' : 'Interview'}${timeStr}`;
+        const timeStr   = p.patientTime != null ? `${String(p.patientTime).padStart(2,'0')}:00 Uhr · ` : '';
+        const ageStr2   = (p.ageGroup && p.ageGroup !== 'unbekannt') ? `${p.ageGroup} J · ` : '';
+        const genStr2   = (p.gender   && p.gender   !== 'unbekannt') ? `${p.gender} · ` : '';
+        const typeLabel = p.patientType === 'erstgespraech' ? 'Erstgespräch' : 'Interview';
+        demoEl.textContent = `${timeStr}${ageStr2}${genStr2}${typeLabel}`;
       }
     });
   });

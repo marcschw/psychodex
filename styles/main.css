@@ -1982,9 +1982,22 @@ img{max-width:100%;display:block}
 .detail-slots-title{font-size:13px;font-weight:600}
 .detail-add-slot-btn{font-size:12px;padding:5px 10px}
 .detail-slots-list{padding:8px 0}
-.detail-slot-row{display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer}
+.detail-slot-row{display:flex;align-items:flex-start;gap:8px;padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05)}
+.detail-slot-row:last-child{border-bottom:none}
 .detail-slot-row:hover{background:var(--bg-hover)}
 .detail-slot-icon{font-size:18px;flex-shrink:0}
+.dsd-full{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.dsd-header{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dsd-kuerzel{font-size:11px;background:rgba(124,58,237,.15);color:var(--accent);border-radius:4px;padding:1px 6px;font-weight:600}
+.dsd-row-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.dsd-chip{font-size:11px;padding:2px 6px;border-radius:5px;font-weight:600;font-family:monospace}
+.dsd-chip-susp{background:rgba(245,158,11,.1);color:#f59e0b;border:1px solid rgba(245,158,11,.2)}
+.dsd-chip-th{background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.2)}
+.dsd-therapist{font-size:11px;color:var(--text-dim);align-self:center}
+.dsd-catches{display:flex;flex-direction:column;gap:3px;margin-top:2px}
+.dsd-catch-row{display:flex;align-items:center;gap:6px}
+.dsd-catch-code{font-size:12px;font-weight:700;font-family:monospace;color:var(--accent-cyan)}
+.dsd-catch-name{font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .detail-slot-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .detail-slot-label{font-size:13px;font-weight:600}
 .detail-slot-time{font-size:11px;color:var(--text-muted)}
