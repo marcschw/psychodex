@@ -2872,15 +2872,30 @@ let _verifyTherapistCodes = [];
 function openVerifyModal(slot) {
   const modal = document.getElementById('verify-modal');
   if (!modal) return;
+  const isEdit = !!slot.seniorCode;
   const label = slot.patientNotes ? `„${slot.patientNotes}"` : `Slot #${slot.id}`;
   document.getElementById('verify-modal-label').textContent = label;
-  const suspCodes = slot.suspectedCodes || [];
-  document.getElementById('verify-suspected').innerHTML = suspCodes.length
-    ? suspCodes.map(c => `<span class="susp-chip"><span class="susp-chip-code">${c.code}</span><span class="susp-chip-title">${c.title||''}</span></span>`).join('')
-    : '<span style="color:var(--text-dim);font-size:13px">(kein Verdacht)</span>';
 
-  document.getElementById('verify-therapist-name').value = '';
-  _verifyTherapistCodes = [];
+  // "Dein Verdacht": prefer actual caught diagnoses, fallback to suspectedCodes
+  const slotCatches = state.catches.filter(c => c.slotId === slot.id);
+  const myDx = slotCatches.length > 0
+    ? slotCatches.map(c => ({ code: c.code, title: c.name }))
+    : (slot.suspectedCodes || []);
+  document.getElementById('verify-suspected').innerHTML = myDx.length
+    ? myDx.map(c => `<span class="susp-chip"><span class="susp-chip-code">${c.code}</span><span class="susp-chip-title">${c.title||''}</span></span>`).join('')
+    : '<span style="color:var(--text-dim);font-size:13px">(keine eigenen Diagnosen)</span>';
+
+  // Pre-fill therapist data when editing an already-verified slot
+  if (isEdit) {
+    _verifyTherapistCodes = slot.therapistCodes?.length
+      ? [...slot.therapistCodes]
+      : (slot.seniorCode ? [{ code: slot.seniorCode, title: '' }] : []);
+    document.getElementById('verify-therapist-name').value = slot.therapistName || '';
+  } else {
+    _verifyTherapistCodes = [];
+    document.getElementById('verify-therapist-name').value = '';
+  }
+  document.getElementById('verify-save').textContent = isEdit ? 'Speichern' : 'Vergleichen & XP';
 
   const renderVerifyChips = () => {
     const wrap = document.getElementById('verify-therapist-chips');
@@ -2937,23 +2952,43 @@ function openVerifyModal(slot) {
     if (!_verifyTherapistCodes.length) { alert('Bitte mindestens eine Diagnose hinzufügen.'); return; }
     const therapistName = document.getElementById('verify-therapist-name').value.trim();
     modal.classList.add('hidden');
-    await applyVerifyXP(slot, _verifyTherapistCodes, therapistName);
+    await applyVerifyXP(slot, _verifyTherapistCodes, therapistName, isEdit);
   };
 }
 
-async function applyVerifyXP(slot, therapistCodes, therapistName) {
-  const susp    = (slot.suspectedCodes || []).map(c => c.code.trim().toUpperCase());
+async function applyVerifyXP(slot, therapistCodes, therapistName, isEdit = false) {
+  const seniorCode = therapistCodes.map(c => c.code.trim().toUpperCase())[0] || '';
+
+  if (isEdit) {
+    // Editing an already-verified slot: update data only, no XP change
+    await db.scheduleSlots.update(slot.id, {
+      seniorCode,
+      therapistCodes,
+      therapistName: therapistName || slot.therapistName || '',
+    });
+    state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(slot.shiftId).sortBy('startHour');
+    if (state.currentTab === 'diagnosen') renderDiagnosenTab();
+    if (state.currentTab === 'home') {
+      const openShift = state.shifts.find(s => s.id === slot.shiftId);
+      if (openShift) renderShiftDetailBody(openShift);
+    }
+    return;
+  }
+
+  // First-time verification: calculate XP from catches (or suspectedCodes as fallback)
+  const slotCatches = state.catches.filter(c => c.slotId === slot.id);
+  const myDx = slotCatches.length > 0
+    ? slotCatches.map(c => c.code.trim().toUpperCase())
+    : (slot.suspectedCodes || []).map(c => c.code.trim().toUpperCase());
   const thCodes = therapistCodes.map(c => c.code.trim().toUpperCase());
 
-  // Evaluate each suspected code independently against all therapist codes
-  const comparisons = susp.length > 0
-    ? susp.map(sc => {
-        if (thCodes.includes(sc)) return DIAGNOSTIC_VERIFY_XP.exact;
-        if (thCodes.some(tc => tc.slice(0, 3) === sc.slice(0, 3))) return DIAGNOSTIC_VERIFY_XP.partial;
-        if (thCodes.some(tc => tc.slice(0, 2) === sc.slice(0, 2))) return DIAGNOSTIC_VERIFY_XP.partial;
-        return DIAGNOSTIC_VERIFY_XP.miss;
-      })
-    : [DIAGNOSTIC_VERIFY_XP.miss];
+  const matchKind = sc => {
+    if (thCodes.includes(sc))                                    return DIAGNOSTIC_VERIFY_XP.exact;
+    if (thCodes.some(tc => tc.slice(0, 3) === sc.slice(0, 3))) return DIAGNOSTIC_VERIFY_XP.partial;
+    if (thCodes.some(tc => tc.slice(0, 2) === sc.slice(0, 2))) return DIAGNOSTIC_VERIFY_XP.partial;
+    return DIAGNOSTIC_VERIFY_XP.miss;
+  };
+  const comparisons = myDx.length > 0 ? myDx.map(matchKind) : [DIAGNOSTIC_VERIFY_XP.miss];
 
   let totalXP = comparisons.reduce((s, r) => s + r.xp, 0);
 
@@ -2963,7 +2998,6 @@ async function applyVerifyXP(slot, therapistCodes, therapistName) {
     state.profile.verifyBoost20 = false;
   }
 
-  // Group by label for the XP popup
   const counts = {};
   comparisons.forEach(r => { counts[r.label] = (counts[r.label] || 0) + 1; });
   const bonuses = Object.entries(counts).map(([label, count]) => {
@@ -2973,11 +3007,10 @@ async function applyVerifyXP(slot, therapistCodes, therapistName) {
 
   const bestResult = comparisons.reduce((best, r) => r.xp > best.xp ? r : best, comparisons[0]);
 
-  const seniorCode = thCodes[0] || '';
   await db.scheduleSlots.update(slot.id, {
     seniorCode,
     therapistCodes,
-    ...(therapistName && { therapistName }),
+    therapistName: therapistName || '',
     terminInterviewDone: true,
     xpEarned: (slot.xpEarned || 0) + totalXP,
   });
@@ -2988,7 +3021,6 @@ async function applyVerifyXP(slot, therapistCodes, therapistName) {
 
   showXPPopup(totalXP, bonuses);
 
-  // Show verify result image briefly
   const imgEl = document.getElementById('verify-result-img');
   if (imgEl) {
     imgEl.src = bestResult.img;
@@ -3001,6 +3033,10 @@ async function applyVerifyXP(slot, therapistCodes, therapistName) {
   renderDiagnosticReminders(today);
   renderDashboard();
   if (state.currentTab === 'diagnosen') renderDiagnosenTab();
+  if (state.currentTab === 'home') {
+    const openShift = state.shifts.find(s => s.id === slot.shiftId);
+    if (openShift) renderShiftDetailBody(openShift);
+  }
 }
 
 // ─── Recall Patient Modal ─────────────────────────────────────────────────────
