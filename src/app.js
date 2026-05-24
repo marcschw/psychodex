@@ -1383,6 +1383,19 @@ function openTeamModal(shift) {
     const rcDisplay    = display.filter(c => effectiveTeam(c) === 'D' || effectiveTeam(c) === 'T');
     const otherDisplay = display.filter(c => effectiveTeam(c) !== 'D' && effectiveTeam(c) !== 'T' && !c._self);
 
+    // Sort: Senior first, then by stunden desc, Training last (keep their relative order)
+    rcDisplay.sort((a, b) => {
+      const aSen = effectiveTeam(a) === 'D' && (a.funktion || '').toLowerCase().includes('senior');
+      const bSen = effectiveTeam(b) === 'D' && (b.funktion || '').toLowerCase().includes('senior');
+      const aTrn = effectiveTeam(a) === 'T';
+      const bTrn = effectiveTeam(b) === 'T';
+      if (aSen && !bSen) return -1;
+      if (!aSen && bSen) return 1;
+      if (aTrn && !bTrn) return 1;
+      if (!aTrn && bTrn) return -1;
+      return (b.stunden || 0) - (a.stunden || 0);
+    });
+
     const present = rcDisplay.filter(c => c.present).length;
     const fehlen  = rcDisplay.length - present;
 
@@ -1408,6 +1421,7 @@ function openTeamModal(shift) {
               <div class="team-colleague-name">${c.name}${c._self ? ' <span class="team-self-badge">Ich</span>' : ''}</div>
               <div class="team-colleague-func" style="color:${isSenior(c) ? '#f59e0b' : ''}">${c.funktion}</div>
             </div>
+            ${!hideIcons && c.stunden != null ? `<div class="team-colleague-seniority">${c.stunden}h · ${c.pct != null ? c.pct + '%' : ''}</div>` : ''}
             ${!hideIcons && (c.tags||[]).length ? `<div class="team-colleague-tags">${tagIconsHTML(c.tags)}</div>` : ''}
             ${!c._self ? `
               <button class="rc-edit-btn" data-wi="${c._wi}" title="Bearbeiten">✏️</button>
@@ -1424,6 +1438,14 @@ function openTeamModal(shift) {
         <button class="rc-add-btn" id="rc-add-btn">${editing ? '✓' : '＋'}</button>
         ${editing ? `<button class="rc-cancel-btn" id="rc-cancel-btn">✗</button>` : ''}
       </div>
+      ${editing ? `<div class="rc-seniority-row">
+        <input type="number" class="rc-add-stunden" id="rc-add-stunden" placeholder="Stunden" step="0.1" min="0"
+          value="${editing.stunden != null ? editing.stunden : ''}" style="width:80px">
+        <span style="font-size:12px;color:var(--text-dim)">h</span>
+        <input type="number" class="rc-add-pct" id="rc-add-pct" placeholder="%" step="0.1" min="0" max="100"
+          value="${editing.pct != null ? editing.pct : ''}" style="width:60px">
+        <span style="font-size:12px;color:var(--text-dim)">%</span>
+      </div>` : ''}
       ${editing ? `<div class="rc-tag-row">
         ${Object.entries(TAG_ICONS).map(([k,v]) => `<button class="rc-tag-btn${(editing.tags||[]).includes(k)?' active':''}" data-tag="${k}" title="${TAG_LABELS[k]||k}">${v}</button>`).join('')}
         <span class="rc-tag-hint">Tags</span>
@@ -1476,14 +1498,23 @@ function openTeamModal(shift) {
       const funk = body.querySelector('#rc-add-funk').value;
       if (!name) { body.querySelector('#rc-add-name').focus(); return; }
       const tags = Array.from(body.querySelectorAll('.rc-tag-btn.active')).map(b => b.dataset.tag);
+      const stundenVal = body.querySelector('#rc-add-stunden')?.value;
+      const pctVal     = body.querySelector('#rc-add-pct')?.value;
+      const stunden    = stundenVal !== '' && stundenVal !== null && stundenVal !== undefined ? parseFloat(stundenVal) : undefined;
+      const pct        = pctVal     !== '' && pctVal     !== null && pctVal     !== undefined ? parseFloat(pctVal)     : undefined;
       if (editingIdx !== null) {
         working[editingIdx].name     = name;
         working[editingIdx].funktion = funk;
         working[editingIdx].team     = inferColleagueTeam(funk) || 'D';
         working[editingIdx].tags     = tags;
+        if (stunden !== undefined) working[editingIdx].stunden = stunden;
+        if (pct     !== undefined) working[editingIdx].pct     = pct;
         editingIdx = null;
       } else {
-        working.push({ name, funktion: funk, team: inferColleagueTeam(funk) || 'D', tags, present: false });
+        working.push({ name, funktion: funk, team: inferColleagueTeam(funk) || 'D', tags, present: false,
+          ...(stunden !== undefined && { stunden }),
+          ...(pct     !== undefined && { pct }),
+        });
       }
       renderBody();
     };
@@ -3565,6 +3596,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     </div>
     <div class="zut-footer">
       <div class="zut-present-label">${presentCount} anwesend · ${people.length} gesamt</div>
+      <button class="btn-secondary" id="zut-seniority-btn" title="Tier nach Dienstalter vergeben">🏅 Dienstalter</button>
       <button class="btn-primary" id="zut-auto-btn">⚡ Auto-Zuteilung</button>
     </div>`;
 
@@ -3614,6 +3646,22 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     }
     zData.blockSize = newSize;
     zData.assignments = newAsgn;
+    saveData(); render();
+  };
+
+  inner.querySelector('#zut-seniority-btn').onclick = () => {
+    pushUndo();
+    // Build seniority-sorted tiers
+    const newTiers = {};
+    // Senior always tier 1
+    people.filter(p => p._isSenior).forEach(p => { newTiers[p.name] = 1; });
+    // Non-senior, non-trainee sorted by stunden desc → tiers 2..7
+    const sortable = people.filter(p => !p._isSenior && !p._isTrainee);
+    sortable.sort((a, b) => (b.stunden || 0) - (a.stunden || 0));
+    const availTiers = [2, 3, 4, 5, 6, 7];
+    sortable.forEach((p, i) => { newTiers[p.name] = availTiers[i] ?? (i + 2); });
+    // Trainee: keep existing tier or don't set (they use TRAINEE_AVATARS)
+    zData.personTiers = newTiers;
     saveData(); render();
   };
 
@@ -3881,6 +3929,7 @@ function openPersonTierModal(personName, people, zData, saveData, render) {
         <div style="font-size:12px;color:var(--text-dim)">
           ${person._isSenior?'★ Seniorassistent · ':''}${person._isTrainee?'🎓 Ausbildung · ':''}${person._self?'(Ich)':''}
         </div>
+        ${person.stunden != null ? `<div style="font-size:13px;color:var(--text-muted)">${person.stunden}h · ${person.pct != null ? person.pct + '%' : ''} Dienstalter</div>` : ''}
         <div style="display:flex;flex-direction:column;gap:6px">
           <label class="form-label">Sternbild</label>
           <div style="display:flex;flex-wrap:wrap;gap:6px">
@@ -8365,20 +8414,37 @@ async function importShiftsFromXML(xmlText) {
     const shiftTeam = xmlTypToTeam(typ);
     const colleagues = Array.from(el.querySelectorAll('kollege')).map(k => {
       const funktion = k.getAttribute('funktion') || '';
+      const stunden  = k.getAttribute('stunden_danach') ? parseFloat(k.getAttribute('stunden_danach')) : null;
+      const pct      = k.getAttribute('pct')            ? parseFloat(k.getAttribute('pct'))            : null;
       return {
         name:     k.getAttribute('name') || '',
         funktion,
         tags:     (k.getAttribute('tags') || '').split(',').map(t => t.trim()).filter(Boolean),
         team:     inferColleagueTeam(funktion) || shiftTeam,
         present:  false,
+        ...(stunden !== null && { stunden }),
+        ...(pct     !== null && { pct }),
       };
     });
 
     if (existingKeys.has(key)) {
       // Update colleagues if shift already exists and has none yet
       const existing = existingShifts.find(s => s.date === datum && s.type === type);
-      if (existing && colleagues.length && !(existing.colleagues || []).length) {
-        await db.shiftLogs.update(existing.id, { colleagues });
+      if (existing && colleagues.length) {
+        if (!(existing.colleagues || []).length) {
+          await db.shiftLogs.update(existing.id, { colleagues });
+        } else {
+          // Update stunden/pct on existing colleagues by name
+          const updatedColleagues = (existing.colleagues || []).map(ec => {
+            const xmlMatch = colleagues.find(c => c.name === ec.name);
+            if (!xmlMatch) return ec;
+            const updates = {};
+            if (xmlMatch.stunden !== undefined && xmlMatch.stunden !== null) updates.stunden = xmlMatch.stunden;
+            if (xmlMatch.pct     !== undefined && xmlMatch.pct     !== null) updates.pct     = xmlMatch.pct;
+            return Object.keys(updates).length ? { ...ec, ...updates } : ec;
+          });
+          await db.shiftLogs.update(existing.id, { colleagues: updatedColleagues });
+        }
       }
       skipped++;
       continue;

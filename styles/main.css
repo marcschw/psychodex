@@ -3171,3 +3171,8 @@ img{max-width:100%;display:block}
   -webkit-tap-highlight-color:transparent;transition:background .12s}
 .dx-action-btn:active{background:rgba(255,255,255,.15)}
 .dx-action-btn-primary{background:rgba(124,58,237,.2);border-color:var(--accent);color:var(--accent)}
+
+/* ── Rolecall seniority display ──── */
+.team-colleague-seniority{font-size:11px;color:var(--text-dim);margin-top:1px}
+.rc-seniority-row{display:flex;align-items:center;gap:6px;padding:4px 0 4px 4px;flex-wrap:wrap}
+.rc-seniority-row input{padding:5px 8px;border-radius:8px;font-size:13px;color:var(--text);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);outline:none}
