@@ -3651,16 +3651,18 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
 
   inner.querySelector('#zut-seniority-btn').onclick = () => {
     pushUndo();
-    // Build seniority-sorted tiers
     const newTiers = {};
-    // Senior always tier 1
-    people.filter(p => p._isSenior).forEach(p => { newTiers[p.name] = 1; });
-    // Non-senior, non-trainee sorted by stunden desc → tiers 2..7
+    const seniors  = people.filter(p => p._isSenior);
     const sortable = people.filter(p => !p._isSenior && !p._isTrainee);
     sortable.sort((a, b) => (b.stunden || 0) - (a.stunden || 0));
-    const availTiers = [2, 3, 4, 5, 6, 7];
-    sortable.forEach((p, i) => { newTiers[p.name] = availTiers[i] ?? (i + 2); });
-    // Trainee: keep existing tier or don't set (they use TRAINEE_AVATARS)
+    if (seniors.length > 0) {
+      seniors.forEach(p => { newTiers[p.name] = 1; });
+      const availTiers = [2, 3, 4, 5, 6, 7];
+      sortable.forEach((p, i) => { newTiers[p.name] = availTiers[i] ?? (i + 2); });
+    } else {
+      const allTiers = [1, 2, 3, 4, 5, 6, 7];
+      sortable.forEach((p, i) => { newTiers[p.name] = allTiers[i] ?? (i + 1); });
+    }
     zData.personTiers = newTiers;
     saveData(); render();
   };
