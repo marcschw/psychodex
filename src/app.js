@@ -70,6 +70,7 @@ const TEAM_META = {
   T: { label: 'Training',                   color: '#f59e0b' },
 };
 const TEAM_ORDER = ['D', 'I', 'F', 'T'];
+const teamDotSvg = color => `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><circle cx='20' cy='20' r='18' fill='${encodeURIComponent(color)}'/></svg>`;
 function xmlTypToTeam(typ) {
   if (typ === 'training') return 'T';
   if (typ === 'int')      return 'I';
@@ -1336,13 +1337,15 @@ function openTeamModal(shift) {
   const working = (shift.colleagues || []).map(c => ({ ...c }));
 
   const isSenior  = c => effectiveTeam(c) === 'D' && (c.funktion || '').toLowerCase().includes('senior');
+  const personTiers = shift.zuteilung?.personTiers || {};
   const dotColor  = c => isSenior(c) ? '#f59e0b' : (TEAM_META[effectiveTeam(c)]?.color || TEAM_META.D.color);
   const avatarSrc = c => {
-    if (isSenior(c)) return './assets/images/avatars/avatar_owl.png';
     const t = effectiveTeam(c);
-    if (t === 'I') return './assets/images/avatars/avatar_dragon.png';
-    if (t === 'F') return './assets/images/avatars/avatar_raven.png';
-    return './assets/images/avatars/avatar_wolf.png';
+    if (t !== 'D' && t !== 'T') return teamDotSvg(TEAM_META[t]?.color || '#666');
+    if (isSenior(c)) return ANIMAL_TIERS[0].img;
+    if (t === 'T') return TRAINEE_AVATARS[1].img;
+    const tier = personTiers[c.name];
+    return tier && ANIMAL_TIERS[tier - 1] ? ANIMAL_TIERS[tier - 1].img : ANIMAL_TIERS[6].img;
   };
 
   let editingIdx = null; // null = add mode, >=0 = edit existing working[editingIdx]
@@ -1531,7 +1534,7 @@ function openOtherTeamsModal(working, hideIcons, onChanged) {
         <div class="team-group-header" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</div>
         ${groups[t].map(c => `
           <div class="team-colleague-row" style="cursor:default">
-            <img class="rc-avatar" src="${t === 'I' ? './assets/images/avatars/avatar_dragon.png' : t === 'F' ? './assets/images/avatars/avatar_raven.png' : './assets/images/avatars/avatar_wolf.png'}" alt="" style="border-color:${TEAM_META[t].color}">
+            <img class="rc-avatar" src="${teamDotSvg(TEAM_META[t]?.color || '#666')}" alt="" style="border-color:${TEAM_META[t]?.color || '#666'}">
             <div class="team-colleague-info">
               <div class="team-colleague-name">${c.name}</div>
               <div class="team-colleague-func">${c.funktion}</div>
@@ -3026,13 +3029,17 @@ const TERMIN_DEFS = {
 };
 
 const ANIMAL_TIERS = [
-  { tier: 1, emoji: '🦁', name: 'Löwe'     },
-  { tier: 2, emoji: '🐯', name: 'Tiger'    },
-  { tier: 3, emoji: '🐺', name: 'Wolf'     },
-  { tier: 4, emoji: '🦊', name: 'Fuchs'    },
-  { tier: 5, emoji: '🦝', name: 'Waschbär' },
-  { tier: 6, emoji: '🐱', name: 'Katze'    },
-  { tier: 7, emoji: '🐭', name: 'Maus'     },
+  { tier: 1, img: './assets/images/avatars/stars/avatar_draco.png',     name: 'Draco',      desc: 'Der Drache' },
+  { tier: 2, img: './assets/images/avatars/stars/avatar_ursa.png',      name: 'Ursa Major', desc: 'Der Große Bär' },
+  { tier: 3, img: './assets/images/avatars/stars/avatar_lupus.png',     name: 'Lupus',      desc: 'Der Wolf' },
+  { tier: 4, img: './assets/images/avatars/stars/avatar_aquila.png',    name: 'Aquila',     desc: 'Der Adler' },
+  { tier: 5, img: './assets/images/avatars/stars/avatar_vulpecula.png', name: 'Vulpecula',  desc: 'Der Fuchs' },
+  { tier: 6, img: './assets/images/avatars/stars/avatar_noctua.png',    name: 'Noctua',     desc: 'Die Eule' },
+  { tier: 7, img: './assets/images/avatars/stars/avatar_corvus.png',    name: 'Corvus',     desc: 'Der Rabe' },
+];
+const TRAINEE_AVATARS = [
+  { img: './assets/images/avatars/stars/avatar_training_1.png', name: 'Doppelstern', desc: 'Mentoring' },
+  { img: './assets/images/avatars/stars/avatar_training_2.png', name: 'Protostern',  desc: 'Neubeginn' },
 ];
 
 function getZuteilBlocks(shift, blockSize) {
@@ -3223,8 +3230,11 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     }).join('');
     const tierNum = zData.personTiers?.[p.name];
     const tierInfo = tierNum ? ANIMAL_TIERS[tierNum - 1] : null;
+    const tierAvatar = p._isTrainee
+      ? TRAINEE_AVATARS[1]
+      : tierInfo ?? null;
     const badges = [
-      tierInfo ? `<span class="zut-tier-badge" title="${tierInfo.name} (Tier ${tierInfo.tier})">${tierInfo.emoji}</span>` : '',
+      tierAvatar ? `<img class="zut-tier-avatar" src="${tierAvatar.img}" title="${tierAvatar.name} · ${tierAvatar.desc}" alt="${tierAvatar.name}">` : '',
       p._self ? '<span class="team-self-badge">Ich</span>' : '',
       p._isSenior ? '<span class="zut-senior-tag">★</span>' : '',
       p._isTrainee ? '<span class="zut-trainee-tag">🎓</span>' : '',
@@ -3431,19 +3441,6 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
 
   inner.querySelector('#zut-auto-btn').onclick = () => {
     pushUndo();
-    // Re-shuffle tiers on every auto-assign (senior stays tier 1)
-    {
-      const newTiers = {};
-      people.filter(p => p._isSenior).forEach(p => { newTiers[p.name] = 1; });
-      const nonSeniorNames = people.filter(p => !p._isSenior).map(p => p.name);
-      const pool = [2,3,4,5,6,7];
-      for (let i = pool.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [pool[i], pool[j]] = [pool[j], pool[i]];
-      }
-      nonSeniorNames.forEach((n, i) => { newTiers[n] = pool[i] ?? (i + 2); });
-      zData.personTiers = newTiers;
-    }
     const result = autoAssignZuteilung(getZuteilBlocks(shift, zData.blockSize), people, zData);
     zData.assignments    = result.assignments;
     zData.planB          = result.planB;
@@ -3697,16 +3694,22 @@ function openPersonTierModal(personName, people, zData, saveData, render) {
     <div class="modal-backdrop" id="ptm-backdrop"></div>
     <div class="modal-sheet">
       <div class="sheet-header">
-        <div class="modal-title">${currentTier ? ANIMAL_TIERS[currentTier-1].emoji : '👤'} ${personName}</div>
+        <div class="modal-title" style="display:flex;align-items:center;gap:8px">
+          ${currentTier ? `<img class="zut-tier-avatar-lg" src="${ANIMAL_TIERS[currentTier-1].img}" alt="">` : ''}
+          ${personName}
+        </div>
       </div>
       <div class="sheet-body" style="padding:16px;display:flex;flex-direction:column;gap:12px">
         <div style="font-size:12px;color:var(--text-dim)">
           ${person._isSenior?'★ Seniorassistent · ':''}${person._isTrainee?'🎓 Ausbildung · ':''}${person._self?'(Ich)':''}
         </div>
         <div style="display:flex;flex-direction:column;gap:6px">
-          <label class="form-label">Tier</label>
+          <label class="form-label">Sternbild</label>
           <div style="display:flex;flex-wrap:wrap;gap:6px">
-            ${ANIMAL_TIERS.map(t => `<button class="ptm-tier-btn${t.tier===currentTier?' ptm-tier-active':''}" data-tier="${t.tier}">${t.emoji} <span style="font-size:11px">${t.name}</span></button>`).join('')}
+            ${ANIMAL_TIERS.map(t => `<button class="ptm-tier-btn${t.tier===currentTier?' ptm-tier-active':''}" data-tier="${t.tier}" title="${t.desc}">
+              <img src="${t.img}" alt="${t.name}" style="width:32px;height:32px;object-fit:contain;display:block;margin:0 auto 2px">
+              <span style="font-size:9px;display:block;text-align:center">${t.name}</span>
+            </button>`).join('')}
           </div>
         </div>
       </div>

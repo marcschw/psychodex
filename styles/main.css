@@ -3101,10 +3101,12 @@ img{max-width:100%;display:block}
 .sup-progress-label{font-size:11px;color:var(--text-dim)}
 /* ── Animal tier badge ───────────────────────────────────────────────────────── */
 .zut-tier-badge{font-size:14px;line-height:1}
+.zut-tier-avatar{width:22px;height:22px;object-fit:contain;border-radius:4px;vertical-align:middle}
+.zut-tier-avatar-lg{width:32px;height:32px;object-fit:contain;border-radius:6px;vertical-align:middle}
 .zut-person-clickable{cursor:pointer}
 .zut-person-clickable:active{opacity:.7}
 /* ── Person tier modal ───────────────────────────────────────────────────────── */
-.ptm-tier-btn{padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);cursor:pointer;font-size:13px;transition:all .15s}
+.ptm-tier-btn{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);cursor:pointer;font-size:13px;transition:all .15s;min-width:52px}
 .ptm-tier-btn:hover{background:rgba(255,255,255,.1)}
 .ptm-tier-active{background:rgba(124,58,237,.2)!important;border-color:var(--accent)!important;color:var(--accent)}
 /* ── Station view short labels ───────────────────────────────────────────────── */

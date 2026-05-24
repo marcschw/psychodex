@@ -1,4 +1,4 @@
-const APP_VERSION  = 'v83';
+const APP_VERSION  = 'v84';
 const APP_CACHE    = `psychodex-app-${APP_VERSION}`;
 const IMAGE_CACHE  = `psychodex-images-${APP_VERSION}`;
 
@@ -20,6 +20,16 @@ const APP_SHELL = [
   './data/icd/f30.json','./data/icd/f40.json','./data/icd/f50.json',
   './data/icd/f60.json','./data/icd/f70.json','./data/icd/f80.json',
   './data/icd/f90.json',
+  // Star constellation tier avatars
+  './assets/images/avatars/stars/avatar_draco.png',
+  './assets/images/avatars/stars/avatar_ursa.png',
+  './assets/images/avatars/stars/avatar_lupus.png',
+  './assets/images/avatars/stars/avatar_aquila.png',
+  './assets/images/avatars/stars/avatar_vulpecula.png',
+  './assets/images/avatars/stars/avatar_noctua.png',
+  './assets/images/avatars/stars/avatar_corvus.png',
+  './assets/images/avatars/stars/avatar_training_1.png',
+  './assets/images/avatars/stars/avatar_training_2.png',
   // Category mosaic images (only 10 – worth pre-loading)
   './assets/images/categories/mosaike/f0.png',
   './assets/images/categories/mosaike/f1.png',
