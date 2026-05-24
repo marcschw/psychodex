@@ -1353,6 +1353,7 @@ function openTeamModal(shift) {
 
   const userName  = localStorage.getItem('psychodex-user-name') || '';
   const hideIcons = localStorage.getItem('hide-team-icons') === '1';
+  let showRcStunden = localStorage.getItem('show-rc-stunden') === '1';
   const selfTeam  = shift.category === 'training' ? 'T' : 'D';
   const selfFunk  = shift.category === 'senior' ? 'Seniorassistent (Ich)' : '(Ich)';
 
@@ -1383,7 +1384,7 @@ function openTeamModal(shift) {
     const rcDisplay    = display.filter(c => effectiveTeam(c) === 'D' || effectiveTeam(c) === 'T');
     const otherDisplay = display.filter(c => effectiveTeam(c) !== 'D' && effectiveTeam(c) !== 'T' && !c._self);
 
-    // Sort: Senior first, then by stunden desc, Training last (keep their relative order)
+    // Sort: Senior first, then by stunden desc (when shown), Training last; within Training by stunden desc
     rcDisplay.sort((a, b) => {
       const aSen = effectiveTeam(a) === 'D' && (a.funktion || '').toLowerCase().includes('senior');
       const bSen = effectiveTeam(b) === 'D' && (b.funktion || '').toLowerCase().includes('senior');
@@ -1393,7 +1394,8 @@ function openTeamModal(shift) {
       if (!aSen && bSen) return 1;
       if (aTrn && !bTrn) return 1;
       if (!aTrn && bTrn) return -1;
-      return (b.stunden || 0) - (a.stunden || 0);
+      if (showRcStunden) return (b.stunden || 0) - (a.stunden || 0);
+      return 0;
     });
 
     const present = rcDisplay.filter(c => c.present).length;
@@ -1410,6 +1412,7 @@ function openTeamModal(shift) {
         <span class="rolecall-fehlen">${fehlen} fehlen</span>
         <span class="rolecall-dot">·</span>
         <span class="rolecall-anwesend">${present} anwesend</span>
+        <button class="rc-stunden-toggle${showRcStunden ? ' active' : ''}" id="rc-stunden-toggle" title="Stunden ein-/ausblenden">h</button>
       </div>
       ${['D','T'].filter(t => groups[t].length).map(t => `
         <div class="team-group-header" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</div>
@@ -1421,7 +1424,7 @@ function openTeamModal(shift) {
               <div class="team-colleague-name">${c.name}${c._self ? ' <span class="team-self-badge">Ich</span>' : ''}</div>
               <div class="team-colleague-func" style="color:${isSenior(c) ? '#f59e0b' : ''}">${c.funktion}</div>
             </div>
-            ${!hideIcons && c.stunden != null ? `<div class="team-colleague-seniority">${c.stunden}h · ${c.pct != null ? c.pct + '%' : ''}</div>` : ''}
+            ${showRcStunden && c.stunden != null ? `<div class="team-colleague-seniority">${c.stunden}h · ${c.pct != null ? c.pct + '%' : ''}</div>` : ''}
             ${!hideIcons && (c.tags||[]).length ? `<div class="team-colleague-tags">${tagIconsHTML(c.tags)}</div>` : ''}
             ${!c._self ? `
               <button class="rc-edit-btn" data-wi="${c._wi}" title="Bearbeiten">✏️</button>
@@ -1458,6 +1461,13 @@ function openTeamModal(shift) {
       body.querySelector('.rolecall-fehlen').textContent   = `${checks.length - p} fehlen`;
       body.querySelector('.rolecall-anwesend').textContent = `${p} anwesend`;
     };
+
+    // Stunden toggle
+    body.querySelector('#rc-stunden-toggle')?.addEventListener('click', () => {
+      showRcStunden = !showRcStunden;
+      localStorage.setItem('show-rc-stunden', showRcStunden ? '1' : '0');
+      renderBody();
+    });
 
     // Checkboxes
     body.querySelectorAll('.team-colleague-check').forEach(cb => {
@@ -8854,7 +8864,7 @@ function openRankTableModal() {
 }
 
 async function recalculateXP() {
-  if (!confirm('XP komplett neu berechnen?\n\nAlle Diagnosen werden mit der aktuellen Formel neu kalkuliert und gespeichert.')) return;
+  if (!confirm('XP komplett neu berechnen?\n\nAlle Dienste, Diagnosen, Verifies, Notizen, Missionen und Achievements werden mit der aktuellen Formel neu kalkuliert und gespeichert.')) return;
 
   const btn = document.getElementById('recalc-xp-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Berechne…'; }
