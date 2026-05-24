@@ -571,6 +571,7 @@ function navigateTo(tab) {
   if (tabEl) tabEl.classList.add('active');
   if (btnEl) btnEl.classList.add('active');
   if (tab === 'home') renderHomeTab();
+  if (tab === 'diagnosen') renderDiagnosenTab();
   if (tab === 'icdf') renderICDFTab();
   if (tab === 'stats') renderStats();
   if (tab === 'settings') renderSettingsTab();
@@ -1383,6 +1384,19 @@ function openTeamModal(shift) {
     const rcDisplay    = display.filter(c => effectiveTeam(c) === 'D' || effectiveTeam(c) === 'T');
     const otherDisplay = display.filter(c => effectiveTeam(c) !== 'D' && effectiveTeam(c) !== 'T' && !c._self);
 
+    // Sort: Senior first, then by stunden desc, Training last (keep their relative order)
+    rcDisplay.sort((a, b) => {
+      const aSen = effectiveTeam(a) === 'D' && (a.funktion || '').toLowerCase().includes('senior');
+      const bSen = effectiveTeam(b) === 'D' && (b.funktion || '').toLowerCase().includes('senior');
+      const aTrn = effectiveTeam(a) === 'T';
+      const bTrn = effectiveTeam(b) === 'T';
+      if (aSen && !bSen) return -1;
+      if (!aSen && bSen) return 1;
+      if (aTrn && !bTrn) return 1;
+      if (!aTrn && bTrn) return -1;
+      return (b.stunden || 0) - (a.stunden || 0);
+    });
+
     const present = rcDisplay.filter(c => c.present).length;
     const fehlen  = rcDisplay.length - present;
 
@@ -1408,6 +1422,7 @@ function openTeamModal(shift) {
               <div class="team-colleague-name">${c.name}${c._self ? ' <span class="team-self-badge">Ich</span>' : ''}</div>
               <div class="team-colleague-func" style="color:${isSenior(c) ? '#f59e0b' : ''}">${c.funktion}</div>
             </div>
+            ${!hideIcons && c.stunden != null ? `<div class="team-colleague-seniority">${c.stunden}h · ${c.pct != null ? c.pct + '%' : ''}</div>` : ''}
             ${!hideIcons && (c.tags||[]).length ? `<div class="team-colleague-tags">${tagIconsHTML(c.tags)}</div>` : ''}
             ${!c._self ? `
               <button class="rc-edit-btn" data-wi="${c._wi}" title="Bearbeiten">✏️</button>
@@ -1424,6 +1439,14 @@ function openTeamModal(shift) {
         <button class="rc-add-btn" id="rc-add-btn">${editing ? '✓' : '＋'}</button>
         ${editing ? `<button class="rc-cancel-btn" id="rc-cancel-btn">✗</button>` : ''}
       </div>
+      ${editing ? `<div class="rc-seniority-row">
+        <input type="number" class="rc-add-stunden" id="rc-add-stunden" placeholder="Stunden" step="0.1" min="0"
+          value="${editing.stunden != null ? editing.stunden : ''}" style="width:80px">
+        <span style="font-size:12px;color:var(--text-dim)">h</span>
+        <input type="number" class="rc-add-pct" id="rc-add-pct" placeholder="%" step="0.1" min="0" max="100"
+          value="${editing.pct != null ? editing.pct : ''}" style="width:60px">
+        <span style="font-size:12px;color:var(--text-dim)">%</span>
+      </div>` : ''}
       ${editing ? `<div class="rc-tag-row">
         ${Object.entries(TAG_ICONS).map(([k,v]) => `<button class="rc-tag-btn${(editing.tags||[]).includes(k)?' active':''}" data-tag="${k}" title="${TAG_LABELS[k]||k}">${v}</button>`).join('')}
         <span class="rc-tag-hint">Tags</span>
@@ -1476,14 +1499,23 @@ function openTeamModal(shift) {
       const funk = body.querySelector('#rc-add-funk').value;
       if (!name) { body.querySelector('#rc-add-name').focus(); return; }
       const tags = Array.from(body.querySelectorAll('.rc-tag-btn.active')).map(b => b.dataset.tag);
+      const stundenVal = body.querySelector('#rc-add-stunden')?.value;
+      const pctVal     = body.querySelector('#rc-add-pct')?.value;
+      const stunden    = stundenVal !== '' && stundenVal !== null && stundenVal !== undefined ? parseFloat(stundenVal) : undefined;
+      const pct        = pctVal     !== '' && pctVal     !== null && pctVal     !== undefined ? parseFloat(pctVal)     : undefined;
       if (editingIdx !== null) {
         working[editingIdx].name     = name;
         working[editingIdx].funktion = funk;
         working[editingIdx].team     = inferColleagueTeam(funk) || 'D';
         working[editingIdx].tags     = tags;
+        if (stunden !== undefined) working[editingIdx].stunden = stunden;
+        if (pct     !== undefined) working[editingIdx].pct     = pct;
         editingIdx = null;
       } else {
-        working.push({ name, funktion: funk, team: inferColleagueTeam(funk) || 'D', tags, present: false });
+        working.push({ name, funktion: funk, team: inferColleagueTeam(funk) || 'D', tags, present: false,
+          ...(stunden !== undefined && { stunden }),
+          ...(pct     !== undefined && { pct }),
+        });
       }
       renderBody();
     };
@@ -2647,13 +2679,41 @@ function openSlotEditForm(slot, source) {
         <label class="form-label">📅 Erstgesprächs-Termin</label>
         <input type="date" id="slot-edit-termin-erst" class="form-input" value="${slot.terminErstgespraech || ''}">
       </div>` : '';
+
+  const slotCatchesForEdit = isPatient ? state.catches.filter(c => c.slotId === slot.id) : [];
+  const firstCatch = slotCatchesForEdit[0];
+  const editAgeGroup = slot.ageGroup || firstCatch?.ageGroup || '';
+  const editGender   = slot.gender   || firstCatch?.gender   || '';
+
   const patientFields = isPatient ? `
     <div class="form-row">
       <label class="form-label">🔖 Kürzel / Notiz</label>
       <input type="text" id="slot-edit-notes" class="form-input" placeholder="Codename…" value="${(slot.patientNotes || '').replace(/"/g,'&quot;')}">
     </div>
+    <div class="form-row">
+      <label class="form-label">👤 Altersgruppe</label>
+      <select id="slot-edit-agegroup" class="form-input">
+        <option value="">—</option>
+        <option value="18-30" ${editAgeGroup==='18-30'?'selected':''}>18–30 J.</option>
+        <option value="31-50" ${editAgeGroup==='31-50'?'selected':''}>31–50 J.</option>
+        <option value="51+"   ${editAgeGroup==='51+'  ?'selected':''}>51+ J.</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">⚧ Geschlecht</label>
+      <select id="slot-edit-gender" class="form-input">
+        <option value="">—</option>
+        <option value="weiblich" ${editGender==='weiblich'?'selected':''}>Weiblich</option>
+        <option value="männlich" ${editGender==='männlich'?'selected':''}>Männlich</option>
+        <option value="divers"   ${editGender==='divers'  ?'selected':''}>Divers</option>
+      </select>
+    </div>
     <div class="form-row" style="flex-direction:column;align-items:stretch;gap:8px">
-      <label class="form-label">🎯 Diagnosen</label>
+      <label class="form-label">🩺 Erfasste Diagnosen</label>
+      <div id="slot-edit-catches-wrap"></div>
+    </div>
+    <div class="form-row" style="flex-direction:column;align-items:stretch;gap:8px">
+      <label class="form-label">🎯 Verdachts-Diagnosen</label>
       <div class="susp-chips-wrap" id="susp-chips-wrap"></div>
       <div class="susp-inline-wrap hidden" id="susp-search-wrap">
         <input type="text" id="susp-search-q" class="form-input" placeholder="Diagnose suchen…" autocomplete="off">
@@ -2725,6 +2785,32 @@ function openSlotEditForm(slot, source) {
     };
     renderSuspChips();
 
+    const renderCatchChips = () => {
+      const wrap = document.getElementById('slot-edit-catches-wrap');
+      if (!wrap) return;
+      const cats = state.catches.filter(c => c.slotId === slot.id);
+      if (!cats.length) {
+        wrap.innerHTML = '<span style="color:var(--text-muted);font-size:0.85rem">(keine)</span>';
+        return;
+      }
+      wrap.innerHTML = cats.map(c =>
+        `<span class="susp-chip">
+          <span class="susp-chip-code">${c.code}</span>
+          <span class="susp-chip-title">${c.name || ''}</span>
+          <button type="button" class="susp-chip-rm" data-catch-id="${c.id}">✕</button>
+        </span>`
+      ).join('');
+      wrap.querySelectorAll('.susp-chip-rm[data-catch-id]').forEach(btn =>
+        btn.addEventListener('click', async e => {
+          e.preventDefault();
+          await db.caughtDiagnoses.delete(parseInt(btn.dataset.catchId));
+          state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
+          renderCatchChips();
+        })
+      );
+    };
+    renderCatchChips();
+
     document.getElementById('btn-susp-add')?.addEventListener('click', e => {
       e.preventDefault();
       const wrap = document.getElementById('susp-search-wrap');
@@ -2793,6 +2879,8 @@ async function saveSlotEdit(slot, source) {
   const terminErstgespraech = document.getElementById('slot-edit-termin-erst')?.value || undefined;
   const ausfallChecked = document.getElementById('slot-edit-ausfall')?.checked ?? false;
   const wasAusfall = slot.ausfall;
+  const ageGroup = isPatient ? (document.getElementById('slot-edit-agegroup')?.value || null) : undefined;
+  const gender   = isPatient ? (document.getElementById('slot-edit-gender')?.value   || null) : undefined;
 
   const updates = {
     startHour: sh, startMinute: sm,
@@ -2804,9 +2892,22 @@ async function saveSlotEdit(slot, source) {
     ...(terminInterview !== undefined && { terminInterview }),
     ...(terminErstgespraech !== undefined && { terminErstgespraech }),
     ...(isPatient && { ausfall: ausfallChecked }),
+    ...(ageGroup !== undefined && { ageGroup }),
+    ...(gender   !== undefined && { gender }),
   };
 
   await db.scheduleSlots.update(slot.id, updates);
+
+  if (isPatient && (ageGroup !== undefined || gender !== undefined)) {
+    const linkedCatches = await db.caughtDiagnoses.where('slotId').equals(slot.id).toArray();
+    for (const c of linkedCatches) {
+      await db.caughtDiagnoses.update(c.id, {
+        ...(ageGroup !== undefined && ageGroup && { ageGroup }),
+        ...(gender   !== undefined && gender   && { gender }),
+      });
+    }
+    state.catches = await db.caughtDiagnoses.orderBy('caughtAt').reverse().toArray();
+  }
 
   document.getElementById('slot-detail-modal').classList.add('hidden');
 
@@ -2872,18 +2973,18 @@ let _verifyTherapistCodes = [];
 function openVerifyModal(slot) {
   const modal = document.getElementById('verify-modal');
   if (!modal) return;
-  const isEdit = !!slot.seniorCode;
+  const isEdit = !!(slot.seniorCode || slot.therapistCodes?.length);
   const label = slot.patientNotes ? `„${slot.patientNotes}"` : `Slot #${slot.id}`;
   document.getElementById('verify-modal-label').textContent = label;
 
-  // "Dein Verdacht": prefer actual caught diagnoses, fallback to suspectedCodes
+  // Show catches first, then suspectedCodes as fallback for "Dein Verdacht"
   const slotCatches = state.catches.filter(c => c.slotId === slot.id);
   const myDx = slotCatches.length > 0
-    ? slotCatches.map(c => ({ code: c.code, title: c.name }))
+    ? slotCatches.map(c => ({ code: c.code, title: c.name || '' }))
     : (slot.suspectedCodes || []);
   document.getElementById('verify-suspected').innerHTML = myDx.length
     ? myDx.map(c => `<span class="susp-chip"><span class="susp-chip-code">${c.code}</span><span class="susp-chip-title">${c.title||''}</span></span>`).join('')
-    : '<span style="color:var(--text-dim);font-size:13px">(keine eigenen Diagnosen)</span>';
+    : '<span style="color:var(--text-dim);font-size:13px">(kein Verdacht)</span>';
 
   // Pre-fill therapist data when editing an already-verified slot
   if (isEdit) {
@@ -2892,10 +2993,12 @@ function openVerifyModal(slot) {
       : (slot.seniorCode ? [{ code: slot.seniorCode, title: '' }] : []);
     document.getElementById('verify-therapist-name').value = slot.therapistName || '';
   } else {
-    _verifyTherapistCodes = [];
     document.getElementById('verify-therapist-name').value = '';
+    _verifyTherapistCodes = [];
   }
-  document.getElementById('verify-save').textContent = isEdit ? 'Speichern' : 'Vergleichen & XP';
+
+  const saveBtn = document.getElementById('verify-save');
+  if (saveBtn) saveBtn.textContent = isEdit ? 'Speichern' : 'Vergleichen & XP';
 
   const renderVerifyChips = () => {
     const wrap = document.getElementById('verify-therapist-chips');
@@ -3007,19 +3110,22 @@ async function applyVerifyXP(slot, therapistCodes, therapistName, isEdit = false
 
   const bestResult = comparisons.reduce((best, r) => r.xp > best.xp ? r : best, comparisons[0]);
 
+  const oldVerifyXP = slot.verifyXP || 0;
+  const xpDiff = totalXP - oldVerifyXP;
   await db.scheduleSlots.update(slot.id, {
     seniorCode,
     therapistCodes,
     therapistName: therapistName || '',
     terminInterviewDone: true,
-    xpEarned: (slot.xpEarned || 0) + totalXP,
+    xpEarned: Math.max(0, (slot.xpEarned || 0) + xpDiff),
+    verifyXP: totalXP,
   });
 
-  const newTotal = (state.profile.totalXP ?? 0) + totalXP;
+  const newTotal = Math.max(0, (state.profile.totalXP ?? 0) + xpDiff);
   await db.profile.update(state.profile.id, { totalXP: newTotal });
   state.profile.totalXP = newTotal;
 
-  showXPPopup(totalXP, bonuses);
+  if (xpDiff > 0) showXPPopup(xpDiff, bonuses);
 
   const imgEl = document.getElementById('verify-result-img');
   if (imgEl) {
@@ -3762,6 +3868,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     </div>
     <div class="zut-footer">
       <div class="zut-present-label">${presentCount} anwesend · ${people.length} gesamt</div>
+      <button class="btn-secondary" id="zut-seniority-btn" title="Tier nach Dienstalter vergeben">🏅 Dienstalter</button>
       <button class="btn-primary" id="zut-auto-btn">⚡ Auto-Zuteilung</button>
     </div>`;
 
@@ -3811,6 +3918,24 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     }
     zData.blockSize = newSize;
     zData.assignments = newAsgn;
+    saveData(); render();
+  };
+
+  inner.querySelector('#zut-seniority-btn').onclick = () => {
+    pushUndo();
+    const newTiers = {};
+    const seniors  = people.filter(p => p._isSenior);
+    const sortable = people.filter(p => !p._isSenior && !p._isTrainee);
+    sortable.sort((a, b) => (b.stunden || 0) - (a.stunden || 0));
+    if (seniors.length > 0) {
+      seniors.forEach(p => { newTiers[p.name] = 1; });
+      const availTiers = [2, 3, 4, 5, 6, 7];
+      sortable.forEach((p, i) => { newTiers[p.name] = availTiers[i] ?? (i + 2); });
+    } else {
+      const allTiers = [1, 2, 3, 4, 5, 6, 7];
+      sortable.forEach((p, i) => { newTiers[p.name] = allTiers[i] ?? (i + 1); });
+    }
+    zData.personTiers = newTiers;
     saveData(); render();
   };
 
@@ -4078,6 +4203,7 @@ function openPersonTierModal(personName, people, zData, saveData, render) {
         <div style="font-size:12px;color:var(--text-dim)">
           ${person._isSenior?'★ Seniorassistent · ':''}${person._isTrainee?'🎓 Ausbildung · ':''}${person._self?'(Ich)':''}
         </div>
+        ${person.stunden != null ? `<div style="font-size:13px;color:var(--text-muted)">${person.stunden}h · ${person.pct != null ? person.pct + '%' : ''} Dienstalter</div>` : ''}
         <div style="display:flex;flex-direction:column;gap:6px">
           <label class="form-label">Sternbild</label>
           <div style="display:flex;flex-wrap:wrap;gap:6px">
@@ -5743,6 +5869,23 @@ async function refreshMissionProgress() {
     }
   }
 
+  // Auto-expire missions that are 1+ month+1day old and have >= 2 shifts since activation
+  const nowMs = Date.now();
+  for (const mission of activeMissions) {
+    if (mission.completedAt) continue; // skip already completed
+    const activatedMs = new Date(mission.activatedAt).getTime();
+    const expiryMs = activatedMs + (31 * 24 * 60 * 60 * 1000); // 31 days = 1 month + 1 day approx
+    if (nowMs >= expiryMs) {
+      const shiftsSince = state.shifts.filter(s => (s.createdAt || `${s.date}T00:00:00`) >= mission.activatedAt).length;
+      if (shiftsSince >= 2) {
+        const expiredAt = new Date().toISOString();
+        await db.missions.update(mission.id, { completedAt: expiredAt, timedOut: true });
+        mission.completedAt = expiredAt;
+        anyCompleted = true;
+      }
+    }
+  }
+
   if (anyCompleted) {
     updateHeader();
     if (state.currentTab === 'stats') renderDashboard();
@@ -5943,7 +6086,7 @@ function _renderMissionDetailBody(am) {
   const catchesSince = state.catches.filter(c => c.caughtAt >= am.activatedAt);
   const shiftsSince  = state.shifts.filter(s => (s.createdAt || `${s.date}T00:00:00`) >= am.activatedAt);
   const { current, target } = calcMissionProgress(def, catchesSince, shiftsSince, state.icdFlat);
-  const cbsModal = missionCheckboxes(current, target, def.tier);
+  const cbsModal = missionCheckboxes(current, target, def.tier, def.emoji || '🎯');
   const active = state.missions.filter(m => !m.completedAt).sort((a, b) => a.slotIndex - b.slotIndex);
   const idx = active.findIndex(m => m.id === am.id);
   const dotsHtml = active.length > 1
@@ -6026,12 +6169,12 @@ function openChallengeHistoryModal() {
 
 const MISSION_TIER_COLORS = { 1:'#9ca3af', 2:'#60a5fa', 3:'#a78bfa' };
 
-const missionCheckboxes = (current, target, tier = 3) => {
+const missionCheckboxes = (current, target, tier = 3, emoji = '🎯') => {
   if (target <= 1) return '';
   const color = MISSION_TIER_COLORS[tier] || 'var(--accent)';
   return Array.from({length: target}, (_, i) => {
     const done = i < current;
-    return `<span class="m-cb${done ? ' m-cb--done' : ''}"${done ? ` style="background:${color};border-color:${color}"` : ''}></span>`;
+    return `<span class="m-cb${done ? ' m-cb--done' : ''}" style="font-size:1.1em;${done ? `filter:none;opacity:1;` : 'filter:grayscale(1);opacity:0.35;'}">${emoji}</span>`;
   }).join('');
 };
 
@@ -6064,7 +6207,7 @@ function renderHomeMissions() {
     const catchesSince = state.catches.filter(c => c.caughtAt >= am.activatedAt);
     const shiftsSince  = state.shifts.filter(s => (s.createdAt || `${s.date}T00:00:00`) >= am.activatedAt);
     const { current, target } = calcMissionProgress(def, catchesSince, shiftsSince, state.icdFlat);
-    const cbs = missionCheckboxes(current, target, def.tier);
+    const cbs = missionCheckboxes(current, target, def.tier, def.emoji || '🎯');
     return `<button class="hm-mission-pill tier-${def.tier}" data-mission-id="${am.id}">
       <div class="hm-mp-dots">${cbs}</div>
       <div class="hm-mp-body">
@@ -6152,7 +6295,7 @@ function renderMissions() {
     const dateStr = done && am.completedAt
       ? new Date(am.completedAt).toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'2-digit' })
       : null;
-    const cbs = done ? '' : missionCheckboxes(current, target, mDef.tier);
+    const cbs = done ? '' : missionCheckboxes(current, target, mDef.tier, mDef.emoji || '🎯');
     const doneLabel = done ? `<span class="m-done-date">${dateStr || '✓'}</span>` : '';
     return `
       <div class="mission-card tier-${mDef.tier}${done ? ' mission-card--done' : ''}">
@@ -6200,6 +6343,168 @@ function renderMissions() {
         if (!mDef) return '';
         return missionCardHtml(am, mDef, 100, 1, 1, true);
       }).join('');
+}
+
+// ─── Diagnosen Tab ────────────────────────────────────────────────────────────
+function _dxMatchKind(sc, thCodes) {
+  if (thCodes.includes(sc))                                    return 'exact';
+  if (thCodes.some(tc => tc.slice(0, 3) === sc.slice(0, 3))) return 'partial';
+  if (thCodes.some(tc => tc.slice(0, 2) === sc.slice(0, 2))) return 'partial';
+  return 'miss';
+}
+
+async function renderDiagnosenTab() {
+  const el = document.getElementById('diagnosen-tab-content');
+  if (!el) return;
+
+  const filter = document.querySelector('.dx-filter-btn.active')?.dataset.filter || 'all';
+
+  // Wire filter buttons (idempotent)
+  document.querySelectorAll('.dx-filter-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.dx-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderDiagnosenTab();
+    };
+  });
+
+  const allSlots = await db.scheduleSlots.toArray();
+  const patientSlots = allSlots
+    .filter(s => !!SLOT_TYPES[s.type]?.patientContact)
+    .sort((a, b) => {
+      const shiftA = state.shifts.find(sh => sh.id === a.shiftId);
+      const shiftB = state.shifts.find(sh => sh.id === b.shiftId);
+      const dateA = shiftA?.date || '';
+      const dateB = shiftB?.date || '';
+      if (dateA !== dateB) return dateB.localeCompare(dateA);
+      return (a.startHour * 60 + (a.startMinute || 0)) - (b.startHour * 60 + (b.startMinute || 0));
+    });
+
+  const isVerified = s => !!(s.seniorCode || s.therapistCodes?.length);
+  const isOffen    = s => !isVerified(s);
+
+  const visible = patientSlots.filter(s => {
+    if (filter === 'verified') return isVerified(s);
+    if (filter === 'offen')    return isOffen(s);
+    return true;
+  });
+
+  if (!visible.length) {
+    el.innerHTML = '<div class="empty-state">Keine Patiententermine gefunden.</div>';
+    return;
+  }
+
+  const fmtD = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '–';
+
+  let html = '';
+  for (const s of visible) {
+    const def      = SLOT_TYPES[s.type] || {};
+    const shift    = state.shifts.find(sh => sh.id === s.shiftId);
+    const timeStr  = padT(s.startHour, s.startMinute ?? 0);
+    const dateStr  = shift ? fmtD(shift.date) : '–';
+    const verified = isVerified(s);
+    const kuerzel  = s.patientNotes || '';
+
+    const slotCatches = state.catches.filter(c => c.slotId === s.id);
+    const myDxObjs = slotCatches.length > 0
+      ? slotCatches.map(c => ({ code: c.code.trim().toUpperCase(), title: c.name || '' }))
+      : (s.suspectedCodes || []).map(c => ({ code: c.code.trim().toUpperCase(), title: c.title || '' }));
+
+    let bodyHtml = '';
+    if (verified) {
+      const thObjs = (s.therapistCodes || []).map(c => ({ code: c.code.trim().toUpperCase(), title: c.title || '' }));
+      if (!thObjs.length && s.seniorCode) thObjs.push({ code: s.seniorCode.trim().toUpperCase(), title: '' });
+      const thCodes = thObjs.map(o => o.code);
+      const myCodes = myDxObjs.map(o => o.code);
+
+      const myRows = myDxObjs.map(o => ({ ...o, kind: _dxMatchKind(o.code, thCodes) }));
+      const thRows = thObjs.map(o => ({ ...o, kind: _dxMatchKind(o.code, myCodes) }));
+
+      const kindClass = k => k === 'exact' ? 'dx-chip dx-chip--exact' : k === 'partial' ? 'dx-chip dx-chip--partial' : 'dx-chip dx-chip--miss';
+      const kindSym   = k => k === 'exact' ? '✓' : k === 'partial' ? '≈' : '✗';
+
+      const myChips = myRows.map(r =>
+        `<button class="${kindClass(r.kind)} dx-chip-clickable" data-code="${r.code}">
+          <span class="dx-chip-sym">${kindSym(r.kind)}</span>
+          <span class="dx-chip-code">${r.code}</span>
+          ${r.title ? `<span class="dx-chip-name">${r.title}</span>` : ''}
+        </button>`
+      ).join('') || '<span class="dx-empty-label">keine</span>';
+
+      const thChips = thRows.map(r =>
+        `<button class="${kindClass(r.kind)} dx-chip-clickable" data-code="${r.code}">
+          <span class="dx-chip-sym">${kindSym(r.kind)}</span>
+          <span class="dx-chip-code">${r.code}</span>
+          ${r.title ? `<span class="dx-chip-name">${r.title}</span>` : ''}
+        </button>`
+      ).join('') || '<span class="dx-empty-label">keine</span>';
+
+      bodyHtml = `
+        <div class="dx-compare-grid">
+          <div class="dx-col">
+            <div class="dx-col-title">Meine Diagnosen</div>
+            <div class="dx-chips">${myChips}</div>
+          </div>
+          <div class="dx-col">
+            <div class="dx-col-title">Therapeut${s.therapistName ? ` · ${s.therapistName}` : ''}</div>
+            <div class="dx-chips">${thChips}</div>
+          </div>
+        </div>
+        <div class="dx-item-footer">
+          <button class="dx-action-btn" data-action="edit" data-slot-id="${s.id}">Bearbeiten</button>
+        </div>`;
+    } else {
+      const catchChips = slotCatches.map(c =>
+        `<button class="dx-chip dx-chip-clickable" data-code="${c.code}">
+          <span class="dx-chip-code">${c.code}</span>
+          <span class="dx-chip-name">${c.name || ''}</span>
+        </button>`
+      ).join('') || '<span class="dx-empty-label">keine Diagnosen erfasst</span>';
+
+      bodyHtml = `
+        <div class="dx-chips" style="margin:8px 0">${catchChips}</div>
+        <div class="dx-item-footer">
+          <button class="dx-action-btn dx-action-btn-primary" data-action="verify" data-slot-id="${s.id}">Vergleichen</button>
+        </div>`;
+    }
+
+    html += `<div class="dx-item">
+      <div class="dx-item-header">
+        <div>
+          <span class="dx-item-type">${def.icon} ${def.label}</span>
+          <span class="dx-item-date">${dateStr} · ${timeStr}</span>
+          ${kuerzel ? `<span class="dx-item-kuerzel">„${kuerzel}"</span>` : ''}
+        </div>
+        <span class="dx-badge ${verified ? 'dx-badge--done' : 'dx-badge--offen'}">${verified ? '✓' : '–'}</span>
+      </div>
+      ${bodyHtml}
+    </div>`;
+  }
+
+  el.innerHTML = html;
+
+  el.querySelectorAll('.dx-chip-clickable[data-code]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      openDiagInfoModal(btn.dataset.code);
+    });
+  });
+
+  el.querySelectorAll('[data-action="verify"][data-slot-id]').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const slot = await db.scheduleSlots.get(parseInt(btn.dataset.slotId));
+      if (slot) openVerifyModal(slot);
+    });
+  });
+
+  el.querySelectorAll('[data-action="edit"][data-slot-id]').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const slot = await db.scheduleSlots.get(parseInt(btn.dataset.slotId));
+      if (slot) openVerifyModal(slot);
+    });
+  });
 }
 
 // ─── ICD-F Tab ────────────────────────────────────────────────────────────────
@@ -7130,27 +7435,49 @@ async function renderShiftDetailBody(shift) {
       e.stopPropagation();
       body.querySelectorAll('.move-patient-menu').forEach(m => m.remove());
       const pkey = btn.dataset.pkey;
-      const candidates = state.shifts
-        .filter(s => s.id !== shift.id && !s.plannerActive)
-        .slice(0, 10);
-      if (!candidates.length) { alert('Keine anderen Dienste vorhanden.'); return; }
+      const p = patientMap.get(isNaN(pkey) ? pkey : parseInt(pkey));
+
+      const allShifts = state.shifts.slice().sort((a, b) => a.date.localeCompare(b.date));
+      const shiftOptions = allShifts.map(sh =>
+        `<option value="${sh.id}" ${sh.id === shift.id ? 'selected' : ''}>${fmtDateShort(sh.date)} ${shiftIcon(sh.type)} ${shiftLabel(sh.type)}${sh.id === shift.id ? ' (aktuell)' : ''}</option>`
+      ).join('');
+
+      const currentTimeVal = p?.patientTime != null
+        ? `${String(p.patientTime).padStart(2,'0')}:00`
+        : '';
+
       const menu = document.createElement('div');
-      menu.className = 'move-patient-menu';
-      const title = document.createElement('div');
-      title.className = 'move-patient-title';
-      title.textContent = 'Termin verschieben in:';
-      menu.appendChild(title);
-      candidates.forEach(s => {
-        const opt = document.createElement('button');
-        opt.className = 'move-diag-option';
-        opt.textContent = `→ ${fmtDateShort(s.date)} ${shiftIcon(s.type)} ${shiftLabel(s.type)}`;
-        opt.addEventListener('click', async () => {
-          menu.remove();
-          await movePatientToShift(pkey, shift, s.id, legacyPatientMap);
-        });
-        menu.appendChild(opt);
-      });
+      menu.className = 'move-patient-menu slot-move-menu';
+      menu.innerHTML = `
+        <div class="slot-move-menu-inner">
+          <div class="slot-move-row">
+            <label>Uhrzeit</label>
+            <input type="time" id="move-patient-time" value="${currentTimeVal}" placeholder="—">
+          </div>
+          <div class="slot-move-row">
+            <label>Dienst</label>
+            <select id="move-patient-shift">${shiftOptions}</select>
+          </div>
+          <div class="slot-move-actions">
+            <button class="btn-primary move-patient-confirm">Verschieben</button>
+            <button class="btn-secondary move-patient-cancel">Abbrechen</button>
+          </div>
+        </div>`;
       btn.closest('.patient-section-header').after(menu);
+
+      menu.querySelector('.move-patient-cancel').addEventListener('click', e => {
+        e.stopPropagation();
+        menu.remove();
+      });
+
+      menu.querySelector('.move-patient-confirm').addEventListener('click', async e => {
+        e.stopPropagation();
+        const timeVal    = menu.querySelector('#move-patient-time').value;
+        const newShiftId = parseInt(menu.querySelector('#move-patient-shift').value);
+        const newTime    = timeVal ? parseInt(timeVal.split(':')[0]) : null;
+        menu.remove();
+        await movePatientToShift(pkey, shift, newShiftId, patientMap, newTime);
+      });
     });
   });
 
@@ -7241,7 +7568,7 @@ async function saveShiftNote(shift, noteText) {
   }
 }
 
-async function movePatientToShift(pkey, sourceShift, targetShiftId, patientMap) {
+async function movePatientToShift(pkey, sourceShift, targetShiftId, patientMap, newPatientTime = undefined) {
   const keyVal = isNaN(pkey) ? pkey : parseInt(pkey);
   const p = patientMap.get(keyVal);
   if (!p || !p.catches.length) return;
@@ -7250,8 +7577,11 @@ async function movePatientToShift(pkey, sourceShift, targetShiftId, patientMap) 
   const targetCatches = state.catches.filter(c => c.shiftId === targetShiftId);
   const newPIdx = targetCatches.reduce((m, c) => Math.max(m, c.patientIndex ?? -1), -1) + 1;
 
+  const catchUpdates = { shiftId: targetShiftId, patientIndex: newPIdx };
+  if (newPatientTime !== undefined) catchUpdates.patientTime = newPatientTime;
+
   for (const c of p.catches) {
-    await db.caughtDiagnoses.update(c.id, { shiftId: targetShiftId, patientIndex: newPIdx });
+    await db.caughtDiagnoses.update(c.id, catchUpdates);
   }
 
   // Refresh patientCount on both shifts
@@ -7796,7 +8126,7 @@ function renderHoursModalBody() {
   const counterTabs = `
     <div class="hours-counter-tabs">
       ${counters.map(c => `<button class="hct-btn${c.id === state.hoursModalCounter && !isSup ? ' active' : ''}" data-cid="${c.id}">${c.name}</button>`).join('')}
-      <button class="hct-btn${isSup ? ' active' : ''}" data-cid="supervision">🎓 Supervision</button>
+      <button class="hct-btn${isSup ? ' active' : ''}" data-cid="supervision">Supervision</button>
     </div>`;
 
   if (isSup) {
@@ -7908,6 +8238,27 @@ function renderHoursModalBody() {
     targetH, pastShifts, sh => calcShiftHours(sh), sh => sh.date
   );
 
+  // "Mit geplanten" indicator: include future planned shifts
+  const futureShifts = all.filter(s => s.date > todayStr);
+  const plannedH = futureShifts.reduce((sum, s) => sum + calcShiftHours(s), 0);
+  const withPlannedH = totalH + plannedH;
+  let withPlannedHtml = '';
+  if (plannedH > 0) {
+    if (withPlannedH >= targetH) {
+      const allSorted = [...all].sort((a, b) => a.date.localeCompare(b.date));
+      let cumH = 0;
+      let reachDate = null;
+      for (const sh of allSorted) {
+        cumH += calcShiftHours(sh);
+        if (cumH >= targetH) { reachDate = sh.date; break; }
+      }
+      withPlannedHtml = `<div class="hours-planned" style="font-size:12px;color:var(--text-dim);margin-top:4px">Prognose mit Geplanten: ${reachDate ? fmtD(reachDate) : '–'}</div>`;
+    } else {
+      const withPct = Math.round((withPlannedH / targetH) * 100);
+      withPlannedHtml = `<div class="hours-planned" style="font-size:12px;color:var(--text-dim);margin-top:4px">Mit Geplanten: ${withPlannedH.toFixed(1)}h (${withPct}%)</div>`;
+    }
+  }
+
   body.innerHTML = `
     ${counterTabs}
     <div class="hours-summary">
@@ -7915,6 +8266,7 @@ function renderHoursModalBody() {
       <div class="hours-summary-info">
         <div class="hours-total">${totalH.toFixed(1).replace('.0','')}h <span style="font-size:14px;color:var(--text-dim)">/ ${targetH}h</span></div>
         <div class="hours-label">${counter?.name || 'Gesamt'} · ${pct}% erledigt</div>
+        ${withPlannedHtml}
         <div class="hours-range">${fmtD(fromDate)} – ${fmtD(toDate)}</div>
         <div class="hours-type-legend">
           ${nFr ? `<span style="color:#3b82f6">🌅 ${nFr}×</span>` : ''}
@@ -8463,20 +8815,34 @@ async function importShiftsFromXML(xmlText) {
     const shiftTeam = xmlTypToTeam(typ);
     const colleagues = Array.from(el.querySelectorAll('kollege')).map(k => {
       const funktion = k.getAttribute('funktion') || '';
+      const stunden  = k.getAttribute('stunden_danach') ? parseFloat(k.getAttribute('stunden_danach')) : null;
+      const pct      = k.getAttribute('pct')            ? parseFloat(k.getAttribute('pct'))            : null;
       return {
         name:     k.getAttribute('name') || '',
         funktion,
         tags:     (k.getAttribute('tags') || '').split(',').map(t => t.trim()).filter(Boolean),
         team:     inferColleagueTeam(funktion) || shiftTeam,
         present:  false,
+        ...(stunden !== null && { stunden }),
+        ...(pct     !== null && { pct }),
       };
     });
 
     if (existingKeys.has(key)) {
-      // Update colleagues if shift already exists and has none yet
+      // Always merge latest XML colleague data (funktion, tags, stunden, pct) into existing shift,
+      // preserving the present (check-in) state and keeping any colleagues not in the XML.
       const existing = existingShifts.find(s => s.date === datum && s.type === type);
-      if (existing && colleagues.length && !(existing.colleagues || []).length) {
-        await db.shiftLogs.update(existing.id, { colleagues });
+      if (existing && colleagues.length) {
+        const merged = [...(existing.colleagues || [])];
+        for (const xmlC of colleagues) {
+          const idx = merged.findIndex(ec => ec.name === xmlC.name);
+          if (idx >= 0) {
+            merged[idx] = { ...merged[idx], ...xmlC, present: merged[idx].present };
+          } else {
+            merged.push(xmlC);
+          }
+        }
+        await db.shiftLogs.update(existing.id, { colleagues: merged });
       }
       skipped++;
       continue;
