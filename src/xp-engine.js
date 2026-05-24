@@ -1,17 +1,17 @@
 export function calculateCatchXP(diagnosis, hasComorbidity, caughtCodes, caughtKategorien) {
-  const baseXP = 15 * diagnosis.seltenheit_score;
+  const baseXP = 8 * diagnosis.seltenheit_score;
   let total = baseXP;
   const bonuses = [];
 
   if (!caughtCodes.has(diagnosis.code)) {
-    total += 50;
-    bonuses.push({ label: 'Erste Diagnose!', xp: 50 });
+    total += 30;
+    bonuses.push({ label: 'Erste Diagnose!', xp: 30 });
   }
 
   if (hasComorbidity) {
-    const comorbidBonus = Math.round(total * 0.2);
+    const comorbidBonus = Math.round(total * 0.15);
     total += comorbidBonus;
-    bonuses.push({ label: 'Komorbidität +20%', xp: comorbidBonus });
+    bonuses.push({ label: 'Komorbidität +15%', xp: comorbidBonus });
   }
 
   return { total, base: baseXP, bonuses };
@@ -120,9 +120,9 @@ export const ROULETTE_DROPS = [
 
 // ─── Diagnostic Loop Verify XP ────────────────────────────────────────────────
 export const DIAGNOSTIC_VERIFY_XP = {
-  exact:   { xp: 300, label: '🎯 Scharfschütze', img: './assets/images/diagnostic_loop/verify_perfect.png' },
-  partial: { xp: 100, label: '👃 Guter Riecher',  img: './assets/images/diagnostic_loop/verify_partial.png' },
-  miss:    { xp:  50, label: '📚 Lernmoment',     img: './assets/images/diagnostic_loop/verify_miss.png' },
+  exact:   { xp:  50, label: '🎯 Scharfschütze', img: './assets/images/diagnostic_loop/verify_perfect.png' },
+  partial: { xp:  20, label: '👃 Guter Riecher',  img: './assets/images/diagnostic_loop/verify_partial.png' },
+  miss:    { xp:   5, label: '📚 Lernmoment',     img: './assets/images/diagnostic_loop/verify_miss.png' },
 };
 
 export const SLOT_TIPS = {
