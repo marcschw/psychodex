@@ -3158,9 +3158,11 @@ img{max-width:100%;display:block}
 .dx-col{background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;padding:8px 10px}
 .dx-col-title{font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase}
 .dx-chips{display:flex;flex-direction:column;gap:4px}
-.dx-chip{display:flex;align-items:center;gap:5px;border:1px solid;border-radius:6px;padding:3px 7px;font-size:12px;font-weight:600}
-.dx-chip-sym{font-size:11px;font-weight:700;opacity:.9}
-.dx-chip-code{font-family:monospace}
+.dx-chip{display:flex;align-items:center;gap:5px;border:1px solid;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:600;cursor:pointer;background:transparent;text-align:left;width:100%;transition:opacity .15s}
+.dx-chip:active{opacity:.7}
+.dx-chip-sym{font-size:11px;font-weight:700;opacity:.9;flex-shrink:0}
+.dx-chip-code{font-family:monospace;flex-shrink:0}
+.dx-chip-name{font-size:11px;font-weight:400;opacity:.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
 .dx-xp-row{margin-top:8px;font-size:12px;font-weight:700;color:var(--accent-cyan)}
 .dx-item-footer{margin-top:10px;display:flex;justify-content:flex-end}
 .dx-action-btn{font-size:12px;font-weight:600;padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:var(--bg-raised);color:var(--text-muted);cursor:pointer;transition:all .15s}

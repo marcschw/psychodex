@@ -3164,16 +3164,26 @@ async function openRecallPatientModal(targetSlot, shift) {
 // ─── Diagnosen Tab ────────────────────────────────────────────────────────────
 
 function _dxCompare(suspectedCodes, therapistCodes) {
-  const susp    = (suspectedCodes  || []).map(c => c.code.trim().toUpperCase());
-  const thCodes = (therapistCodes  || []).map(c => c.code.trim().toUpperCase());
+  const norm = arr => (arr || []).map(c =>
+    typeof c === 'string' ? { code: c, title: '' } : { code: c.code, title: c.title || c.name || '' });
+  const myObjs = norm(suspectedCodes);
+  const thObjs = norm(therapistCodes);
+  const susp    = myObjs.map(c => c.code.trim().toUpperCase());
+  const thCodes = thObjs.map(c => c.code.trim().toUpperCase());
   const matchKind = (sc, list) => {
     if (list.includes(sc))                                    return 'exact';
     if (list.some(tc => tc.slice(0, 3) === sc.slice(0, 3))) return 'partial';
     if (list.some(tc => tc.slice(0, 2) === sc.slice(0, 2))) return 'partial';
     return 'miss';
   };
-  const myRows = susp.map(sc => ({ code: sc, kind: matchKind(sc, thCodes) }));
-  const thRows = thCodes.map(tc => ({ code: tc, kind: matchKind(tc, susp) }));
+  const myRows = myObjs.map(obj => {
+    const sc = obj.code.trim().toUpperCase();
+    return { code: sc, title: obj.title, kind: matchKind(sc, thCodes) };
+  });
+  const thRows = thObjs.map(obj => {
+    const tc = obj.code.trim().toUpperCase();
+    return { code: tc, title: obj.title, kind: matchKind(tc, susp) };
+  });
   const comparisons = susp.length > 0
     ? susp.map(sc => DIAGNOSTIC_VERIFY_XP[matchKind(sc, thCodes)])
     : [DIAGNOSTIC_VERIFY_XP.miss];
@@ -3224,12 +3234,15 @@ async function renderDiagnosenTab() {
   const kindColor = { exact: '#10b981', partial: '#f59e0b', miss: '#ef4444' };
   const kindLabel = { exact: '✓', partial: '~', miss: '✗' };
 
-  const codeChip = (code, kind, fullCode) => {
+  const codeChip = (code, kind, title) => {
     const col = kindColor[kind];
     const sym = kindLabel[kind];
-    return `<span class="dx-chip" style="border-color:${col};color:${col}" title="${fullCode||code}">
-      <span class="dx-chip-sym">${sym}</span><span class="dx-chip-code">${code}</span>
-    </span>`;
+    const esc = (title || '').replace(/"/g, '&quot;');
+    return `<button class="dx-chip" data-code="${code}" style="border-color:${col};color:${col}" title="${esc || code}">
+      <span class="dx-chip-sym">${sym}</span>
+      <span class="dx-chip-code">${code}</span>
+      ${title ? `<span class="dx-chip-name">${title}</span>` : ''}
+    </button>`;
   };
 
   const rows = filtered.map(s => {
@@ -3266,10 +3279,10 @@ async function renderDiagnosenTab() {
       const { myRows, thRows, xp } = _dxCompare(myDx, thCodes);
 
       const myCol = myRows.length
-        ? myRows.map(r => codeChip(r.code, r.kind)).join('')
+        ? myRows.map(r => codeChip(r.code, r.kind, r.title)).join('')
         : '<span style="color:var(--text-dim);font-size:12px">–</span>';
       const thCol = thRows.length
-        ? thRows.map(r => codeChip(r.code, r.kind)).join('')
+        ? thRows.map(r => codeChip(r.code, r.kind, r.title)).join('')
         : '<span style="color:var(--text-dim);font-size:12px">–</span>';
 
       const therapistNameHtml = s.therapistName
@@ -3358,9 +3371,16 @@ async function renderDiagnosenTab() {
     });
   });
 
+  el.querySelectorAll('.dx-chip[data-code]').forEach(chip => {
+    chip.addEventListener('click', e => {
+      e.stopPropagation();
+      openDiagInfoModal(chip.dataset.code);
+    });
+  });
+
   el.querySelectorAll('.pt-item').forEach(item =>
     item.addEventListener('click', e => {
-      if (e.target.closest('[data-action]')) return;
+      if (e.target.closest('[data-action]') || e.target.closest('.dx-chip')) return;
       openShiftDetailModal(parseInt(item.dataset.shiftId));
     }));
 }
