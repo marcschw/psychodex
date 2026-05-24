@@ -8430,23 +8430,20 @@ async function importShiftsFromXML(xmlText) {
     });
 
     if (existingKeys.has(key)) {
-      // Update colleagues if shift already exists and has none yet
+      // Always merge latest XML colleague data (funktion, tags, stunden, pct) into existing shift,
+      // preserving the present (check-in) state and keeping any colleagues not in the XML.
       const existing = existingShifts.find(s => s.date === datum && s.type === type);
       if (existing && colleagues.length) {
-        if (!(existing.colleagues || []).length) {
-          await db.shiftLogs.update(existing.id, { colleagues });
-        } else {
-          // Update stunden/pct on existing colleagues by name
-          const updatedColleagues = (existing.colleagues || []).map(ec => {
-            const xmlMatch = colleagues.find(c => c.name === ec.name);
-            if (!xmlMatch) return ec;
-            const updates = {};
-            if (xmlMatch.stunden !== undefined && xmlMatch.stunden !== null) updates.stunden = xmlMatch.stunden;
-            if (xmlMatch.pct     !== undefined && xmlMatch.pct     !== null) updates.pct     = xmlMatch.pct;
-            return Object.keys(updates).length ? { ...ec, ...updates } : ec;
-          });
-          await db.shiftLogs.update(existing.id, { colleagues: updatedColleagues });
+        const merged = [...(existing.colleagues || [])];
+        for (const xmlC of colleagues) {
+          const idx = merged.findIndex(ec => ec.name === xmlC.name);
+          if (idx >= 0) {
+            merged[idx] = { ...merged[idx], ...xmlC, present: merged[idx].present };
+          } else {
+            merged.push(xmlC);
+          }
         }
+        await db.shiftLogs.update(existing.id, { colleagues: merged });
       }
       skipped++;
       continue;
