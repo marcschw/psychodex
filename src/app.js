@@ -2943,23 +2943,34 @@ function openVerifyModal(slot) {
 async function applyVerifyXP(slot, therapistCodes, therapistName) {
   const susp    = (slot.suspectedCodes || []).map(c => c.code.trim().toUpperCase());
   const thCodes = therapistCodes.map(c => c.code.trim().toUpperCase());
-  let result;
-  if (thCodes.some(tc => susp.includes(tc))) {
-    result = DIAGNOSTIC_VERIFY_XP.exact;
-  } else if (thCodes.some(tc => susp.some(sc => sc.slice(0, 3) === tc.slice(0, 3)))) {
-    result = DIAGNOSTIC_VERIFY_XP.partial;
-  } else if (thCodes.some(tc => susp.some(sc => sc.slice(0, 2) === tc.slice(0, 2)))) {
-    result = DIAGNOSTIC_VERIFY_XP.partial;
-  } else {
-    result = DIAGNOSTIC_VERIFY_XP.miss;
-  }
 
-  let xp = result.xp;
+  // Evaluate each suspected code independently against all therapist codes
+  const comparisons = susp.length > 0
+    ? susp.map(sc => {
+        if (thCodes.includes(sc)) return DIAGNOSTIC_VERIFY_XP.exact;
+        if (thCodes.some(tc => tc.slice(0, 3) === sc.slice(0, 3))) return DIAGNOSTIC_VERIFY_XP.partial;
+        if (thCodes.some(tc => tc.slice(0, 2) === sc.slice(0, 2))) return DIAGNOSTIC_VERIFY_XP.partial;
+        return DIAGNOSTIC_VERIFY_XP.miss;
+      })
+    : [DIAGNOSTIC_VERIFY_XP.miss];
+
+  let totalXP = comparisons.reduce((s, r) => s + r.xp, 0);
+
   if (state.profile.verifyBoost20) {
-    xp = Math.round(xp * 1.2);
+    totalXP = Math.round(totalXP * 1.2);
     await db.profile.update(state.profile.id, { verifyBoost20: false });
     state.profile.verifyBoost20 = false;
   }
+
+  // Group by label for the XP popup
+  const counts = {};
+  comparisons.forEach(r => { counts[r.label] = (counts[r.label] || 0) + 1; });
+  const bonuses = Object.entries(counts).map(([label, count]) => {
+    const r = Object.values(DIAGNOSTIC_VERIFY_XP).find(v => v.label === label);
+    return { label: `${count > 1 ? count + '× ' : ''}${label}`, xp: r.xp * count };
+  });
+
+  const bestResult = comparisons.reduce((best, r) => r.xp > best.xp ? r : best, comparisons[0]);
 
   const seniorCode = thCodes[0] || '';
   await db.scheduleSlots.update(slot.id, {
@@ -2967,20 +2978,19 @@ async function applyVerifyXP(slot, therapistCodes, therapistName) {
     therapistCodes,
     ...(therapistName && { therapistName }),
     terminInterviewDone: true,
-    xpEarned: (slot.xpEarned || 0) + xp,
+    xpEarned: (slot.xpEarned || 0) + totalXP,
   });
 
-  const newTotal = (state.profile.totalXP ?? 0) + xp;
+  const newTotal = (state.profile.totalXP ?? 0) + totalXP;
   await db.profile.update(state.profile.id, { totalXP: newTotal });
   state.profile.totalXP = newTotal;
 
-  const bonuses = [{ label: result.label, xp }];
-  showXPPopup(xp, bonuses);
+  showXPPopup(totalXP, bonuses);
 
   // Show verify result image briefly
   const imgEl = document.getElementById('verify-result-img');
   if (imgEl) {
-    imgEl.src = result.img;
+    imgEl.src = bestResult.img;
     imgEl.classList.remove('hidden');
     setTimeout(() => imgEl.classList.add('hidden'), 3000);
   }
