@@ -682,7 +682,7 @@ function renderHoursCounters() {
   const supHours  = state.supHours ?? 0;
   const supTarget = state.profile?.supervisionTarget ?? 30;
   const supPct    = Math.min(100, Math.round((supHours / supTarget) * 100));
-  const supColor  = supPct >= 100 ? '#10b981' : supPct >= 60 ? '#f59e0b' : '#ef4444';
+  const supColor  = supPct >= 100 ? '#10b981' : '#8b5cf6';
 
   const counterCards = counters.map(c => {
     const h = calcCounterHours(c);
@@ -710,7 +710,7 @@ function renderHoursCounters() {
   const supCard = `
     <div class="hours-counter-card sup-counter-card" data-counter-id="supervision">
       <div class="hc-top">
-        <span class="hc-name">🎓 Supervision</span>
+        <span class="hc-name">Supervision</span>
         <span class="hc-pct" style="color:${supColor}">${supPct}%</span>
       </div>
       <div class="hc-bar-wrap"><div class="hc-bar-fill" style="width:${supPct}%;background:${supColor}"></div></div>
@@ -6259,56 +6259,56 @@ function renderStats() {
 }
 
 function renderHeatmap() {
-  const el    = document.getElementById('heatmap');
-  const today = new Date();
+  const el       = document.getElementById('heatmap');
+  const today    = new Date();
   const todayStr = today.toISOString().split('T')[0];
-  // Build date → color map based on activity fraction
-  const shiftColorMap = new Map();
+
+  // Build date → { shift, color, isFuture } map
+  const shiftMap = new Map();
   for (const shift of state.shifts) {
-    const asgn = shift.zuteilung?.assignments;
-    let fraction;
-    if (asgn && Object.keys(asgn).length > 0) {
-      const vals = Object.values(asgn);
-      const nonPause = vals.filter(v => v !== 'pause').length;
-      fraction = nonPause / vals.length;
+    const isFuture = shift.date > todayStr;
+    let color;
+    if (isFuture) {
+      color = null; // future shifts get a fixed CSS class, not an activity color
     } else {
-      // Fallback: use shift duration ratio (max 8h = full green)
-      try {
-        const h = shiftHours(shift);
-        const durMins = (h.end[0]*60 + h.end[1]) - (h.start[0]*60 + h.start[1]);
-        fraction = Math.min(1, durMins / 480);
-      } catch { fraction = 1; }
+      const asgn = shift.zuteilung?.assignments;
+      let fraction;
+      if (asgn && Object.keys(asgn).length > 0) {
+        const vals = Object.values(asgn);
+        fraction = vals.filter(v => v !== 'pause').length / vals.length;
+      } else {
+        try {
+          const h = shiftHours(shift);
+          const durMins = (h.end[0]*60 + h.end[1]) - (h.start[0]*60 + h.start[1]);
+          fraction = Math.min(1, durMins / 480);
+        } catch { fraction = 1; }
+      }
+      const hue = Math.round(fraction * 110);
+      color = `hsl(${hue},70%,48%)`;
     }
-    const hue = Math.round(fraction * 110); // 0=red, 110=green
-    shiftColorMap.set(shift.date, `hsl(${hue},70%,48%)`);
+    shiftMap.set(shift.date, { id: shift.id, color, isFuture });
   }
 
-  // Find earliest shift date
-  const firstShiftDate = state.shifts.length
-    ? state.shifts.slice().sort((a, b) => a.date.localeCompare(b.date))[0].date
-    : null;
-
-  // Determine start: Monday of first shift week, or 52 weeks back
+  // Start: Monday of first shift week (past or future)
+  const allDates = state.shifts.map(s => s.date).sort();
+  const firstDate = allDates[0] || null;
   let start;
-  if (firstShiftDate) {
-    start = new Date(firstShiftDate + 'T12:00:00');
-    const dow = start.getDay() || 7; // 1=Mon..7=Sun
-    start.setDate(start.getDate() - (dow - 1)); // rewind to Monday
+  if (firstDate) {
+    start = new Date(firstDate + 'T12:00:00');
+    const dow = start.getDay() || 7;
+    start.setDate(start.getDate() - (dow - 1));
   } else {
     start = new Date(today);
     start.setDate(start.getDate() - 52 * 7 + 1);
   }
-
-  // Clamp start to at most 104 weeks back
   const maxStart = new Date(today);
   maxStart.setDate(maxStart.getDate() - 104 * 7);
   if (start < maxStart) start = maxStart;
 
-  const startStr = start.toISOString().split('T')[0];
-
-  // Compute dynamic week count
+  const startStr  = start.toISOString().split('T')[0];
   const msPerWeek = 7 * 24 * 3600 * 1000;
-  const WEEKS = Math.min(104, Math.ceil((today - start) / msPerWeek) + 2);
+  // Extend 9 weeks into the future (~2 months)
+  const WEEKS = Math.min(112, Math.ceil((today - start) / msPerWeek) + 9);
 
   let html = '';
   for (let w = 0; w < WEEKS; w++) {
@@ -6316,23 +6316,28 @@ function renderHeatmap() {
     for (let d = 0; d < 7; d++) {
       const date = new Date(start);
       date.setDate(start.getDate() + w * 7 + d);
-      const ds = date.toISOString().split('T')[0];
-      const color = shiftColorMap.get(ds);
-      const cls = ['heatmap-cell', color ? 'hm-active' : '',
-        ds === todayStr ? 'hm-today' : '', date > today ? 'hm-future' : ''].filter(Boolean).join(' ');
-      const styleAttr = color && ds !== todayStr ? ` style="background:${color};box-shadow:0 0 5px ${color}66"` : '';
-      html += `<div class="${cls}"${styleAttr} title="${ds}"></div>`;
+      const ds    = date.toISOString().split('T')[0];
+      const entry = shiftMap.get(ds);
+      const isFutureShift = entry?.isFuture;
+      const cls = ['heatmap-cell',
+        entry ? (isFutureShift ? 'hm-future-shift' : 'hm-active') : '',
+        ds === todayStr ? 'hm-today' : '',
+        date > today && !entry ? 'hm-future' : '',
+      ].filter(Boolean).join(' ');
+      const styleAttr = entry && !isFutureShift && ds !== todayStr
+        ? ` style="background:${entry.color};box-shadow:0 0 5px ${entry.color}66"` : '';
+      const dataAttr  = entry ? ` data-shift-id="${entry.id}"` : '';
+      html += `<div class="${cls}"${styleAttr}${dataAttr} title="${ds}"></div>`;
     }
     html += '</div>';
   }
   el.innerHTML = html;
-  el.querySelectorAll('.heatmap-cell[title]').forEach(cell => {
-    if (shiftColorMap.has(cell.title)) {
-      cell.addEventListener('click', () => showHeatmapDetail(cell.title));
-    }
+
+  el.querySelectorAll('.heatmap-cell[data-shift-id]').forEach(cell => {
+    cell.addEventListener('click', () => openShiftDetailModal(parseInt(cell.dataset.shiftId)));
   });
 
-  return startStr; // return for header label
+  return startStr;
 }
 
 function showHeatmapDetail(dateStr) {
