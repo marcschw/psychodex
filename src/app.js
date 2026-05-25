@@ -4036,7 +4036,7 @@ function openPtmLightbox(src, name) {
 
 function openPersonTierModal(personName, people, zData, saveData, render) {
   const person = people.find(p => p.name === personName);
-  if (!person) return;
+  if (!person || person._isTrainee) return;
   const currentTier = zData.personTiers?.[personName] ?? null;
   const existing = document.getElementById('person-tier-modal');
   if (existing) existing.remove();
@@ -4386,29 +4386,31 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
     bi > 0 ? allowedPeople.filter(p => result[`${p.name}::${blocks[bi-1].key}`] === role) : [];
 
   for (const [bi, block] of blocks.entries()) {
-    // Kassa: 1 non-trainee; prefer same person as prev block (2-block ≈ :30 stints); buffer after termin
+    // Kassa: 1 non-trainee; ROTATE each block (prefer someone not in kassa last block)
     if (!allowedPeople.some(p => result[`${p.name}::${block.key}`] === 'kassa')) {
       const pool = free(block, bi).filter(p => !p._isTrainee);
-      const prev = prevRole(bi, 'kassa').filter(p => pool.includes(p) && !hadTerminRecently(p, bi));
-      const pref = prev.length ? prev : pool.filter(p => !hadTerminRecently(p, bi));
-      const p = pickByScore(pref.length ? pref : pool.length ? pool : free(block, bi), 'kassa');
+      const prevKassaNames = new Set(prevRole(bi, 'kassa').map(p => p.name));
+      const rotators = pool.filter(p => !hadTerminRecently(p, bi) && !prevKassaNames.has(p.name));
+      const fallback  = pool.filter(p => !hadTerminRecently(p, bi));
+      const p = pickByScore(rotators.length ? rotators : fallback.length ? fallback : pool.length ? pool : free(block, bi), 'kassa');
       if (p) assign(p, block, 'kassa');
     }
-    // Backoffice: up to 2; prefer same people as prev block
-    const prevBO = prevRole(bi, 'backoffice');
+    // Backoffice: up to 2; ROTATE each block (prefer people not in backoffice last block)
+    const prevBONames = new Set(prevRole(bi, 'backoffice').map(p => p.name));
     for (let slot = 0; slot < 2; slot++) {
       if (allowedPeople.filter(p => result[`${p.name}::${block.key}`] === 'backoffice').length >= 2) break;
       const pool = free(block, bi).filter(p => !p._isTrainee);
-      const pref = prevBO.filter(p => pool.includes(p));
-      const pick = pickByScore(pref.length ? pref : pool.length ? pool : free(block, bi), 'backoffice');
+      const rotators = pool.filter(p => !prevBONames.has(p.name));
+      const pick = pickByScore(rotators.length ? rotators : pool.length ? pool : free(block, bi), 'backoffice');
       if (pick) assign(pick, block, 'backoffice');
       else break;
     }
-    // 5. Stock: always assign when someone is free; prefer same person as prev block
+    // 5. Stock: ROTATE each block (prefer someone not in 5stock last block)
     if (!allowedPeople.some(p => result[`${p.name}::${block.key}`] === '5stock')) {
       const pool = free(block, bi).filter(p => !p._isTrainee);
-      const prev5 = prevRole(bi, '5stock').filter(p => pool.includes(p));
-      const p = pickByScore(prev5.length ? prev5 : pool.length ? pool : free(block, bi), '5stock');
+      const prev5Names = new Set(prevRole(bi, '5stock').map(p => p.name));
+      const rotators = pool.filter(p => !prev5Names.has(p.name));
+      const p = pickByScore(rotators.length ? rotators : pool.length ? pool : free(block, bi), '5stock');
       if (p) assign(p, block, '5stock');
     }
     // Fill remaining with backoffice (cap 2); extras left empty (Leer)
