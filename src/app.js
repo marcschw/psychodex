@@ -4016,6 +4016,15 @@ function showZuteilPicker(triggerBtn, cellKey, zData, saveData, pushUndo, render
   );
 }
 
+function openPtmLightbox(src, name) {
+  const lb = document.createElement('div');
+  lb.className = 'ptm-lightbox';
+  lb.innerHTML = `<div class="ptm-lb-backdrop"></div><img class="ptm-lb-img" src="${src}" alt="${name}">`;
+  document.body.appendChild(lb);
+  lb.querySelector('.ptm-lb-backdrop').onclick = () => lb.remove();
+  lb.querySelector('.ptm-lb-img').onclick = () => lb.remove();
+}
+
 function openPersonTierModal(personName, people, zData, saveData, render) {
   const person = people.find(p => p.name === personName);
   if (!person) return;
@@ -4025,25 +4034,29 @@ function openPersonTierModal(personName, people, zData, saveData, render) {
   const modal = document.createElement('div');
   modal.id = 'person-tier-modal';
   modal.className = 'modal';
+  const initImg = currentTier ? ANIMAL_TIERS[currentTier-1].img : '';
+  const initName = currentTier ? ANIMAL_TIERS[currentTier-1].name : '';
+  const initDesc = currentTier ? ANIMAL_TIERS[currentTier-1].desc : '';
   modal.innerHTML = `
     <div class="modal-backdrop" id="ptm-backdrop"></div>
     <div class="modal-sheet">
       <div class="sheet-header">
-        <div class="modal-title" style="display:flex;align-items:center;gap:8px">
-          ${currentTier ? `<span class="zut-tier-emoji-lg">${ANIMAL_TIERS[currentTier-1].emoji}</span>` : ''}
-          ${personName}
-        </div>
+        <div class="modal-title">${personName}</div>
       </div>
       <div class="sheet-body" style="padding:16px;display:flex;flex-direction:column;gap:12px">
         <div style="font-size:12px;color:var(--text-dim)">
           ${person._isSenior?'★ Seniorassistent · ':''}${person._isTrainee?'🎓 Ausbildung · ':''}${person._self?'(Ich)':''}
         </div>
         ${person.stunden != null ? `<div style="font-size:13px;color:var(--text-muted)">${person.stunden}h · ${person.pct != null ? person.pct + '%' : ''} Dienstalter</div>` : ''}
+        <div id="ptm-preview" class="ptm-preview${initImg ? '' : ' ptm-preview--empty'}">
+          ${initImg ? `<img id="ptm-preview-img" src="${initImg}" alt="${initName}" class="ptm-preview-img">
+          <div id="ptm-preview-label" class="ptm-preview-label">${initName} · <span style="color:var(--text-dim)">${initDesc}</span></div>` : '<span style="color:var(--text-dim);font-size:13px">Kein Sternbild gewählt</span>'}
+        </div>
         <div style="display:flex;flex-direction:column;gap:6px">
           <label class="form-label">Sternbild</label>
           <div style="display:flex;flex-wrap:wrap;gap:6px">
             ${ANIMAL_TIERS.map(t => `<button class="ptm-tier-btn${t.tier===currentTier?' ptm-tier-active':''}" data-tier="${t.tier}" title="${t.desc}">
-              <img src="${t.img}" alt="${t.name}" style="width:40px;height:40px;object-fit:contain;display:block;margin:0 auto 2px">
+              <img src="${t.img}" alt="${t.name}" style="width:36px;height:36px;object-fit:contain;display:block;margin:0 auto 2px">
               <span style="font-size:9px;display:block;text-align:center">${t.name}</span>
             </button>`).join('')}
           </div>
@@ -4056,12 +4069,22 @@ function openPersonTierModal(personName, people, zData, saveData, render) {
     </div>`;
   document.body.appendChild(modal);
   let selectedTier = currentTier;
+  const previewEl  = modal.querySelector('#ptm-preview');
+  const previewImg = modal.querySelector('#ptm-preview-img');
   modal.querySelectorAll('.ptm-tier-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       selectedTier = parseInt(btn.dataset.tier);
       modal.querySelectorAll('.ptm-tier-btn').forEach(b => b.classList.remove('ptm-tier-active'));
       btn.classList.add('ptm-tier-active');
+      const t = ANIMAL_TIERS[selectedTier - 1];
+      previewEl.classList.remove('ptm-preview--empty');
+      previewEl.innerHTML = `<img id="ptm-preview-img" src="${t.img}" alt="${t.name}" class="ptm-preview-img">
+        <div class="ptm-preview-label">${t.name} · <span style="color:var(--text-dim)">${t.desc}</span></div>`;
+      previewEl.querySelector('.ptm-preview-img')?.addEventListener('click', () => openPtmLightbox(t.img, t.name));
     });
+  });
+  previewImg?.addEventListener('click', () => {
+    if (currentTier) openPtmLightbox(ANIMAL_TIERS[currentTier-1].img, ANIMAL_TIERS[currentTier-1].name);
   });
   const close = () => modal.remove();
   document.getElementById('ptm-backdrop').onclick = close;

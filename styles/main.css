@@ -3141,6 +3141,14 @@ img{max-width:100%;display:block}
 .ptm-tier-btn{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);cursor:pointer;font-size:13px;transition:all .15s;min-width:52px}
 .ptm-tier-btn:hover{background:rgba(255,255,255,.1)}
 .ptm-tier-active{background:rgba(124,58,237,.2)!important;border-color:var(--accent)!important;color:var(--accent)}
+.ptm-preview{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 0 4px}
+.ptm-preview--empty{min-height:40px;justify-content:center}
+.ptm-preview-img{width:120px;height:120px;object-fit:contain;cursor:pointer;border-radius:12px;transition:transform .15s}
+.ptm-preview-img:hover{transform:scale(1.04)}
+.ptm-preview-label{font-size:13px;font-weight:600;text-align:center}
+.ptm-lightbox{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center}
+.ptm-lb-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.85)}
+.ptm-lb-img{position:relative;max-width:90vw;max-height:85vh;object-fit:contain;border-radius:12px;cursor:pointer}
 /* ── Station view short labels ───────────────────────────────────────────────── */
 .zut-station-short-td{min-width:55px;max-width:70px;white-space:nowrap}
 .zut-station-role-short{font-size:10px;font-weight:700;margin-left:2px}
@@ -3190,7 +3198,7 @@ img{max-width:100%;display:block}
 .dx-chip--partial .dx-chip-sym{color:#fbbf24}
 .dx-chip--miss{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2)}
 .dx-chip--miss .dx-chip-sym{color:#f87171}
-.dx-chip-thumb{width:56px;height:56px;border-radius:6px;object-fit:cover;flex-shrink:0;margin-top:5px;align-self:flex-start}
+.dx-chip-thumb{width:44px;height:44px;border-radius:6px;object-fit:cover;flex-shrink:0;margin-top:10px;align-self:flex-start}
 .dx-chip-col{flex-direction:column;align-items:flex-start}
 .dx-chip-row{display:flex;align-items:center;gap:4px;flex-wrap:wrap;width:100%}
 .dx-chip-sym{font-size:11px;flex-shrink:0}
