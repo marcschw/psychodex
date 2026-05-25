@@ -3551,14 +3551,12 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       : tierInfo ?? null;
     const badges = [
       tierAvatar ? `<span class="zut-tier-emoji" title="${tierAvatar.name} · ${tierAvatar.desc}">${tierAvatar.emoji}</span>` : '',
-      p._self ? '<span class="team-self-badge">Ich</span>' : '',
       p._isSenior ? '<span class="zut-senior-tag">★</span>' : '',
-      p._isTrainee ? '<span class="zut-trainee-tag">🎓</span>' : '',
       isPlanBRow ? '<span class="zut-planb-tag">Plan B</span>' : '',
     ].filter(Boolean).join('');
     return `<tr class="zut-row${absent?' zut-row-absent':''}${ps.notYetPresent&&!absent?' zut-row-notyet':''}">
       <td class="zut-td-name">
-        <div class="zut-person-name zut-person-clickable" data-pname="${p.name}" title="${p.name}">${firstName}${badges?' '+badges:''}</div>
+        <div class="zut-person-name zut-person-clickable" data-pname="${p.name}" title="${p.name}">${firstName}${badges ? `<br><span class="zut-name-badges">${badges}</span>` : ''}</div>
         <div class="zut-person-sub">
           ${!absent?`<button class="zut-checkin-btn${ps.notYetPresent?' absent':' present'}" data-pname="${p.name}">${ps.notYetPresent?'⏳':'✓'}</button>`:''}
           ${earlyMark}
@@ -4491,7 +4489,17 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
     bi > 0 ? allowedPeople.filter(p => result[`${p.name}::${blocks[bi-1].key}`] === role) : [];
 
   for (const [bi, block] of blocks.entries()) {
-    // Kassa: 1 non-trainee; ROTATE each block (prefer someone not in kassa last block)
+    // How many consecutive blocks a person stays in a station role before rotating (~2h)
+    const maxStay = Math.max(1, Math.round(2 / blockSize));
+    const consec = (pname, roleKey) => {
+      let c = 0;
+      for (let k = bi - 1; k >= 0; k--) {
+        if (result[`${pname}::${blocks[k].key}`] === roleKey) c++; else break;
+      }
+      return c;
+    };
+
+    // Kassa: rotate every block (handover at :30 — keep blocks short)
     if (!allowedPeople.some(p => result[`${p.name}::${block.key}`] === 'kassa')) {
       const pool = free(block, bi).filter(p => !p._isTrainee);
       const prevKassaNames = new Set(prevRole(bi, 'kassa').map(p => p.name));
@@ -4500,23 +4508,33 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
       const p = pickByScore(rotators.length ? rotators : fallback.length ? fallback : pool.length ? pool : free(block, bi), 'kassa');
       if (p) assign(p, block, 'kassa');
     }
-    // Backoffice: up to 2; ROTATE each block (prefer people not in backoffice last block)
+    // Backoffice: stay up to maxStay blocks (~2h), then rotate
     const prevBONames = new Set(prevRole(bi, 'backoffice').map(p => p.name));
     for (let slot = 0; slot < 2; slot++) {
       if (allowedPeople.filter(p => result[`${p.name}::${block.key}`] === 'backoffice').length >= 2) break;
       const pool = free(block, bi).filter(p => !p._isTrainee);
-      const rotators = pool.filter(p => !prevBONames.has(p.name));
-      const pick = pickByScore(rotators.length ? rotators : pool.length ? pool : free(block, bi), 'backoffice');
-      if (pick) assign(pick, block, 'backoffice');
-      else break;
+      const staying = prevRole(bi, 'backoffice').filter(p => pool.includes(p) && consec(p.name, 'backoffice') < maxStay);
+      if (staying.length) {
+        assign(staying[0], block, 'backoffice');
+      } else {
+        const rotators = pool.filter(p => !prevBONames.has(p.name));
+        const pick = pickByScore(rotators.length ? rotators : pool.length ? pool : free(block, bi), 'backoffice');
+        if (pick) assign(pick, block, 'backoffice'); else break;
+      }
     }
-    // 5. Stock: ROTATE each block (prefer someone not in 5stock last block)
+    // 5. Stock: stay up to maxStay blocks (~2h), then rotate
     if (!allowedPeople.some(p => result[`${p.name}::${block.key}`] === '5stock')) {
       const pool = free(block, bi).filter(p => !p._isTrainee);
-      const prev5Names = new Set(prevRole(bi, '5stock').map(p => p.name));
-      const rotators = pool.filter(p => !prev5Names.has(p.name));
-      const p = pickByScore(rotators.length ? rotators : pool.length ? pool : free(block, bi), '5stock');
-      if (p) assign(p, block, '5stock');
+      const prev5 = prevRole(bi, '5stock');
+      const staying5 = prev5.filter(p => pool.includes(p) && !hadTerminRecently(p, bi) && consec(p.name, '5stock') < maxStay);
+      if (staying5.length) {
+        assign(staying5[0], block, '5stock');
+      } else {
+        const prev5Names = new Set(prev5.map(p => p.name));
+        const rotators = pool.filter(p => !prev5Names.has(p.name));
+        const p = pickByScore(rotators.length ? rotators : pool.length ? pool : free(block, bi), '5stock');
+        if (p) assign(p, block, '5stock');
+      }
     }
     // Fill remaining with backoffice (cap 2); extras left empty (Leer)
     for (const p of free(block, bi)) {
@@ -6298,7 +6316,6 @@ function renderMissions() {
       <div class="mission-card tier-${mDef.tier}${done ? ' mission-card--done' : ''}">
         <div class="mc-right" style="flex:1">
           <div class="mission-card-header">
-            <span class="mission-tier-badge">${TIER_LABELS[mDef.tier]}</span>
             <span class="mission-reward">${done ? '✓ ' : ''}+${mDef.reward.toLocaleString('de-AT')} XP</span>
           </div>
           <div class="mission-title">${mDef.title}</div>
