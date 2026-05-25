@@ -981,6 +981,16 @@ async function renderHomeTab() {
         ${shift.type !== 'schulung' ? `
         <textarea id="home-edit-note" class="home-note-area" rows="6"
           placeholder="Dienst-Log / Notizen…">${shift.note || ''}</textarea>` : ''}
+        ${(shift.xmlMeetings && shift.xmlMeetings.length) ? `
+        <div class="home-xml-meetings">
+          <div class="home-xml-meetings-label">Termine</div>
+          ${shift.xmlMeetings.map(m => `
+            <div class="home-xml-meeting-row">
+              <span class="home-xml-meeting-time">${m.von}–${m.bis}</span>
+              <span class="home-xml-meeting-title">${m.titel || m.typ}</span>
+              ${m.mit ? `<div class="home-xml-meeting-mit">${m.mit}</div>` : ''}
+            </div>`).join('')}
+        </div>` : ''}
       </div>`;
 
     // Date edit button opens reschedule modal
@@ -3481,6 +3491,14 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     if (ps.earlyLeave) {
       const [lh] = ps.earlyLeave.split(':').map(Number);
       if (block.start >= lh) return false;
+    }
+    if (p.meetings && p.meetings.length) {
+      const bStartM = block.start * 60, bEndM = block.end * 60;
+      for (const mt of p.meetings) {
+        const [mh, mm_] = mt.von.split(':').map(Number);
+        const [eh, em]  = mt.bis.split(':').map(Number);
+        if (mh * 60 + mm_ < bEndM && eh * 60 + em > bStartM) return false;
+      }
     }
     return true;
   };
@@ -8931,6 +8949,33 @@ async function importShiftsFromXML(xmlText) {
   const dienste = Array.from(doc.querySelectorAll('dienst'));
   if (!dienste.length) { alert('Keine Dienste in der XML-Datei gefunden.'); return; }
 
+  // Top-level sections (outside <dienste>)
+  const xmlMeetingsAll = Array.from(doc.querySelectorAll('termine > termin')).map(t => ({
+    datum:     t.getAttribute('datum')     || '',
+    von:       t.getAttribute('von')       || '',
+    bis:       t.getAttribute('bis')       || '',
+    typ:       t.getAttribute('typ')       || '',
+    titel:     t.getAttribute('titel')     || '',
+    ersteller: t.getAttribute('ersteller') || '',
+    mit:       t.getAttribute('mit')       || '',
+  })).filter(t => t.datum && t.von);
+
+  const xmlAnmeldungen = Array.from(doc.querySelectorAll('anmeldungen > anmeldung')).map(a => ({
+    datum:          a.getAttribute('datum')         || '',
+    von:            a.getAttribute('von')           || '',
+    patientName:    a.getAttribute('name')          || '',
+    sprache:        a.getAttribute('sprache')       || '',
+    isInternational: a.getAttribute('international') === 'ja',
+  })).filter(a => a.datum && a.von);
+
+  const xmlErstgespraeche = Array.from(doc.querySelectorAll('erstgespraeche > erstgespraech')).map(e => ({
+    datum:          e.getAttribute('datum')         || '',
+    von:            e.getAttribute('von')           || '',
+    isDemo:         e.getAttribute('demo')          === 'ja',
+    isInternational: e.getAttribute('international') === 'ja',
+    sprache:        e.getAttribute('sprache')       || '',
+  })).filter(e => e.datum && e.von);
+
   const halbtagToType = { AM: 'früh', PM: 'spät', NM: 'spät', SAT: 'samstag', FULL: 'full' };
 
   const getCategory = (typ, spalte) => {
@@ -8961,14 +9006,21 @@ async function importShiftsFromXML(xmlText) {
       const funktion = k.getAttribute('funktion') || '';
       const stunden  = k.getAttribute('stunden_danach') ? parseFloat(k.getAttribute('stunden_danach')) : null;
       const pct      = k.getAttribute('pct')            ? parseFloat(k.getAttribute('pct'))            : null;
+      const meetings = Array.from(k.querySelectorAll('meeting')).map(m => ({
+        von:   m.getAttribute('von')   || '',
+        bis:   m.getAttribute('bis')   || '',
+        typ:   m.getAttribute('typ')   || '',
+        titel: m.getAttribute('titel') || '',
+      })).filter(m => m.von && m.bis);
       return {
         name:     k.getAttribute('name') || '',
         funktion,
         tags:     (k.getAttribute('tags') || '').split(',').map(t => t.trim()).filter(Boolean),
         team:     inferColleagueTeam(funktion) || shiftTeam,
         present:  false,
-        ...(stunden !== null && { stunden }),
-        ...(pct     !== null && { pct }),
+        ...(stunden  !== null  && { stunden }),
+        ...(pct      !== null  && { pct }),
+        ...(meetings.length    && { meetings }),
       };
     });
 
@@ -9002,6 +9054,67 @@ async function importShiftsFromXML(xmlText) {
     });
     existingKeys.add(key);
     imported++;
+  }
+
+  // Merge global meetings, anmeldungen, erstgespraeche into matching shifts
+  if (xmlMeetingsAll.length || xmlAnmeldungen.length || xmlErstgespraeche.length) {
+    const allShifts = await db.shiftLogs.toArray();
+    const timeToM = s => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
+
+    for (const mt of xmlMeetingsAll) {
+      const mStartM = timeToM(mt.von);
+      for (const s of allShifts.filter(s => s.date === mt.datum)) {
+        const h = shiftHours(s);
+        const sStartM = h.start[0]*60+h.start[1], sEndM = h.end[0]*60+h.end[1];
+        if (mStartM >= sStartM && mStartM < sEndM) {
+          const cur = s.xmlMeetings || [];
+          if (!cur.some(x => x.von === mt.von && x.titel === mt.titel)) {
+            await db.shiftLogs.update(s.id, { xmlMeetings: [...cur, { ...mt }] });
+          }
+        }
+      }
+    }
+
+    const toTermin = (type, obj) => {
+      const startHour = timeToM(obj.von) / 60;
+      return {
+        id: `xml-${type}-${obj.datum}-${obj.von}`,
+        type,
+        startHour,
+        ...(type === 'anmeldung' && obj.patientName && { patientName: obj.patientName }),
+        ...(obj.isInternational && { isInternational: true }),
+        ...(obj.sprache          && { sprache: obj.sprache }),
+        ...(obj.isDemo           && { isDemo: true }),
+        importedFromXml: true,
+      };
+    };
+
+    const terminsByDate = {};
+    for (const a of xmlAnmeldungen) {
+      (terminsByDate[a.datum] = terminsByDate[a.datum] || []).push(toTermin('anmeldung', a));
+    }
+    for (const e of xmlErstgespraeche) {
+      (terminsByDate[e.datum] = terminsByDate[e.datum] || []).push(toTermin('erstgesprach', e));
+    }
+
+    for (const [datum, newTermine] of Object.entries(terminsByDate)) {
+      for (const s of allShifts.filter(s => s.date === datum)) {
+        const h = shiftHours(s);
+        const sStartM = h.start[0]*60+h.start[1], sEndM = h.end[0]*60+h.end[1];
+        const matching = newTermine.filter(t => {
+          const tM = t.startHour * 60;
+          return tM >= sStartM && tM < sEndM;
+        });
+        if (!matching.length) continue;
+        const cur = s.zuteilung || {};
+        const curTermine = cur.termine || [];
+        const merged = [...curTermine];
+        for (const nt of matching) {
+          if (!merged.some(x => x.id === nt.id)) merged.push(nt);
+        }
+        await db.shiftLogs.update(s.id, { zuteilung: { ...cur, termine: merged } });
+      }
+    }
   }
 
   state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
