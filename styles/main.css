@@ -2611,6 +2611,15 @@ img{max-width:100%;display:block}
 .home-xml-meeting-time{font-size:11px;font-weight:600;color:var(--accent);margin-right:8px;white-space:nowrap}
 .home-xml-meeting-title{font-size:12px;font-weight:600;color:var(--text)}
 .home-xml-meeting-mit{font-size:11px;color:var(--text-dim);margin-top:2px;line-height:1.3}
+/* Patient code / reveal */
+.zut-pt-inline{display:inline-flex;align-items:center;gap:2px;vertical-align:middle}
+.zut-pt-text{font-size:10px;font-weight:600;color:var(--text-dim);letter-spacing:.02em}
+.zut-pt-reveal{background:none;border:none;padding:0 2px;font-size:10px;cursor:pointer;opacity:.5;line-height:1;-webkit-tap-highlight-color:transparent}
+.zut-pt-reveal:active{opacity:1}
+.zut-patient-row{display:flex;align-items:center;gap:2px;margin-top:2px}
+/* Freudian suggestions in popup */
+.zut-popup-sug-row{display:flex;flex-wrap:wrap;gap:4px;padding:4px 0 2px}
+.zut-popup-sug-btn{padding:3px 8px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.3);color:var(--accent)}
 .home-note-save-row{display:flex;justify-content:flex-end;margin-top:4px}
 .home-note-save-btn{
   padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;

@@ -981,17 +981,37 @@ async function renderHomeTab() {
         ${shift.type !== 'schulung' ? `
         <textarea id="home-edit-note" class="home-note-area" rows="6"
           placeholder="Dienst-Log / Notizen…">${shift.note || ''}</textarea>` : ''}
-        ${(shift.xmlMeetings && shift.xmlMeetings.length) ? `
-        <div class="home-xml-meetings">
-          <div class="home-xml-meetings-label">Termine</div>
-          ${shift.xmlMeetings.map(m => `
-            <div class="home-xml-meeting-row">
-              <span class="home-xml-meeting-time">${m.von}–${m.bis}</span>
-              <span class="home-xml-meeting-title">${m.titel || m.typ}</span>
-              ${m.mit ? `<div class="home-xml-meeting-mit">${m.mit}</div>` : ''}
-            </div>`).join('')}
-        </div>` : ''}
+        ${(() => {
+          const homeTermine = (shift.zuteilung?.termine || [])
+            .filter(t => t.type === 'anmeldung' || t.type === 'erstgesprach')
+            .sort((a, b) => (a.startHour ?? 0) - (b.startHour ?? 0));
+          if (!homeTermine.length && !(shift.xmlMeetings && shift.xmlMeetings.length)) return '';
+          const escA = s => String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+          const terminItems = homeTermine.map(t => {
+            const def = TERMIN_DEFS[t.type] || {};
+            const pd  = patientCode(t);
+            const ptHtml = pd ? ` <span class="zut-pt-inline"><span class="zut-pt-text" data-code="${escA(pd.code)}" data-full="${escA(pd.full)}">${escA(pd.code)}</span><button class="zut-pt-reveal" title="Name einblenden">🔒</button></span>` : '';
+            const h = String(Math.floor(t.startHour ?? 0)).padStart(2,'0');
+            return `<div class="home-xml-meeting-row">${def.icon||''} <span class="home-xml-meeting-time">${h}:00</span> <span class="home-xml-meeting-title">${def.label||t.type}${ptHtml}</span>${t.isInternational?'<span class="zut-chip-badge" style="margin-left:4px">INT</span>':''}</div>`;
+          }).join('');
+          const meetingItems = (shift.xmlMeetings||[]).map(m =>
+            `<div class="home-xml-meeting-row"><span class="home-xml-meeting-time">${m.von}–${m.bis}</span> <span class="home-xml-meeting-title">${m.titel||m.typ}</span>${m.mit?`<div class="home-xml-meeting-mit">${m.mit}</div>`:''}</div>`
+          ).join('');
+          return `<div class="home-xml-meetings"><div class="home-xml-meetings-label">Termine</div>${terminItems}${meetingItems}</div>`;
+        })()}
       </div>`;
+
+    // Patient name reveal toggle in home panel
+    panel.onclick = e => {
+      const btn = e.target.closest('.zut-pt-reveal');
+      if (!btn) return;
+      e.stopPropagation();
+      const span = btn.previousElementSibling;
+      if (!span) return;
+      const showing = btn.classList.toggle('revealed');
+      span.textContent = showing ? span.dataset.full : span.dataset.code;
+      btn.textContent  = showing ? '🔓' : '🔒';
+    };
 
     // Date edit button opens reschedule modal
     document.getElementById('btn-home-date-edit').addEventListener('click', () =>
@@ -1227,7 +1247,10 @@ function renderMonthCalendar() {
 }
 
 function renderShiftNav() {
-  const sorted = state.shifts.slice().sort((a, b) => a.date.localeCompare(b.date));
+  const sorted = state.shifts.slice().sort((a, b) => {
+    const dc = a.date.localeCompare(b.date);
+    return dc !== 0 ? dc : (a.id - b.id);
+  });
   const selIdx = sorted.findIndex(s => s.id === state.homeSelectedShiftId);
   const prevShift = selIdx > 0 ? sorted[selIdx - 1] : null;
   const nextShift = selIdx >= 0 && selIdx < sorted.length - 1 ? sorted[selIdx + 1] : null;
@@ -3344,6 +3367,31 @@ const TERMIN_DEFS = {
   erstgesprach: { label:'Erstgespräch', icon:'💬', dur:1 },
 };
 
+// Freudian +3 surname code suggestions (letter = shifted by +3 from patient surname initial)
+const FREUD_SURNAMES = {
+  A:['Aigner','Altmann','Aumayr'],   B:['Bauer','Berger','Brandl'],
+  C:['Carnero','Czermak','Czech'],   D:['Dallinger','Dorner','Deutsch'],
+  E:['Ecker','Eder','Erlach'],       F:['Fischer','Fuchs','Frank'],
+  G:['Gruber','Gasteiner','Gartner'],H:['Huber','Haller','Hofmann'],
+  I:['Igler','Illek','Ibscher'],     J:['Jäger','Jordan','Jung'],
+  K:['Koller','Kramer','König'],     L:['Leitner','Lang','Lehner'],
+  M:['Mayr','Müller','Moser'],       N:['Neumann','Niedermayer','Nussbaumer'],
+  O:['Obermayr','Ortner','Ober'],    P:['Pichler','Prat','Pöchhacker'],
+  Q:['Quast','Queitsch'],            R:['Reiter','Rosner','Riedl'],
+  S:['Steiner','Schwarz','Sommer'],  T:['Thaler','Tretter','Traun'],
+  U:['Unterberger','Ulrich','Urban'],V:['Voss','Vogler','Vogel'],
+  W:['Wagner','Weiss','Winkler'],    X:['Xaver'],
+  Y:['Youssef'],                     Z:['Ziegler','Zimmermann','Zechner'],
+};
+
+function patientCode(t) {
+  if (t.codename) return { code: t.codename, full: t.codename };
+  if (!t.patientName) return null;
+  const parts = t.patientName.replace(',', ' ').trim().split(/\s+/).filter(Boolean);
+  const code = parts.map(p => p[0]?.toUpperCase() + '.').join(' ');
+  return { code, full: t.patientName };
+}
+
 const ANIMAL_TIERS = [
   { tier: 1, img: './assets/images/avatars/stars/avatar_draco.png',     emoji: '🐉', name: 'Draco',      desc: 'Der Drache' },
   { tier: 2, img: './assets/images/avatars/stars/avatar_ursa.png',      emoji: '🐻', name: 'Ursa Major', desc: 'Der Große Bär' },
@@ -3477,6 +3525,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     const parts = name.trim().split(/\s+/);
     return parts.length <= 1 ? parts[0] : `${parts[0]} ${parts[parts.length - 1][0]}.`;
   };
+  const escAttr = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
   const sH = shiftHours(shift);
   const shiftStartM = sH.start[0] * 60 + sH.start[1];
   const shiftEndM   = sH.end[0]   * 60 + sH.end[1];
@@ -3663,6 +3712,8 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     const mainName = person
       ? `${person._isTrainee ? '🎓' : ''}${shortNameFn(person.name)}`
       : (needsAlert ? '?' : '—');
+    const pdPerson = patientCode(t);
+    const ptPersonHtml = pdPerson ? `<div class="zut-patient-row"><span class="zut-pt-text" data-code="${escAttr(pdPerson.code)}" data-full="${escAttr(pdPerson.full)}">${escAttr(pdPerson.code)}</span><button class="zut-pt-reveal">🔒</button></div>` : '';
     const cells = [];
     let ci = 0;
     while (ci < halfCols.length) {
@@ -3675,6 +3726,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
         cells.push(`<td${cs} class="zut-cell zut-station-cell zut-station-span" style="background:${color}18;border-right:2px solid ${color}55;vertical-align:top;padding:3px 5px">
           <div class="zut-span-time">${mToHHMM(tStartM)}–${mToHHMM(tEndM)}</div>
           <div class="zut-span-name" style="color:${color}">${mainName}</div>
+          ${ptPersonHtml}
           ${traineeHtml}
         </td>`);
         ci += colSpan;
@@ -3782,6 +3834,8 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       const mainName = person
         ? `${person._isTrainee ? '🎓' : ''}${shortNameFn(person.name)}`
         : (needsAlert ? '?' : '—');
+      const pdStation = patientCode(t);
+      const ptStationHtml = pdStation ? `<div class="zut-patient-row"><span class="zut-pt-text" data-code="${escAttr(pdStation.code)}" data-full="${escAttr(pdStation.full)}">${escAttr(pdStation.code)}</span><button class="zut-pt-reveal">🔒</button></div>` : '';
 
       const cells = [];
       let i = 0;
@@ -3795,6 +3849,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
           cells.push(`<td${cs} class="zut-cell zut-station-cell zut-station-span" style="background:${color}18;border-right:2px solid ${color}55;vertical-align:top;padding:3px 5px">
             <div class="zut-span-time">${mToHHMM(tStartM)}–${mToHHMM(tEndM)}</div>
             <div class="zut-span-name" style="color:${color}">${mainName}</div>
+            ${ptStationHtml}
             ${traineeHtml}
           </td>`);
           i += colSpan;
@@ -3837,9 +3892,12 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
         const pInit = t.personName ? personInitials(t.personName) : '';
         const badges = `${t.isInternational ? '<span class="zut-chip-badge">INT</span>' : t.isDemo ? '<span class="zut-chip-badge">D</span>' : ''}`;
         const titleParts = [def.label, t.personName, t.isDemo&&!t.isInternational?'Demo':null, t.isInternational?'International':null].filter(Boolean);
+        const pd = patientCode(t);
+        const ptChipHtml = pd ? `<span class="zut-pt-inline"><span class="zut-pt-text" data-code="${escAttr(pd.code)}" data-full="${escAttr(pd.full)}">${escAttr(pd.code)}</span><button class="zut-pt-reveal" title="Name einblenden">🔒</button></span>` : '';
         return `<div class="zut-tl-chip${t.isInternational?' zut-chip-intl':''}${t.personName?' zut-chip-ok':''}" data-tid="${t.id}" draggable="true" title="${titleParts.join(' · ')}">
           <span class="zut-chip-icon">${def.icon}</span>
           <span class="zut-chip-num">#${num}</span>
+          ${ptChipHtml}
           ${pInit?`<span class="zut-chip-person">${pInit}</span>`:''}
           ${t.personName?'<span class="zut-chip-check">✓</span>':''}
           ${badges}
@@ -4032,6 +4090,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       inner.querySelectorAll('.zut-tl-col').forEach(c => c.classList.remove('zut-drop-target'));
       const wasDrag = chip.dataset.moved === '1';
       delete chip.dataset.moved; touchStart = null;
+      if (e.target.closest('.zut-pt-reveal')) return; // handled by reveal logic
       const tid = parseInt(chip.dataset.tid);
       const t = zData.termine.find(t => t.id === tid);
       if (!t) return;
@@ -4052,6 +4111,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     chip.addEventListener('dragend', () => { chip.classList.remove('zut-chip-dragging'); delete chip.dataset.dragging; });
     chip.addEventListener('click', e => {
       if (chip.dataset.dragging) return;
+      if (e.target.closest('.zut-pt-reveal')) return; // handled by reveal logic
       e.stopPropagation();
       const t = zData.termine.find(t => t.id === parseInt(chip.dataset.tid));
       if (t) openZuteilEditTermin(t, tlHours, people, zData, saveData, pushUndo, render);
@@ -4179,6 +4239,18 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       saveData(); render();
     });
   });
+
+  // ── Patient name reveal toggle ─────────────────────────────────────────────
+  inner.onclick = e => {
+    const btn = e.target.closest('.zut-pt-reveal');
+    if (!btn) return;
+    e.stopPropagation();
+    const span = btn.previousElementSibling;
+    if (!span) return;
+    const showing = btn.classList.toggle('revealed');
+    span.textContent = showing ? span.dataset.full : span.dataset.code;
+    btn.textContent  = showing ? '🔓' : '🔒';
+  };
 }
 
 function showZuteilPicker(triggerBtn, cellKey, zData, saveData, pushUndo, render) {
@@ -4421,6 +4493,7 @@ function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo
   const cur  = termin.startHour ?? termin.hour;
   const presentPeople = people.filter(p => p.present && !(zData.personStates[p.name]||{}).notYetPresent && !p._isTrainee);
   const isEG = termin.type === 'erstgesprach';
+  const escA = s => String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
   const popup = document.createElement('div');
   popup.className = 'zut-popup';
   popup.innerHTML = `
@@ -4429,6 +4502,12 @@ function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo
       <select id="zp-thour" class="form-input" style="flex:1">
         ${tlHours.map(h=>`<option value="${h}"${h===cur?' selected':''}>${String(h).padStart(2,'0')}:00</option>`).join('')}
       </select></div>
+    <div class="zut-popup-row"><span>Patient</span>
+      <input type="text" id="zp-patname" class="form-input" style="flex:1" placeholder="Name (optional)" value="${escA(termin.patientName)}"></div>
+    <div class="zut-popup-row"><span>Code</span>
+      <input type="text" id="zp-codename" class="form-input" style="flex:1" placeholder="Codename (optional)" value="${escA(termin.codename)}">
+      <button type="button" id="zp-freud-btn" class="zut-hdr-btn" style="margin-left:4px;font-size:12px" title="Freudian Vorschläge (+3)">🎲</button></div>
+    <div id="zp-freud-sug" class="zut-popup-sug-row" style="display:none"></div>
     ${isEG ? `
     <label class="zut-popup-row"><span>Demo-Termin</span>
       <input type="checkbox" id="zp-demo" ${termin.isDemo?'checked':''}></label>
@@ -4446,6 +4525,24 @@ function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo
     </div>
     <button class="btn-secondary" id="zp-tdel" style="width:100%;margin-top:6px;color:#f87171;border-color:rgba(248,113,113,.4)">🗑 Löschen</button>`;
   document.getElementById('zuteilung-modal').appendChild(popup);
+
+  // Freudian codename suggestions (+3 shift on surname initial)
+  popup.querySelector('#zp-freud-btn').onclick = () => {
+    const pn = popup.querySelector('#zp-patname').value.trim();
+    if (!pn) return;
+    const parts = pn.replace(',', ' ').trim().split(/\s+/).filter(Boolean);
+    const lastPart = pn.includes(',') ? parts[0] : (parts[parts.length - 1] || parts[0]);
+    const ini = lastPart[0]?.toUpperCase() || 'A';
+    const code = String.fromCharCode(((ini.charCodeAt(0) - 65 + 3) % 26) + 65);
+    const names = FREUD_SURNAMES[code] || FREUD_SURNAMES[ini] || [];
+    const sugEl = popup.querySelector('#zp-freud-sug');
+    sugEl.style.display = 'flex';
+    sugEl.innerHTML = `<span style="font-size:10px;color:var(--text-dim);width:100%">${ini}→${code}:</span>` +
+      names.map(n => `<button class="zut-popup-sug-btn" data-n="${n}">${n}</button>`).join('');
+    sugEl.querySelectorAll('.zut-popup-sug-btn').forEach(b => {
+      b.onclick = () => { popup.querySelector('#zp-codename').value = b.dataset.n; sugEl.style.display = 'none'; };
+    });
+  };
 
   // Demo toggle shows/hides International + person row
   if (isEG) {
@@ -4470,7 +4567,11 @@ function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo
     pushUndo();
     const idx = zData.termine.findIndex(t => t.id === termin.id);
     if (idx >= 0) {
-      zData.termine[idx].startHour = parseInt(popup.querySelector('#zp-thour').value);
+      zData.termine[idx].startHour  = parseInt(popup.querySelector('#zp-thour').value);
+      const pn = popup.querySelector('#zp-patname').value.trim();
+      const cn = popup.querySelector('#zp-codename').value.trim();
+      if (pn) zData.termine[idx].patientName = pn; else delete zData.termine[idx].patientName;
+      if (cn) zData.termine[idx].codename    = cn; else delete zData.termine[idx].codename;
       if (isEG) {
         const isDemo  = popup.querySelector('#zp-demo').checked;
         const isIntl  = popup.querySelector('#zp-intl').checked;
@@ -8971,6 +9072,7 @@ async function importShiftsFromXML(xmlText) {
   const xmlErstgespraeche = Array.from(doc.querySelectorAll('erstgespraeche > erstgespraech')).map(e => ({
     datum:          e.getAttribute('datum')         || '',
     von:            e.getAttribute('von')           || '',
+    bis:            e.getAttribute('bis')           || '',
     isDemo:         e.getAttribute('demo')          === 'ja',
     isInternational: e.getAttribute('international') === 'ja',
     sprache:        e.getAttribute('sprache')       || '',
@@ -9076,7 +9178,7 @@ async function importShiftsFromXML(xmlText) {
     }
 
     const toTermin = (type, obj) => {
-      const startHour = timeToM(obj.von) / 60;
+      const startHour = Math.floor(timeToM(obj.von) / 60);
       return {
         id: `xml-${type}-${obj.datum}-${obj.von}`,
         type,
@@ -9091,9 +9193,20 @@ async function importShiftsFromXML(xmlText) {
 
     const terminsByDate = {};
     for (const a of xmlAnmeldungen) {
+      if (a.isInternational) continue; // not our team
       (terminsByDate[a.datum] = terminsByDate[a.datum] || []).push(toTermin('anmeldung', a));
     }
     for (const e of xmlErstgespraeche) {
+      if (e.isInternational) {
+        // Info-only: show in meetings panel, not in our termin planning
+        xmlMeetingsAll.push({
+          datum: e.datum, von: e.von, bis: e.bis,
+          typ: 'erstgesprach-demo-intl',
+          titel: `Demo INT${e.sprache ? ' · ' + e.sprache : ''}`,
+          ersteller: '', mit: '',
+        });
+        continue;
+      }
       (terminsByDate[e.datum] = terminsByDate[e.datum] || []).push(toTermin('erstgesprach', e));
     }
 
