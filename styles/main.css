@@ -1401,11 +1401,11 @@ img{max-width:100%;display:block}
 /* ── Mission card two-column layout ─────────────────────────────────────────── */
 .mission-card{display:flex;align-items:center;gap:12px}
 .mc-left{flex-shrink:0;display:flex;align-items:center;justify-content:center}
-.mc-icon-circle{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.mc-icon-circle{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center}
 .tier-1 .mc-icon-circle{background:rgba(156,163,175,.12);border:1px solid rgba(156,163,175,.25)}
 .tier-2 .mc-icon-circle{background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.3)}
 .tier-3 .mc-icon-circle{background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.35)}
-.mc-emoji{font-size:20px;line-height:1}
+.mc-emoji{font-size:13px;line-height:1}
 .mc-right{flex:1;min-width:0}
 .mission-card--done{opacity:.55}
 .mission-card--done .mc-emoji{filter:grayscale(.6)}
@@ -1562,7 +1562,7 @@ img{max-width:100%;display:block}
   position:relative;
   border-radius:var(--r);
   overflow:hidden;
-  aspect-ratio:1/1;
+  aspect-ratio:3/4;
   cursor:pointer;
   border:1px solid var(--border);
   transition:transform .2s ease, border-color .2s;
@@ -1572,9 +1572,9 @@ img{max-width:100%;display:block}
 
 .dmc-bg{
   position:absolute;inset:0;
-  background-size:cover;background-position:center;
+  background-size:cover;background-position:top center;
   background-color:var(--bg-raised);
-  filter:grayscale(100%) brightness(.3);
+  filter:grayscale(100%) brightness(.45);
   transition:filter .3s ease;
 }
 .diag-mosaic-card.is-caught .dmc-bg{
@@ -3131,10 +3131,8 @@ img{max-width:100%;display:block}
 .sup-progress-label{font-size:11px;color:var(--text-dim)}
 /* ── Animal tier badge ───────────────────────────────────────────────────────── */
 .zut-tier-badge{font-size:14px;line-height:1}
-.zut-tier-avatar{width:22px;height:22px;object-fit:contain;border-radius:4px;vertical-align:middle}
-.zut-tier-avatar-lg{width:32px;height:32px;object-fit:contain;border-radius:6px;vertical-align:middle}
-.zut-tier-emoji{font-size:18px;line-height:1;vertical-align:middle}
-.zut-tier-emoji-lg{font-size:28px;line-height:1;vertical-align:middle}
+.zut-tier-avatar{width:32px;height:32px;object-fit:contain;border-radius:4px;vertical-align:middle}
+.zut-tier-avatar-lg{width:44px;height:44px;object-fit:contain;border-radius:6px;vertical-align:middle}
 .zut-person-clickable{cursor:pointer}
 .zut-person-clickable:active{opacity:.7}
 /* ── Person tier modal ───────────────────────────────────────────────────────── */

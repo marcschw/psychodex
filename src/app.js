@@ -3540,7 +3540,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       ? TRAINEE_AVATARS[1]
       : tierInfo ?? null;
     const badges = [
-      tierAvatar ? `<span class="zut-tier-emoji" title="${tierAvatar.name} · ${tierAvatar.desc}">${tierAvatar.emoji}</span>` : '',
+      tierAvatar ? `<img class="zut-tier-avatar" src="${tierAvatar.img}" title="${tierAvatar.name} · ${tierAvatar.desc}" alt="${tierAvatar.name}">` : '',
       p._self ? '<span class="team-self-badge">Ich</span>' : '',
       p._isSenior ? '<span class="zut-senior-tag">★</span>' : '',
       p._isTrainee ? '<span class="zut-trainee-tag">🎓</span>' : '',
@@ -3693,9 +3693,8 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     </div>
     <div class="zut-footer">
       <div class="zut-present-label">${presentCount} anwesend · ${people.length} gesamt</div>
-      <button class="btn-secondary" id="zut-seniority-btn" title="Tier nach Dienstalter vergeben">🏅 Dienstalter</button>
+      <button class="btn-secondary" id="zut-seniority-btn" title="Tier nach Rang/Dienstalter vergeben">🏅 nach Rang</button>
       <button class="btn-secondary" id="zut-random-tier-btn" title="Tier zufällig vergeben">🎲 Zufällig</button>
-      <button class="btn-primary" id="zut-auto-btn">⚡ Auto-Zuteilung</button>
     </div>`;
 
   // ── Event handlers ──────────────────────────────────────────────────────────
@@ -3775,17 +3774,6 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     if (seniors.length > 0) seniors.forEach(p => { newTiers[p.name] = 1; });
     sortable.forEach((p, i) => { newTiers[p.name] = shuffled[i] ?? (i + (seniors.length > 0 ? 2 : 1)); });
     zData.personTiers = newTiers;
-    saveData(); render();
-  };
-
-  inner.querySelector('#zut-auto-btn').onclick = () => {
-    pushUndo();
-    const result = autoAssignZuteilung(getZuteilBlocks(shift, zData.blockSize), people, zData);
-    zData.assignments    = result.assignments;
-    zData.planB          = result.planB;
-    zData.dualPlanActive = result.dualPlanActive;
-    zData.planAPersons   = result.planAPersons;
-    zData.termine        = result.resolvedTermine ?? zData.termine;
     saveData(); render();
   };
 
@@ -4034,7 +4022,7 @@ function openPersonTierModal(personName, people, zData, saveData, render) {
     <div class="modal-sheet">
       <div class="sheet-header">
         <div class="modal-title" style="display:flex;align-items:center;gap:8px">
-          ${currentTier ? `<span class="zut-tier-emoji-lg">${ANIMAL_TIERS[currentTier-1].emoji}</span>` : ''}
+          ${currentTier ? `<img class="zut-tier-avatar-lg" src="${ANIMAL_TIERS[currentTier-1].img}" alt="">` : ''}
           ${personName}
         </div>
       </div>
@@ -4047,7 +4035,7 @@ function openPersonTierModal(personName, people, zData, saveData, render) {
           <label class="form-label">Sternbild</label>
           <div style="display:flex;flex-wrap:wrap;gap:6px">
             ${ANIMAL_TIERS.map(t => `<button class="ptm-tier-btn${t.tier===currentTier?' ptm-tier-active':''}" data-tier="${t.tier}" title="${t.desc}">
-              <span style="font-size:28px;display:block;text-align:center;line-height:1.2">${t.emoji}</span>
+              <img src="${t.img}" alt="${t.name}" style="width:40px;height:40px;object-fit:contain;display:block;margin:0 auto 2px">
               <span style="font-size:9px;display:block;text-align:center">${t.name}</span>
             </button>`).join('')}
           </div>
@@ -6209,7 +6197,7 @@ async function renderDiagnosenTab() {
 
   const allSlots = await db.scheduleSlots.toArray();
   const patientSlots = allSlots
-    .filter(s => !!SLOT_TYPES[s.type]?.patientContact && s.type !== 'erstgesprach')
+    .filter(s => s.type === 'anmeldung' || s.type === 'interview')
     .sort((a, b) => {
       const shiftA = state.shifts.find(sh => sh.id === a.shiftId);
       const shiftB = state.shifts.find(sh => sh.id === b.shiftId);
