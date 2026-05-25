@@ -3230,6 +3230,24 @@ img{max-width:100%;display:block}
 .dx-action-btn{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:var(--text);-webkit-tap-highlight-color:transparent;transition:background .12s}
 .dx-action-btn:active{background:rgba(255,255,255,.15)}
 .dx-action-btn-primary{background:rgba(124,58,237,.2);border-color:var(--accent);color:var(--accent)}
+.dx-badge-sm{display:inline-block;padding:1px 5px;border-radius:8px;font-size:10px;font-weight:600;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:var(--text-dim);margin-left:4px;vertical-align:middle}
+.dx-item-meta{display:inline-block;margin-left:4px}
+.dx-item-kuerzel .zut-pt-text{font-style:italic}
+.dx-privacy-btn{margin-left:auto;padding:4px 8px;border-radius:20px;font-size:13px;cursor:pointer;background:none;border:1px solid rgba(255,255,255,.12);color:var(--text-dim);flex-shrink:0;-webkit-tap-highlight-color:transparent}
+/* Termin detail modal */
+.termin-detail-modal{position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end}
+.tdm-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+.tdm-sheet{position:relative;width:100%;max-width:480px;margin:0 auto;background:var(--bg-card);border-radius:18px 18px 0 0;padding:20px 18px 32px;display:flex;flex-direction:column;gap:10px}
+.tdm-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px}
+.tdm-row{display:flex;gap:12px;font-size:13px;align-items:baseline}
+.tdm-row span:first-child{color:var(--text-dim);min-width:100px;flex-shrink:0}
+.tdm-row span:last-child{color:var(--text);font-weight:500;word-break:break-word}
+.tdm-close{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.08);border:none;border-radius:50%;width:30px;height:30px;font-size:14px;cursor:pointer;color:var(--text-dim)}
+/* Home termin row */
+.home-termin-row{cursor:pointer}
+.home-termin-row:active{opacity:.7}
+.home-pt-badge{display:inline-block;padding:1px 5px;border-radius:8px;font-size:10px;font-weight:600;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-dim);margin-left:3px;vertical-align:middle}
+.home-privacy-toggle{background:none;border:none;font-size:12px;cursor:pointer;opacity:.6;padding:0 2px;margin-left:4px;vertical-align:middle;-webkit-tap-highlight-color:transparent}
 
 /* ── Rolecall seniority display ──── */
 .team-colleague-seniority{font-size:11px;color:var(--text-dim);margin-top:1px}

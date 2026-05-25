@@ -986,31 +986,55 @@ async function renderHomeTab() {
             .filter(t => t.type === 'anmeldung' || t.type === 'erstgesprach')
             .sort((a, b) => (a.startHour ?? 0) - (b.startHour ?? 0));
           if (!homeTermine.length && !(shift.xmlMeetings && shift.xmlMeetings.length)) return '';
-          const escA = s => String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+          const pv = privacyOn();
           const terminItems = homeTermine.map(t => {
             const def = TERMIN_DEFS[t.type] || {};
             const pd  = patientCode(t);
-            const ptHtml = pd ? ` <span class="zut-pt-inline"><span class="zut-pt-text" data-code="${escA(pd.code)}" data-full="${escA(pd.full)}">${escA(pd.code)}</span><button class="zut-pt-reveal" title="Name einblenden">🔒</button></span>` : '';
+            const displayText = pd ? (pv ? pd.code : pd.full) : null;
+            const ptHtml = pd ? ` <span class="zut-pt-inline"><span class="zut-pt-text${pv?'':' revealed'}" data-code="${escAttr(pd.code)}" data-full="${escAttr(pd.full)}">${escAttr(displayText)}</span><button class="zut-pt-reveal${pv?'':' revealed'}">${pv?'🔒':'🔓'}</button></span>` : '';
             const h = String(Math.floor(t.startHour ?? 0)).padStart(2,'0');
-            return `<div class="home-xml-meeting-row">${def.icon||''} <span class="home-xml-meeting-time">${h}:00</span> <span class="home-xml-meeting-title">${def.label||t.type}${ptHtml}</span>${t.isInternational?'<span class="zut-chip-badge" style="margin-left:4px">INT</span>':''}</div>`;
+            const agBadge = t.ageGroup ? `<span class="home-pt-badge">${t.ageGroup}</span>` : '';
+            const gdBadge = t.gender   ? `<span class="home-pt-badge">${t.gender[0].toUpperCase()}</span>` : '';
+            return `<div class="home-xml-meeting-row home-termin-row" data-termin-id="${t.id}">${def.icon||''} <span class="home-xml-meeting-time">${h}:00</span> <span class="home-xml-meeting-title">${def.label||t.type}${ptHtml}</span>${agBadge}${gdBadge}${t.isInternational?'<span class="zut-chip-badge" style="margin-left:4px">INT</span>':''}</div>`;
           }).join('');
-          const meetingItems = (shift.xmlMeetings||[]).map(m =>
-            `<div class="home-xml-meeting-row"><span class="home-xml-meeting-time">${m.von}–${m.bis}</span> <span class="home-xml-meeting-title">${m.titel||m.typ}</span>${m.mit?`<div class="home-xml-meeting-mit">${m.mit}</div>`:''}</div>`
+          const meetingItems = (shift.xmlMeetings||[]).map((m, idx) =>
+            `<div class="home-xml-meeting-row home-meeting-row" data-meeting-idx="${idx}" style="cursor:pointer"><span class="home-xml-meeting-time">${m.von}–${m.bis}</span> <span class="home-xml-meeting-title">${escAttr(m.titel||m.typ)}</span>${m.mit?`<div class="home-xml-meeting-mit">${escAttr(m.mit)}</div>`:''}</div>`
           ).join('');
-          return `<div class="home-xml-meetings"><div class="home-xml-meetings-label">Termine</div>${terminItems}${meetingItems}</div>`;
+          const pvBtn = `<button class="home-privacy-toggle" title="${pv?'Namen einblenden':'Namen ausblenden'}">${pv?'🔒':'🔓'}</button>`;
+          return `<div class="home-xml-meetings"><div class="home-xml-meetings-label">Termine ${pvBtn}</div>${terminItems}${meetingItems}</div>`;
         })()}
       </div>`;
 
-    // Patient name reveal toggle in home panel
+    // Home panel interaction: reveal, privacy toggle, termin detail, meeting detail
     panel.onclick = e => {
-      const btn = e.target.closest('.zut-pt-reveal');
-      if (!btn) return;
-      e.stopPropagation();
-      const span = btn.previousElementSibling;
-      if (!span) return;
-      const showing = btn.classList.toggle('revealed');
-      span.textContent = showing ? span.dataset.full : span.dataset.code;
-      btn.textContent  = showing ? '🔓' : '🔒';
+      if (e.target.closest('.zut-pt-reveal')) {
+        e.stopPropagation();
+        const btn = e.target.closest('.zut-pt-reveal');
+        const span = btn.previousElementSibling;
+        if (!span) return;
+        const showing = btn.classList.toggle('revealed');
+        span.textContent = showing ? span.dataset.full : span.dataset.code;
+        btn.textContent  = showing ? '🔓' : '🔒';
+        return;
+      }
+      if (e.target.closest('.home-privacy-toggle')) {
+        localStorage.setItem('psychodex-privacy', privacyOn() ? '0' : '1');
+        renderHomeTab();
+        return;
+      }
+      const terminRow = e.target.closest('.home-termin-row');
+      if (terminRow) {
+        const tid = terminRow.dataset.terminId;
+        const t = (shift.zuteilung?.termine || []).find(x => String(x.id) === String(tid));
+        if (t) openTerminDetailModal(t, 'termin');
+        return;
+      }
+      const meetingRow = e.target.closest('.home-meeting-row');
+      if (meetingRow) {
+        const idx = parseInt(meetingRow.dataset.meetingIdx);
+        const m = (shift.xmlMeetings || [])[idx];
+        if (m) openTerminDetailModal(m, 'meeting');
+      }
     };
 
     // Date edit button opens reschedule modal
@@ -3392,6 +3416,48 @@ function patientCode(t) {
   return { code, full: t.patientName };
 }
 
+function codeNameStr(str) {
+  if (!str) return null;
+  const parts = str.replace(',', ' ').trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) return null; // single word looks like a code already
+  return { code: parts.map(p => p[0].toUpperCase() + '.').join(' '), full: str };
+}
+
+const escAttr   = s => String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+const privacyOn = () => localStorage.getItem('psychodex-privacy') !== '0';
+
+function openTerminDetailModal(item, itemType) {
+  document.querySelectorAll('.termin-detail-modal').forEach(m => m.remove());
+  const modal = document.createElement('div');
+  modal.className = 'termin-detail-modal';
+  let rows = '';
+  if (itemType === 'termin') {
+    const def = TERMIN_DEFS[item.type] || {};
+    const pd = patientCode(item);
+    rows = `
+      <div class="tdm-title">${def.icon || ''} ${def.label || item.type}</div>
+      <div class="tdm-row"><span>Zeit</span><span>${String(Math.floor(item.startHour||0)).padStart(2,'0')}:00</span></div>
+      ${pd ? `<div class="tdm-row"><span>Patient</span><span>${escAttr(pd.full)}</span></div>` : ''}
+      ${item.ageGroup ? `<div class="tdm-row"><span>Altersgruppe</span><span>${item.ageGroup}</span></div>` : ''}
+      ${item.gender   ? `<div class="tdm-row"><span>Geschlecht</span><span>${item.gender}</span></div>` : ''}
+      ${item.sprache  ? `<div class="tdm-row"><span>Sprache</span><span>${item.sprache}</span></div>` : ''}
+      ${item.isInternational ? `<div class="tdm-row"><span>International</span><span>🌍</span></div>` : ''}
+      ${item.isDemo   ? `<div class="tdm-row"><span>Demo-Termin</span><span>✓</span></div>` : ''}
+      ${item.personName ? `<div class="tdm-row"><span>Person</span><span>${escAttr(item.personName)}</span></div>` : ''}`;
+  } else {
+    rows = `
+      <div class="tdm-title">${escAttr(item.titel || item.typ)}</div>
+      <div class="tdm-row"><span>Zeit</span><span>${item.von}–${item.bis}</span></div>
+      ${item.typ && item.typ !== item.titel ? `<div class="tdm-row"><span>Typ</span><span>${escAttr(item.typ)}</span></div>` : ''}
+      ${item.ersteller ? `<div class="tdm-row"><span>Ersteller</span><span>${escAttr(item.ersteller)}</span></div>` : ''}
+      ${item.mit ? `<div class="tdm-row"><span>Teilnehmer</span><span>${escAttr(item.mit)}</span></div>` : ''}`;
+  }
+  modal.innerHTML = `<div class="tdm-backdrop"></div><div class="tdm-sheet">${rows}<button class="tdm-close">✕</button></div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('.tdm-backdrop').onclick = () => modal.remove();
+  modal.querySelector('.tdm-close').onclick    = () => modal.remove();
+}
+
 const ANIMAL_TIERS = [
   { tier: 1, img: './assets/images/avatars/stars/avatar_draco.png',     emoji: '🐉', name: 'Draco',      desc: 'Der Drache' },
   { tier: 2, img: './assets/images/avatars/stars/avatar_ursa.png',      emoji: '🐻', name: 'Ursa Major', desc: 'Der Große Bär' },
@@ -3525,7 +3591,6 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     const parts = name.trim().split(/\s+/);
     return parts.length <= 1 ? parts[0] : `${parts[0]} ${parts[parts.length - 1][0]}.`;
   };
-  const escAttr = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
   const sH = shiftHours(shift);
   const shiftStartM = sH.start[0] * 60 + sH.start[1];
   const shiftEndM   = sH.end[0]   * 60 + sH.end[1];
@@ -4493,7 +4558,6 @@ function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo
   const cur  = termin.startHour ?? termin.hour;
   const presentPeople = people.filter(p => p.present && !(zData.personStates[p.name]||{}).notYetPresent && !p._isTrainee);
   const isEG = termin.type === 'erstgesprach';
-  const escA = s => String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
   const popup = document.createElement('div');
   popup.className = 'zut-popup';
   popup.innerHTML = `
@@ -4503,11 +4567,25 @@ function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo
         ${tlHours.map(h=>`<option value="${h}"${h===cur?' selected':''}>${String(h).padStart(2,'0')}:00</option>`).join('')}
       </select></div>
     <div class="zut-popup-row"><span>Patient</span>
-      <input type="text" id="zp-patname" class="form-input" style="flex:1" placeholder="Name (optional)" value="${escA(termin.patientName)}"></div>
+      <input type="text" id="zp-patname" class="form-input" style="flex:1" placeholder="Name (optional)" value="${escAttr(termin.patientName)}"></div>
     <div class="zut-popup-row"><span>Code</span>
-      <input type="text" id="zp-codename" class="form-input" style="flex:1" placeholder="Codename (optional)" value="${escA(termin.codename)}">
+      <input type="text" id="zp-codename" class="form-input" style="flex:1" placeholder="Codename (optional)" value="${escAttr(termin.codename)}">
       <button type="button" id="zp-freud-btn" class="zut-hdr-btn" style="margin-left:4px;font-size:12px" title="Freudian Vorschläge (+3)">🎲</button></div>
     <div id="zp-freud-sug" class="zut-popup-sug-row" style="display:none"></div>
+    <div class="zut-popup-row"><span>Altersgruppe</span>
+      <select id="zp-agegroup" class="form-input" style="flex:1">
+        <option value="">—</option>
+        <option value="18-30"${termin.ageGroup==='18-30'?' selected':''}>18–30 J.</option>
+        <option value="31-50"${termin.ageGroup==='31-50'?' selected':''}>31–50 J.</option>
+        <option value="51+"  ${termin.ageGroup==='51+'  ?' selected':''}>51+ J.</option>
+      </select></div>
+    <div class="zut-popup-row"><span>Geschlecht</span>
+      <select id="zp-gender" class="form-input" style="flex:1">
+        <option value="">—</option>
+        <option value="weiblich"${termin.gender==='weiblich'?' selected':''}>Weiblich</option>
+        <option value="männlich"${termin.gender==='männlich'?' selected':''}>Männlich</option>
+        <option value="divers"  ${termin.gender==='divers'  ?' selected':''}>Divers</option>
+      </select></div>
     ${isEG ? `
     <label class="zut-popup-row"><span>Demo-Termin</span>
       <input type="checkbox" id="zp-demo" ${termin.isDemo?'checked':''}></label>
@@ -4572,6 +4650,10 @@ function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo
       const cn = popup.querySelector('#zp-codename').value.trim();
       if (pn) zData.termine[idx].patientName = pn; else delete zData.termine[idx].patientName;
       if (cn) zData.termine[idx].codename    = cn; else delete zData.termine[idx].codename;
+      const ag = popup.querySelector('#zp-agegroup').value;
+      const gd = popup.querySelector('#zp-gender').value;
+      if (ag) zData.termine[idx].ageGroup = ag; else delete zData.termine[idx].ageGroup;
+      if (gd) zData.termine[idx].gender   = gd; else delete zData.termine[idx].gender;
       if (isEG) {
         const isDemo  = popup.querySelector('#zp-demo').checked;
         const isIntl  = popup.querySelector('#zp-intl').checked;
@@ -6632,6 +6714,18 @@ async function renderDiagnosenTab() {
     };
   });
 
+  // Privacy toggle in Diagnosen tab
+  const pvToggleBtn = document.getElementById('dx-privacy-toggle');
+  if (pvToggleBtn) {
+    const pv = privacyOn();
+    pvToggleBtn.textContent = pv ? '🔒' : '🔓';
+    pvToggleBtn.title = pv ? 'Namen einblenden' : 'Namen ausblenden';
+    pvToggleBtn.onclick = () => {
+      localStorage.setItem('psychodex-privacy', privacyOn() ? '0' : '1');
+      renderDiagnosenTab();
+    };
+  }
+
   const allSlots = await db.scheduleSlots.toArray();
   const patientSlots = allSlots
     .filter(s => s.type === 'anmeldung' || s.type === 'interview')
@@ -6667,7 +6761,17 @@ async function renderDiagnosenTab() {
     const timeStr  = padT(s.startHour, s.startMinute ?? 0);
     const dateStr  = shift ? fmtD(shift.date) : '–';
     const verified = isVerified(s);
-    const kuerzel  = s.patientNotes || '';
+    const kuerzelRaw = s.patientNotes || '';
+    const kuerzelCn  = codeNameStr(kuerzelRaw);
+    const pv         = privacyOn();
+    const kuerzel    = kuerzelRaw
+      ? (kuerzelCn
+          ? `<span class="dx-item-kuerzel"><span class="zut-pt-text${pv?'':' revealed'}" data-code="${escAttr(kuerzelCn.code)}" data-full="${escAttr(kuerzelCn.full)}">„${pv ? kuerzelCn.code : kuerzelCn.full}"</span><button class="zut-pt-reveal dx-reveal-btn${pv?'':' revealed'}">${pv?'🔒':'🔓'}</button></span>`
+          : `<span class="dx-item-kuerzel">„${kuerzelRaw}"</span>`)
+      : '';
+    const agBadge = (s.ageGroup || s.gender)
+      ? `<span class="dx-item-meta">${s.ageGroup ? `<span class="dx-badge-sm">${s.ageGroup}</span>` : ''}${s.gender ? `<span class="dx-badge-sm">${s.gender[0]?.toUpperCase()}</span>` : ''}</span>`
+      : '';
 
     const slotCatches = state.catches.filter(c => c.slotId === s.id);
     const myDxObjs = slotCatches.length > 0
@@ -6736,7 +6840,8 @@ async function renderDiagnosenTab() {
         <div>
           <span class="dx-item-type">${def.icon} ${def.label}</span>
           <span class="dx-item-date">${dateStr} · ${timeStr}</span>
-          ${kuerzel ? `<span class="dx-item-kuerzel">„${kuerzel}"</span>` : ''}
+          ${kuerzel}
+          ${agBadge}
         </div>
         <span class="dx-badge ${verified ? 'dx-badge--done' : 'dx-badge--offen'}">${verified ? '✓' : '–'}</span>
       </div>
@@ -6745,6 +6850,18 @@ async function renderDiagnosenTab() {
   }
 
   el.innerHTML = html;
+
+  // Kürzel reveal toggle
+  el.addEventListener('click', e => {
+    const btn = e.target.closest('.dx-reveal-btn');
+    if (!btn) return;
+    e.stopPropagation();
+    const span = btn.previousElementSibling;
+    if (!span) return;
+    const showing = btn.classList.toggle('revealed');
+    span.textContent = showing ? `„${span.dataset.full}"` : `„${span.dataset.code}"`;
+    btn.textContent  = showing ? '🔓' : '🔒';
+  }, { once: false });
 
   el.querySelectorAll('.dx-chip-clickable[data-code]').forEach(btn => {
     btn.addEventListener('click', e => {
