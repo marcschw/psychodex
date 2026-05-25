@@ -3593,28 +3593,35 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     const halfCols = [];
     for (let m = startM; m < endM; m += 30) halfCols.push(m);
 
-    // Find person assigned to a role at a given minute (based on block assignments)
-    const personAtMin = (roleKey, minute) => {
+    // All people assigned to a role at a given minute
+    const peopleAtMin = (roleKey, minute) => {
       const b = blocks.find(bb => bb.start * 60 <= minute && bb.end * 60 > minute);
-      if (!b) return null;
-      return people.find(p => zData.assignments[`${p.name}::${b.key}`] === roleKey) || null;
+      if (!b) return [];
+      return people.filter(p => zData.assignments[`${p.name}::${b.key}`] === roleKey);
     };
 
-    // Continuous half-col spans for a role (backoffice, 5stock)
+    // Continuous half-col spans for a role; fills initial partial gap with first block's assignment
     const buildHalfSpans = roleKey => {
+      // Find first minute that has a block assignment (for initial-gap fill)
+      const firstFilledM = halfCols.find(m => peopleAtMin(roleKey, m).length > 0) ?? null;
+      const resolve = m => {
+        const ps = peopleAtMin(roleKey, m);
+        return ps.length ? ps : (firstFilledM !== null && m < firstFilledM ? peopleAtMin(roleKey, firstFilledM) : []);
+      };
       const spans = [];
       let i = 0;
       while (i < halfCols.length) {
-        const person = personAtMin(roleKey, halfCols[i]);
+        const ps = resolve(halfCols[i]);
+        const sig = ps.map(p => p.name).sort().join('\0');
         let j = i + 1;
-        while (j < halfCols.length && (personAtMin(roleKey, halfCols[j])?.name || null) === (person?.name || null)) j++;
-        spans.push({ person, startM: halfCols[i], endM: halfCols[j] ?? endM, colSpan: j - i });
+        while (j < halfCols.length && resolve(halfCols[j]).map(p => p.name).sort().join('\0') === sig) j++;
+        spans.push({ ps, startM: halfCols[i], endM: halfCols[j] ?? endM, colSpan: j - i });
         i = j;
       }
       return spans;
     };
 
-    // Kassa: 1.5h (90-min) visual slots, always cut at 90-min boundaries from shift start
+    // Kassa: 1.5h (90-min) visual slots; fills initial partial gap from first block in slot
     const buildKassaSpans = () => {
       const spans = [];
       let m = startM;
@@ -3624,30 +3631,37 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
         const endIdx   = halfCols.findIndex(hc => hc >= slotEnd);
         const colSpan  = (endIdx === -1 ? halfCols.length : endIdx) - startIdx;
         if (colSpan <= 0) break;
-        spans.push({ person: personAtMin('kassa', m), startM: m, endM: slotEnd, colSpan });
+        // Use first half-col in slot that has a block assignment
+        let ps = [];
+        for (let hc = m; hc < slotEnd && !ps.length; hc += 30) ps = peopleAtMin('kassa', hc);
+        spans.push({ ps, startM: m, endM: slotEnd, colSpan });
         m += 90;
       }
       return spans;
     };
 
-    const renderSpanCell = (colSpan, person, sm, em, needsWarn) => {
+    const renderSpanCell = (colSpan, ps, sm, em, needsWarn) => {
       const cs = colSpan > 1 ? ` colspan="${colSpan}"` : '';
-      if (!person) {
+      if (!ps.length) {
         const warn = needsWarn ? ' style="background:rgba(239,68,68,.09)"' : '';
         return `<td${cs} class="zut-cell zut-station-cell"${warn}>${needsWarn ? '<span class="zut-station-gap">!</span>' : ''}</td>`;
       }
-      const color = personColor(person.name);
+      const color = personColor(ps[0].name);
+      const namesHtml = ps.map(p => {
+        const traineeIcon = p._isTrainee ? '🎓' : '';
+        return `<div class="zut-span-name" style="color:${personColor(p.name)}">${traineeIcon}${shortName(p.name)}</div>`;
+      }).join('');
       return `<td${cs} class="zut-cell zut-station-cell zut-station-span" style="background:${color}18;border-right:2px solid ${color}55;vertical-align:top;padding:3px 5px">
         <div class="zut-span-time">${mToHHMM(sm)}–${mToHHMM(em)}</div>
-        <div class="zut-span-name" style="color:${color}">${shortName(person.name)}</div>
+        ${namesHtml}
       </td>`;
     };
 
     const renderRoleRow = (roleKey, label, icon) => {
       const needsWarn = roleKey === 'kassa' || roleKey === 'backoffice';
       const spans = roleKey === 'kassa' ? buildKassaSpans() : buildHalfSpans(roleKey);
-      const cells = spans.map(({ person, startM: sm, endM: em, colSpan }) =>
-        renderSpanCell(colSpan, person, sm, em, needsWarn)
+      const cells = spans.map(({ ps, startM: sm, endM: em, colSpan }) =>
+        renderSpanCell(colSpan, ps, sm, em, needsWarn)
       ).join('');
       return `<tr><td class="zut-td-name zut-station-name-td zut-station-short-td">${icon}<span class="zut-station-role-short">${label}</span></td>${cells}</tr>`;
     };
@@ -3662,6 +3676,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       const needsAlert = !person && !t.isInternational;
       const color   = person ? personColor(person.name) : (needsAlert ? '#ef4444' : '#94a3b8');
       const typeNum = terminByType[t.type]?.findIndex(x => x.id === t.id) + 1;
+      const traineeIcon = person?._isTrainee ? '🎓' : '';
 
       const cells = [];
       let i = 0;
@@ -3672,7 +3687,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
           while (j < halfCols.length && halfCols[j] >= tStartM && halfCols[j] < tEndM) j++;
           const colSpan = j - i;
           const cs = colSpan > 1 ? ` colspan="${colSpan}"` : '';
-          const name = person ? shortName(person.name) : (needsAlert ? '?' : '—');
+          const name = person ? `${traineeIcon}${shortName(person.name)}` : (needsAlert ? '?' : '—');
           cells.push(`<td${cs} class="zut-cell zut-station-cell zut-station-span" style="background:${color}18;border-right:2px solid ${color}55;vertical-align:top;padding:3px 5px">
             <div class="zut-span-time">${mToHHMM(tStartM)}–${mToHHMM(tEndM)}</div>
             <div class="zut-span-name" style="color:${color}">${name}</div>
@@ -3694,7 +3709,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     const headerCols = halfCols.map(m =>
       m % 60 === 0
         ? `<th class="zut-th-block zut-th-hour">${mToHHMM(m)}</th>`
-        : `<th class="zut-th-block zut-th-half"></th>`
+        : `<th class="zut-th-block zut-th-half">:30</th>`
     ).join('');
 
     return `<table class="zut-table"><thead><tr>
@@ -6256,7 +6271,6 @@ function renderHomeMissions() {
     return `<button class="hm-mission-pill tier-${def.tier}" data-mission-id="${am.id}">
       <div class="hm-mp-dots">${cbs}</div>
       <div class="hm-mp-body">
-        <span class="hm-mp-emoji">${def.emoji||''}</span>
         <div class="hm-mp-title">${def.title}</div>
       </div>
     </button>`;
