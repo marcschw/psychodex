@@ -3011,7 +3011,7 @@ img{max-width:100%;display:block}
   position:sticky;top:0;left:0;z-index:3;
   background:var(--bg);border-bottom:2px solid var(--border);
   padding:8px 10px;font-size:12px;font-weight:600;color:var(--text-dim);
-  text-align:left;white-space:nowrap;min-width:80px;
+  text-align:left;white-space:nowrap;min-width:105px;
 }
 .zut-th-block{
   position:sticky;top:0;z-index:2;
@@ -3024,7 +3024,7 @@ img{max-width:100%;display:block}
 .zut-td-name{
   position:sticky;left:0;z-index:1;
   background:var(--bg);border-bottom:1px solid var(--border);
-  padding:6px 8px;min-width:80px;
+  padding:6px 8px;min-width:105px;
 }
 .zut-person-name{font-size:13px;font-weight:600;color:var(--text);white-space:normal;line-height:1.3;}
 .zut-name-badges{display:inline-flex;align-items:center;gap:3px;line-height:1}
@@ -3248,6 +3248,16 @@ img{max-width:100%;display:block}
 .home-termin-row:active{opacity:.7}
 .home-pt-badge{display:inline-block;padding:1px 5px;border-radius:8px;font-size:10px;font-weight:600;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-dim);margin-left:3px;vertical-align:middle}
 .home-privacy-toggle{background:none;border:none;font-size:12px;cursor:pointer;opacity:.6;padding:0 2px;margin-left:4px;vertical-align:middle;-webkit-tap-highlight-color:transparent}
+/* Swap mode */
+.zut-swap-selected-row .zut-td-name{background:rgba(59,130,246,.12);outline:2px solid #3b82f6;}
+.zut-swap-target{cursor:pointer;}
+.zut-swap-target:hover{opacity:.8;outline:1px dashed rgba(59,130,246,.6);border-radius:4px;}
+.zut-swap-sel-highlight{outline:2px solid #3b82f6;border-radius:4px;background:rgba(59,130,246,.18);}
+.zut-hdr-btn.active{background:rgba(59,130,246,.2);color:#3b82f6;border-color:rgba(59,130,246,.4);}
+/* Timeline patient info */
+.tl-patient-info{display:flex;align-items:center;gap:4px;margin-top:3px;flex-wrap:wrap;}
+.tl-pt-text{font-size:11px;color:var(--text-dim);}
+.tl-pt-plain{font-size:11px;color:var(--text-dim);}
 
 /* ── Rolecall seniority display ──── */
 .team-colleague-seniority{font-size:11px;color:var(--text-dim);margin-top:1px}

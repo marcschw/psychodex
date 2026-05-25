@@ -47,6 +47,8 @@ const state = {
 };
 
 let _editingSuspectedCodes = []; // working copy while slot-edit form is open
+let _zutSwapMode = false;
+let _zutSwapSel  = null; // { pname } when one person selected for swap
 
 // ─── Team / Colleague Constants ───────────────────────────────────────────────
 const TAG_ICONS = {
@@ -985,7 +987,8 @@ async function renderHomeTab() {
           const homeTermine = (shift.zuteilung?.termine || [])
             .filter(t => t.type === 'anmeldung' || t.type === 'erstgesprach')
             .sort((a, b) => (a.startHour ?? 0) - (b.startHour ?? 0));
-          if (!homeTermine.length && !(shift.xmlMeetings && shift.xmlMeetings.length)) return '';
+          const hasColleagueMeetings = (shift.colleagues || []).some(c => c.meetings?.length);
+          if (!homeTermine.length && !(shift.xmlMeetings && shift.xmlMeetings.length) && !hasColleagueMeetings) return '';
           const pv = privacyOn();
           const terminItems = homeTermine.map(t => {
             const def = TERMIN_DEFS[t.type] || {};
@@ -1001,7 +1004,16 @@ async function renderHomeTab() {
             `<div class="home-xml-meeting-row home-meeting-row" data-meeting-idx="${idx}" style="cursor:pointer"><span class="home-xml-meeting-time">${m.von}–${m.bis}</span> <span class="home-xml-meeting-title">${escAttr(m.titel||m.typ)}</span>${m.mit?`<div class="home-xml-meeting-mit">${escAttr(m.mit)}</div>`:''}</div>`
           ).join('');
           const pvBtn = `<button class="home-privacy-toggle" title="${pv?'Namen einblenden':'Namen ausblenden'}">${pv?'🔒':'🔓'}</button>`;
-          return `<div class="home-xml-meetings"><div class="home-xml-meetings-label">Termine ${pvBtn}</div>${terminItems}${meetingItems}</div>`;
+          // Colleague meetings: who from the team is in which meeting
+          const cmItems = (shift.colleagues || [])
+            .filter(c => c.meetings?.length)
+            .flatMap(c => c.meetings.map(m =>
+              `<div class="home-xml-meeting-row"><span class="home-xml-meeting-time">${m.von}–${m.bis}</span> <span class="home-xml-meeting-mit">${escAttr(c.name)}:</span> <span class="home-xml-meeting-title">${escAttr(m.titel||m.typ||'Meeting')}</span></div>`
+            )).join('');
+          const teamMeetingsHtml = cmItems
+            ? `<div class="home-xml-meetings-label" style="margin-top:8px;border-top:1px solid rgba(124,58,237,.15);padding-top:6px">Team-Meetings</div>${cmItems}`
+            : '';
+          return `<div class="home-xml-meetings"><div class="home-xml-meetings-label">Termine ${pvBtn}</div>${terminItems}${meetingItems}${teamMeetingsHtml}</div>`;
         })()}
       </div>`;
 
@@ -1962,6 +1974,18 @@ function renderTimeline(shift) {
           <div class="tl-slot-label">${def.label} ${flags}</div>
           <div class="tl-slot-time">${padT(slot.startHour,slot.startMinute)}–${padT(slot.endHour,slot.endMinute)} · +${slot.xpEarned} XP</div>
           ${commentHtml}
+          ${isPatient && (slot.patientNotes || slot.ageGroup || slot.gender) ? (() => {
+            const pv = privacyOn();
+            const pnCoded = codeNameStr(slot.patientNotes);
+            const pnHtml  = pnCoded
+              ? `<span class="zut-pt-text tl-pt-text" data-code="${escAttr(pnCoded.code)}" data-full="${escAttr(pnCoded.full)}">${escAttr(pv ? pnCoded.code : pnCoded.full)}</span><button class="zut-pt-reveal${pv?'':' revealed'}">${pv?'🔒':'🔓'}</button>`
+              : slot.patientNotes
+                ? `<span class="tl-pt-plain">${escAttr(slot.patientNotes)}</span>`
+                : '';
+            const agHtml = slot.ageGroup ? `<span class="home-pt-badge">${slot.ageGroup}</span>` : '';
+            const gdHtml = slot.gender   ? `<span class="home-pt-badge">${slot.gender[0].toUpperCase()}</span>` : '';
+            return `<div class="tl-patient-info">${pnHtml}${agHtml}${gdHtml}</div>`;
+          })() : ''}
         </div>
         ${isPatient ? `<button class="tl-slot-chevron" data-chevron title="${isExpanded ? 'Einklappen' : 'Einblenden'}">${isExpanded ? '▲' : '▼'}</button>` : ''}
         <button class="tl-slot-delete btn-icon" data-slot-id="${slot.id}" title="Löschen">🗑</button>
@@ -2001,6 +2025,17 @@ function renderTimeline(shift) {
         state.collapsedSlotIds.add(slotId);
       }
       renderTimeline(shift);
+    });
+  });
+
+  tl.querySelectorAll('.zut-pt-reveal').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const span = btn.previousElementSibling;
+      if (!span) return;
+      const showing = btn.classList.toggle('revealed');
+      span.textContent = showing ? span.dataset.full : span.dataset.code;
+      btn.textContent  = showing ? '🔓' : '🔒';
     });
   });
 
@@ -3720,7 +3755,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       isPlanBRow ? '<span class="zut-planb-tag">Plan B</span>' : '',
     ].filter(Boolean).join('');
     const displayName = shortNameFn(p.name);
-    return `<tr class="zut-row${absent?' zut-row-absent':''}${ps.notYetPresent&&!absent?' zut-row-notyet':''}">
+    return `<tr class="zut-row${absent?' zut-row-absent':''}${ps.notYetPresent&&!absent?' zut-row-notyet':''}${_zutSwapSel?.pname === p.name?' zut-swap-selected-row':''}">
       <td class="zut-td-name">
         <div class="zut-person-name zut-person-clickable" data-pname="${p.name}" title="${p.name}">${displayName}${badges ? `<br><span class="zut-name-badges">${badges}</span>` : ''}</div>
         <div class="zut-person-sub">
@@ -3837,12 +3872,12 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       return spans;
     };
 
-    // Kassa: 1.5h (90-min) visual slots; fills initial partial gap from first block in slot
+    // Kassa: 2h (120-min) visual slots; fills initial partial gap from first block in slot
     const buildKassaSpans = () => {
       const spans = [];
       let m = startM;
       while (m < endM) {
-        const slotEnd = Math.min(m + 90, endM);
+        const slotEnd = Math.min(m + 120, endM);
         const startIdx = halfCols.indexOf(m);
         const endIdx   = halfCols.findIndex(hc => hc >= slotEnd);
         const colSpan  = (endIdx === -1 ? halfCols.length : endIdx) - startIdx;
@@ -3851,7 +3886,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
         let ps = [];
         for (let hc = m; hc < slotEnd && !ps.length; hc += 30) ps = peopleAtMin('kassa', hc);
         spans.push({ ps, startM: m, endM: slotEnd, colSpan });
-        m += 90;
+        m += 120;
       }
       return spans;
     };
@@ -3865,7 +3900,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       const color = personColor(ps[0].name);
       const namesHtml = ps.map(p => {
         const traineeIcon = p._isTrainee ? '🎓' : '';
-        return `<div class="zut-span-name" style="color:${personColor(p.name)}">${traineeIcon}${shortNameFn(p.name)}</div>`;
+        return `<div class="zut-span-name${_zutSwapMode?' zut-swap-target':''}" data-pname="${escAttr(p.name)}" style="color:${personColor(p.name)}">${traineeIcon}${shortNameFn(p.name)}</div>`;
       }).join('');
       return `<td${cs} class="zut-cell zut-station-cell zut-station-span" style="background:${color}18;border-right:2px solid ${color}55;vertical-align:top;padding:3px 5px">
         <div class="zut-span-time">${mToHHMM(sm)}–${mToHHMM(em)}</div>
@@ -3913,7 +3948,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
           const cs = colSpan > 1 ? ` colspan="${colSpan}"` : '';
           cells.push(`<td${cs} class="zut-cell zut-station-cell zut-station-span" style="background:${color}18;border-right:2px solid ${color}55;vertical-align:top;padding:3px 5px">
             <div class="zut-span-time">${mToHHMM(tStartM)}–${mToHHMM(tEndM)}</div>
-            <div class="zut-span-name" style="color:${color}">${mainName}</div>
+            <div class="zut-span-name${_zutSwapMode && person?' zut-swap-target':''}" data-pname="${escAttr(person?.name||'')}" style="color:${color}">${mainName}</div>
             ${ptStationHtml}
             ${traineeHtml}
           </td>`);
@@ -3985,6 +4020,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
         <button class="zut-hdr-btn" id="zut-redo-btn"${!zData.redoStack?.length?' disabled':''} title="Wiederholen">↪</button>
         <button class="zut-hdr-btn" id="zut-reset-btn" title="Zurücksetzen">🔄</button>
         <button class="zut-hdr-btn" id="zut-size-btn" title="Blockgröße umschalten">${zData.blockSize}h</button>
+        <button class="zut-hdr-btn${_zutSwapMode?' active':''}" id="zut-swap-btn" title="Personen tauschen">↔</button>
         <button class="zut-hdr-close" id="zut-close-btn">✕</button>
       </div>
     </div>
@@ -4213,8 +4249,48 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     btn.onclick = e => { e.stopPropagation(); openZuteilEarlyLeave(btn.dataset.pname, zData, saveData, pushUndo, render); };
   });
 
+  // ── Swap mode ──────────────────────────────────────────────────────────────
+  inner.querySelector('#zut-swap-btn').onclick = e => {
+    e.stopPropagation();
+    _zutSwapMode = !_zutSwapMode;
+    _zutSwapSel = null;
+    render();
+  };
+
+  const doSwap = (pnameA, pnameB) => {
+    if (pnameA === pnameB) { _zutSwapSel = null; render(); return; }
+    pushUndo();
+    const newAsgn = {};
+    for (const [key, role] of Object.entries(zData.assignments)) {
+      const [pn, bk] = key.split('::');
+      if (pn === pnameA)      newAsgn[`${pnameB}::${bk}`] = role;
+      else if (pn === pnameB) newAsgn[`${pnameA}::${bk}`] = role;
+      else                    newAsgn[key] = role;
+    }
+    zData.assignments = newAsgn;
+    for (const t of zData.termine) {
+      if (t.personName === pnameA)      t.personName = pnameB;
+      else if (t.personName === pnameB) t.personName = pnameA;
+    }
+    _zutSwapSel = null;
+    saveData(); render();
+  };
+
   inner.querySelectorAll('.zut-cell-btn:not([disabled])').forEach(btn => {
-    btn.onclick = e => { e.stopPropagation(); showZuteilPicker(btn, btn.dataset.key, zData, saveData, pushUndo, render); };
+    btn.onclick = e => {
+      e.stopPropagation();
+      if (_zutSwapMode) {
+        const [pname] = btn.dataset.key.split('::');
+        if (!_zutSwapSel) {
+          _zutSwapSel = { pname };
+          render();
+        } else {
+          doSwap(_zutSwapSel.pname, pname);
+        }
+        return;
+      }
+      showZuteilPicker(btn, btn.dataset.key, zData, saveData, pushUndo, render);
+    };
   });
 
   inner.querySelectorAll('.zut-person-clickable').forEach(el => {
@@ -4259,6 +4335,22 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       delete zData.assignments[`${pname}::${fromBlock}`];
       zData.assignments[`${pname}::${toBlock}`] = toRole;
       saveData(); render();
+    });
+  });
+
+  // Station view: swap mode span clicks
+  inner.querySelectorAll('.zut-swap-target[data-pname]').forEach(el => {
+    el.addEventListener('click', e => {
+      if (!_zutSwapMode) return;
+      e.stopPropagation();
+      const pname = el.dataset.pname;
+      if (!pname) return;
+      if (!_zutSwapSel) {
+        _zutSwapSel = { pname };
+        render();
+      } else {
+        doSwap(_zutSwapSel.pname, pname);
+      }
     });
   });
 
@@ -4677,6 +4769,10 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
   }
   const result = {};
   const terminCount = Object.fromEntries(allowedPeople.map(p => [p.name, 0]));
+  // Pre-load terminCount from manually pre-set termine so round-robin starts from correct baseline
+  for (const t of termine) {
+    if (t.personName && terminCount[t.personName] !== undefined) terminCount[t.personName]++;
+  }
   const trainees    = allowedPeople.filter(p => p._isTrainee);
   const nonTrainees = allowedPeople.filter(p => !p._isTrainee);
 
