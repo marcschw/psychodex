@@ -3402,6 +3402,7 @@ async function openZuteilungScreen(shift) {
   zData.redoStack      = [];                        // in-memory only, not persisted
   zData.stationView    = zData.stationView    || false;
   zData.personTiers    = zData.personTiers    || null;
+  zData.traineeAvatars = zData.traineeAvatars || {};
 
   const saveData = () => {
     const { redoStack, ...saveable } = zData;
@@ -3546,7 +3547,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     const tierNum = zData.personTiers?.[p.name];
     const tierInfo = tierNum ? ANIMAL_TIERS[tierNum - 1] : null;
     const tierAvatar = p._isTrainee
-      ? TRAINEE_AVATARS[1]
+      ? TRAINEE_AVATARS[zData.traineeAvatars?.[p.name] ?? 1]
       : tierInfo ?? null;
     const badges = [
       tierAvatar ? `<span class="zut-tier-emoji" title="${tierAvatar.name} · ${tierAvatar.desc}">${tierAvatar.emoji}</span>` : '',
@@ -3581,57 +3582,96 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
 
   // ── Station view grid ───────────────────────────────────────────────────────
   const stationGridHtml = (() => {
-    // Termin rows: static display only
-    const chipCell = (covering, needsAlert) => {
-      if (!covering.length)
-        return `<td class="zut-cell zut-station-cell"${needsAlert?' style="background:rgba(239,68,68,.09)"':''}>${needsAlert?'<span class="zut-station-gap">!</span>':''}</td>`;
-      return `<td class="zut-cell zut-station-cell">${covering.map(p => {
-        const color = personColor(p.name);
-        return `<span class="zut-station-chip" style="background:${color}33;border:1.5px solid ${color}88;color:${color}" data-pname="${p.name}" title="${p.name}">${personInitials(p.name)}</span>`;
-      }).join('')}</td>`;
+    const padH = h => String(h).padStart(2, '0');
+    const shortName = name => {
+      const parts = name.trim().split(/\s+/);
+      return parts.length <= 1 ? parts[0] : `${parts[0]} ${parts[parts.length - 1][0]}.`;
     };
-    // Role rows: draggable chips + droppable cells
-    const roleChipCell = (covering, needsAlert, blockKey, roleKey) => {
-      const drop = `data-blockkey="${blockKey}" data-role="${roleKey}"`;
-      if (!covering.length)
-        return `<td class="zut-cell zut-station-cell zut-station-drop" ${drop}${needsAlert?' style="background:rgba(239,68,68,.09)"':''}>${needsAlert?'<span class="zut-station-gap">!</span>':''}</td>`;
-      return `<td class="zut-cell zut-station-cell zut-station-drop" ${drop}>${covering.map(p => {
-        const color = personColor(p.name);
-        return `<span class="zut-station-chip" draggable="true" style="background:${color}33;border:1.5px solid ${color}88;color:${color}" data-pname="${p.name}" data-blockkey="${blockKey}" data-role="${roleKey}" title="${p.name}">${personInitials(p.name)}</span>`;
-      }).join('')}</td>`;
-    };
-    const terminTypes = [...new Set(terminSorted.map(t => t.type))];
-    const terminRows = terminTypes.map(type => {
-      const def = TERMIN_DEFS[type];
-      const typeTermins = terminSorted.filter(t => t.type === type);
-      const cells = blocks.map(b => {
-        const covering = [];
-        for (const t of typeTermins) {
-          const tH = t.startHour ?? t.hour;
-          if (b.start < tH || b.start >= tH + def.dur) continue;
-          if (t.personName) {
-            const person = people.find(p => p.name === t.personName);
-            if (person && !covering.some(c => c.name === person.name)) covering.push(person);
-          }
+
+    // Build consecutive spans for a role: groups blocks where same person-set is assigned
+    const buildSpans = roleKey => {
+      const result = [];
+      let i = 0;
+      while (i < blocks.length) {
+        const covering = people.filter(p => zData.assignments[`${p.name}::${blocks[i].key}`] === roleKey);
+        const sig = covering.map(p => p.name).sort().join('\0');
+        let j = i + 1;
+        while (j < blocks.length) {
+          const nc = people.filter(p => zData.assignments[`${p.name}::${blocks[j].key}`] === roleKey);
+          if (nc.map(p => p.name).sort().join('\0') !== sig) break;
+          j++;
         }
-        const anyInRange = typeTermins.some(t => { const tH = t.startHour ?? t.hour; return b.start >= tH && b.start < tH + def.dur; });
-        const needsAlert = anyInRange && covering.length === 0 && typeTermins.some(t => !t.isInternational);
-        return chipCell(covering, needsAlert);
+        result.push({ ps: covering, startIdx: i, count: j - i });
+        i = j;
+      }
+      return result;
+    };
+
+    const renderRoleRow = (roleKey, label, icon) => {
+      const needsWarn = roleKey === 'kassa' || roleKey === 'backoffice';
+      const spans = buildSpans(roleKey);
+      const cells = spans.map(({ ps, startIdx, count }) => {
+        const cs = count > 1 ? ` colspan="${count}"` : '';
+        if (!ps.length) {
+          const warn = needsWarn ? ' style="background:rgba(239,68,68,.09)"' : '';
+          return `<td${cs} class="zut-cell zut-station-cell"${warn}>${needsWarn ? '<span class="zut-station-gap">!</span>' : ''}</td>`;
+        }
+        const startTime = `${padH(blocks[startIdx].start)}:00`;
+        const endTime   = `${padH(blocks[startIdx + count - 1].end)}:00`;
+        const colors = ps.map(p => personColor(p.name));
+        const bg = colors[0];
+        return `<td${cs} class="zut-cell zut-station-cell zut-station-span" style="background:${bg}18;border-right:2px solid ${bg}55;vertical-align:top;padding:3px 5px">
+          <div class="zut-span-time">${startTime}–${endTime}</div>
+          ${ps.map((p, i) => `<div class="zut-span-name" style="color:${colors[i]}">${shortName(p.name)}</div>`).join('')}
+        </td>`;
       }).join('');
-      return `<tr><td class="zut-td-name zut-station-name-td zut-station-short-td">${def.icon}<span class="zut-station-role-short">${def.label}</span></td>${cells}</tr>`;
+      return `<tr><td class="zut-td-name zut-station-name-td zut-station-short-td">${icon}<span class="zut-station-role-short">${label}</span></td>${cells}</tr>`;
+    };
+
+    // Termin rows: one row per individual termin (with colspan spanning its duration)
+    const terminRows = terminSorted.map((t, idx) => {
+      const def = TERMIN_DEFS[t.type];
+      if (!def) return '';
+      const tH = t.startHour ?? t.hour;
+      const tEnd = tH + def.dur;
+      const person = t.personName ? people.find(p => p.name === t.personName) : null;
+      const needsAlert = !person && !t.isInternational;
+      const color = person ? personColor(person.name) : (needsAlert ? '#ef4444' : '#94a3b8');
+      const typeNum = terminByType[t.type]?.findIndex(x => x.id === t.id) + 1;
+
+      const cells = [];
+      let i = 0;
+      while (i < blocks.length) {
+        const b = blocks[i];
+        if (b.start >= tH && b.start < tEnd) {
+          // Count how many consecutive blocks are covered
+          let j = i;
+          while (j < blocks.length && blocks[j].start >= tH && blocks[j].start < tEnd) j++;
+          const count = j - i;
+          const cs = count > 1 ? ` colspan="${count}"` : '';
+          const name = person ? shortName(person.name) : (needsAlert ? '?' : '—');
+          cells.push(`<td${cs} class="zut-cell zut-station-cell zut-station-span" style="background:${color}18;border-right:2px solid ${color}55;vertical-align:top;padding:3px 5px">
+            <div class="zut-span-time">${padH(tH)}:00–${padH(tEnd)}:00</div>
+            <div class="zut-span-name" style="color:${color}">${name}</div>
+          </td>`);
+          i += count;
+        } else {
+          cells.push(`<td class="zut-cell zut-station-cell"></td>`);
+          i++;
+        }
+      }
+      const num = terminByType[t.type] ? `#${typeNum}` : '';
+      return `<tr><td class="zut-td-name zut-station-name-td zut-station-short-td">${def.icon}<span class="zut-station-role-short">${def.label} ${num}</span></td>${cells.join('')}</tr>`;
     }).join('');
+
     const roleRows = ['kassa','backoffice','5stock'].map(rk => {
       const ri = ZUTEIL_ROLES[rk];
-      if (!ri) return '';
-      const cells = blocks.map(b => {
-        const covering = people.filter(p => zData.assignments[`${p.name}::${b.key}`] === rk);
-        return roleChipCell(covering, (rk === 'kassa' || rk === 'backoffice') && covering.length === 0, b.key, rk);
-      }).join('');
-      return `<tr><td class="zut-td-name zut-station-name-td zut-station-short-td">${ri.icon}<span class="zut-station-role-short">${ri.short}</span></td>${cells}</tr>`;
-    }).filter(Boolean).join('');
+      return ri ? renderRoleRow(rk, ri.short, ri.icon) : '';
+    }).join('');
+
     return `<table class="zut-table"><thead><tr>
         <th class="zut-th-name" style="min-width:70px">Station</th>
-        ${blocks.map(b=>`<th class="zut-th-block">${b.label}</th>`).join('')}
+        ${blocks.map(b => `<th class="zut-th-block">${b.label}</th>`).join('')}
       </tr></thead><tbody>${terminRows}${roleRows}</tbody></table>`;
   })();
 
@@ -3802,7 +3842,9 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       const type  = btn.dataset.type;
       const dur   = TERMIN_DEFS[type]?.dur ?? 1;
       const sameType = zData.termine.filter(t => t.type === type);
-      const baseH = type === 'anmeldung' ? tlStartH : tlStartH + 2;
+      // For shifts starting on a half-hour (e.g. Spät 13:30), first termin at next full hour
+      const termMinH = shiftH.start[1] > 0 ? shiftH.start[0] + 1 : shiftH.start[0];
+      const baseH = type === 'anmeldung' ? termMinH : termMinH + 2;
       let h = baseH;
       // Find first slot that doesn't overlap any existing termin of the same type
       while (h < tlEndH) {
@@ -4025,6 +4067,68 @@ function showZuteilPicker(triggerBtn, cellKey, zData, saveData, pushUndo, render
   );
 }
 
+function openTraineeAvatarModal(personName, people, zData, saveData, render) {
+  const existing = document.getElementById('trainee-avatar-modal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'trainee-avatar-modal';
+  modal.className = 'modal';
+  if (!zData.traineeAvatars) zData.traineeAvatars = {};
+  const currentIdx = zData.traineeAvatars[personName] ?? 1;
+  let selectedIdx = currentIdx;
+  const initAv = TRAINEE_AVATARS[currentIdx];
+  modal.innerHTML = `
+    <div class="modal-backdrop" id="tam-backdrop"></div>
+    <div class="modal-sheet">
+      <div class="sheet-header"><div class="modal-title">${personName}</div></div>
+      <div class="sheet-body" style="padding:16px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:12px;color:var(--text-dim)">🎓 Ausbildung</div>
+        <div id="tam-preview" class="ptm-preview">
+          <img src="${initAv.img}" alt="${initAv.name}" class="ptm-preview-img">
+          <div class="ptm-preview-label">${initAv.name} · <span style="color:var(--text-dim)">${initAv.desc}</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label class="form-label">Sternbild</label>
+          <div style="display:flex;gap:8px">
+            ${TRAINEE_AVATARS.map((av, i) => `
+              <button class="ptm-tier-btn${i === currentIdx ? ' ptm-tier-active' : ''}" data-idx="${i}" title="${av.desc}">
+                <img src="${av.img}" alt="${av.name}" style="width:36px;height:36px;object-fit:contain;display:block;margin:0 auto 2px">
+                <span style="font-size:9px;display:block;text-align:center">${av.name}</span>
+              </button>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="sheet-footer">
+        <button id="tam-cancel" class="btn-secondary">Abbrechen</button>
+        <button id="tam-save" class="btn-primary" style="flex:1">Speichern</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  const previewEl = modal.querySelector('#tam-preview');
+  modal.querySelectorAll('.ptm-tier-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedIdx = parseInt(btn.dataset.idx);
+      modal.querySelectorAll('.ptm-tier-btn').forEach(b => b.classList.remove('ptm-tier-active'));
+      btn.classList.add('ptm-tier-active');
+      const av = TRAINEE_AVATARS[selectedIdx];
+      previewEl.innerHTML = `<img src="${av.img}" alt="${av.name}" class="ptm-preview-img">
+        <div class="ptm-preview-label">${av.name} · <span style="color:var(--text-dim)">${av.desc}</span></div>`;
+    });
+  });
+  const close = () => modal.remove();
+  document.getElementById('tam-backdrop').onclick = close;
+  document.getElementById('tam-cancel').onclick = close;
+  document.getElementById('tam-save').onclick = () => {
+    if (!zData.traineeAvatars) zData.traineeAvatars = {};
+    // If another trainee already has selectedIdx, swap them
+    const other = people.filter(p => p._isTrainee && p.name !== personName)
+      .find(p => (zData.traineeAvatars[p.name] ?? 1) === selectedIdx);
+    if (other) zData.traineeAvatars[other.name] = currentIdx;
+    zData.traineeAvatars[personName] = selectedIdx;
+    saveData(); render(); close();
+  };
+}
+
 function openPtmLightbox(src, name) {
   const lb = document.createElement('div');
   lb.className = 'ptm-lightbox';
@@ -4036,7 +4140,8 @@ function openPtmLightbox(src, name) {
 
 function openPersonTierModal(personName, people, zData, saveData, render) {
   const person = people.find(p => p.name === personName);
-  if (!person || person._isTrainee) return;
+  if (!person) return;
+  if (person._isTrainee) { openTraineeAvatarModal(personName, people, zData, saveData, render); return; }
   const currentTier = zData.personTiers?.[personName] ?? null;
   const existing = document.getElementById('person-tier-modal');
   if (existing) existing.remove();
