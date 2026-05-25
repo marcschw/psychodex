@@ -3461,6 +3461,19 @@ async function openZuteilungScreen(shift) {
 function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, render }) {
   const blocks = getZuteilBlocks(shift, zData.blockSize);
 
+  // Shared helpers used by both person view and station view
+  const mToHHMM = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+  const shortNameFn = name => {
+    const parts = name.trim().split(/\s+/);
+    return parts.length <= 1 ? parts[0] : `${parts[0]} ${parts[parts.length - 1][0]}.`;
+  };
+  const sH = shiftHours(shift);
+  const shiftStartM = sH.start[0] * 60 + sH.start[1];
+  const shiftEndM   = sH.end[0]   * 60 + sH.end[1];
+  const halfCols = [];
+  for (let m = shiftStartM; m < shiftEndM; m += 30) halfCols.push(m);
+  const blockHalfCols = zData.blockSize * 2; // half-columns per block (2 for 1h, 4 for 2h)
+
   const isAvail = (p, block) => {
     if (!p.present) return false;
     const ps = zData.personStates[p.name] || {};
@@ -3509,6 +3522,15 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     return { icon: def.icon, num: typeNum, id: t.id };
   };
 
+  // Trainees participating in a termin (anmeldung+interview always; erstgesprach only if isDemo)
+  const getTerminTrainees = t => {
+    if (t.type === 'erstgesprach' && !t.isDemo) return [];
+    const tStartM = (t.startHour ?? t.hour) * 60;
+    const b = blocks.find(bb => bb.start * 60 <= tStartM && bb.end * 60 > tStartM);
+    if (!b) return [];
+    return people.filter(p => p._isTrainee && zData.assignments[`${p.name}::${b.key}`] === 'termin');
+  };
+
   // Person color for station view
   const PERSON_COLORS = [
     '#f59e0b','#10b981','#3b82f6','#ec4899','#8b5cf6','#06b6d4','#f97316','#a3e635',
@@ -3528,22 +3550,33 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     const earlyMark = ps.earlyLeave ? `<span class="zut-early-tag">⏰${ps.earlyLeave}</span>` : '';
     const absent = !p.present;
     const isPlanBRow = zData.dualPlanActive && (!p.present || ps.notYetPresent);
-    const firstName = p.name.split(' ')[0];
-    const cells = blocks.map(b => {
-      const key = `${p.name}::${b.key}`;
-      const role = zData.assignments[key];
-      const ri   = role ? ZUTEIL_ROLES[role] : null;
-      const unavail = !isAvail(p, b);
-      const terminInfo = ri && role === 'termin' ? getTerminInfoForCell(p.name, b) : null;
-      const cellInner = ri
-        ? `<span class="zut-cell-icon">${terminInfo ? terminInfo.icon : ri.icon}</span><span class="zut-role-short">${terminInfo ? '#' + terminInfo.num : ri.short}</span>`
-        : `<span class="zut-empty-dot">·</span>`;
-      const terminDragAttrs = terminInfo ? `draggable="true" data-terminid="${terminInfo.id}"` : '';
-      return `<td class="zut-cell${unavail?' zut-cell-unavail':''}">
-        <button class="zut-cell-btn${ri?' has-role':''}${isPlanBRow?' plan-b-cell':''}" data-key="${key}"
-                style="${ri?`background:${ri.color}1a;border-color:${ri.color}55;color:${ri.color}`:''}"
-                ${unavail?'disabled':''} ${terminDragAttrs}>${cellInner}</button></td>`;
-    }).join('');
+    // Build cells using halfCols: each block spans blockHalfCols half-columns
+    const cellParts = [];
+    let ci = 0;
+    while (ci < halfCols.length) {
+      const m = halfCols[ci];
+      const b = blocks.find(bb => bb.start * 60 === m);
+      if (b) {
+        const key = `${p.name}::${b.key}`;
+        const role = zData.assignments[key];
+        const ri   = role ? ZUTEIL_ROLES[role] : null;
+        const unavail = !isAvail(p, b);
+        const terminInfo = ri && role === 'termin' ? getTerminInfoForCell(p.name, b) : null;
+        const cellInner = ri
+          ? `<span class="zut-cell-icon">${terminInfo ? terminInfo.icon : ri.icon}</span><span class="zut-role-short">${terminInfo ? '#' + terminInfo.num : ri.short}</span>`
+          : `<span class="zut-empty-dot">·</span>`;
+        const terminDragAttrs = terminInfo ? `draggable="true" data-terminid="${terminInfo.id}"` : '';
+        const cs = blockHalfCols > 1 ? ` colspan="${blockHalfCols}"` : '';
+        cellParts.push(`<td${cs} class="zut-cell${unavail?' zut-cell-unavail':''}">
+          <button class="zut-cell-btn${ri?' has-role':''}${isPlanBRow?' plan-b-cell':''}" data-key="${key}"
+                  style="${ri?`background:${ri.color}1a;border-color:${ri.color}55;color:${ri.color}`:''}"
+                  ${unavail?'disabled':''} ${terminDragAttrs}>${cellInner}</button></td>`);
+        ci += blockHalfCols;
+      } else {
+        cellParts.push(`<td class="zut-cell zut-cell-unavail"></td>`);
+        ci++;
+      }
+    }
     const tierNum = zData.personTiers?.[p.name];
     const tierInfo = tierNum ? ANIMAL_TIERS[tierNum - 1] : null;
     const tierAvatar = p._isTrainee
@@ -3554,44 +3587,92 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       p._isSenior ? '<span class="zut-senior-tag">★</span>' : '',
       isPlanBRow ? '<span class="zut-planb-tag">Plan B</span>' : '',
     ].filter(Boolean).join('');
+    const displayName = shortNameFn(p.name);
     return `<tr class="zut-row${absent?' zut-row-absent':''}${ps.notYetPresent&&!absent?' zut-row-notyet':''}">
       <td class="zut-td-name">
-        <div class="zut-person-name zut-person-clickable" data-pname="${p.name}" title="${p.name}">${firstName}${badges ? `<br><span class="zut-name-badges">${badges}</span>` : ''}</div>
+        <div class="zut-person-name zut-person-clickable" data-pname="${p.name}" title="${p.name}">${displayName}${badges ? `<br><span class="zut-name-badges">${badges}</span>` : ''}</div>
         <div class="zut-person-sub">
           ${!absent?`<button class="zut-checkin-btn${ps.notYetPresent?' absent':' present'}" data-pname="${p.name}">${ps.notYetPresent?'⏳':'✓'}</button>`:''}
           ${earlyMark}
           ${!absent?`<button class="zut-early-btn${ps.earlyLeave?' active':''}" data-pname="${p.name}" title="Frühgang">⏰</button>`:''}
         </div>
-      </td>${cells}</tr>`;
+      </td>${cellParts.join('')}</tr>`;
   }).join('');
 
+  // covRow with halfCol-spanning block cells
+  const covRowCells = (() => {
+    const cells = [];
+    let ci = 0;
+    while (ci < halfCols.length) {
+      const m = halfCols[ci];
+      const b = blocks.find(bb => bb.start * 60 === m);
+      if (b) {
+        const roles = people
+          .filter(p => !zData.dualPlanActive || planASet.has(p.name))
+          .map(p => zData.assignments[`${p.name}::${b.key}`]).filter(Boolean);
+        const hasK = roles.includes('kassa'), hasB = roles.includes('backoffice');
+        const cs = blockHalfCols > 1 ? ` colspan="${blockHalfCols}"` : '';
+        cells.push(`<td${cs} class="zut-cell" style="text-align:center;padding:2px">
+          <span style="color:${hasK?'#10b981':'#ef4444'};font-size:9px;font-weight:700">K</span>
+          <span style="color:${hasB?'#10b981':'#ef4444'};font-size:9px;font-weight:700">B</span></td>`);
+        ci += blockHalfCols;
+      } else {
+        cells.push(`<td class="zut-cell"></td>`);
+        ci++;
+      }
+    }
+    return cells.join('');
+  })();
   const covRow = `<tr class="zut-cov-row">
     <td class="zut-td-name" style="min-width:auto;padding:2px 6px"><span class="zut-cov-label">Dkg.</span></td>
-    ${blocks.map(b => {
-      const roles = people
-        .filter(p => !zData.dualPlanActive || planASet.has(p.name))
-        .map(p => zData.assignments[`${p.name}::${b.key}`]).filter(Boolean);
-      const hasK = roles.includes('kassa'), hasB = roles.includes('backoffice');
-      return `<td class="zut-cell" style="text-align:center;padding:2px">
-        <span style="color:${hasK?'#10b981':'#ef4444'};font-size:9px;font-weight:700">K</span>
-        <span style="color:${hasB?'#10b981':'#ef4444'};font-size:9px;font-weight:700">B</span></td>`;
-    }).join('')}
+    ${covRowCells}
   </tr>`;
+
+  // Termin rows for person view (same logic as station view)
+  const personViewTerminRows = terminSorted.map(t => {
+    const def = TERMIN_DEFS[t.type];
+    if (!def) return '';
+    const tStartM = (t.startHour ?? t.hour) * 60;
+    const tEndM   = tStartM + def.dur * 60;
+    const person  = t.personName ? people.find(p => p.name === t.personName) : null;
+    const needsAlert = !person && !t.isInternational;
+    const color   = person ? personColor(person.name) : (needsAlert ? '#ef4444' : '#94a3b8');
+    const typeNum = terminByType[t.type]?.findIndex(x => x.id === t.id) + 1;
+    const trainees = getTerminTrainees(t);
+    const traineeHtml = trainees.map(tr =>
+      `<div class="zut-span-name" style="color:${personColor(tr.name)};opacity:.85">🎓${shortNameFn(tr.name)}</div>`
+    ).join('');
+    const mainName = person
+      ? `${person._isTrainee ? '🎓' : ''}${shortNameFn(person.name)}`
+      : (needsAlert ? '?' : '—');
+    const cells = [];
+    let ci = 0;
+    while (ci < halfCols.length) {
+      const m = halfCols[ci];
+      if (m >= tStartM && m < tEndM) {
+        let j = ci;
+        while (j < halfCols.length && halfCols[j] >= tStartM && halfCols[j] < tEndM) j++;
+        const colSpan = j - ci;
+        const cs = colSpan > 1 ? ` colspan="${colSpan}"` : '';
+        cells.push(`<td${cs} class="zut-cell zut-station-cell zut-station-span" style="background:${color}18;border-right:2px solid ${color}55;vertical-align:top;padding:3px 5px">
+          <div class="zut-span-time">${mToHHMM(tStartM)}–${mToHHMM(tEndM)}</div>
+          <div class="zut-span-name" style="color:${color}">${mainName}</div>
+          ${traineeHtml}
+        </td>`);
+        ci += colSpan;
+      } else {
+        cells.push(`<td class="zut-cell zut-station-cell"></td>`);
+        ci++;
+      }
+    }
+    return `<tr><td class="zut-td-name zut-station-name-td zut-station-short-td" style="min-width:auto">${def.icon}<span class="zut-station-role-short">${def.label} #${typeNum}</span></td>${cells.join('')}</tr>`;
+  }).join('');
 
   // ── Station view grid ───────────────────────────────────────────────────────
   const stationGridHtml = (() => {
-    const mToHHMM = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
-    const shortName = name => {
-      const parts = name.trim().split(/\s+/);
-      return parts.length <= 1 ? parts[0] : `${parts[0]} ${parts[parts.length - 1][0]}.`;
-    };
-
-    // 30-minute half-column grid
-    const sH = shiftHours(shift);
-    const startM = sH.start[0] * 60 + sH.start[1];
-    const endM   = sH.end[0]   * 60 + sH.end[1];
-    const halfCols = [];
-    for (let m = startM; m < endM; m += 30) halfCols.push(m);
+    // mToHHMM, shortNameFn, halfCols, shiftStartM, shiftEndM from outer scope
+    const startM = shiftStartM;
+    const endM   = shiftEndM;
 
     // All people assigned to a role at a given minute
     const peopleAtMin = (roleKey, minute) => {
@@ -3649,7 +3730,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       const color = personColor(ps[0].name);
       const namesHtml = ps.map(p => {
         const traineeIcon = p._isTrainee ? '🎓' : '';
-        return `<div class="zut-span-name" style="color:${personColor(p.name)}">${traineeIcon}${shortName(p.name)}</div>`;
+        return `<div class="zut-span-name" style="color:${personColor(p.name)}">${traineeIcon}${shortNameFn(p.name)}</div>`;
       }).join('');
       return `<td${cs} class="zut-cell zut-station-cell zut-station-span" style="background:${color}18;border-right:2px solid ${color}55;vertical-align:top;padding:3px 5px">
         <div class="zut-span-time">${mToHHMM(sm)}–${mToHHMM(em)}</div>
@@ -3666,7 +3747,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       return `<tr><td class="zut-td-name zut-station-name-td zut-station-short-td">${icon}<span class="zut-station-role-short">${label}</span></td>${cells}</tr>`;
     };
 
-    // Termin rows at 30-min resolution
+    // Termin rows at 30-min resolution (with trainees)
     const terminRows = terminSorted.map(t => {
       const def = TERMIN_DEFS[t.type];
       if (!def) return '';
@@ -3676,7 +3757,13 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       const needsAlert = !person && !t.isInternational;
       const color   = person ? personColor(person.name) : (needsAlert ? '#ef4444' : '#94a3b8');
       const typeNum = terminByType[t.type]?.findIndex(x => x.id === t.id) + 1;
-      const traineeIcon = person?._isTrainee ? '🎓' : '';
+      const trainees = getTerminTrainees(t);
+      const traineeHtml = trainees.map(tr =>
+        `<div class="zut-span-name" style="color:${personColor(tr.name)};opacity:.85">🎓${shortNameFn(tr.name)}</div>`
+      ).join('');
+      const mainName = person
+        ? `${person._isTrainee ? '🎓' : ''}${shortNameFn(person.name)}`
+        : (needsAlert ? '?' : '—');
 
       const cells = [];
       let i = 0;
@@ -3687,10 +3774,10 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
           while (j < halfCols.length && halfCols[j] >= tStartM && halfCols[j] < tEndM) j++;
           const colSpan = j - i;
           const cs = colSpan > 1 ? ` colspan="${colSpan}"` : '';
-          const name = person ? `${traineeIcon}${shortName(person.name)}` : (needsAlert ? '?' : '—');
           cells.push(`<td${cs} class="zut-cell zut-station-cell zut-station-span" style="background:${color}18;border-right:2px solid ${color}55;vertical-align:top;padding:3px 5px">
             <div class="zut-span-time">${mToHHMM(tStartM)}–${mToHHMM(tEndM)}</div>
-            <div class="zut-span-name" style="color:${color}">${name}</div>
+            <div class="zut-span-name" style="color:${color}">${mainName}</div>
+            ${traineeHtml}
           </td>`);
           i += colSpan;
         } else {
@@ -3777,10 +3864,13 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     <div class="zut-grid-wrap">
       ${zData.stationView ? stationGridHtml : `<table class="zut-table">
         <thead><tr>
-          <th class="zut-th-name">Person (${presentCount})</th>
-          ${blocks.map(b=>`<th class="zut-th-block">${b.label}</th>`).join('')}
+          <th class="zut-th-name" style="min-width:80px">Person (${presentCount})</th>
+          ${halfCols.map(m => m % 60 === 0
+            ? `<th class="zut-th-block zut-th-hour">${mToHHMM(m)}</th>`
+            : `<th class="zut-th-block zut-th-half">:30</th>`
+          ).join('')}
         </tr></thead>
-        <tbody>${bodyRows}${covRow}</tbody>
+        <tbody>${personViewTerminRows}${bodyRows}${covRow}</tbody>
       </table>`}
     </div>
     <div class="zut-footer">
