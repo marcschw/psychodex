@@ -3540,7 +3540,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       ? TRAINEE_AVATARS[1]
       : tierInfo ?? null;
     const badges = [
-      tierAvatar ? `<img class="zut-tier-avatar" src="${tierAvatar.img}" title="${tierAvatar.name} · ${tierAvatar.desc}" alt="${tierAvatar.name}">` : '',
+      tierAvatar ? `<span class="zut-tier-emoji" title="${tierAvatar.name} · ${tierAvatar.desc}">${tierAvatar.emoji}</span>` : '',
       p._self ? '<span class="team-self-badge">Ich</span>' : '',
       p._isSenior ? '<span class="zut-senior-tag">★</span>' : '',
       p._isTrainee ? '<span class="zut-trainee-tag">🎓</span>' : '',
@@ -3761,6 +3761,10 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       sortable.forEach((p, i) => { newTiers[p.name] = allTiers[i] ?? (i + 1); });
     }
     zData.personTiers = newTiers;
+    const autoResult = autoAssignZuteilung(getZuteilBlocks(shift, zData.blockSize), people, zData);
+    zData.assignments = autoResult.assignments; zData.planB = autoResult.planB;
+    zData.dualPlanActive = autoResult.dualPlanActive; zData.planAPersons = autoResult.planAPersons;
+    zData.termine = autoResult.resolvedTermine ?? zData.termine;
     saveData(); render();
   };
 
@@ -3774,6 +3778,10 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     if (seniors.length > 0) seniors.forEach(p => { newTiers[p.name] = 1; });
     sortable.forEach((p, i) => { newTiers[p.name] = shuffled[i] ?? (i + (seniors.length > 0 ? 2 : 1)); });
     zData.personTiers = newTiers;
+    const autoResult2 = autoAssignZuteilung(getZuteilBlocks(shift, zData.blockSize), people, zData);
+    zData.assignments = autoResult2.assignments; zData.planB = autoResult2.planB;
+    zData.dualPlanActive = autoResult2.dualPlanActive; zData.planAPersons = autoResult2.planAPersons;
+    zData.termine = autoResult2.resolvedTermine ?? zData.termine;
     saveData(); render();
   };
 
@@ -4022,7 +4030,7 @@ function openPersonTierModal(personName, people, zData, saveData, render) {
     <div class="modal-sheet">
       <div class="sheet-header">
         <div class="modal-title" style="display:flex;align-items:center;gap:8px">
-          ${currentTier ? `<img class="zut-tier-avatar-lg" src="${ANIMAL_TIERS[currentTier-1].img}" alt="">` : ''}
+          ${currentTier ? `<span class="zut-tier-emoji-lg">${ANIMAL_TIERS[currentTier-1].emoji}</span>` : ''}
           ${personName}
         </div>
       </div>
@@ -6001,7 +6009,7 @@ const missionCheckboxes = (current, target, tier = 3, emoji = '🎯') => {
   const color = MISSION_TIER_COLORS[tier] || 'var(--accent)';
   return Array.from({length: target}, (_, i) => {
     const done = i < current;
-    return `<span class="m-cb${done ? ' m-cb--done' : ''}" style="font-size:1.1em;${done ? `filter:none;opacity:1;` : 'filter:grayscale(1);opacity:0.35;'}">${emoji}</span>`;
+    return `<span class="m-cb${done ? ' m-cb--done' : ''}" style="font-size:7px;${done ? `filter:none;opacity:1;` : 'filter:grayscale(1);opacity:0.35;'}">${emoji}</span>`;
   }).join('');
 };
 
@@ -6252,20 +6260,16 @@ async function renderDiagnosenTab() {
 
       const chipThumb = code => `<img class="dx-chip-thumb" src="assets/images/diagnoses/${code.toLowerCase()}.png" alt="" onerror="this.style.display='none'" loading="lazy">`;
       const myChips = myRows.map(r =>
-        `<button class="${kindClass(r.kind)} dx-chip-clickable" data-code="${r.code}">
+        `<button class="${kindClass(r.kind)} dx-chip-clickable dx-chip-col" data-code="${r.code}">
+          <div class="dx-chip-row"><span class="dx-chip-sym">${kindSym(r.kind)}</span><span class="dx-chip-code">${r.code}</span>${r.title ? `<span class="dx-chip-name">${r.title}</span>` : ''}</div>
           ${chipThumb(r.code)}
-          <span class="dx-chip-sym">${kindSym(r.kind)}</span>
-          <span class="dx-chip-code">${r.code}</span>
-          ${r.title ? `<span class="dx-chip-name">${r.title}</span>` : ''}
         </button>`
       ).join('') || '<span class="dx-empty-label">keine</span>';
 
       const thChips = thRows.map(r =>
-        `<button class="${kindClass(r.kind)} dx-chip-clickable" data-code="${r.code}">
+        `<button class="${kindClass(r.kind)} dx-chip-clickable dx-chip-col" data-code="${r.code}">
+          <div class="dx-chip-row"><span class="dx-chip-sym">${kindSym(r.kind)}</span><span class="dx-chip-code">${r.code}</span>${r.title ? `<span class="dx-chip-name">${r.title}</span>` : ''}</div>
           ${chipThumb(r.code)}
-          <span class="dx-chip-sym">${kindSym(r.kind)}</span>
-          <span class="dx-chip-code">${r.code}</span>
-          ${r.title ? `<span class="dx-chip-name">${r.title}</span>` : ''}
         </button>`
       ).join('') || '<span class="dx-empty-label">keine</span>';
 
@@ -6285,10 +6289,9 @@ async function renderDiagnosenTab() {
         </div>`;
     } else {
       const catchChips = slotCatches.map(c =>
-        `<button class="dx-chip dx-chip-clickable" data-code="${c.code}">
+        `<button class="dx-chip dx-chip-clickable dx-chip-col" data-code="${c.code}">
+          <div class="dx-chip-row"><span class="dx-chip-code">${c.code}</span><span class="dx-chip-name">${c.name || ''}</span></div>
           <img class="dx-chip-thumb" src="assets/images/diagnoses/${c.code.toLowerCase()}.png" alt="" onerror="this.style.display='none'" loading="lazy">
-          <span class="dx-chip-code">${c.code}</span>
-          <span class="dx-chip-name">${c.name || ''}</span>
         </button>`
       ).join('') || '<span class="dx-empty-label">keine Diagnosen erfasst</span>';
 
