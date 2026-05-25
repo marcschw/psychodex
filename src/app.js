@@ -685,10 +685,14 @@ function renderHoursCounters() {
   const supPct    = Math.min(100, Math.round((supHours / supTarget) * 100));
   const supColor  = supPct >= 100 ? '#10b981' : '#8b5cf6';
 
+  const todayStr2 = new Date().toISOString().slice(0, 10);
   const counterCards = counters.map(c => {
-    const h = calcCounterHours(c);
+    const baseShifts2 = c.fromDate ? state.shifts.filter(s => s.date >= c.fromDate) : state.shifts;
+    const doneH = baseShifts2.filter(s => !s.plannerActive).reduce((s, sh) => s + calcShiftHours(sh), 0) + getExtraHoursTotal();
+    const planH = baseShifts2.filter(s => s.plannerActive && s.date > todayStr2).reduce((s, sh) => s + calcShiftHours(sh), 0);
+    const h = doneH + planH;
     const t = c.targetHours || 480;
-    const pct = Math.min(100, Math.round((h / t) * 100));
+    const pct = Math.min(100, Math.round((doneH / t) * 100));
     const fromTxt = c.fromDate
       ? `ab ${new Date(c.fromDate + 'T12:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })}`
       : '';
@@ -704,7 +708,7 @@ function renderHoursCounters() {
           <span class="hc-pct">${pct}%</span>
         </div>
         <div class="hc-bar-wrap"><div class="hc-bar-fill" style="width:${pct}%"></div></div>
-        <div class="hc-abs">${h.toFixed(1).replace('.0','')}h / ${t}h${fromTxt ? ` · ${fromTxt}` : ''}</div>
+        <div class="hc-abs">${doneH.toFixed(1).replace('.0','')}h / ${t}h${fromTxt ? ` · ${fromTxt}` : ''}${planH > 0 ? ` <span class="hc-planned-badge">+${planH.toFixed(1).replace('.0','')}h geplant</span>` : ''}</div>
       </div>`;
   }).join('');
 
@@ -727,7 +731,7 @@ function renderHoursCounters() {
     });
   });
   el.querySelector('.sup-counter-card')?.addEventListener('click', () => {
-    openHoursModal('supervision');
+    openSupervisionSheet();
   });
 }
 
@@ -1378,7 +1382,13 @@ function openTeamModal(shift) {
     // Build display: self-entry + working list, each tagged with working index
     const display = working.map((c, i) => ({ ...c, _wi: i }));
     if (userName && !display.some(c => c.name.toLowerCase() === userName.toLowerCase())) {
-      display.unshift({ name: userName, funktion: selfFunk, team: selfTeam, tags: [], present: true, _self: true, _wi: -1 });
+      const selfHours = Math.round(
+        state.shifts.filter(s => !s.plannerActive && s.date <= shift.date)
+          .reduce((sum, s) => sum + calcShiftHours(s), 0) * 10) / 10;
+      const selfTarget = state.profile?.hourCounters?.[0]?.targetHours || 480;
+      const selfPct = selfHours > 0 ? Math.round((selfHours / selfTarget) * 100) : null;
+      display.unshift({ name: userName, funktion: selfFunk, team: selfTeam, tags: [], present: true, _self: true, _wi: -1,
+        stunden: selfHours || null, pct: selfPct });
     }
 
     const rcDisplay    = display.filter(c => effectiveTeam(c) === 'D' || effectiveTeam(c) === 'T');
@@ -3325,17 +3335,17 @@ const TERMIN_DEFS = {
 };
 
 const ANIMAL_TIERS = [
-  { tier: 1, img: './assets/images/avatars/stars/avatar_draco.png',     name: 'Draco',      desc: 'Der Drache' },
-  { tier: 2, img: './assets/images/avatars/stars/avatar_ursa.png',      name: 'Ursa Major', desc: 'Der Große Bär' },
-  { tier: 3, img: './assets/images/avatars/stars/avatar_lupus.png',     name: 'Lupus',      desc: 'Der Wolf' },
-  { tier: 4, img: './assets/images/avatars/stars/avatar_aquila.png',    name: 'Aquila',     desc: 'Der Adler' },
-  { tier: 5, img: './assets/images/avatars/stars/avatar_vulpecula.png', name: 'Vulpecula',  desc: 'Der Fuchs' },
-  { tier: 6, img: './assets/images/avatars/stars/avatar_noctua.png',    name: 'Noctua',     desc: 'Die Eule' },
-  { tier: 7, img: './assets/images/avatars/stars/avatar_corvus.png',    name: 'Corvus',     desc: 'Der Rabe' },
+  { tier: 1, img: './assets/images/avatars/stars/avatar_draco.png',     emoji: '🐉', name: 'Draco',      desc: 'Der Drache' },
+  { tier: 2, img: './assets/images/avatars/stars/avatar_ursa.png',      emoji: '🐻', name: 'Ursa Major', desc: 'Der Große Bär' },
+  { tier: 3, img: './assets/images/avatars/stars/avatar_lupus.png',     emoji: '🐺', name: 'Lupus',      desc: 'Der Wolf' },
+  { tier: 4, img: './assets/images/avatars/stars/avatar_aquila.png',    emoji: '🦅', name: 'Aquila',     desc: 'Der Adler' },
+  { tier: 5, img: './assets/images/avatars/stars/avatar_vulpecula.png', emoji: '🦊', name: 'Vulpecula',  desc: 'Der Fuchs' },
+  { tier: 6, img: './assets/images/avatars/stars/avatar_noctua.png',    emoji: '🦉', name: 'Noctua',     desc: 'Die Eule' },
+  { tier: 7, img: './assets/images/avatars/stars/avatar_corvus.png',    emoji: '🐦', name: 'Corvus',     desc: 'Der Rabe' },
 ];
 const TRAINEE_AVATARS = [
-  { img: './assets/images/avatars/stars/avatar_training_1.png', name: 'Doppelstern', desc: 'Mentoring' },
-  { img: './assets/images/avatars/stars/avatar_training_2.png', name: 'Protostern',  desc: 'Neubeginn' },
+  { img: './assets/images/avatars/stars/avatar_training_1.png', emoji: '⭐', name: 'Doppelstern', desc: 'Mentoring' },
+  { img: './assets/images/avatars/stars/avatar_training_2.png', emoji: '💫', name: 'Protostern',  desc: 'Neubeginn' },
 ];
 
 function getZuteilBlocks(shift, blockSize) {
@@ -3530,7 +3540,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       ? TRAINEE_AVATARS[1]
       : tierInfo ?? null;
     const badges = [
-      tierAvatar ? `<img class="zut-tier-avatar" src="${tierAvatar.img}" title="${tierAvatar.name} · ${tierAvatar.desc}" alt="${tierAvatar.name}">` : '',
+      tierAvatar ? `<span class="zut-tier-emoji" title="${tierAvatar.name} · ${tierAvatar.desc}">${tierAvatar.emoji}</span>` : '',
       p._self ? '<span class="team-self-badge">Ich</span>' : '',
       p._isSenior ? '<span class="zut-senior-tag">★</span>' : '',
       p._isTrainee ? '<span class="zut-trainee-tag">🎓</span>' : '',
@@ -3684,6 +3694,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     <div class="zut-footer">
       <div class="zut-present-label">${presentCount} anwesend · ${people.length} gesamt</div>
       <button class="btn-secondary" id="zut-seniority-btn" title="Tier nach Dienstalter vergeben">🏅 Dienstalter</button>
+      <button class="btn-secondary" id="zut-random-tier-btn" title="Tier zufällig vergeben">🎲 Zufällig</button>
       <button class="btn-primary" id="zut-auto-btn">⚡ Auto-Zuteilung</button>
     </div>`;
 
@@ -3750,6 +3761,19 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       const allTiers = [1, 2, 3, 4, 5, 6, 7];
       sortable.forEach((p, i) => { newTiers[p.name] = allTiers[i] ?? (i + 1); });
     }
+    zData.personTiers = newTiers;
+    saveData(); render();
+  };
+
+  inner.querySelector('#zut-random-tier-btn').onclick = () => {
+    pushUndo();
+    const newTiers = {};
+    const sortable = people.filter(p => !p._isSenior && !p._isTrainee);
+    const seniors  = people.filter(p => p._isSenior);
+    const tiers    = [1, 2, 3, 4, 5, 6, 7].slice(seniors.length > 0 ? 1 : 0);
+    const shuffled = [...tiers].sort(() => Math.random() - 0.5);
+    if (seniors.length > 0) seniors.forEach(p => { newTiers[p.name] = 1; });
+    sortable.forEach((p, i) => { newTiers[p.name] = shuffled[i] ?? (i + (seniors.length > 0 ? 2 : 1)); });
     zData.personTiers = newTiers;
     saveData(); render();
   };
@@ -4010,7 +4034,7 @@ function openPersonTierModal(personName, people, zData, saveData, render) {
     <div class="modal-sheet">
       <div class="sheet-header">
         <div class="modal-title" style="display:flex;align-items:center;gap:8px">
-          ${currentTier ? `<img class="zut-tier-avatar-lg" src="${ANIMAL_TIERS[currentTier-1].img}" alt="">` : ''}
+          ${currentTier ? `<span class="zut-tier-emoji-lg">${ANIMAL_TIERS[currentTier-1].emoji}</span>` : ''}
           ${personName}
         </div>
       </div>
@@ -4023,7 +4047,7 @@ function openPersonTierModal(personName, people, zData, saveData, render) {
           <label class="form-label">Sternbild</label>
           <div style="display:flex;flex-wrap:wrap;gap:6px">
             ${ANIMAL_TIERS.map(t => `<button class="ptm-tier-btn${t.tier===currentTier?' ptm-tier-active':''}" data-tier="${t.tier}" title="${t.desc}">
-              <img src="${t.img}" alt="${t.name}" style="width:32px;height:32px;object-fit:contain;display:block;margin:0 auto 2px">
+              <span style="font-size:28px;display:block;text-align:center;line-height:1.2">${t.emoji}</span>
               <span style="font-size:9px;display:block;text-align:center">${t.name}</span>
             </button>`).join('')}
           </div>
@@ -6185,7 +6209,7 @@ async function renderDiagnosenTab() {
 
   const allSlots = await db.scheduleSlots.toArray();
   const patientSlots = allSlots
-    .filter(s => !!SLOT_TYPES[s.type]?.patientContact)
+    .filter(s => !!SLOT_TYPES[s.type]?.patientContact && s.type !== 'erstgesprach')
     .sort((a, b) => {
       const shiftA = state.shifts.find(sh => sh.id === a.shiftId);
       const shiftB = state.shifts.find(sh => sh.id === b.shiftId);
@@ -6238,8 +6262,10 @@ async function renderDiagnosenTab() {
       const kindClass = k => k === 'exact' ? 'dx-chip dx-chip--exact' : k === 'partial' ? 'dx-chip dx-chip--partial' : 'dx-chip dx-chip--miss';
       const kindSym   = k => k === 'exact' ? '✓' : k === 'partial' ? '≈' : '✗';
 
+      const chipThumb = code => `<img class="dx-chip-thumb" src="assets/images/diagnoses/${code.toLowerCase()}.png" alt="" onerror="this.style.display='none'" loading="lazy">`;
       const myChips = myRows.map(r =>
         `<button class="${kindClass(r.kind)} dx-chip-clickable" data-code="${r.code}">
+          ${chipThumb(r.code)}
           <span class="dx-chip-sym">${kindSym(r.kind)}</span>
           <span class="dx-chip-code">${r.code}</span>
           ${r.title ? `<span class="dx-chip-name">${r.title}</span>` : ''}
@@ -6248,6 +6274,7 @@ async function renderDiagnosenTab() {
 
       const thChips = thRows.map(r =>
         `<button class="${kindClass(r.kind)} dx-chip-clickable" data-code="${r.code}">
+          ${chipThumb(r.code)}
           <span class="dx-chip-sym">${kindSym(r.kind)}</span>
           <span class="dx-chip-code">${r.code}</span>
           ${r.title ? `<span class="dx-chip-name">${r.title}</span>` : ''}
@@ -6271,6 +6298,7 @@ async function renderDiagnosenTab() {
     } else {
       const catchChips = slotCatches.map(c =>
         `<button class="dx-chip dx-chip-clickable" data-code="${c.code}">
+          <img class="dx-chip-thumb" src="assets/images/diagnoses/${c.code.toLowerCase()}.png" alt="" onerror="this.style.display='none'" loading="lazy">
           <span class="dx-chip-code">${c.code}</span>
           <span class="dx-chip-name">${c.name || ''}</span>
         </button>`
