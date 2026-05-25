@@ -3566,100 +3566,124 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
   }).join('');
 
   const covRow = `<tr class="zut-cov-row">
-    <td class="zut-td-name"><span class="zut-cov-label">Abdeckung</span></td>
+    <td class="zut-td-name" style="min-width:auto;padding:2px 6px"><span class="zut-cov-label">Dkg.</span></td>
     ${blocks.map(b => {
       const roles = people
         .filter(p => !zData.dualPlanActive || planASet.has(p.name))
         .map(p => zData.assignments[`${p.name}::${b.key}`]).filter(Boolean);
       const hasK = roles.includes('kassa'), hasB = roles.includes('backoffice');
-      return `<td class="zut-cell" style="text-align:center;padding:4px 2px">
-        <span style="color:${hasK?'#10b981':'#ef4444'};font-size:11px;font-weight:700">K</span>
-        <span style="color:${hasB?'#10b981':'#ef4444'};font-size:11px;font-weight:700">B</span></td>`;
+      return `<td class="zut-cell" style="text-align:center;padding:2px">
+        <span style="color:${hasK?'#10b981':'#ef4444'};font-size:9px;font-weight:700">K</span>
+        <span style="color:${hasB?'#10b981':'#ef4444'};font-size:9px;font-weight:700">B</span></td>`;
     }).join('')}
   </tr>`;
 
   // ── Station view grid ───────────────────────────────────────────────────────
   const stationGridHtml = (() => {
-    const padH = h => String(h).padStart(2, '0');
+    const mToHHMM = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
     const shortName = name => {
       const parts = name.trim().split(/\s+/);
       return parts.length <= 1 ? parts[0] : `${parts[0]} ${parts[parts.length - 1][0]}.`;
     };
 
-    // Build consecutive spans for a role: groups blocks where same person-set is assigned
-    const buildSpans = roleKey => {
-      const result = [];
+    // 30-minute half-column grid
+    const sH = shiftHours(shift);
+    const startM = sH.start[0] * 60 + sH.start[1];
+    const endM   = sH.end[0]   * 60 + sH.end[1];
+    const halfCols = [];
+    for (let m = startM; m < endM; m += 30) halfCols.push(m);
+
+    // Find person assigned to a role at a given minute (based on block assignments)
+    const personAtMin = (roleKey, minute) => {
+      const b = blocks.find(bb => bb.start * 60 <= minute && bb.end * 60 > minute);
+      if (!b) return null;
+      return people.find(p => zData.assignments[`${p.name}::${b.key}`] === roleKey) || null;
+    };
+
+    // Continuous half-col spans for a role (backoffice, 5stock)
+    const buildHalfSpans = roleKey => {
+      const spans = [];
       let i = 0;
-      while (i < blocks.length) {
-        const covering = people.filter(p => zData.assignments[`${p.name}::${blocks[i].key}`] === roleKey);
-        const sig = covering.map(p => p.name).sort().join('\0');
+      while (i < halfCols.length) {
+        const person = personAtMin(roleKey, halfCols[i]);
         let j = i + 1;
-        while (j < blocks.length) {
-          const nc = people.filter(p => zData.assignments[`${p.name}::${blocks[j].key}`] === roleKey);
-          if (nc.map(p => p.name).sort().join('\0') !== sig) break;
-          j++;
-        }
-        result.push({ ps: covering, startIdx: i, count: j - i });
+        while (j < halfCols.length && (personAtMin(roleKey, halfCols[j])?.name || null) === (person?.name || null)) j++;
+        spans.push({ person, startM: halfCols[i], endM: halfCols[j] ?? endM, colSpan: j - i });
         i = j;
       }
-      return result;
+      return spans;
+    };
+
+    // Kassa: 1.5h (90-min) visual slots, always cut at 90-min boundaries from shift start
+    const buildKassaSpans = () => {
+      const spans = [];
+      let m = startM;
+      while (m < endM) {
+        const slotEnd = Math.min(m + 90, endM);
+        const startIdx = halfCols.indexOf(m);
+        const endIdx   = halfCols.findIndex(hc => hc >= slotEnd);
+        const colSpan  = (endIdx === -1 ? halfCols.length : endIdx) - startIdx;
+        if (colSpan <= 0) break;
+        spans.push({ person: personAtMin('kassa', m), startM: m, endM: slotEnd, colSpan });
+        m += 90;
+      }
+      return spans;
+    };
+
+    const renderSpanCell = (colSpan, person, sm, em, needsWarn) => {
+      const cs = colSpan > 1 ? ` colspan="${colSpan}"` : '';
+      if (!person) {
+        const warn = needsWarn ? ' style="background:rgba(239,68,68,.09)"' : '';
+        return `<td${cs} class="zut-cell zut-station-cell"${warn}>${needsWarn ? '<span class="zut-station-gap">!</span>' : ''}</td>`;
+      }
+      const color = personColor(person.name);
+      return `<td${cs} class="zut-cell zut-station-cell zut-station-span" style="background:${color}18;border-right:2px solid ${color}55;vertical-align:top;padding:3px 5px">
+        <div class="zut-span-time">${mToHHMM(sm)}–${mToHHMM(em)}</div>
+        <div class="zut-span-name" style="color:${color}">${shortName(person.name)}</div>
+      </td>`;
     };
 
     const renderRoleRow = (roleKey, label, icon) => {
       const needsWarn = roleKey === 'kassa' || roleKey === 'backoffice';
-      const spans = buildSpans(roleKey);
-      const cells = spans.map(({ ps, startIdx, count }) => {
-        const cs = count > 1 ? ` colspan="${count}"` : '';
-        if (!ps.length) {
-          const warn = needsWarn ? ' style="background:rgba(239,68,68,.09)"' : '';
-          return `<td${cs} class="zut-cell zut-station-cell"${warn}>${needsWarn ? '<span class="zut-station-gap">!</span>' : ''}</td>`;
-        }
-        const startTime = `${padH(blocks[startIdx].start)}:00`;
-        const endTime   = `${padH(blocks[startIdx + count - 1].end)}:00`;
-        const colors = ps.map(p => personColor(p.name));
-        const bg = colors[0];
-        return `<td${cs} class="zut-cell zut-station-cell zut-station-span" style="background:${bg}18;border-right:2px solid ${bg}55;vertical-align:top;padding:3px 5px">
-          <div class="zut-span-time">${startTime}–${endTime}</div>
-          ${ps.map((p, i) => `<div class="zut-span-name" style="color:${colors[i]}">${shortName(p.name)}</div>`).join('')}
-        </td>`;
-      }).join('');
+      const spans = roleKey === 'kassa' ? buildKassaSpans() : buildHalfSpans(roleKey);
+      const cells = spans.map(({ person, startM: sm, endM: em, colSpan }) =>
+        renderSpanCell(colSpan, person, sm, em, needsWarn)
+      ).join('');
       return `<tr><td class="zut-td-name zut-station-name-td zut-station-short-td">${icon}<span class="zut-station-role-short">${label}</span></td>${cells}</tr>`;
     };
 
-    // Termin rows: one row per individual termin (with colspan spanning its duration)
-    const terminRows = terminSorted.map((t, idx) => {
+    // Termin rows at 30-min resolution
+    const terminRows = terminSorted.map(t => {
       const def = TERMIN_DEFS[t.type];
       if (!def) return '';
-      const tH = t.startHour ?? t.hour;
-      const tEnd = tH + def.dur;
-      const person = t.personName ? people.find(p => p.name === t.personName) : null;
+      const tStartM = (t.startHour ?? t.hour) * 60;
+      const tEndM   = tStartM + def.dur * 60;
+      const person  = t.personName ? people.find(p => p.name === t.personName) : null;
       const needsAlert = !person && !t.isInternational;
-      const color = person ? personColor(person.name) : (needsAlert ? '#ef4444' : '#94a3b8');
+      const color   = person ? personColor(person.name) : (needsAlert ? '#ef4444' : '#94a3b8');
       const typeNum = terminByType[t.type]?.findIndex(x => x.id === t.id) + 1;
 
       const cells = [];
       let i = 0;
-      while (i < blocks.length) {
-        const b = blocks[i];
-        if (b.start >= tH && b.start < tEnd) {
-          // Count how many consecutive blocks are covered
+      while (i < halfCols.length) {
+        const m = halfCols[i];
+        if (m >= tStartM && m < tEndM) {
           let j = i;
-          while (j < blocks.length && blocks[j].start >= tH && blocks[j].start < tEnd) j++;
-          const count = j - i;
-          const cs = count > 1 ? ` colspan="${count}"` : '';
+          while (j < halfCols.length && halfCols[j] >= tStartM && halfCols[j] < tEndM) j++;
+          const colSpan = j - i;
+          const cs = colSpan > 1 ? ` colspan="${colSpan}"` : '';
           const name = person ? shortName(person.name) : (needsAlert ? '?' : '—');
           cells.push(`<td${cs} class="zut-cell zut-station-cell zut-station-span" style="background:${color}18;border-right:2px solid ${color}55;vertical-align:top;padding:3px 5px">
-            <div class="zut-span-time">${padH(tH)}:00–${padH(tEnd)}:00</div>
+            <div class="zut-span-time">${mToHHMM(tStartM)}–${mToHHMM(tEndM)}</div>
             <div class="zut-span-name" style="color:${color}">${name}</div>
           </td>`);
-          i += count;
+          i += colSpan;
         } else {
           cells.push(`<td class="zut-cell zut-station-cell"></td>`);
           i++;
         }
       }
-      const num = terminByType[t.type] ? `#${typeNum}` : '';
-      return `<tr><td class="zut-td-name zut-station-name-td zut-station-short-td">${def.icon}<span class="zut-station-role-short">${def.label} ${num}</span></td>${cells.join('')}</tr>`;
+      return `<tr><td class="zut-td-name zut-station-name-td zut-station-short-td">${def.icon}<span class="zut-station-role-short">${def.label} #${typeNum}</span></td>${cells.join('')}</tr>`;
     }).join('');
 
     const roleRows = ['kassa','backoffice','5stock'].map(rk => {
@@ -3667,9 +3691,15 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       return ri ? renderRoleRow(rk, ri.short, ri.icon) : '';
     }).join('');
 
+    const headerCols = halfCols.map(m =>
+      m % 60 === 0
+        ? `<th class="zut-th-block zut-th-hour">${mToHHMM(m)}</th>`
+        : `<th class="zut-th-block zut-th-half"></th>`
+    ).join('');
+
     return `<table class="zut-table"><thead><tr>
-        <th class="zut-th-name" style="min-width:70px">Station</th>
-        ${blocks.map(b => `<th class="zut-th-block">${b.label}</th>`).join('')}
+        <th class="zut-th-name" style="min-width:60px">Station</th>
+        ${headerCols}
       </tr></thead><tbody>${terminRows}${roleRows}</tbody></table>`;
   })();
 
@@ -6316,11 +6346,13 @@ function renderMissions() {
       <div class="mission-card tier-${mDef.tier}${done ? ' mission-card--done' : ''}">
         <div class="mc-right" style="flex:1">
           <div class="mission-card-header">
+            <span class="mission-tier-badge">${TIER_LABELS[mDef.tier]}</span>
             <span class="mission-reward">${done ? '✓ ' : ''}+${mDef.reward.toLocaleString('de-AT')} XP</span>
           </div>
+          ${cbs ? `<div class="mission-progress-row">${cbs}</div>` : ''}
           <div class="mission-title">${mDef.title}</div>
           <div class="mission-desc">${mDef.description}</div>
-          ${cbs ? `<div class="mission-progress-row">${cbs}</div>` : doneLabel}
+          ${done ? doneLabel : ''}
         </div>
       </div>`;
   };
