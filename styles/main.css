@@ -3143,7 +3143,7 @@ img{max-width:100%;display:block}
 .ptm-tier-active{background:rgba(124,58,237,.2)!important;border-color:var(--accent)!important;color:var(--accent)}
 .ptm-preview{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 0 4px}
 .ptm-preview--empty{min-height:40px;justify-content:center}
-.ptm-preview-img{width:120px;height:120px;object-fit:contain;cursor:pointer;border-radius:12px;transition:transform .15s}
+.ptm-preview-img{width:100%;max-height:55vw;object-fit:contain;cursor:pointer;border-radius:12px;transition:transform .15s}
 .ptm-preview-img:hover{transform:scale(1.04)}
 .ptm-preview-label{font-size:13px;font-weight:600;text-align:center}
 .ptm-lightbox{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center}

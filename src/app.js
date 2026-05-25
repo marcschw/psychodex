@@ -3368,13 +3368,22 @@ async function openZuteilungScreen(shift) {
 
   const userName = localStorage.getItem('psychodex-user-name') || '';
   const people = [];
-  if (userName) people.push({
-    name: userName,
-    funktion: fresh.category === 'senior' ? 'Seniorassistent' : fresh.category === 'training' ? 'Training' : 'Assistent',
-    present: true, _self: true,
-    _isSenior: fresh.category === 'senior',
-    _isTrainee: fresh.category === 'training',
-  });
+  if (userName) {
+    const selfHours = Math.round(
+      state.shifts.filter(s => !s.plannerActive && s.date <= fresh.date)
+        .reduce((sum, s) => sum + calcShiftHours(s), 0) * 10) / 10;
+    const selfTarget = state.profile?.hourCounters?.[0]?.targetHours || 480;
+    const selfPct = selfHours > 0 ? Math.round((selfHours / selfTarget) * 100) : null;
+    people.push({
+      name: userName,
+      funktion: fresh.category === 'senior' ? 'Seniorassistent' : fresh.category === 'training' ? 'Training' : 'Assistent',
+      present: true, _self: true,
+      _isSenior: fresh.category === 'senior',
+      _isTrainee: fresh.category === 'training',
+      stunden: selfHours || null,
+      pct: selfPct,
+    });
+  }
   for (const c of (fresh.colleagues||[])) {
     const team = effectiveTeam(c);
     if ((team === 'D' || team === 'T') && c.name.toLowerCase() !== userName.toLowerCase())
@@ -4091,7 +4100,30 @@ function openPersonTierModal(personName, people, zData, saveData, render) {
   document.getElementById('ptm-cancel').onclick = close;
   document.getElementById('ptm-save').onclick = () => {
     if (!zData.personTiers) zData.personTiers = {};
-    if (selectedTier) zData.personTiers[personName] = selectedTier;
+    if (selectedTier) {
+      const existingOwner = Object.entries(zData.personTiers)
+        .find(([name, tier]) => tier === selectedTier && name !== personName)?.[0];
+      if (existingOwner) {
+        const myOldTier = zData.personTiers[personName];
+        if (myOldTier) zData.personTiers[existingOwner] = myOldTier;
+        else delete zData.personTiers[existingOwner];
+        // Swap assignments between the two people
+        const allKeys = Object.keys(zData.assignments);
+        const myAssign = {};
+        const theirAssign = {};
+        allKeys.filter(k => k.startsWith(personName + '::')).forEach(k => {
+          myAssign[k.slice(personName.length + 2)] = zData.assignments[k];
+          delete zData.assignments[k];
+        });
+        allKeys.filter(k => k.startsWith(existingOwner + '::')).forEach(k => {
+          theirAssign[k.slice(existingOwner.length + 2)] = zData.assignments[k];
+          delete zData.assignments[k];
+        });
+        Object.entries(myAssign).forEach(([block, role]) => { zData.assignments[existingOwner + '::' + block] = role; });
+        Object.entries(theirAssign).forEach(([block, role]) => { zData.assignments[personName + '::' + block] = role; });
+      }
+      zData.personTiers[personName] = selectedTier;
+    }
     saveData(); render(); close();
   };
 }
@@ -6157,12 +6189,7 @@ function renderMissions() {
     const doneLabel = done ? `<span class="m-done-date">${dateStr || '✓'}</span>` : '';
     return `
       <div class="mission-card tier-${mDef.tier}${done ? ' mission-card--done' : ''}">
-        <div class="mc-left">
-          <div class="mc-icon-circle">
-            <span class="mc-emoji">${mDef.emoji || '🎯'}</span>
-          </div>
-        </div>
-        <div class="mc-right">
+        <div class="mc-right" style="flex:1">
           <div class="mission-card-header">
             <span class="mission-tier-badge">${TIER_LABELS[mDef.tier]}</span>
             <span class="mission-reward">${done ? '✓ ' : ''}+${mDef.reward.toLocaleString('de-AT')} XP</span>
