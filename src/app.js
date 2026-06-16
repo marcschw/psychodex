@@ -47,6 +47,8 @@ const state = {
 };
 
 let _editingSuspectedCodes = []; // working copy while slot-edit form is open
+let _zutSwapMode = false;
+let _zutSwapSel  = null; // { pname } for person-swap mode
 
 // ─── Team / Colleague Constants ───────────────────────────────────────────────
 const TAG_ICONS = {
@@ -977,7 +979,68 @@ async function renderHomeTab() {
         ${shift.type !== 'schulung' ? `
         <textarea id="home-edit-note" class="home-note-area" rows="6"
           placeholder="Dienst-Log / Notizen…">${shift.note || ''}</textarea>` : ''}
+        ${(() => {
+          const homeTermine = (shift.zuteilung?.termine || [])
+            .filter(t => t.type === 'anmeldung' || t.type === 'erstgesprach')
+            .sort((a, b) => (a.startHour ?? 0) - (b.startHour ?? 0));
+          const xmlMeetings = shift.xmlMeetings || [];
+          const colleagueMeetings = (shift.colleagues || []).filter(c => c.meetings?.length);
+          if (!homeTermine.length && !xmlMeetings.length && !colleagueMeetings.length) return '';
+          const pv = privacyOn();
+          const pvBtn = `<button class="home-privacy-toggle" title="${pv?'Namen einblenden':'Namen ausblenden'}">${pv?'🔒':'🔓'}</button>`;
+          const terminItems = homeTermine.map(t => {
+            const def = TERMIN_DEFS[t.type] || {};
+            const pd  = patientCode(t);
+            const displayText = pd ? (pv ? pd.code : pd.full) : null;
+            const ptHtml = pd ? ` <span class="zut-pt-inline"><span class="zut-pt-text${pv?'':' revealed'}" data-code="${escAttr(pd.code)}" data-full="${escAttr(pd.full)}">${escAttr(displayText)}</span><button class="zut-pt-reveal${pv?'':' revealed'}">${pv?'🔒':'🔓'}</button></span>` : '';
+            const h = String(Math.floor(t.startHour ?? 0)).padStart(2,'0');
+            const agBadge = t.ageGroup ? `<span class="home-pt-badge">${t.ageGroup}</span>` : '';
+            const gdBadge = t.gender   ? `<span class="home-pt-badge">${t.gender[0].toUpperCase()}</span>` : '';
+            return `<div class="home-xml-meeting-row home-termin-row" data-termin-id="${t.id}">${def.icon||''} <span class="home-xml-meeting-time">${h}:00</span> <span class="home-xml-meeting-title">${def.label||t.type}${ptHtml}</span>${agBadge}${gdBadge}</div>`;
+          }).join('');
+          const meetingItems = xmlMeetings.map((m, idx) =>
+            `<div class="home-xml-meeting-row home-meeting-row" data-meeting-idx="${idx}" style="cursor:pointer"><span class="home-xml-meeting-time">${m.von}–${m.bis}</span> <span class="home-xml-meeting-title">${escAttr(m.titel||m.typ)}</span>${m.mit?`<div class="home-xml-meeting-mit">${escAttr(m.mit)}</div>`:''}</div>`
+          ).join('');
+          const teamMeetItems = colleagueMeetings.flatMap(c =>
+            c.meetings.map(m => `<div class="home-xml-meeting-row"><span class="home-xml-meeting-time">${m.von}–${m.bis}</span> <span style="font-size:11px;color:var(--text-dim);margin-right:4px">${escAttr(c.name.split(' ')[0])}:</span><span class="home-xml-meeting-title">${escAttr(m.titel||m.typ||'Meeting')}</span></div>`)
+          ).join('');
+          const teamLabel = teamMeetItems ? `<div class="home-xml-meetings-label" style="margin-top:6px">Team-Meetings</div>${teamMeetItems}` : '';
+          return `<div class="home-xml-meetings" id="home-termine-section"><div class="home-xml-meetings-label">Termine ${pvBtn}</div>${terminItems}${meetingItems}${teamLabel}</div>`;
+        })()}
       </div>`;
+
+    // Home termine section: privacy toggle + reveal + click to detail modal
+    const homeTermineSection = document.getElementById('home-termine-section');
+    if (homeTermineSection) {
+      homeTermineSection.addEventListener('click', e => {
+        if (e.target.closest('.zut-pt-reveal')) {
+          e.stopPropagation();
+          const btn = e.target.closest('.zut-pt-reveal');
+          const span = btn.previousElementSibling;
+          if (!span) return;
+          const showing = btn.classList.toggle('revealed');
+          span.textContent = showing ? span.dataset.full : span.dataset.code;
+          btn.textContent  = showing ? '🔓' : '🔒';
+          return;
+        }
+        if (e.target.closest('.home-privacy-toggle')) {
+          localStorage.setItem('psychodex-privacy', privacyOn() ? '0' : '1');
+          renderHomeTab(); return;
+        }
+        const terminRow = e.target.closest('.home-termin-row');
+        if (terminRow) {
+          const tid = terminRow.dataset.terminId;
+          const t = (shift.zuteilung?.termine || []).find(x => String(x.id) === String(tid));
+          if (t) openTerminDetailModal(t, 'termin'); return;
+        }
+        const meetingRow = e.target.closest('.home-meeting-row');
+        if (meetingRow) {
+          const idx = parseInt(meetingRow.dataset.meetingIdx);
+          const m = (shift.xmlMeetings || [])[idx];
+          if (m) openTerminDetailModal(m, 'meeting');
+        }
+      });
+    }
 
     // Date edit button opens reschedule modal
     document.getElementById('btn-home-date-edit').addEventListener('click', () =>
@@ -1895,6 +1958,16 @@ function renderTimeline(shift) {
           <div class="tl-slot-label">${def.label} ${flags}</div>
           <div class="tl-slot-time">${padT(slot.startHour,slot.startMinute)}–${padT(slot.endHour,slot.endMinute)} · +${slot.xpEarned} XP</div>
           ${commentHtml}
+          ${isPatient && (slot.patientNotes || slot.ageGroup || slot.gender) ? (() => {
+            const pv = privacyOn();
+            const pnCoded = codeNameStr(slot.patientNotes);
+            const pnHtml = pnCoded
+              ? `<span class="zut-pt-text tl-pt-coded" data-code="${escAttr(pnCoded.code)}" data-full="${escAttr(pnCoded.full)}">${escAttr(pv ? pnCoded.code : pnCoded.full)}</span><button class="zut-pt-reveal${pv?'':' revealed'}">${pv?'🔒':'🔓'}</button>`
+              : slot.patientNotes ? `<span class="tl-pt-plain">${escAttr(slot.patientNotes)}</span>` : '';
+            const agHtml = slot.ageGroup ? `<span class="home-pt-badge">${slot.ageGroup}</span>` : '';
+            const gdHtml = slot.gender   ? `<span class="home-pt-badge">${slot.gender[0].toUpperCase()}</span>` : '';
+            return `<div class="tl-patient-info">${pnHtml}${agHtml}${gdHtml}</div>`;
+          })() : ''}
         </div>
         ${isPatient ? `<button class="tl-slot-chevron" data-chevron title="${isExpanded ? 'Einklappen' : 'Einblenden'}">${isExpanded ? '▲' : '▼'}</button>` : ''}
         <button class="tl-slot-delete btn-icon" data-slot-id="${slot.id}" title="Löschen">🗑</button>
@@ -1934,6 +2007,18 @@ function renderTimeline(shift) {
         state.collapsedSlotIds.add(slotId);
       }
       renderTimeline(shift);
+    });
+  });
+
+  // Wire patient name reveal in timeline
+  tl.querySelectorAll('.zut-pt-reveal').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const span = btn.previousElementSibling;
+      if (!span) return;
+      const showing = btn.classList.toggle('revealed');
+      span.textContent = showing ? span.dataset.full : span.dataset.code;
+      btn.textContent  = showing ? '🔓' : '🔒';
     });
   });
 
@@ -3188,7 +3273,8 @@ async function openRecallPatientModal(targetSlot, shift) {
         const dateStr    = fmtD(slotShift?.date) ?? '—';
         const timeStr    = `${String(p.startHour ?? 0).padStart(2,'0')}:${String(p.startMinute ?? 0).padStart(2,'0')}`;
         const typeLbl    = SLOT_TYPES[p.type]?.label ?? p.type;
-        const kuerzel    = p.patientNotes || '(kein Kürzel)';
+        const pnCoded    = codeNameStr(p.patientNotes);
+        const kuerzel    = pnCoded ? pnCoded.code : (p.patientNotes || '(kein Kürzel)');
         const isToday    = p.terminInterview?.slice(0,10) === shift.date || p.terminErstgespraech?.slice(0,10) === shift.date;
         const termins    = [
           p.terminInterview     ? `Termin für Interview: ${fmtD(p.terminInterview)}` : null,
@@ -3536,7 +3622,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
       p._isTrainee ? '<span class="zut-trainee-tag">🎓</span>' : '',
       isPlanBRow ? '<span class="zut-planb-tag">Plan B</span>' : '',
     ].filter(Boolean).join('');
-    return `<tr class="zut-row${absent?' zut-row-absent':''}${ps.notYetPresent&&!absent?' zut-row-notyet':''}">
+    return `<tr class="zut-row${absent?' zut-row-absent':''}${ps.notYetPresent&&!absent?' zut-row-notyet':''}${_zutSwapSel?.pname===p.name?' zut-swap-sel-row':''}">
       <td class="zut-td-name">
         <div class="zut-person-name zut-person-clickable" data-pname="${p.name}" title="${p.name}">${firstName}${badges?' '+badges:''}</div>
         <div class="zut-person-sub">
@@ -3578,7 +3664,8 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
         return `<td class="zut-cell zut-station-cell zut-station-drop" ${drop}${needsAlert?' style="background:rgba(239,68,68,.09)"':''}>${needsAlert?'<span class="zut-station-gap">!</span>':''}</td>`;
       return `<td class="zut-cell zut-station-cell zut-station-drop" ${drop}>${covering.map(p => {
         const color = personColor(p.name);
-        return `<span class="zut-station-chip" draggable="true" style="background:${color}33;border:1.5px solid ${color}88;color:${color}" data-pname="${p.name}" data-blockkey="${blockKey}" data-role="${roleKey}" title="${p.name}">${personInitials(p.name)}</span>`;
+        const swapSel = _zutSwapSel?.pname === p.name ? ' zut-swap-sel-chip' : '';
+        return `<span class="zut-station-chip${_zutSwapMode?' zut-swap-chip':''}${swapSel}" draggable="${!_zutSwapMode}" style="background:${color}33;border:1.5px solid ${color}88;color:${color}" data-pname="${p.name}" data-blockkey="${blockKey}" data-role="${roleKey}" title="${p.name}">${personInitials(p.name)}</span>`;
       }).join('')}</td>`;
     };
     const terminTypes = [...new Set(terminSorted.map(t => t.type))];
@@ -3655,6 +3742,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
         <button class="zut-hdr-btn" id="zut-redo-btn"${!zData.redoStack?.length?' disabled':''} title="Wiederholen">↪</button>
         <button class="zut-hdr-btn" id="zut-reset-btn" title="Zurücksetzen">🔄</button>
         <button class="zut-hdr-btn" id="zut-size-btn" title="Blockgröße umschalten">${zData.blockSize}h</button>
+        <button class="zut-hdr-btn${_zutSwapMode?' active':''}" id="zut-swap-btn" title="Personen tauschen">↔</button>
         <button class="zut-hdr-close" id="zut-close-btn">✕</button>
       </div>
     </div>
@@ -3866,8 +3954,41 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     btn.onclick = e => { e.stopPropagation(); openZuteilEarlyLeave(btn.dataset.pname, zData, saveData, pushUndo, render); };
   });
 
+  // ── Swap mode ──────────────────────────────────────────────────────────────
+  inner.querySelector('#zut-swap-btn').onclick = e => {
+    e.stopPropagation(); _zutSwapMode = !_zutSwapMode; _zutSwapSel = null; render();
+  };
+
+  const doSwap = (pnameA, pnameB) => {
+    if (pnameA === pnameB) { _zutSwapSel = null; render(); return; }
+    pushUndo();
+    const newAsgn = {};
+    for (const [key, role] of Object.entries(zData.assignments)) {
+      const [pn, bk] = key.split('::');
+      if (pn === pnameA)      newAsgn[`${pnameB}::${bk}`] = role;
+      else if (pn === pnameB) newAsgn[`${pnameA}::${bk}`] = role;
+      else                    newAsgn[key] = role;
+    }
+    zData.assignments = newAsgn;
+    for (const t of zData.termine) {
+      if (t.personName === pnameA)      t.personName = pnameB;
+      else if (t.personName === pnameB) t.personName = pnameA;
+    }
+    _zutSwapSel = null;
+    saveData(); render();
+  };
+
   inner.querySelectorAll('.zut-cell-btn:not([disabled])').forEach(btn => {
-    btn.onclick = e => { e.stopPropagation(); showZuteilPicker(btn, btn.dataset.key, zData, saveData, pushUndo, render); };
+    btn.onclick = e => {
+      e.stopPropagation();
+      if (_zutSwapMode) {
+        const [pname] = btn.dataset.key.split('::');
+        if (!_zutSwapSel) { _zutSwapSel = { pname }; render(); }
+        else              { doSwap(_zutSwapSel.pname, pname); }
+        return;
+      }
+      showZuteilPicker(btn, btn.dataset.key, zData, saveData, pushUndo, render);
+    };
   });
 
   inner.querySelectorAll('.zut-person-clickable').forEach(el => {
@@ -3895,6 +4016,17 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
     chip.addEventListener('click', e => {
       e.stopPropagation();
       openPersonTierModal(chip.dataset.pname, people, zData, saveData, render);
+    });
+  });
+
+  // Station swap chips (in swap mode, draggable is disabled → use swap handler)
+  inner.querySelectorAll('.zut-swap-chip').forEach(chip => {
+    chip.addEventListener('click', e => {
+      e.stopPropagation();
+      const pname = chip.dataset.pname;
+      if (!pname) return;
+      if (!_zutSwapSel) { _zutSwapSel = { pname }; render(); }
+      else              { doSwap(_zutSwapSel.pname, pname); }
     });
   });
   inner.querySelectorAll('.zut-station-drop').forEach(cell => {
@@ -4163,6 +4295,10 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
   }
   const result = {};
   const terminCount = Object.fromEntries(allowedPeople.map(p => [p.name, 0]));
+  // Pre-seed terminCount from manually pre-assigned termine so round-robin distributes fairly
+  for (const t of termine) {
+    if (t.personName && terminCount[t.personName] !== undefined) terminCount[t.personName]++;
+  }
   const trainees    = allowedPeople.filter(p => p._isTrainee);
   const nonTrainees = allowedPeople.filter(p => !p._isTrainee);
 
