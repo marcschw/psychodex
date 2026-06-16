@@ -2965,6 +2965,18 @@ img{max-width:100%;display:block}
   color:var(--text);font-size:14px;padding:6px 10px;cursor:pointer;
 }
 .zut-hdr-btn:disabled{opacity:.4;cursor:default;}
+.zut-hdr-btn.active{background:rgba(59,130,246,.2);color:#60a5fa;border-color:rgba(59,130,246,.4);}
+/* Swap mode */
+.zut-swap-sel-row .zut-td-name{background:rgba(59,130,246,.12);outline:2px solid #3b82f6;outline-offset:-2px;}
+.zut-swap-chip{cursor:pointer;}
+.zut-swap-chip:hover{opacity:.75;outline:1px dashed rgba(59,130,246,.6);border-radius:4px;}
+.zut-swap-sel-chip{outline:2px solid #3b82f6 !important;border-radius:4px;}
+/* Patient info in timeline slots */
+.tl-patient-info{display:flex;align-items:center;gap:4px;margin-top:3px;flex-wrap:wrap;}
+.tl-pt-coded{font-size:11px;color:var(--text-dim);}
+.tl-pt-plain{font-size:11px;color:var(--text-dim);}
+/* Home patient badge */
+.home-pt-badge{display:inline-block;padding:1px 5px;border-radius:8px;font-size:10px;font-weight:600;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-dim);margin-left:3px;vertical-align:middle;}
 .zut-hdr-close{
   background:none;border:none;color:var(--text-dim);font-size:20px;
   cursor:pointer;padding:4px 8px;line-height:1;
