@@ -318,6 +318,10 @@ const fmtDateTime = ts => new Date(ts).toLocaleString('de-AT', {
 // ─── Service Worker ───────────────────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
+  let _swRefreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!_swRefreshing) { _swRefreshing = true; window.location.reload(); }
+  });
 }
 
 // ─── Lazy Image Loader ────────────────────────────────────────────────────────

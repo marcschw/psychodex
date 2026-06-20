@@ -1,4 +1,4 @@
-const APP_VERSION  = 'v114';
+const APP_VERSION  = 'v115';
 const APP_CACHE    = `psychodex-app-${APP_VERSION}`;
 const IMAGE_CACHE  = `psychodex-images-${APP_VERSION}`;
 
@@ -125,6 +125,11 @@ self.addEventListener('fetch', e => {
         .catch(() => caches.match(request))
     );
   }
+});
+
+// ── Force-update on message ───────────────────────────────────────────────
+self.addEventListener('message', e => {
+  if (e.data === 'SKIP_WAITING') self.skipWaiting();
 });
 
 // ── Notification click → bring app to foreground ──────────────────────────
