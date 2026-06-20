@@ -261,7 +261,7 @@ function calcCounterHours(counter) {
 function calcShiftHours(shift) {
   if (shift.customStart != null && shift.customEnd != null)
     return Math.max(0, (shift.customEnd - shift.customStart) / 60);
-  const base = shift.type === 'full' ? 12 : shift.type === 'samstag' ? 7 : shift.type === 'schulung' ? 6 : 6.5;
+  const base = shift.type === 'full' ? 12 : shift.type === 'samstag' ? 7 : shift.type === 'schulung' ? 6 : 6.25;
   return base + (shift.extensionMinutes || 0) / 60;
 }
 function fmtShiftDuration(shift) {
@@ -1456,8 +1456,8 @@ function openTeamModal(shift) {
     const display = working.map((c, i) => ({ ...c, _wi: i }));
     if (userName && !display.some(c => c.name.toLowerCase() === userName.toLowerCase())) {
       const selfHours = Math.round(
-        state.shifts.filter(s => !s.plannerActive && s.date <= shift.date)
-          .reduce((sum, s) => sum + calcShiftHours(s), 0) * 10) / 10;
+        (state.shifts.filter(s => !s.plannerActive && s.date <= shift.date)
+          .reduce((sum, s) => sum + calcShiftHours(s), 0) + getExtraHoursTotal()) * 10) / 10;
       const selfTarget = state.profile?.hourCounters?.[0]?.targetHours || 480;
       const selfPct = selfHours > 0 ? Math.round((selfHours / selfTarget) * 100) : null;
       display.unshift({ name: userName, funktion: selfFunk, team: selfTeam, tags: [], present: true, _self: true, _wi: -1,
@@ -1499,7 +1499,16 @@ function openTeamModal(shift) {
       </div>
       ${['D','T'].filter(t => groups[t].length).map(t => `
         <div class="team-group-header" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</div>
-        ${groups[t].map(c => `
+        ${groups[t].map(c => {
+          const rcH = c._self ? c.stunden : (() => {
+            const total = state.shifts
+              .filter(s => !s.plannerActive && s.date <= shift.date && (s.colleagues || []).some(cl => cl.name === c.name))
+              .reduce((sum, s) => sum + calcShiftHours(s), 0);
+            return total > 0 ? Math.round(total * 10) / 10 : null;
+          })();
+          const rcTarget = state.profile?.hourCounters?.[0]?.targetHours || 480;
+          const rcPct = rcH != null && rcH > 0 ? Math.round((rcH / rcTarget) * 100) : null;
+          return `
           <label class="team-colleague-row${c.present ? ' is-present' : ''}">
             <input type="checkbox" class="team-colleague-check" data-wi="${c._wi}" ${c.present ? 'checked' : ''}>
             <img class="rc-avatar" src="${avatarSrc(c)}" alt="" style="border-color:${dotColor(c)}">
@@ -1507,13 +1516,13 @@ function openTeamModal(shift) {
               <div class="team-colleague-name">${c.name}${c._self ? ' <span class="team-self-badge">Ich</span>' : ''}</div>
               <div class="team-colleague-func" style="color:${isSenior(c) ? '#f59e0b' : ''}">${c.funktion}</div>
             </div>
-            ${showRcStunden && c.stunden != null ? `<div class="team-colleague-seniority">${c.stunden}h · ${c.pct != null ? c.pct + '%' : ''}</div>` : ''}
+            ${showRcStunden && rcH != null ? `<div class="team-colleague-seniority">${rcH}h · ${rcPct != null ? rcPct + '%' : ''}</div>` : ''}
             ${!hideIcons && (c.tags||[]).length ? `<div class="team-colleague-tags">${tagIconsHTML(c.tags)}</div>` : ''}
             ${!c._self ? `
               <button class="rc-edit-btn" data-wi="${c._wi}" title="Bearbeiten">✏️</button>
               <button class="rc-del-btn"  data-wi="${c._wi}" title="Entfernen">✕</button>` : ''}
-          </label>
-        `).join('')}
+          </label>`;
+        }).join('')}
       `).join('')}
       ${otherDisplay.length ? `<button class="other-teams-link" id="btn-other-teams">👁 Andere Teams (${otherDisplay.length})</button>` : ''}
       <div class="rc-add-form">
