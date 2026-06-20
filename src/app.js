@@ -692,25 +692,29 @@ function renderHoursCounters() {
     const baseShifts2 = c.fromDate ? state.shifts.filter(s => s.date >= c.fromDate) : state.shifts;
     const doneH = baseShifts2.filter(s => !s.plannerActive).reduce((s, sh) => s + calcShiftHours(sh), 0) + getExtraHoursTotal();
     const planH = baseShifts2.filter(s => s.plannerActive && s.date > todayStr2).reduce((s, sh) => s + calcShiftHours(sh), 0);
-    const h = doneH + planH;
     const t = c.targetHours || 480;
-    const pct = Math.min(100, Math.round((doneH / t) * 100));
+    const donePct = Math.min(100, (doneH / t) * 100);
+    const planPct = Math.min(100 - donePct, (planH / t) * 100);
     const fromTxt = c.fromDate
       ? `ab ${new Date(c.fromDate + 'T12:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })}`
       : '';
     const nm = (c.name || '').toLowerCase();
     const trackerBg = nm.includes('psych') ? 'url(./assets/images/trackers/tracker_psy.png)'
       : nm.includes('fach') ? 'url(./assets/images/trackers/tracker_fach.png)' : '';
+    const doneHFmt = doneH.toFixed(1).replace('.0','');
+    const planHFmt = planH.toFixed(1).replace('.0','');
     return `
       <div class="hours-counter-card${trackerBg ? ' has-tracker-bg' : ''}"
            data-counter-id="${c.id}"
            ${trackerBg ? `style="--tracker-bg:${trackerBg}"` : ''}>
         <div class="hc-top">
           <span class="hc-name">${c.name}</span>
-          <span class="hc-pct">${pct}%</span>
+          <span class="hc-pct">${Math.round(donePct)}%</span>
         </div>
-        <div class="hc-bar-wrap"><div class="hc-bar-fill" style="width:${pct}%"></div></div>
-        <div class="hc-abs">${doneH.toFixed(1).replace('.0','')}h / ${t}h${fromTxt ? ` · ${fromTxt}` : ''}${planH > 0 ? ` <span class="hc-planned-badge">+${planH.toFixed(1).replace('.0','')}h geplant</span>` : ''}</div>
+        <div class="hc-bar-wrap">
+          <div class="hc-bar-done" style="width:${donePct.toFixed(2)}%"></div>${planPct > 0 ? `<div class="hc-bar-plan" style="width:${planPct.toFixed(2)}%"></div>` : ''}
+        </div>
+        <div class="hc-abs">${doneHFmt}h erledigt${planH > 0 ? ` · <span class="hc-planned-badge">${planHFmt}h geplant</span>` : ''} / ${t}h${fromTxt ? ` · ${fromTxt}` : ''}</div>
       </div>`;
   }).join('');
 
@@ -9794,6 +9798,7 @@ function renderHourCountersSettings() {
     await saveCounters(updated);
     renderHourCountersSettings();
     renderHoursCounters();
+    if (state.currentTab === 'stats') renderDashboard();
   }));
   const addBtn = el.querySelector('#btn-add-counter');
   if (addBtn) addBtn.addEventListener('click', async () => {
