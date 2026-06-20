@@ -1503,16 +1503,7 @@ function openTeamModal(shift) {
       </div>
       ${['D','T'].filter(t => groups[t].length).map(t => `
         <div class="team-group-header" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</div>
-        ${groups[t].map(c => {
-          const rcH = c._self ? c.stunden : (() => {
-            const total = state.shifts
-              .filter(s => !s.plannerActive && s.date <= shift.date && (s.colleagues || []).some(cl => cl.name === c.name))
-              .reduce((sum, s) => sum + calcShiftHours(s), 0);
-            return total > 0 ? Math.round(total * 10) / 10 : null;
-          })();
-          const rcTarget = state.profile?.hourCounters?.[0]?.targetHours || 480;
-          const rcPct = rcH != null && rcH > 0 ? Math.round((rcH / rcTarget) * 100) : null;
-          return `
+        ${groups[t].map(c => `
           <label class="team-colleague-row${c.present ? ' is-present' : ''}">
             <input type="checkbox" class="team-colleague-check" data-wi="${c._wi}" ${c.present ? 'checked' : ''}>
             <img class="rc-avatar" src="${avatarSrc(c)}" alt="" style="border-color:${dotColor(c)}">
@@ -1520,13 +1511,13 @@ function openTeamModal(shift) {
               <div class="team-colleague-name">${c.name}${c._self ? ' <span class="team-self-badge">Ich</span>' : ''}</div>
               <div class="team-colleague-func" style="color:${isSenior(c) ? '#f59e0b' : ''}">${c.funktion}</div>
             </div>
-            ${showRcStunden && rcH != null ? `<div class="team-colleague-seniority">${rcH}h · ${rcPct != null ? rcPct + '%' : ''}</div>` : ''}
+            ${showRcStunden && c.stunden != null ? `<div class="team-colleague-seniority">${c.stunden}h · ${c.pct != null ? c.pct + '%' : ''}</div>` : ''}
             ${!hideIcons && (c.tags||[]).length ? `<div class="team-colleague-tags">${tagIconsHTML(c.tags)}</div>` : ''}
             ${!c._self ? `
               <button class="rc-edit-btn" data-wi="${c._wi}" title="Bearbeiten">✏️</button>
               <button class="rc-del-btn"  data-wi="${c._wi}" title="Entfernen">✕</button>` : ''}
-          </label>`;
-        }).join('')}
+          </label>
+        `).join('')}
       `).join('')}
       ${otherDisplay.length ? `<button class="other-teams-link" id="btn-other-teams">👁 Andere Teams (${otherDisplay.length})</button>` : ''}
       <div class="rc-add-form">
