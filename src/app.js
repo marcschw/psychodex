@@ -460,6 +460,68 @@ async function loadFromDB() {
     }
     state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
   }
+
+  if (await mergeSplitDayShifts()) {
+    state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+  }
+}
+
+// ─── Merge früh + spät on the same day into one Ganztagsdienst ────────────────
+async function mergeSplitDayShifts() {
+  const all = await db.shiftLogs.toArray();
+  const byDate = {};
+  for (const s of all) (byDate[s.date] = byDate[s.date] || []).push(s);
+  let mergedCount = 0;
+
+  for (const shifts of Object.values(byDate)) {
+    const frueh = shifts.find(s => s.type === 'früh');
+    const spaet = shifts.find(s => s.type === 'spät');
+    if (!frueh || !spaet) continue;
+
+    // Colleagues: union by name, keep check-in state from either half
+    const colleagues = [...(frueh.colleagues || [])];
+    for (const c of (spaet.colleagues || [])) {
+      const i = colleagues.findIndex(x => x.name === c.name);
+      if (i >= 0) colleagues[i] = { ...colleagues[i], ...c, present: colleagues[i].present || c.present };
+      else colleagues.push(c);
+    }
+
+    // Zuteilung: merge assignments/termine/personTiers from both halves
+    let zuteilung = frueh.zuteilung || spaet.zuteilung || null;
+    if (frueh.zuteilung && spaet.zuteilung) {
+      const termine = [...(frueh.zuteilung.termine || [])];
+      for (const t of (spaet.zuteilung.termine || [])) {
+        if (!termine.some(x => x.id === t.id)) termine.push(t);
+      }
+      zuteilung = {
+        ...frueh.zuteilung,
+        assignments: { ...(frueh.zuteilung.assignments || {}), ...(spaet.zuteilung.assignments || {}) },
+        personTiers: { ...(frueh.zuteilung.personTiers || {}), ...(spaet.zuteilung.personTiers || {}) },
+        termine,
+      };
+    }
+
+    const xmlMeetings = [...(frueh.xmlMeetings || [])];
+    for (const m of (spaet.xmlMeetings || [])) {
+      if (!xmlMeetings.some(x => x.von === m.von && x.titel === m.titel)) xmlMeetings.push(m);
+    }
+
+    await db.shiftLogs.update(frueh.id, {
+      type: 'full',
+      category: (frueh.category && frueh.category !== 'regulär') ? frueh.category : (spaet.category || frueh.category || 'regulär'),
+      colleagues,
+      xpEarned: (frueh.xpEarned || 0) + (spaet.xpEarned || 0),
+      patientCount: (frueh.patientCount || 0) + (spaet.patientCount || 0),
+      plannerActive: !!(frueh.plannerActive || spaet.plannerActive),
+      baseXPAwarded: !!(frueh.baseXPAwarded || spaet.baseXPAwarded),
+      ...(zuteilung ? { zuteilung } : {}),
+      ...(xmlMeetings.length ? { xmlMeetings } : {}),
+      customStart: null, customEnd: null, extensionMinutes: 0,
+    });
+    await db.shiftLogs.delete(spaet.id);
+    mergedCount++;
+  }
+  return mergedCount;
 }
 
 // ─── Escape key closes any open modal ─────────────────────────────────────────
@@ -9347,10 +9409,14 @@ async function importShiftsFromXML(xmlText) {
       };
     });
 
-    if (existingKeys.has(key)) {
+    // A früh/spät re-import for a day already merged into a Ganztagsdienst
+    // belongs to that full shift — merge colleague data there instead of re-creating the half.
+    const mergedFullKey = (type === 'früh' || type === 'spät') && existingKeys.has(`${datum}_full`) ? `${datum}_full` : null;
+
+    if (existingKeys.has(key) || mergedFullKey) {
       // Always merge latest XML colleague data (funktion, tags, stunden, pct) into existing shift,
       // preserving the present (check-in) state and keeping any colleagues not in the XML.
-      const existing = existingShifts.find(s => s.date === datum && s.type === type);
+      const existing = existingShifts.find(s => s.date === datum && s.type === (mergedFullKey ? 'full' : type));
       if (existing && colleagues.length) {
         const merged = [...(existing.colleagues || [])];
         for (const xmlC of colleagues) {
@@ -9451,10 +9517,11 @@ async function importShiftsFromXML(xmlText) {
     }
   }
 
+  const mergedDays = await mergeSplitDayShifts();
   state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
   renderHomeTab();
   renderDashboard();
-  alert(`XML importiert: ${imported} neue Dienste angelegt, ${skipped} übersprungen.`);
+  alert(`XML importiert: ${imported} neue Dienste angelegt, ${skipped} übersprungen.${mergedDays ? ` ${mergedDays} Tag${mergedDays > 1 ? 'e' : ''} zu Ganztag zusammengeführt.` : ''}`);
 }
 
 // ─── XP Info Modal ────────────────────────────────────────────────────────────
