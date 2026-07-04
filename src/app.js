@@ -1130,7 +1130,7 @@ async function renderHomeTab() {
       localStorage.setItem('hide-team-icons', hideIcons ? '' : '1');
       renderHomeTab();
     });
-    document.getElementById('btn-home-vm').addEventListener('click', () => {
+    document.getElementById('btn-home-vm')?.addEventListener('click', () => {
       let newType;
       if (isSpecial)           newType = 'früh';
       else if (vmActive && nmActive) newType = 'spät';
@@ -1138,7 +1138,7 @@ async function renderHomeTab() {
       else                     return;
       inlineSaveShift(shift, { type: newType });
     });
-    document.getElementById('btn-home-nm').addEventListener('click', () => {
+    document.getElementById('btn-home-nm')?.addEventListener('click', () => {
       let newType;
       if (isSpecial)           newType = 'spät';
       else if (nmActive && vmActive) newType = 'früh';
