@@ -74,6 +74,19 @@ db.version(8).stores({
   supervisionLogs: '++id, date',
 });
 
+// v9: calendarEvents (meetings/reminders) + friendBlocks (recurring weekly therapist blocks)
+db.version(9).stores({
+  profile: '++id',
+  shiftLogs: '++id, date, type, category',
+  caughtDiagnoses: '++id, code, kategorie, shiftId, caughtAt',
+  missions: '++id, slotIndex',
+  unlockedAchievements: '++id, badgeId, tier, unlockedAt',
+  scheduleSlots: '++id, shiftId, type, startHour',
+  supervisionLogs: '++id, date',
+  calendarEvents: '++id, date, type',
+  friendBlocks: '++id, weekday',
+});
+
 // Auto-reload when another tab upgrades the DB to avoid blocking
 db.on('versionchange', () => {
   db.close();

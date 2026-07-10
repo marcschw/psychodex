@@ -12,6 +12,8 @@ const state = {
   expandedSlotId: null,
   collapsedSlotIds: new Set(),
   calMonth: null,
+  calEvents: [],                // meetings/reminders created in the calendar
+  friendBlocks: [],             // recurring weekly therapist friend blocks
   icdfCollection: { symptoms: [], diagnoses: [] },
   icdData: {},
   icdFlat: [],
@@ -101,7 +103,8 @@ const FUNK_OPTIONS = [
   'Forschung 1','Forschung 2','Forschung 3','Forschung 4','Forschung 5','Forschung 6',
 ];
 function effectiveTeam(c) {
-  return inferColleagueTeam(c.funktion) || c.team || 'D';
+  // Manual reassignment (rolecall long-press menu) wins over funktion inference
+  return c.teamOverride || inferColleagueTeam(c.funktion) || c.team || 'D';
 }
 function tagIconsHTML(tags) {
   return (tags || []).map(t => TAG_ICONS[t] || t).join(' ');
@@ -391,6 +394,7 @@ async function init() {
     setupShiftAdvModal();
     setupMissionModals();
     setupEscapeKey();
+    startAlarmScheduler(); // global — fires for today's shift/events even when viewing another day
     document.getElementById('badge-lb-close').addEventListener('click', closeBadgeLightbox);
     document.getElementById('badge-lb-backdrop').addEventListener('click', closeBadgeLightbox);
     document.getElementById('loading-screen').classList.add('fade-out');
@@ -433,6 +437,12 @@ async function loadFromDB() {
   try {
     state.unlockedAchievements = await db.unlockedAchievements.toArray();
   } catch { state.unlockedAchievements = []; }
+  try {
+    state.calEvents = await db.calendarEvents.orderBy('date').toArray();
+  } catch { state.calEvents = []; }
+  try {
+    state.friendBlocks = await db.friendBlocks.toArray();
+  } catch { state.friendBlocks = []; }
 
   // Migrate old single-number extraHours to entries array
   if (!Array.isArray(state.profile.extraHourEntries)) {
@@ -478,12 +488,30 @@ async function mergeSplitDayShifts() {
     const spaet = shifts.find(s => s.type === 'spät');
     if (!frueh || !spaet) continue;
 
-    // Colleagues: union by name, keep check-in state from either half
-    const colleagues = [...(frueh.colleagues || [])];
+    // Colleagues: union by name, keep check-in state from either half.
+    // Früh presence maps to statusVM, spät presence to statusNM (per-half rolecall).
+    // present:false is a RECORDED absence → 'absent'; missing present stays undefined.
+    const toHalfStatus = c => c.status
+      ?? (c.present === true ? 'present' : c.present === false ? 'absent' : undefined);
+    const colleagues = (frueh.colleagues || []).map(c => {
+      const { status: _s, ...rest } = c;
+      return { ...rest, ...(c.statusVM === undefined && toHalfStatus(c) !== undefined ? { statusVM: toHalfStatus(c) } : {}) };
+    });
     for (const c of (spaet.colleagues || [])) {
+      const nmStatus = c.statusNM ?? toHalfStatus(c);
+      const { status: _s, statusVM: _svm, ...rest } = c;
       const i = colleagues.findIndex(x => x.name === c.name);
-      if (i >= 0) colleagues[i] = { ...colleagues[i], ...c, present: colleagues[i].present || c.present };
-      else colleagues.push(c);
+      if (i >= 0) {
+        const prev = colleagues[i];
+        colleagues[i] = {
+          ...prev, ...rest,
+          present: prev.present === true || c.present === true,
+          ...(prev.statusVM !== undefined ? { statusVM: prev.statusVM } : {}),
+          ...(nmStatus !== undefined ? { statusNM: nmStatus } : {}),
+        };
+      } else {
+        colleagues.push({ ...rest, ...(nmStatus !== undefined ? { statusNM: nmStatus } : {}) });
+      }
     }
 
     // Zuteilung: merge assignments/termine/personTiers from both halves
@@ -528,6 +556,9 @@ async function mergeSplitDayShifts() {
 function setupEscapeKey() {
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
+    // Dynamic overlays first — they stack on top of regular modals
+    const dynOverlay = document.getElementById('rc-status-menu') || document.getElementById('cal-day-sheet');
+    if (dynOverlay) { dynOverlay.remove(); return; }
     const openModals = [
       { id: 'xp-info-modal',        fn: closeXPInfoModal },
       { id: 'rank-table-modal',     fn: closeRankTableModal },
@@ -1034,7 +1065,10 @@ async function renderHomeTab() {
         <div class="home-team-row">
           ${teamInfoHTML}
           <div class="home-team-btns">
-            <button class="home-team-btn" id="btn-home-team" title="Rolecall">👥 ${teamButtonPreviewHTML(colleaguesWithSelf)}</button>
+            ${shift.type === 'full' ? `
+              <button class="home-team-btn" id="btn-home-team-vm" title="Rolecall Vormittag">👥 VM</button>
+              <button class="home-team-btn" id="btn-home-team-nm" title="Rolecall Nachmittag">👥 NM</button>
+            ` : `<button class="home-team-btn" id="btn-home-team" title="Rolecall">👥 ${teamButtonPreviewHTML(colleaguesWithSelf)}</button>`}
             <button class="home-team-btn home-zut-btn" id="btn-home-zut" title="Zuteilung">📋</button>
             <button class="home-icons-toggle" id="btn-icons-toggle" title="${hideIcons ? 'Tag-Icons zeigen' : 'Tag-Icons ausblenden'}">${hideIcons ? '◎' : '◉'}</button>
           </div>
@@ -1058,7 +1092,9 @@ async function renderHomeTab() {
             .filter(t => t.type === 'anmeldung' || t.type === 'erstgesprach')
             .sort((a, b) => (a.startHour ?? 0) - (b.startHour ?? 0));
           const hasColleagueMeetings = (shift.colleagues || []).some(c => c.meetings?.length);
-          if (!homeTermine.length && !(shift.xmlMeetings && shift.xmlMeetings.length) && !hasColleagueMeetings) return '';
+          const dayCalEvents = (state.calEvents || []).filter(e => e.date === shift.date)
+            .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+          if (!homeTermine.length && !(shift.xmlMeetings && shift.xmlMeetings.length) && !hasColleagueMeetings && !dayCalEvents.length) return '';
           const pv = privacyOn();
           const terminItems = homeTermine.map(t => {
             const def = TERMIN_DEFS[t.type] || {};
@@ -1073,6 +1109,9 @@ async function renderHomeTab() {
           const meetingItems = (shift.xmlMeetings||[]).map((m, idx) =>
             `<div class="home-xml-meeting-row home-meeting-row" data-meeting-idx="${idx}" style="cursor:pointer"><span class="home-xml-meeting-time">${m.von}–${m.bis}</span> <span class="home-xml-meeting-title">${escAttr(m.titel||m.typ)}</span>${m.mit?`<div class="home-xml-meeting-mit">${escAttr(m.mit)}</div>`:''}</div>`
           ).join('');
+          const calEventItems = dayCalEvents.map(e =>
+            `<div class="home-xml-meeting-row">${e.type === 'meeting' ? '📅' : '⏰'} <span class="home-xml-meeting-time">${e.time || ''}</span> <span class="home-xml-meeting-title">${escAttr(e.title)}</span>${e.alarmOff ? ' 🔕' : ''}</div>`
+          ).join('');
           const pvBtn = `<button class="home-privacy-toggle" title="${pv?'Namen einblenden':'Namen ausblenden'}">${pv?'🔒':'🔓'}</button>`;
           // Colleague meetings: who from the team is in which meeting
           const cmItems = (shift.colleagues || [])
@@ -1083,7 +1122,7 @@ async function renderHomeTab() {
           const teamMeetingsHtml = cmItems
             ? `<div class="home-xml-meetings-label" style="margin-top:8px;border-top:1px solid rgba(124,58,237,.15);padding-top:6px">Team-Meetings</div>${cmItems}`
             : '';
-          return `<div class="home-xml-meetings"><div class="home-xml-meetings-label">Termine ${pvBtn}</div>${terminItems}${meetingItems}${teamMeetingsHtml}</div>`;
+          return `<div class="home-xml-meetings"><div class="home-xml-meetings-label">Termine ${pvBtn}</div>${terminItems}${meetingItems}${calEventItems}${teamMeetingsHtml}</div>`;
         })()}
       </div>`;
 
@@ -1124,6 +1163,8 @@ async function renderHomeTab() {
       openRescheduleModal(shift));
     const teamBtn = document.getElementById('btn-home-team');
     if (teamBtn) teamBtn.addEventListener('click', () => openTeamModal(shift));
+    document.getElementById('btn-home-team-vm')?.addEventListener('click', () => openTeamModal(shift, 'vm'));
+    document.getElementById('btn-home-team-nm')?.addEventListener('click', () => openTeamModal(shift, 'nm'));
     document.getElementById('btn-home-zut')?.addEventListener('click', () => openZuteilungScreen(shift));
     const iconsToggle = document.getElementById('btn-icons-toggle');
     if (iconsToggle) iconsToggle.addEventListener('click', () => {
@@ -1180,7 +1221,7 @@ async function renderHomeTab() {
 
     renderTimeline(shift);
     breakBtn.classList.remove('hidden');
-    if (shift.date === today) startAlarmScheduler();
+    // Alarm scheduler runs globally (started in init) — no per-view restart needed
   }
 
   // Apply swipe animation to content wrapper
@@ -1298,12 +1339,16 @@ function renderMonthCalendar() {
   let html = `<div class="cal-weekdays"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span class="cal-weekend">Sa</span><span class="cal-weekend cal-sun-label">So</span></div><div class="cal-grid">`;
   for (let i = 0; i < firstDow; i++) html += '<div class="cal-cell cal-empty"></div>';
 
+  const evByDate = {};
+  for (const ev of (state.calEvents || [])) {
+    if (ev.date.startsWith(state.calMonth)) (evByDate[ev.date] = evByDate[ev.date] || []).push(ev);
+  }
+
   for (let d = 1; d <= daysInMon; d++) {
     const ds  = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const dow = (new Date(year, month - 1, d).getDay() + 6) % 7; // 0=Mon..6=Sun
     const isSunday    = dow === 6;
     const holidayName = holidays.get(ds) ?? null;
-    const isBlocked   = isSunday || !!holidayName;
     const dsh = shiftByDay[d] || [];
     const isToday      = ds === today;
     const isPast       = ds < today;
@@ -1315,6 +1360,14 @@ function renderMonthCalendar() {
       const icon = shiftIcon(s.type);
       return `<span class="cal-dot-icon" style="opacity:${op}" title="${shiftLabel(s.type)}">${icon}</span>`;
     }).join('');
+
+    const dayEvents   = evByDate[ds] || [];
+    const evDots      = dayEvents.length
+      ? `<span class="cal-ev-dot" title="${dayEvents.length} Termin${dayEvents.length > 1 ? 'e' : ''}">${dayEvents.some(e => e.type === 'meeting') ? '📅' : '⏰'}</span>` : '';
+    // Subtle side markers for recurring friend blocks on this weekday
+    const dayFriends  = (state.friendBlocks || []).filter(b => b.weekday === dow);
+    const friendMarks = dayFriends.length
+      ? `<div class="cal-friend-marks">${dayFriends.slice(0, 3).map(b => `<span class="cal-friend-mark" title="${escAttr(b.name)} ${b.von}–${b.bis}">${escAttr((b.name || '?')[0].toUpperCase())}</span>`).join('')}</div>` : '';
 
     const cls = ['cal-cell',
       isSunday    ? 'cal-sunday'    : '',
@@ -1331,6 +1384,8 @@ function renderMonthCalendar() {
     html += `<div class="${cls}" data-date="${ds}" data-shift-ids="${ids}"${title}>
       <span class="cal-day-num">${d}</span>
       ${holidayName ? '<span class="cal-holiday-dot">🇦🇹</span>' : ''}
+      ${evDots}
+      ${friendMarks}
       ${dots ? `<div class="cal-dots">${dots}</div>` : ''}
     </div>`;
   }
@@ -1338,18 +1393,115 @@ function renderMonthCalendar() {
   calEl.innerHTML = html;
 
   calEl.querySelectorAll('.cal-cell:not(.cal-empty):not(.cal-sunday):not(.cal-holiday)').forEach(cell => {
-    cell.addEventListener('click', async () => {
-      const ids = cell.dataset.shiftIds;
-      if (ids) {
-        state.homeSelectedShiftId = parseInt(ids.split(',')[0]);
-        closeCalModal();
-        renderHomeTab();
-      } else {
-        closeCalModal();
-        openQuickCreateModal(cell.dataset.date);
-      }
-    });
+    cell.addEventListener('click', () => openDaySheet(cell.dataset.date));
   });
+}
+
+// ─── Calendar Day Sheet: shifts, meetings, reminders, friend blocks ──────────
+function openDaySheet(ds) {
+  document.getElementById('cal-day-sheet')?.remove();
+  const dateObj = new Date(ds + 'T12:00:00');
+  const dow     = (dateObj.getDay() + 6) % 7;
+  const heading = dateObj.toLocaleDateString('de-AT', { weekday:'long', day:'2-digit', month:'2-digit', year:'numeric' });
+
+  const sheet = document.createElement('div');
+  sheet.id = 'cal-day-sheet';
+
+  const render = () => {
+    const dayShifts  = state.shifts.filter(s => s.date === ds);
+    const dayEvents  = (state.calEvents || []).filter(e => e.date === ds)
+      .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+    const dayFriends = (state.friendBlocks || []).filter(b => b.weekday === dow);
+
+    sheet.innerHTML = `
+      <div class="ds-backdrop"></div>
+      <div class="ds-card">
+        <button class="ds-close" title="Schließen">✕</button>
+        <div class="ds-title">${heading}</div>
+        ${dayShifts.length ? `<div class="ds-sep">Dienste</div>` : ''}
+        ${dayShifts.map(s => `
+          <button class="ds-row ds-shift" data-sid="${s.id}">
+            ${shiftIcon(s.type)} ${shiftLabelFull(s)}
+          </button>`).join('')}
+        ${dayEvents.length ? `<div class="ds-sep">Termine</div>` : ''}
+        ${dayEvents.map(e => `
+          <div class="ds-row ds-event">
+            <span>${e.type === 'meeting' ? '📅' : '⏰'} ${e.time || ''} ${escAttr(e.title)}${e.alarmOff ? ' 🔕' : ''}</span>
+            <button class="ds-ev-del" data-eid="${e.id}" title="Löschen">🗑</button>
+          </div>`).join('')}
+        ${dayFriends.length ? `<div class="ds-sep">Therapeutenteam</div>
+          ${dayFriends.map(b => `<div class="ds-row ds-friend">🫂 ${escAttr(b.name)} · ${b.von}–${b.bis}</div>`).join('')}` : ''}
+        <div class="ds-actions">
+          <button class="ds-act" id="ds-add-shift">＋ Dienst</button>
+          <button class="ds-act" id="ds-add-meeting">＋ Meeting</button>
+          <button class="ds-act" id="ds-add-reminder">＋ Reminder</button>
+        </div>
+        <div class="ds-ev-form hidden" id="ds-ev-form">
+          <input type="text" id="ds-ev-title" class="setting-input" placeholder="Titel…" style="flex:1;min-width:100px">
+          <input type="time" id="ds-ev-time" class="setting-input" value="12:00" style="width:92px">
+          <button type="button" id="ds-ev-alarm" class="slot-alarm-toggle" title="Erinnerung 10 Min vorher">🔔</button>
+          <button id="ds-ev-save" class="io-btn">✓</button>
+        </div>
+      </div>`;
+
+    sheet.querySelector('.ds-backdrop').addEventListener('click', () => sheet.remove());
+    sheet.querySelector('.ds-close').addEventListener('click', () => sheet.remove());
+
+    sheet.querySelectorAll('.ds-shift').forEach(btn => btn.addEventListener('click', () => {
+      state.homeSelectedShiftId = parseInt(btn.dataset.sid);
+      sheet.remove();
+      closeCalModal();
+      renderHomeTab();
+    }));
+
+    sheet.querySelectorAll('.ds-ev-del').forEach(btn => btn.addEventListener('click', async () => {
+      await db.calendarEvents.delete(parseInt(btn.dataset.eid));
+      state.calEvents = await db.calendarEvents.orderBy('date').toArray();
+      render();
+      renderMonthCalendar();
+    }));
+
+    sheet.querySelector('#ds-add-shift').addEventListener('click', () => {
+      sheet.remove();
+      closeCalModal();
+      openQuickCreateModal(ds);
+    });
+
+    let pendingType = null;
+    const evForm = sheet.querySelector('#ds-ev-form');
+    const showForm = type => {
+      pendingType = type;
+      evForm.classList.remove('hidden');
+      sheet.querySelector('#ds-ev-title').placeholder = type === 'meeting' ? 'Meeting-Titel…' : 'Erinnerung…';
+      sheet.querySelector('#ds-ev-title').focus();
+    };
+    sheet.querySelector('#ds-add-meeting').addEventListener('click', () => showForm('meeting'));
+    sheet.querySelector('#ds-add-reminder').addEventListener('click', () => showForm('reminder'));
+
+    const alarmBtn = sheet.querySelector('#ds-ev-alarm');
+    alarmBtn.addEventListener('click', () => {
+      const off = alarmBtn.classList.toggle('off');
+      alarmBtn.textContent = off ? '🔕' : '🔔';
+    });
+
+    sheet.querySelector('#ds-ev-save').addEventListener('click', async () => {
+      const title = sheet.querySelector('#ds-ev-title').value.trim();
+      const time  = sheet.querySelector('#ds-ev-time').value;
+      if (!title || !pendingType) return;
+      await db.calendarEvents.add({
+        date: ds, type: pendingType, title, time,
+        alarmOff: alarmBtn.classList.contains('off'),
+        createdAt: new Date().toISOString(),
+      });
+      state.calEvents = await db.calendarEvents.orderBy('date').toArray();
+      render();
+      renderMonthCalendar();
+      if (state.homeSelectedShiftId && state.shifts.find(s => s.id === state.homeSelectedShiftId)?.date === ds) renderHomeTab();
+    });
+  };
+
+  render();
+  document.body.appendChild(sheet);
 }
 
 function renderShiftNav() {
@@ -1476,7 +1628,7 @@ function openRescheduleModal(shift) {
 }
 
 // ─── Team Attendance Modal ────────────────────────────────────────────────────
-function openTeamModal(shift) {
+function openTeamModal(shift, half = null) {
   const modal   = document.getElementById('team-modal');
   const body    = document.getElementById('team-modal-body');
   const titleEl = document.getElementById('team-modal-title');
@@ -1485,14 +1637,36 @@ function openTeamModal(shift) {
   const dateObj  = new Date(shift.date + 'T12:00:00');
   const wdShort  = dateObj.toLocaleDateString('de-AT', { weekday:'short' });
   const dtShort  = dateObj.toLocaleDateString('de-AT', { day:'numeric', month:'numeric', year:'numeric' });
-  const typeAbbr = { früh:'VM', spät:'NM', samstag:'SAT', full:'Ganztag', schulung:'Sch' }[shift.type] || '';
-  const typeLabel= { früh:'Vormittag', spät:'Nachmittag', samstag:'Samstag', full:'Ganztag', schulung:'Schulung' }[shift.type] || '';
+  const typeAbbr = half === 'vm' ? 'VM' : half === 'nm' ? 'NM'
+    : ({ früh:'VM', spät:'NM', samstag:'SAT', full:'Ganztag', schulung:'Sch' }[shift.type] || '');
+  const typeLabel= half === 'vm' ? 'Vormittag' : half === 'nm' ? 'Nachmittag'
+    : ({ früh:'Vormittag', spät:'Nachmittag', samstag:'Samstag', full:'Ganztag', schulung:'Schulung' }[shift.type] || '');
   titleEl.textContent = `Rolecall – ${wdShort} ${dtShort} ${typeAbbr}`;
 
   const { start: ss, end: se } = shiftHours(shift);
   const tr = `${String(ss[0]).padStart(2,'0')}:${String(ss[1]).padStart(2,'0')}–${String(se[0]).padStart(2,'0')}:${String(se[1]).padStart(2,'0')}`;
   const dtLong = dateObj.toLocaleDateString('de-AT', { weekday:'long', day:'numeric', month:'numeric', year:'numeric' });
   subEl.textContent = `${dtLong} · ${typeLabel} (${tr})`;
+
+  // Per-half status key for full shifts opened via VM/NM buttons
+  const statusKey = half === 'vm' ? 'statusVM' : half === 'nm' ? 'statusNM' : 'status';
+  const getStatus = c => c[statusKey] ?? c.status ?? (c.present ? 'present' : 'absent');
+  const setStatus = (c, st) => { c[statusKey] = st; };
+  const syncPresent = c => {
+    if (shift.type === 'full') {
+      const vm = c.statusVM ?? c.status, nm = c.statusNM ?? c.status;
+      // No recorded status at all → keep legacy present flag untouched
+      c.present = (vm === undefined && nm === undefined) ? !!c.present
+        : (vm === 'present' || nm === 'present');
+    } else {
+      c.present = getStatus(c) === 'present';
+    }
+  };
+  const STATUS_META = {
+    present: { icon: '✓',  cls: 'rc-st-present' },
+    krank:   { icon: '🤒', cls: 'rc-st-krank'   },
+    absent:  { icon: '✗',  cls: 'rc-st-absent'  },
+  };
 
   const userName  = localStorage.getItem('psychodex-user-name') || '';
   const hideIcons = localStorage.getItem('hide-team-icons') === '1';
@@ -1547,8 +1721,10 @@ function openTeamModal(shift) {
       return 0;
     });
 
-    const present = rcDisplay.filter(c => c.present).length;
-    const fehlen  = rcDisplay.length - present;
+    const statusOf = c => c._self ? 'present' : getStatus(c);
+    const present  = rcDisplay.filter(c => statusOf(c) === 'present').length;
+    const krank    = rcDisplay.filter(c => statusOf(c) === 'krank').length;
+    const fehlen   = rcDisplay.length - present - krank;
 
     const groups = { D: [], T: [] };
     for (const c of rcDisplay) groups[effectiveTeam(c)].push(c);
@@ -1561,13 +1737,18 @@ function openTeamModal(shift) {
         <span class="rolecall-fehlen">${fehlen} fehlen</span>
         <span class="rolecall-dot">·</span>
         <span class="rolecall-anwesend">${present} anwesend</span>
+        <span class="rolecall-dot rc-krank-dot" style="display:${krank ? '' : 'none'}">·</span>
+        <span class="rolecall-krank" style="display:${krank ? '' : 'none'}">${krank} krank</span>
         <button class="rc-stunden-toggle${showRcStunden ? ' active' : ''}" id="rc-stunden-toggle" title="Stunden ein-/ausblenden">h</button>
       </div>
       ${['D','T'].filter(t => groups[t].length).map(t => `
         <div class="team-group-header" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</div>
-        ${groups[t].map(c => `
-          <label class="team-colleague-row${c.present ? ' is-present' : ''}">
-            <input type="checkbox" class="team-colleague-check" data-wi="${c._wi}" ${c.present ? 'checked' : ''}>
+        ${groups[t].map(c => {
+          const st   = statusOf(c);
+          const meta = STATUS_META[st] || STATUS_META.absent;
+          return `
+          <div class="team-colleague-row${st === 'present' ? ' is-present' : ''}${st === 'krank' ? ' is-krank' : ''}" data-wi="${c._wi}">
+            <button class="rc-status-btn ${meta.cls}" data-wi="${c._wi}" title="Status: tippen zum Wechseln, halten für Menü">${meta.icon}</button>
             <img class="rc-avatar" src="${avatarSrc(c)}" alt="" style="border-color:${dotColor(c)}">
             <div class="team-colleague-info">
               <div class="team-colleague-name">${c.name}${c._self ? ' <span class="team-self-badge">Ich</span>' : ''}</div>
@@ -1578,8 +1759,8 @@ function openTeamModal(shift) {
             ${!c._self ? `
               <button class="rc-edit-btn" data-wi="${c._wi}" title="Bearbeiten">✏️</button>
               <button class="rc-del-btn"  data-wi="${c._wi}" title="Entfernen">✕</button>` : ''}
-          </label>
-        `).join('')}
+          </div>`;
+        }).join('')}
       `).join('')}
       ${otherDisplay.length ? `<button class="other-teams-link" id="btn-other-teams">👁 Andere Teams (${otherDisplay.length})</button>` : ''}
       <div class="rc-add-form">
@@ -1603,14 +1784,6 @@ function openTeamModal(shift) {
         <span class="rc-tag-hint">Tags</span>
       </div>` : ''}`;
 
-    // Status update
-    const updateStatus = () => {
-      const checks = body.querySelectorAll('.team-colleague-check');
-      const p = Array.from(checks).filter(x => x.checked).length;
-      body.querySelector('.rolecall-fehlen').textContent   = `${checks.length - p} fehlen`;
-      body.querySelector('.rolecall-anwesend').textContent = `${p} anwesend`;
-    };
-
     // Stunden toggle
     body.querySelector('#rc-stunden-toggle')?.addEventListener('click', () => {
       showRcStunden = !showRcStunden;
@@ -1618,13 +1791,83 @@ function openTeamModal(shift) {
       renderBody();
     });
 
-    // Checkboxes
-    body.querySelectorAll('.team-colleague-check').forEach(cb => {
-      cb.addEventListener('change', () => {
-        cb.closest('.team-colleague-row').classList.toggle('is-present', cb.checked);
-        const wi = parseInt(cb.dataset.wi);
-        if (wi >= 0) working[wi].present = cb.checked;
-        updateStatus();
+    // Status long-press menu: status choices + team reassignment
+    const openStatusMenu = wi => {
+      document.getElementById('rc-status-menu')?.remove();
+      const c = working[wi];
+      if (!c) return;
+      const menu = document.createElement('div');
+      menu.id = 'rc-status-menu';
+      menu.innerHTML = `
+        <div class="rc-menu-backdrop"></div>
+        <div class="rc-menu-card">
+          <div class="rc-menu-title">${escAttr(c.name)}</div>
+          <button class="rc-menu-opt" data-st="present">✓ Anwesend</button>
+          <button class="rc-menu-opt" data-st="krank">🤒 Krank</button>
+          <button class="rc-menu-opt" data-st="absent">✗ Abwesend</button>
+          <div class="rc-menu-sep">Team zuordnen</div>
+          ${TEAM_ORDER.map(t => `<button class="rc-menu-opt rc-menu-team${effectiveTeam(c) === t ? ' active' : ''}" data-team="${t}" style="color:${TEAM_META[t].color}">${TEAM_META[t].label}</button>`).join('')}
+          ${c.teamOverride ? `<button class="rc-menu-opt" data-team-auto="1">↩︎ Automatisch (${TEAM_META[inferColleagueTeam(c.funktion) || c.team || 'D']?.label || 'Standard'})</button>` : ''}
+        </div>`;
+      modal.appendChild(menu);
+      menu.querySelector('.rc-menu-backdrop').addEventListener('click', () => menu.remove());
+      menu.querySelectorAll('[data-st]').forEach(b => b.addEventListener('click', () => {
+        setStatus(c, b.dataset.st); menu.remove(); renderBody();
+      }));
+      menu.querySelectorAll('[data-team]').forEach(b => b.addEventListener('click', () => {
+        c.teamOverride = b.dataset.team; menu.remove(); renderBody();
+      }));
+      menu.querySelector('[data-team-auto]')?.addEventListener('click', () => {
+        delete c.teamOverride; menu.remove(); renderBody();
+      });
+    };
+
+    // Recompute the counters in place (keeps add/edit form input + scroll intact)
+    const updateCounts = () => {
+      let p = 0, k = 0, total = 0;
+      body.querySelectorAll('.team-colleague-row').forEach(r => {
+        total++;
+        const wi = parseInt(r.dataset.wi);
+        const st = wi < 0 ? 'present' : getStatus(working[wi]);
+        if (st === 'present') p++;
+        else if (st === 'krank') k++;
+      });
+      body.querySelector('.rolecall-anwesend').textContent = `${p} anwesend`;
+      body.querySelector('.rolecall-fehlen').textContent   = `${total - p - k} fehlen`;
+      const kEl  = body.querySelector('.rolecall-krank');
+      const kDot = body.querySelector('.rc-krank-dot');
+      if (kEl)  { kEl.textContent = `${k} krank`; kEl.style.display = k ? '' : 'none'; }
+      if (kDot) kDot.style.display = k ? '' : 'none';
+    };
+
+    // Row tap cycles status (abwesend → anwesend → krank), long-press opens menu
+    body.querySelectorAll('.team-colleague-row').forEach(row => {
+      const wi = parseInt(row.dataset.wi);
+      if (wi < 0) return; // self row stays static
+      let lpTimer = null, lpFired = false;
+      row.addEventListener('pointerdown', e => {
+        if (e.target.closest('.rc-edit-btn, .rc-del-btn')) return;
+        lpFired = false;
+        lpTimer = setTimeout(() => { lpFired = true; openStatusMenu(wi); }, 500);
+      });
+      const cancel = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } };
+      row.addEventListener('pointerup', cancel);
+      row.addEventListener('pointerleave', cancel);
+      row.addEventListener('pointercancel', cancel);
+      row.addEventListener('click', e => {
+        if (e.target.closest('.rc-edit-btn, .rc-del-btn')) return;
+        if (lpFired) { lpFired = false; return; }
+        const cur  = getStatus(working[wi]);
+        const next = cur === 'absent' ? 'present' : cur === 'present' ? 'krank' : 'absent';
+        setStatus(working[wi], next);
+        // Patch the row in place instead of re-rendering (preserves form input)
+        const meta = STATUS_META[next];
+        const btn  = row.querySelector('.rc-status-btn');
+        btn.className   = `rc-status-btn ${meta.cls}`;
+        btn.textContent = meta.icon;
+        row.classList.toggle('is-present', next === 'present');
+        row.classList.toggle('is-krank',   next === 'krank');
+        updateCounts();
       });
     });
 
@@ -1696,31 +1939,29 @@ function openTeamModal(shift) {
   modal.classList.remove('hidden');
 
   document.getElementById('team-modal-save').onclick = async () => {
-    // Sync any uncaptured checkbox state before saving
-    body.querySelectorAll('.team-colleague-check').forEach(cb => {
-      const wi = parseInt(cb.dataset.wi);
-      if (wi >= 0 && wi < working.length) working[wi].present = cb.checked;
-    });
+    working.forEach(syncPresent);
     await db.shiftLogs.update(shift.id, { colleagues: working });
     state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
     modal.classList.add('hidden');
+    document.getElementById('rc-status-menu')?.remove();
     await applyRolecallBonuses(shift, working);
     renderHomeTab();
   };
   document.getElementById('team-modal-zuteilung').onclick = async () => {
-    body.querySelectorAll('.team-colleague-check').forEach(cb => {
-      const wi = parseInt(cb.dataset.wi);
-      if (wi >= 0 && wi < working.length) working[wi].present = cb.checked;
-    });
+    working.forEach(syncPresent);
     await db.shiftLogs.update(shift.id, { colleagues: working });
     state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
     modal.classList.add('hidden');
+    document.getElementById('rc-status-menu')?.remove();
     openZuteilungScreen(shift);
   };
 }
 
 function setupTeamModal() {
-  const close = () => document.getElementById('team-modal').classList.add('hidden');
+  const close = () => {
+    document.getElementById('team-modal').classList.add('hidden');
+    document.getElementById('rc-status-menu')?.remove();
+  };
   document.getElementById('team-modal-close').addEventListener('click', close);
   document.getElementById('team-modal-backdrop').addEventListener('click', close);
   document.getElementById('team-modal-cancel').addEventListener('click', close);
@@ -2295,10 +2536,8 @@ async function openImportedShift(shiftId) {
   state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
   state.plannerShiftId = shiftId;
   state.plannerSlots = await db.scheduleSlots.where('shiftId').equals(shiftId).sortBy('startHour');
-  state.alarmFired = new Set();
   state.homeSelectedShiftId = shiftId;
   renderHomeTab();
-  if (!isFuture) startAlarmScheduler();
 }
 
 function setupPlannerListeners() {
@@ -2467,7 +2706,6 @@ async function startPlannerShift() {
   state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
   state.plannerShiftId = shiftId;
   state.plannerSlots = [];
-  state.alarmFired = new Set();
 
   // Request notification permission once per session (non-blocking)
   requestNotificationPermission();
@@ -2505,7 +2743,6 @@ async function closePlannerShift() {
   state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
   state.plannerShiftId = null;
   state.plannerSlots   = [];
-  stopAlarmScheduler();
 
   updateHeader();
   if (totalBase > 0) {
@@ -2527,6 +2764,15 @@ function openSlotAddModal(shiftId, startH, startM, source = 'planner') {
   document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('slot-flags-row').classList.add('hidden');
   document.getElementById('slot-comment').value = '';
+  const alarmTgl = document.getElementById('slot-alarm-toggle');
+  if (alarmTgl) {
+    alarmTgl.classList.remove('off');
+    alarmTgl.textContent = '🔔 Erinnerung an';
+    alarmTgl.onclick = () => {
+      const off = alarmTgl.classList.toggle('off');
+      alarmTgl.textContent = off ? '🔕 Erinnerung aus' : '🔔 Erinnerung an';
+    };
+  }
   document.getElementById('slot-start-time').value = padT(startH, startM);
 
   // Default end = startH + 1
@@ -2555,11 +2801,12 @@ async function saveSlot() {
   const modifier = CATEGORY_XP_MODIFIER[shift?.category || 'regulär'];
   const xp = Math.round(def.xp * modifier);
 
+  const alarmOff = document.getElementById('slot-alarm-toggle')?.classList.contains('off') || false;
   const slotId = await db.scheduleSlots.add({
     shiftId: ctx.shiftId, type: ctx.selectedType,
     startHour: sh, startMinute: sm,
     endHour: eh,   endMinute: em,
-    flags: [...ctx.flags], comment,
+    flags: [...ctx.flags], comment, alarmOff,
     xpEarned: xp, createdAt: new Date().toISOString()
   });
 
@@ -3528,7 +3775,7 @@ function codeNameStr(str) {
   return { code: parts.map(p => p[0].toUpperCase() + '.').join(' '), full: str };
 }
 
-const escAttr   = s => String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+const escAttr   = s => String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const privacyOn = () => localStorage.getItem('psychodex-privacy') !== '0';
 
 function openTerminDetailModal(item, itemType) {
@@ -5106,8 +5353,8 @@ async function applyRolecallBonuses(shift, colleagues) {
   }
 
   if (!totalBonus && !bonusList.length) {
-    // Mark as checked even with no bonus so we don't re-check
-    await db.shiftLogs.update(shift.id, { rolecallBonusAwarded: true });
+    // No bonus yet — do NOT set the flag: a later save (e.g. the other half of a
+    // full-day rolecall) may still qualify. The flag is only set when awarding.
     return;
   }
 
@@ -5262,6 +5509,8 @@ async function saveMealHint() {
 }
 
 // ─── Alarm Scheduler ──────────────────────────────────────────────────────────
+// Runs globally (started in init) and always checks TODAY's shift — regardless
+// of which day is currently viewed in the home tab.
 function startAlarmScheduler() {
   stopAlarmScheduler();
   state.alarmInterval = setInterval(checkAlarms, 60_000);
@@ -5271,59 +5520,88 @@ function stopAlarmScheduler() {
   if (state.alarmInterval) { clearInterval(state.alarmInterval); state.alarmInterval = null; }
 }
 
-function checkAlarms() {
-  if (!state.plannerShiftId || !state.plannerSlots.length) return;
-  const now     = new Date();
-  const nowMins = now.getHours() * 60 + now.getMinutes();
+function fireAlarm(bannerText, notifTitle, notifBody, key) {
+  const banner = document.getElementById('planner-alarm-banner');
+  if (banner) {
+    banner.textContent = bannerText;
+    banner.classList.remove('hidden');
+    setTimeout(() => banner.classList.add('hidden'), 15_000);
+  }
+  showSystemNotification(notifTitle, notifBody, key);
+  state.alarmFired.add(key);
+}
 
-  // Is patient contact happening right now?
-  const patientNow = state.plannerSlots.some(s => {
+async function checkAlarms() {
+  if (localStorage.getItem('alarms-off') === '1') return;
+  const now      = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const nowMins  = now.getHours() * 60 + now.getMinutes();
+
+  // Today's shift slots — closed shifts don't alarm; prefer the actively running one
+  const todayCandidates = state.shifts.filter(s => s.date === todayStr && !s.closedAt);
+  const todayShift = todayCandidates.find(s => s.plannerActive)
+    || todayCandidates.find(s => s.id === state.plannerShiftId)
+    || todayCandidates[0];
+  let slots = [];
+  if (todayShift) {
+    slots = state.plannerShiftId === todayShift.id
+      ? state.plannerSlots
+      : await db.scheduleSlots.where('shiftId').equals(todayShift.id).toArray();
+  }
+
+  // Suppress alarms while patient contact is happening right now
+  const patientNow = slots.some(s => {
     if (!SLOT_TYPES[s.type]?.patientContact) return false;
     return toMins(s.startHour, s.startMinute) <= nowMins && nowMins < toMins(s.endHour, s.endMinute);
   });
-  if (patientNow) return;
 
-  // ── Kassensturz: every hour at x:30 while a kassa slot is active ──────────
-  const nowMin = now.getMinutes();
-  if (nowMin >= 29 && nowMin <= 31) {
-    const kassaActive = state.plannerSlots.some(s =>
-      SLOT_TYPES[s.type]?.halfHour &&
-      toMins(s.startHour, s.startMinute) <= nowMins &&
-      nowMins < toMins(s.endHour, s.endMinute)
-    );
-    if (kassaActive) {
-      const alarmKey = `kassa-${now.getHours()}:30`;
-      if (!state.alarmFired.has(alarmKey)) {
-        const timeStr = `${now.getHours()}:30`;
-        const banner = document.getElementById('planner-alarm-banner');
-        if (banner) {
-          banner.textContent = `💰 Kassensturz um ${timeStr}`;
-          banner.classList.remove('hidden');
-          setTimeout(() => banner.classList.add('hidden'), 15_000);
-        }
-        showSystemNotification('💰 Kassensturz', `Kassensturz um ${timeStr} fällig`, `kassa-${timeStr}`);
-        state.alarmFired.add(alarmKey);
+  if (!patientNow) {
+    // ── Kassa: 10 min before the half hour (x:20) → count the money ─────────
+    // Activity is checked at the :30 TARGET, not the firing minute, so a slot
+    // starting at x:30 still gets its reminder and one ending before x:30 doesn't.
+    const nowMin = now.getMinutes();
+    if (nowMin >= 19 && nowMin <= 21) {
+      const targetMins = now.getHours() * 60 + 30;
+      const halfTarget = `${now.getHours()}:30`;
+      const kassaActive = slots.some(s =>
+        !s.alarmOff &&
+        SLOT_TYPES[s.type]?.halfHour &&
+        toMins(s.startHour, s.startMinute) <= targetMins &&
+        targetMins < toMins(s.endHour, s.endMinute)
+      );
+      const alarmKey = `kassa-${todayStr}-${halfTarget}`;
+      if (kassaActive && !state.alarmFired.has(alarmKey)) {
+        fireAlarm(`💰 Geld zählen – Kassensturz um ${halfTarget}`,
+          '💰 Geld zählen', `Kassensturz um ${halfTarget} – jetzt zählen`, alarmKey);
       }
     }
-  }
 
-  // ── Slot start alarm: 9–11 minutes before ─────────────────────────────────
-  for (const slot of state.plannerSlots) {
-    if (state.alarmFired.has(slot.id)) continue;
-    const diff = toMins(slot.startHour, slot.startMinute) - nowMins;
-    if (diff >= 9 && diff <= 11) {
-      const def  = SLOT_TYPES[slot.type] || {};
-      const time = padT(slot.startHour, slot.startMinute);
-      const msg  = `${def.icon || '⏰'} ${def.label} um ${time}`;
-
-      const banner = document.getElementById('planner-alarm-banner');
-      if (banner) {
-        banner.textContent = `⏰ In ~10 min: ${msg}`;
-        banner.classList.remove('hidden');
-        setTimeout(() => banner.classList.add('hidden'), 10_000);
+    // ── Slot start alarm: 9–11 minutes before (per-slot mutable) ────────────
+    for (const slot of slots) {
+      if (slot.alarmOff) continue;
+      const key = `slot-${slot.id}`;
+      if (state.alarmFired.has(key)) continue;
+      const diff = toMins(slot.startHour, slot.startMinute) - nowMins;
+      if (diff >= 9 && diff <= 11) {
+        const def  = SLOT_TYPES[slot.type] || {};
+        const time = padT(slot.startHour, slot.startMinute);
+        const msg  = `${def.icon || '⏰'} ${def.label} um ${time}`;
+        fireAlarm(`⏰ In ~10 min: ${msg}`, '⏰ In ~10 Minuten', msg, key);
       }
-      showSystemNotification(`⏰ In ~10 Minuten`, msg, `alarm-slot-${slot.id}`);
-      state.alarmFired.add(slot.id);
+    }
+
+    // ── Calendar events (meetings/reminders): 9–11 minutes before ───────────
+    for (const ev of (state.calEvents || [])) {
+      if (ev.date !== todayStr || ev.alarmOff || !ev.time) continue;
+      const key = `ev-${ev.id}`;
+      if (state.alarmFired.has(key)) continue;
+      const [eh, em] = ev.time.split(':').map(Number);
+      const diff = toMins(eh, em) - nowMins;
+      if (diff >= 9 && diff <= 11) {
+        const icon = ev.type === 'meeting' ? '📅' : '⏰';
+        fireAlarm(`${icon} In ~10 min: ${ev.title} um ${ev.time}`,
+          `${icon} In ~10 Minuten`, `${ev.title} um ${ev.time}`, key);
+      }
     }
   }
 }
@@ -6418,6 +6696,7 @@ async function refreshMissionProgress() {
 function renderSettingsTab() {
   renderHourCountersSettings();
   renderExtraHoursSettings();
+  renderFriendBlocksSettings();
   // Supervision target
   const supEl = document.getElementById('setting-sup-target');
   if (supEl) {
@@ -6431,6 +6710,60 @@ function renderSettingsTab() {
       }
     };
   }
+  // Global alarm toggle
+  const alarmBtn = document.getElementById('setting-alarms-toggle');
+  if (alarmBtn) {
+    const paint = () => {
+      const off = localStorage.getItem('alarms-off') === '1';
+      alarmBtn.textContent = off ? '🔕 Alarme aus' : '🔔 Alarme aktiv';
+      alarmBtn.style.opacity = off ? '.6' : '1';
+    };
+    paint();
+    alarmBtn.onclick = () => {
+      localStorage.setItem('alarms-off', localStorage.getItem('alarms-off') === '1' ? '0' : '1');
+      paint();
+    };
+  }
+}
+
+// ─── Friend Blocks Settings (recurring weekly therapist blocks) ───────────────
+const WEEKDAY_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+function renderFriendBlocksSettings() {
+  const el = document.getElementById('friend-blocks-section');
+  if (!el) return;
+  const blocks = state.friendBlocks || [];
+  el.innerHTML = `
+    ${blocks.map(b => `
+      <div class="fb-item" data-id="${b.id}">
+        <span class="fb-name">${escAttr(b.name)}</span>
+        <span class="fb-when">${WEEKDAY_LABELS[b.weekday]} ${b.von}–${b.bis}</span>
+        <button class="btn-icon fb-del" data-id="${b.id}" title="Löschen">🗑</button>
+      </div>`).join('')}
+    <div class="fb-add-row">
+      <input type="text" id="fb-add-name" class="setting-input" placeholder="Name" style="flex:1;min-width:80px">
+      <select id="fb-add-wd" class="setting-input" style="width:64px">
+        ${WEEKDAY_LABELS.map((w, i) => `<option value="${i}">${w}</option>`).join('')}
+      </select>
+      <input type="time" id="fb-add-von" class="setting-input" value="14:00" style="width:92px">
+      <input type="time" id="fb-add-bis" class="setting-input" value="18:00" style="width:92px">
+      <button id="fb-add-btn" class="io-btn">＋</button>
+    </div>`;
+
+  el.querySelectorAll('.fb-del').forEach(btn => btn.addEventListener('click', async () => {
+    await db.friendBlocks.delete(parseInt(btn.dataset.id));
+    state.friendBlocks = await db.friendBlocks.toArray();
+    renderFriendBlocksSettings();
+  }));
+  el.querySelector('#fb-add-btn')?.addEventListener('click', async () => {
+    const name = el.querySelector('#fb-add-name').value.trim();
+    const weekday = parseInt(el.querySelector('#fb-add-wd').value);
+    const von = el.querySelector('#fb-add-von').value;
+    const bis = el.querySelector('#fb-add-bis').value;
+    if (!name || !von || !bis) return;
+    await db.friendBlocks.add({ name, weekday, von, bis });
+    state.friendBlocks = await db.friendBlocks.toArray();
+    renderFriendBlocksSettings();
+  });
 }
 
 // ─── Supervision Logging ──────────────────────────────────────────────────────
