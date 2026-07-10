@@ -1,4 +1,4 @@
-const APP_VERSION  = 'v119';
+const APP_VERSION  = 'v120';
 const APP_CACHE    = `psychodex-app-${APP_VERSION}`;
 const IMAGE_CACHE  = `psychodex-images-${APP_VERSION}`;
 

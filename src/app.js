@@ -1914,6 +1914,7 @@ function openTeamModal(shift, half = null) {
         editingIdx = null;
       } else {
         working.push({ name, funktion: funk, team: inferColleagueTeam(funk) || 'D', tags, present: false,
+          manuallyAdded: true, // survives XML re-import sync
           ...(stunden !== undefined && { stunden }),
           ...(pct     !== undefined && { pct }),
         });
@@ -9705,7 +9706,7 @@ async function importShiftsFromXML(xmlText) {
   const existingShifts = await db.shiftLogs.toArray();
   const existingKeys = new Set(existingShifts.map(s => `${s.date}_${s.type}`));
 
-  let imported = 0, skipped = 0;
+  let imported = 0, skipped = 0, updated = 0;
 
   for (const el of dienste) {
     const datum   = el.getAttribute('datum');
@@ -9736,9 +9737,9 @@ async function importShiftsFromXML(xmlText) {
         tags:     (k.getAttribute('tags') || '').split(',').map(t => t.trim()).filter(Boolean),
         team:     inferColleagueTeam(funktion) || shiftTeam,
         present:  false,
+        meetings, // always set so a removed meeting clears on re-import
         ...(stunden  !== null  && { stunden }),
         ...(pct      !== null  && { pct }),
-        ...(meetings.length    && { meetings }),
       };
     });
 
@@ -9747,22 +9748,32 @@ async function importShiftsFromXML(xmlText) {
     const mergedFullKey = (type === 'früh' || type === 'spät') && existingKeys.has(`${datum}_full`) ? `${datum}_full` : null;
 
     if (existingKeys.has(key) || mergedFullKey) {
-      // Always merge latest XML colleague data (funktion, tags, stunden, pct) into existing shift,
-      // preserving the present (check-in) state and keeping any colleagues not in the XML.
+      // The XML is the source of truth on re-import: colleagues no longer listed
+      // (abgemeldet) are removed (manually added ones are kept), funktion/team are
+      // refreshed, and check-in state (present/statusVM/NM) is preserved.
       const existing = existingShifts.find(s => s.date === datum && s.type === (mergedFullKey ? 'full' : type));
       if (existing && colleagues.length) {
-        const merged = [...(existing.colleagues || [])];
+        const xmlNames = new Set(colleagues.map(c => c.name));
+        const merged = (existing.colleagues || []).filter(ec => xmlNames.has(ec.name) || ec.manuallyAdded);
         for (const xmlC of colleagues) {
           const idx = merged.findIndex(ec => ec.name === xmlC.name);
           if (idx >= 0) {
-            merged[idx] = { ...merged[idx], ...xmlC, present: merged[idx].present };
+            const prev = merged[idx];
+            merged[idx] = { ...prev, ...xmlC, present: prev.present };
+            // A changed funktion in the XML beats a manual team reassignment
+            if (prev.funktion !== xmlC.funktion && merged[idx].teamOverride) delete merged[idx].teamOverride;
           } else {
             merged.push(xmlC);
           }
         }
-        await db.shiftLogs.update(existing.id, { colleagues: merged });
+        const upd = { colleagues: merged };
+        // Shift-level category can change too (e.g. training → regulär), except into merged full days
+        if (!mergedFullKey && existing.category !== category) upd.category = category;
+        await db.shiftLogs.update(existing.id, upd);
+        updated++;
+      } else {
+        skipped++;
       }
-      skipped++;
       continue;
     }
 
@@ -9778,38 +9789,24 @@ async function importShiftsFromXML(xmlText) {
     imported++;
   }
 
-  // Merge global meetings, anmeldungen, erstgespraeche into matching shifts
-  if (xmlMeetingsAll.length || xmlAnmeldungen.length || xmlErstgespraeche.length) {
+  // Sync global meetings, anmeldungen, erstgespraeche into matching shifts.
+  // The XML is the source of truth for every date it covers: existing XML termine
+  // are UPDATED (not skipped), cancelled ones are removed, manual entries kept.
+  const importDates = new Set(dienste.map(el => el.getAttribute('datum')).filter(Boolean));
+  if (importDates.size || xmlMeetingsAll.length || xmlAnmeldungen.length || xmlErstgespraeche.length) {
     const allShifts = await db.shiftLogs.toArray();
     const timeToM = s => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
 
-    for (const mt of xmlMeetingsAll) {
-      const mStartM = timeToM(mt.von);
-      for (const s of allShifts.filter(s => s.date === mt.datum)) {
-        const h = shiftHours(s);
-        const sStartM = h.start[0]*60+h.start[1], sEndM = h.end[0]*60+h.end[1];
-        if (mStartM >= sStartM && mStartM < sEndM) {
-          const cur = s.xmlMeetings || [];
-          if (!cur.some(x => x.von === mt.von && x.titel === mt.titel)) {
-            await db.shiftLogs.update(s.id, { xmlMeetings: [...cur, { ...mt }] });
-          }
-        }
-      }
-    }
-
-    const toTermin = (type, obj) => {
-      const startHour = Math.floor(timeToM(obj.von) / 60);
-      return {
-        id: `xml-${type}-${obj.datum}-${obj.von}`,
-        type,
-        startHour,
-        ...(type === 'anmeldung' && obj.patientName && { patientName: obj.patientName }),
-        ...(obj.isInternational && { isInternational: true }),
-        ...(obj.sprache          && { sprache: obj.sprache }),
-        ...(obj.isDemo           && { isDemo: true }),
-        importedFromXml: true,
-      };
-    };
+    const toTermin = (type, obj) => ({
+      id: `xml-${type}-${obj.datum}-${obj.von}`,
+      type,
+      startHour: Math.floor(timeToM(obj.von) / 60),
+      ...(type === 'anmeldung' && obj.patientName && { patientName: obj.patientName }),
+      isInternational: !!obj.isInternational,
+      isDemo: !!obj.isDemo,
+      ...(obj.sprache && { sprache: obj.sprache }),
+      importedFromXml: true,
+    });
 
     const terminsByDate = {};
     for (const a of xmlAnmeldungen) {
@@ -9830,22 +9827,53 @@ async function importShiftsFromXML(xmlText) {
       (terminsByDate[e.datum] = terminsByDate[e.datum] || []).push(toTermin('erstgesprach', e));
     }
 
-    for (const [datum, newTermine] of Object.entries(terminsByDate)) {
+    const meetingsByDate = {};
+    for (const mt of xmlMeetingsAll) (meetingsByDate[mt.datum] = meetingsByDate[mt.datum] || []).push(mt);
+
+    // Every date the XML covers gets a full sync (also removes cancelled entries)
+    const syncDates = new Set([...importDates, ...Object.keys(terminsByDate), ...Object.keys(meetingsByDate)]);
+
+    for (const datum of syncDates) {
+      const newTermine  = terminsByDate[datum]  || [];
+      const newMeetings = meetingsByDate[datum] || [];
       for (const s of allShifts.filter(s => s.date === datum)) {
         const h = shiftHours(s);
         const sStartM = h.start[0]*60+h.start[1], sEndM = h.end[0]*60+h.end[1];
-        const matching = newTermine.filter(t => {
-          const tM = t.startHour * 60;
-          return tM >= sStartM && tM < sEndM;
-        });
-        if (!matching.length) continue;
-        const cur = s.zuteilung || {};
+        const inWindow = t => { const tM = t.startHour * 60; return tM >= sStartM && tM < sEndM; };
+
+        // ── Termine: remove cancelled XML termine, update existing, add new ──
+        const matching = newTermine.filter(inWindow);
+        const xmlIds   = new Set(matching.map(t => t.id));
+        const cur      = s.zuteilung || {};
         const curTermine = cur.termine || [];
-        const merged = [...curTermine];
+        let changed = false;
+        const kept = curTermine.filter(t => {
+          const drop = t.importedFromXml && !xmlIds.has(t.id);
+          if (drop) changed = true;
+          return !drop;
+        });
         for (const nt of matching) {
-          if (!merged.some(x => x.id === nt.id)) merged.push(nt);
+          const idx = kept.findIndex(x => x.id === nt.id);
+          if (idx >= 0) {
+            // Refresh XML fields, keep locally added ones (personName, ageGroup, gender, codes)
+            const upd = { ...kept[idx], ...nt };
+            if (JSON.stringify(upd) !== JSON.stringify(kept[idx])) { kept[idx] = upd; changed = true; }
+          } else {
+            kept.push(nt);
+            changed = true;
+          }
         }
-        await db.shiftLogs.update(s.id, { zuteilung: { ...cur, termine: merged } });
+        if (changed) await db.shiftLogs.update(s.id, { zuteilung: { ...cur, termine: kept } });
+
+        // ── Meetings: xmlMeetings come only from XML → replace with current set ──
+        const mtsInWindow = newMeetings.filter(mt => {
+          const mM = timeToM(mt.von);
+          return mM >= sStartM && mM < sEndM;
+        }).map(mt => ({ ...mt }));
+        const curMts = s.xmlMeetings || [];
+        if (JSON.stringify(mtsInWindow) !== JSON.stringify(curMts)) {
+          await db.shiftLogs.update(s.id, { xmlMeetings: mtsInWindow });
+        }
       }
     }
   }
@@ -9854,7 +9882,7 @@ async function importShiftsFromXML(xmlText) {
   state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
   renderHomeTab();
   renderDashboard();
-  alert(`XML importiert: ${imported} neue Dienste angelegt, ${skipped} übersprungen.${mergedDays ? ` ${mergedDays} Tag${mergedDays > 1 ? 'e' : ''} zu Ganztag zusammengeführt.` : ''}`);
+  alert(`XML importiert: ${imported} neue Dienste, ${updated} aktualisiert, ${skipped} übersprungen.${mergedDays ? ` ${mergedDays} Tag${mergedDays > 1 ? 'e' : ''} zu Ganztag zusammengeführt.` : ''}`);
 }
 
 // ─── XP Info Modal ────────────────────────────────────────────────────────────
