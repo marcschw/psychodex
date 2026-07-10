@@ -1650,8 +1650,23 @@ function openTeamModal(shift, half = null) {
 
   // Per-half status key for full shifts opened via VM/NM buttons
   const statusKey = half === 'vm' ? 'statusVM' : half === 'nm' ? 'statusNM' : 'status';
-  const getStatus = c => c[statusKey] ?? c.status ?? (c.present ? 'present' : 'absent');
-  const setStatus = (c, st) => { c[statusKey] = st; };
+  const getStatus = c => {
+    if (half) {
+      if (c[statusKey] !== undefined) return c[statusKey];
+      // Legacy fallback (status/present) ONLY while no per-half data exists at all —
+      // otherwise the other half's check-in would bleed into this one via `present`.
+      if (c.statusVM === undefined && c.statusNM === undefined) {
+        return c.status ?? (c.present ? 'present' : 'absent');
+      }
+      return 'absent';
+    }
+    return c.status ?? (c.present ? 'present' : 'absent');
+  };
+  const setStatus = (c, st) => {
+    c[statusKey] = st;
+    // Once per-half data exists, the legacy whole-day status must not bleed anymore
+    if (half) delete c.status;
+  };
   const syncPresent = c => {
     if (shift.type === 'full') {
       const vm = c.statusVM ?? c.status, nm = c.statusNM ?? c.status;
