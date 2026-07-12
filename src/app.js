@@ -121,6 +121,14 @@ function teamButtonPreviewHTML(colleagues) {
   if (training.length) parts.push(`T: ${training.length}/2`);
   return parts.join(' ') || '';
 }
+// Half membership on a full-day shift: VM/NM crews are tracked per colleague
+// (inVM/inNM); legacy entries without flags count for both halves.
+function colleagueInHalf(c, half) {
+  if (!half) return true;
+  const flag = half === 'vm' ? c.inVM : c.inNM;
+  if (flag !== undefined) return flag;
+  return c.inVM === undefined && c.inNM === undefined;
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 // Normalize kategorie to the 2-char block code (F0-F9) used as icdData keys.
@@ -1051,9 +1059,12 @@ async function renderHomeTab() {
       const tagCounts = {};
       if (!hideIcons) for (const c of colleagues) for (const tag of (c.tags || [])) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
       const parts = [];
-      if (deuReg.length || senior) parts.push(`<span class="team-info-chip" style="color:${TEAM_META.D.color}">D: ${deuReg.length}/6</span>`);
-      if (senior) parts.push(`<span class="team-info-chip" style="color:#f59e0b">S</span>`);
-      if (training.length) parts.push(`<span class="team-info-chip" style="color:${TEAM_META.T.color}">T: ${training.length}/2</span>`);
+      // Full days show per-half counts on the VM/NM buttons instead of a merged total here
+      if (shift.type !== 'full') {
+        if (deuReg.length || senior) parts.push(`<span class="team-info-chip" style="color:${TEAM_META.D.color}">D: ${deuReg.length}/6</span>`);
+        if (senior) parts.push(`<span class="team-info-chip" style="color:#f59e0b">S</span>`);
+        if (training.length) parts.push(`<span class="team-info-chip" style="color:${TEAM_META.T.color}">T: ${training.length}/2</span>`);
+      }
       const tags = Object.entries(tagCounts)
         .map(([tag, n]) => `<span class="team-info-chip">${TAG_ICONS[tag] || tag}${n > 1 ? ` ${n}` : ''}</span>`)
         .join('');
@@ -1077,10 +1088,13 @@ async function renderHomeTab() {
         <div class="home-team-row">
           ${teamInfoHTML}
           <div class="home-team-btns">
-            ${shift.type === 'full' ? `
-              <button class="home-team-btn" id="btn-home-team-vm" title="Rolecall Vormittag">👥 VM</button>
-              <button class="home-team-btn" id="btn-home-team-nm" title="Rolecall Nachmittag">👥 NM</button>
-            ` : `<button class="home-team-btn" id="btn-home-team" title="Rolecall">👥 ${teamButtonPreviewHTML(colleaguesWithSelf)}</button>`}
+            ${shift.type === 'full' ? (() => {
+              const vmPrev = teamButtonPreviewHTML(colleaguesWithSelf.filter(c => colleagueInHalf(c, 'vm')));
+              const nmPrev = teamButtonPreviewHTML(colleaguesWithSelf.filter(c => colleagueInHalf(c, 'nm')));
+              return `
+              <button class="home-team-btn" id="btn-home-team-vm" title="Rolecall Vormittag">👥 VM${vmPrev ? ` <span class="home-half-preview">${vmPrev}</span>` : ''}</button>
+              <button class="home-team-btn" id="btn-home-team-nm" title="Rolecall Nachmittag">👥 NM${nmPrev ? ` <span class="home-half-preview">${nmPrev}</span>` : ''}</button>`;
+            })() : `<button class="home-team-btn" id="btn-home-team" title="Rolecall">👥 ${teamButtonPreviewHTML(colleaguesWithSelf)}</button>`}
             <button class="home-team-btn home-zut-btn" id="btn-home-zut" title="Zuteilung">📋</button>
             <button class="home-icons-toggle" id="btn-icons-toggle" title="${hideIcons ? 'Tag-Icons zeigen' : 'Tag-Icons ausblenden'}">${hideIcons ? '◎' : '◉'}</button>
           </div>
@@ -1743,13 +1757,7 @@ function openTeamModal(shift, half = null) {
   let editingIdx = null; // null = add mode, >=0 = edit existing working[editingIdx]
 
   // Half membership: VM/NM rolecalls only show that half's crew.
-  // Colleagues without any half flags (legacy data) appear in both.
-  const inThisHalf = c => {
-    if (!half) return true;
-    const flag = half === 'vm' ? c.inVM : c.inNM;
-    if (flag !== undefined) return flag;
-    return c.inVM === undefined && c.inNM === undefined;
-  };
+  const inThisHalf = c => colleagueInHalf(c, half);
 
   const renderBody = () => {
     // Build display: self-entry + working list, each tagged with working index

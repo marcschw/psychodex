@@ -2509,6 +2509,7 @@ img{max-width:100%;display:block}
   color:var(--text-dim);-webkit-tap-highlight-color:transparent;transition:background .15s;
 }
 .home-date-edit-btn:active{background:rgba(255,255,255,.15)}
+.home-half-preview{font-size:10px;color:rgba(147,197,253,.8);font-weight:600;white-space:nowrap}
 .home-team-btn{
   font-size:12px;padding:3px 8px;border-radius:8px;cursor:pointer;
   background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.25);
