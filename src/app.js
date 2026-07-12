@@ -1096,12 +1096,12 @@ async function renderHomeTab() {
               <button class="home-team-btn" id="btn-home-team-nm" title="Rolecall Nachmittag">👥 NM${nmPrev ? ` <span class="home-half-preview">${nmPrev}</span>` : ''}</button>`;
             })() : `<button class="home-team-btn" id="btn-home-team" title="Rolecall">👥 ${teamButtonPreviewHTML(colleaguesWithSelf)}</button>`}
             <button class="home-team-btn home-zut-btn" id="btn-home-zut" title="Zuteilung">📋</button>
-            <button class="home-icons-toggle" id="btn-icons-toggle" title="${hideIcons ? 'Tag-Icons zeigen' : 'Tag-Icons ausblenden'}">${hideIcons ? '◎' : '◉'}</button>
           </div>
         </div>` : ''}
         <div class="home-inline-row">
           <span class="home-shift-num">${shiftNumber(shift)}</span>
           <span class="home-inline-xp">${xpLabel}</span>
+          ${hasTeam ? `<button class="home-icons-toggle" id="btn-icons-toggle" title="${hideIcons ? 'Tag-Icons zeigen' : 'Tag-Icons ausblenden'}">${hideIcons ? '◎' : '◉'}</button>` : ''}
           <button id="btn-delete-home-shift" class="btn-icon home-del-btn" title="Dienst löschen">🗑</button>
         </div>
         <div class="home-type-compact-row">
@@ -1717,18 +1717,20 @@ function openTeamModal(shift, half = null) {
     // Once per-half data exists, the legacy whole-day status must not bleed anymore
     if (half) delete c.status;
   };
+  const countsAsThere = st => st === 'present' || st === 'late';
   const syncPresent = c => {
     if (shift.type === 'full') {
       const vm = c.statusVM ?? c.status, nm = c.statusNM ?? c.status;
       // No recorded status at all → keep legacy present flag untouched
       c.present = (vm === undefined && nm === undefined) ? !!c.present
-        : (vm === 'present' || nm === 'present');
+        : (countsAsThere(vm) || countsAsThere(nm));
     } else {
-      c.present = getStatus(c) === 'present';
+      c.present = countsAsThere(getStatus(c));
     }
   };
   const STATUS_META = {
     present: { icon: '✓',  cls: 'rc-st-present' },
+    late:    { icon: '🕓', cls: 'rc-st-late'    },
     krank:   { icon: '🤒', cls: 'rc-st-krank'   },
     absent:  { icon: '✗',  cls: 'rc-st-absent'  },
   };
@@ -1791,8 +1793,9 @@ function openTeamModal(shift, half = null) {
 
     const statusOf = c => c._self ? 'present' : getStatus(c);
     const present  = rcDisplay.filter(c => statusOf(c) === 'present').length;
+    const late     = rcDisplay.filter(c => statusOf(c) === 'late').length;
     const krank    = rcDisplay.filter(c => statusOf(c) === 'krank').length;
-    const fehlen   = rcDisplay.length - present - krank;
+    const fehlen   = rcDisplay.length - present - late - krank;
 
     const groups = { D: [], T: [] };
     for (const c of rcDisplay) groups[effectiveTeam(c)].push(c);
@@ -1805,6 +1808,8 @@ function openTeamModal(shift, half = null) {
         <span class="rolecall-fehlen">${fehlen} fehlen</span>
         <span class="rolecall-dot">·</span>
         <span class="rolecall-anwesend">${present} anwesend</span>
+        <span class="rolecall-dot rc-late-dot" style="display:${late ? '' : 'none'}">·</span>
+        <span class="rolecall-late" style="display:${late ? '' : 'none'}">${late} verspätet</span>
         <span class="rolecall-dot rc-krank-dot" style="display:${krank ? '' : 'none'}">·</span>
         <span class="rolecall-krank" style="display:${krank ? '' : 'none'}">${krank} krank</span>
         <button class="rc-stunden-toggle${showRcStunden ? ' active' : ''}" id="rc-stunden-toggle" title="Stunden ein-/ausblenden">h</button>
@@ -1815,7 +1820,7 @@ function openTeamModal(shift, half = null) {
           const st   = statusOf(c);
           const meta = STATUS_META[st] || STATUS_META.absent;
           return `
-          <div class="team-colleague-row${st === 'present' ? ' is-present' : ''}${st === 'krank' ? ' is-krank' : ''}" data-wi="${c._wi}">
+          <div class="team-colleague-row${st === 'present' ? ' is-present' : ''}${st === 'late' ? ' is-late' : ''}${st === 'krank' ? ' is-krank' : ''}" data-wi="${c._wi}">
             <button class="rc-status-btn ${meta.cls}" data-wi="${c._wi}" title="Status: tippen zum Wechseln, halten für Menü">${meta.icon}</button>
             <img class="rc-avatar" src="${avatarSrc(c)}" alt="" style="border-color:${dotColor(c)}">
             <div class="team-colleague-info">
@@ -1871,6 +1876,7 @@ function openTeamModal(shift, half = null) {
         <div class="rc-menu-card">
           <div class="rc-menu-title">${escAttr(c.name)}</div>
           <button class="rc-menu-opt" data-st="present">✓ Anwesend</button>
+          <button class="rc-menu-opt" data-st="late">🕓 Kommt verspätet</button>
           <button class="rc-menu-opt" data-st="krank">🤒 Krank</button>
           <button class="rc-menu-opt" data-st="absent">✗ Abwesend</button>
           <div class="rc-menu-sep">Team zuordnen</div>
@@ -1892,20 +1898,25 @@ function openTeamModal(shift, half = null) {
 
     // Recompute the counters in place (keeps add/edit form input + scroll intact)
     const updateCounts = () => {
-      let p = 0, k = 0, total = 0;
+      let p = 0, l = 0, k = 0, total = 0;
       body.querySelectorAll('.team-colleague-row').forEach(r => {
         total++;
         const wi = parseInt(r.dataset.wi);
         const st = wi < 0 ? 'present' : getStatus(working[wi]);
         if (st === 'present') p++;
+        else if (st === 'late') l++;
         else if (st === 'krank') k++;
       });
       body.querySelector('.rolecall-anwesend').textContent = `${p} anwesend`;
-      body.querySelector('.rolecall-fehlen').textContent   = `${total - p - k} fehlen`;
-      const kEl  = body.querySelector('.rolecall-krank');
-      const kDot = body.querySelector('.rc-krank-dot');
-      if (kEl)  { kEl.textContent = `${k} krank`; kEl.style.display = k ? '' : 'none'; }
-      if (kDot) kDot.style.display = k ? '' : 'none';
+      body.querySelector('.rolecall-fehlen').textContent   = `${total - p - l - k} fehlen`;
+      const setPair = (elCls, dotCls, n, label) => {
+        const el  = body.querySelector(elCls);
+        const dot = body.querySelector(dotCls);
+        if (el)  { el.textContent = `${n} ${label}`; el.style.display = n ? '' : 'none'; }
+        if (dot) dot.style.display = n ? '' : 'none';
+      };
+      setPair('.rolecall-late',  '.rc-late-dot',  l, 'verspätet');
+      setPair('.rolecall-krank', '.rc-krank-dot', k, 'krank');
     };
 
     // Row tap cycles status (abwesend → anwesend → krank), long-press opens menu
@@ -1926,7 +1937,9 @@ function openTeamModal(shift, half = null) {
         if (e.target.closest('.rc-edit-btn, .rc-del-btn')) return;
         if (lpFired) { lpFired = false; return; }
         const cur  = getStatus(working[wi]);
-        const next = cur === 'absent' ? 'present' : cur === 'present' ? 'krank' : 'absent';
+        const next = cur === 'absent' ? 'present'
+          : cur === 'present' ? 'late'
+          : cur === 'late' ? 'krank' : 'absent';
         setStatus(working[wi], next);
         // Patch the row in place instead of re-rendering (preserves form input)
         const meta = STATUS_META[next];
@@ -1934,6 +1947,7 @@ function openTeamModal(shift, half = null) {
         btn.className   = `rc-status-btn ${meta.cls}`;
         btn.textContent = meta.icon;
         row.classList.toggle('is-present', next === 'present');
+        row.classList.toggle('is-late',    next === 'late');
         row.classList.toggle('is-krank',   next === 'krank');
         updateCounts();
       });
