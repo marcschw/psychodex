@@ -9816,9 +9816,17 @@ async function importShiftsFromXML(xmlText) {
 
     const shiftTeam = xmlTypToTeam(typ);
     // Which half of the day this <dienst> covers — colleagues carry per-half membership
-    const halfFlags = type === 'früh' ? { inVM: true }
-      : type === 'spät' ? { inNM: true }
+    const halfFlags = type === 'früh' ? { inVM: true, inNM: false }
+      : type === 'spät' ? { inVM: false, inNM: true }
       : type === 'full' ? { inVM: true, inNM: true } : {};
+    // A kollege can carry its own halbtag ("GT" | "VM" | "NM") on FULL days
+    const colleagueHalfFlags = k => {
+      const kh = (k.getAttribute('halbtag') || '').toUpperCase();
+      if (kh === 'GT' || kh === 'FULL') return { inVM: true, inNM: true };
+      if (kh === 'VM' || kh === 'AM')   return { inVM: true, inNM: false };
+      if (kh === 'NM' || kh === 'PM')   return { inVM: false, inNM: true };
+      return halfFlags; // no per-kollege halbtag → inherit from the dienst
+    };
     const colleagues = Array.from(el.querySelectorAll('kollege')).map(k => {
       const funktion = k.getAttribute('funktion') || '';
       const stunden  = k.getAttribute('stunden_danach') ? parseFloat(k.getAttribute('stunden_danach')) : null;
@@ -9836,7 +9844,7 @@ async function importShiftsFromXML(xmlText) {
         team:     inferColleagueTeam(funktion) || shiftTeam,
         present:  false,
         meetings, // always set so a removed meeting clears on re-import
-        ...halfFlags,
+        ...colleagueHalfFlags(k),
         ...(stunden  !== null  && { stunden }),
         ...(pct      !== null  && { pct }),
       };
