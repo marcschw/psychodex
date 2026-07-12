@@ -1640,6 +1640,30 @@ function openRescheduleModal(shift) {
 }
 
 // ─── Team Attendance Modal ────────────────────────────────────────────────────
+// Chronological sequence of all rolecalls: one entry per shift, full days as VM→NM
+function rolecallSequence() {
+  const startMins = (s, half) => {
+    if (s.type === 'full') return half === 'nm' ? 810 : 480; // 13:30 / 8:00
+    const h = shiftHours(s);
+    return h.start[0] * 60 + h.start[1];
+  };
+  const entries = [];
+  for (const s of state.shifts) {
+    if (s.type === 'full') entries.push({ id: s.id, half: 'vm' }, { id: s.id, half: 'nm' });
+    else entries.push({ id: s.id, half: null });
+  }
+  const byId = new Map(state.shifts.map(s => [s.id, s]));
+  entries.sort((a, b) => {
+    const sa = byId.get(a.id), sb = byId.get(b.id);
+    return sa.date.localeCompare(sb.date)
+      || (startMins(sa, a.half) - startMins(sb, b.half))
+      || (sa.id - sb.id);
+  });
+  return entries;
+}
+
+let _rcSwipeNav = null; // set by openTeamModal; called by the swipe handler in setupTeamModal
+
 function openTeamModal(shift, half = null) {
   const modal   = document.getElementById('team-modal');
   const body    = document.getElementById('team-modal-body');
@@ -1976,21 +2000,42 @@ function openTeamModal(shift, half = null) {
   renderBody();
   modal.classList.remove('hidden');
 
-  document.getElementById('team-modal-save').onclick = async () => {
+  const persist = async () => {
     working.forEach(syncPresent);
     await db.shiftLogs.update(shift.id, { colleagues: working });
     state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+  };
+
+  // Swipe left/right → next/previous rolecall (auto-saves the current one)
+  _rcSwipeNav = async dir => {
+    const seq = rolecallSequence();
+    const idx = seq.findIndex(e => e.id === shift.id && (e.half ?? null) === (half ?? null));
+    const target = seq[idx + dir];
+    if (idx < 0 || !target) return;
+    await persist();
+    document.getElementById('rc-status-menu')?.remove();
+    const targetShift = state.shifts.find(s => s.id === target.id);
+    if (!targetShift) return;
+    if (state.homeSelectedShiftId !== targetShift.id) {
+      state.homeSelectedShiftId = targetShift.id;
+      renderHomeTab();
+    }
+    openTeamModal(targetShift, target.half);
+  };
+
+  document.getElementById('team-modal-save').onclick = async () => {
+    await persist();
     modal.classList.add('hidden');
     document.getElementById('rc-status-menu')?.remove();
+    _rcSwipeNav = null;
     await applyRolecallBonuses(shift, working);
     renderHomeTab();
   };
   document.getElementById('team-modal-zuteilung').onclick = async () => {
-    working.forEach(syncPresent);
-    await db.shiftLogs.update(shift.id, { colleagues: working });
-    state.shifts = await db.shiftLogs.orderBy('date').reverse().toArray();
+    await persist();
     modal.classList.add('hidden');
     document.getElementById('rc-status-menu')?.remove();
+    _rcSwipeNav = null;
     openZuteilungScreen(shift);
   };
 }
@@ -1999,7 +2044,11 @@ function setupTeamModal() {
   const close = () => {
     document.getElementById('team-modal').classList.add('hidden');
     document.getElementById('rc-status-menu')?.remove();
+    _rcSwipeNav = null;
   };
+  // Swipe on the rolecall sheet: left → next rolecall, right → previous
+  const sheet = document.querySelector('#team-modal .modal-sheet');
+  if (sheet) addSwipeHandler(sheet, () => _rcSwipeNav?.(1), () => _rcSwipeNav?.(-1));
   document.getElementById('team-modal-close').addEventListener('click', close);
   document.getElementById('team-modal-backdrop').addEventListener('click', close);
   document.getElementById('team-modal-cancel').addEventListener('click', close);
