@@ -820,18 +820,23 @@ function renderHoursCounters() {
       : nm.includes('fach') ? 'url(./assets/images/trackers/tracker_fach.png)' : '';
     const doneHFmt = doneH.toFixed(1).replace('.0','');
     const planHFmt = planH.toFixed(1).replace('.0','');
+    const totalPct = Math.min(100, ((doneH + planH) / t) * 100);
+    const donePctR = Math.round(donePct);
+    const planPctR = Math.round(planPct);
     return `
       <div class="hours-counter-card${trackerBg ? ' has-tracker-bg' : ''}"
            data-counter-id="${c.id}"
            ${trackerBg ? `style="--tracker-bg:${trackerBg}"` : ''}>
         <div class="hc-top">
           <span class="hc-name">${c.name}</span>
-          <span class="hc-pct">${Math.round(donePct)}%</span>
+          <span class="hc-pct">${donePctR}%${planH > 0 ? ` <span class="hc-pct-plan">+${planPctR}%</span>` : ''}</span>
         </div>
         <div class="hc-bar-wrap">
           <div class="hc-bar-done" style="width:${donePct.toFixed(2)}%"></div>${planPct > 0 ? `<div class="hc-bar-plan" style="width:${planPct.toFixed(2)}%"></div>` : ''}
         </div>
-        <div class="hc-abs">${doneHFmt}h erledigt${planH > 0 ? ` · <span class="hc-planned-badge">${planHFmt}h geplant</span>` : ''} / ${t}h${fromTxt ? ` · ${fromTxt}` : ''}</div>
+        <div class="hc-abs">
+          <span class="hc-abs-done">✓ ${doneHFmt}h erledigt · ${donePctR}%</span>${planH > 0 ? `<span class="hc-abs-plan">◷ ${planHFmt}h geplant · ${planPctR}%</span>` : ''}<span class="hc-abs-target">Ziel ${t}h${fromTxt ? ` · ${fromTxt}` : ''}</span>
+        </div>
       </div>`;
   }).join('');
 
