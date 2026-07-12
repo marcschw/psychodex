@@ -495,7 +495,12 @@ async function mergeSplitDayShifts() {
       ?? (c.present === true ? 'present' : c.present === false ? 'absent' : undefined);
     const colleagues = (frueh.colleagues || []).map(c => {
       const { status: _s, ...rest } = c;
-      return { ...rest, ...(c.statusVM === undefined && toHalfStatus(c) !== undefined ? { statusVM: toHalfStatus(c) } : {}) };
+      return {
+        ...rest,
+        inVM: c.inVM ?? true, // was on the früh half
+        inNM: c.inNM ?? false,
+        ...(c.statusVM === undefined && toHalfStatus(c) !== undefined ? { statusVM: toHalfStatus(c) } : {}),
+      };
     });
     for (const c of (spaet.colleagues || [])) {
       const nmStatus = c.statusNM ?? toHalfStatus(c);
@@ -505,12 +510,19 @@ async function mergeSplitDayShifts() {
         const prev = colleagues[i];
         colleagues[i] = {
           ...prev, ...rest,
+          inVM: prev.inVM,
+          inNM: c.inNM ?? true,
           present: prev.present === true || c.present === true,
           ...(prev.statusVM !== undefined ? { statusVM: prev.statusVM } : {}),
           ...(nmStatus !== undefined ? { statusNM: nmStatus } : {}),
         };
       } else {
-        colleagues.push({ ...rest, ...(nmStatus !== undefined ? { statusNM: nmStatus } : {}) });
+        colleagues.push({
+          ...rest,
+          inVM: c.inVM ?? false,
+          inNM: c.inNM ?? true,
+          ...(nmStatus !== undefined ? { statusNM: nmStatus } : {}),
+        });
       }
     }
 
@@ -1706,9 +1718,18 @@ function openTeamModal(shift, half = null) {
 
   let editingIdx = null; // null = add mode, >=0 = edit existing working[editingIdx]
 
+  // Half membership: VM/NM rolecalls only show that half's crew.
+  // Colleagues without any half flags (legacy data) appear in both.
+  const inThisHalf = c => {
+    if (!half) return true;
+    const flag = half === 'vm' ? c.inVM : c.inNM;
+    if (flag !== undefined) return flag;
+    return c.inVM === undefined && c.inNM === undefined;
+  };
+
   const renderBody = () => {
     // Build display: self-entry + working list, each tagged with working index
-    const display = working.map((c, i) => ({ ...c, _wi: i }));
+    const display = working.map((c, i) => ({ ...c, _wi: i })).filter(inThisHalf);
     if (userName && !display.some(c => c.name.toLowerCase() === userName.toLowerCase())) {
       const selfHours = Math.round(
         (state.shifts.filter(s => !s.plannerActive && s.date <= shift.date)
@@ -1930,6 +1951,7 @@ function openTeamModal(shift, half = null) {
       } else {
         working.push({ name, funktion: funk, team: inferColleagueTeam(funk) || 'D', tags, present: false,
           manuallyAdded: true, // survives XML re-import sync
+          ...(half === 'vm' ? { inVM: true, inNM: false } : half === 'nm' ? { inVM: false, inNM: true } : {}),
           ...(stunden !== undefined && { stunden }),
           ...(pct     !== undefined && { pct }),
         });
@@ -9736,6 +9758,10 @@ async function importShiftsFromXML(xmlText) {
     const key = `${datum}_${type}`;
 
     const shiftTeam = xmlTypToTeam(typ);
+    // Which half of the day this <dienst> covers — colleagues carry per-half membership
+    const halfFlags = type === 'früh' ? { inVM: true }
+      : type === 'spät' ? { inNM: true }
+      : type === 'full' ? { inVM: true, inNM: true } : {};
     const colleagues = Array.from(el.querySelectorAll('kollege')).map(k => {
       const funktion = k.getAttribute('funktion') || '';
       const stunden  = k.getAttribute('stunden_danach') ? parseFloat(k.getAttribute('stunden_danach')) : null;
@@ -9753,6 +9779,7 @@ async function importShiftsFromXML(xmlText) {
         team:     inferColleagueTeam(funktion) || shiftTeam,
         present:  false,
         meetings, // always set so a removed meeting clears on re-import
+        ...halfFlags,
         ...(stunden  !== null  && { stunden }),
         ...(pct      !== null  && { pct }),
       };
@@ -9761,15 +9788,17 @@ async function importShiftsFromXML(xmlText) {
     // A früh/spät re-import for a day already merged into a Ganztagsdienst
     // belongs to that full shift — merge colleague data there instead of re-creating the half.
     const mergedFullKey = (type === 'früh' || type === 'spät') && existingKeys.has(`${datum}_full`) ? `${datum}_full` : null;
+    const halfKey = type === 'früh' ? 'inVM' : type === 'spät' ? 'inNM' : null;
 
     if (existingKeys.has(key) || mergedFullKey) {
-      // The XML is the source of truth on re-import: colleagues no longer listed
-      // (abgemeldet) are removed (manually added ones are kept), funktion/team are
-      // refreshed, and check-in state (present/statusVM/NM) is preserved.
+      // The XML is the source of truth on re-import — but only for the half of the
+      // day this <dienst> element covers. Colleagues no longer listed lose THIS
+      // half's membership (and are removed entirely once they're in neither half);
+      // check-in state (present/statusVM/NM) and manually added people are kept.
       const existing = existingShifts.find(s => s.date === datum && s.type === (mergedFullKey ? 'full' : type));
       if (existing && colleagues.length) {
         const xmlNames = new Set(colleagues.map(c => c.name));
-        const merged = (existing.colleagues || []).filter(ec => xmlNames.has(ec.name) || ec.manuallyAdded);
+        let merged = (existing.colleagues || []).map(ec => ({ ...ec }));
         for (const xmlC of colleagues) {
           const idx = merged.findIndex(ec => ec.name === xmlC.name);
           if (idx >= 0) {
@@ -9778,13 +9807,28 @@ async function importShiftsFromXML(xmlText) {
             // A changed funktion in the XML beats a manual team reassignment
             if (prev.funktion !== xmlC.funktion && merged[idx].teamOverride) delete merged[idx].teamOverride;
           } else {
-            merged.push(xmlC);
+            merged.push({ ...xmlC });
           }
         }
+        merged = merged.filter(ec => {
+          if (xmlNames.has(ec.name) || ec.manuallyAdded) return true;
+          if (halfKey && existing.type === 'full') {
+            // Not in this half's XML → drop this half's membership only;
+            // keep the person while the other half still lists them.
+            ec[halfKey] = false;
+            const other = halfKey === 'inVM' ? 'inNM' : 'inVM';
+            return ec[other] === true;
+          }
+          return false; // same-type sync: not in the XML → abgemeldet
+        });
         const upd = { colleagues: merged };
         // Shift-level category can change too (e.g. training → regulär), except into merged full days
         if (!mergedFullKey && existing.category !== category) upd.category = category;
         await db.shiftLogs.update(existing.id, upd);
+        // Keep the in-memory snapshot current so the day's OTHER half syncs
+        // against this result instead of overwriting it (AM/PM in one upload)
+        existing.colleagues = merged;
+        if (upd.category) existing.category = upd.category;
         updated++;
       } else {
         skipped++;
