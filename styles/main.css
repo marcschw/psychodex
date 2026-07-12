@@ -2495,10 +2495,10 @@ img{max-width:100%;display:block}
 .home-shift-banner>*{position:relative;z-index:1}
 .home-inline-row{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
 .home-date-row{display:flex;align-items:center}
-.home-team-row{display:flex;align-items:center;gap:6px;padding:4px 0}
+.home-team-row{display:flex;align-items:center;gap:6px;padding:4px 0;flex-wrap:wrap}
 .home-team-info{display:flex;align-items:center;gap:4px;flex-wrap:wrap;flex:1;min-width:0}
 .team-info-chip{font-size:11px;font-weight:600;letter-spacing:.03em;color:var(--text-dim);background:rgba(255,255,255,.05);border-radius:5px;padding:2px 5px;white-space:nowrap}
-.home-team-btns{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.home-team-btns{display:flex;align-items:center;gap:5px;flex-shrink:0;flex-wrap:wrap;max-width:100%;min-width:0}
 .home-date-badge{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .home-date-pretty{font-size:15px;font-weight:700;color:var(--text)}
 .home-date-time{font-size:13px;color:var(--text-dim);font-variant-numeric:tabular-nums}
