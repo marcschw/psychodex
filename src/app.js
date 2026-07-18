@@ -9272,10 +9272,16 @@ function renderHoursModalBody() {
     : state.shifts;
   const all      = baseShifts;
   const filtered = state.hoursFilter === 'all' ? all : all.filter(s => s.type === state.hoursFilter);
-  const totalH   = counter ? calcCounterHours(counter) : calcTotalHours();
   const targetH  = counter?.targetHours || 480;
   const extra    = getExtraHoursTotal();
-  const pct      = Math.min(100, Math.round((totalH / targetH) * 100));
+  const todayStr = new Date().toISOString().slice(0, 10);
+  // Split into actually completed vs. still-planned (future) hours — same
+  // definition as the small dashboard counters, so "erledigt" never silently
+  // includes hours that haven't happened yet.
+  const doneH    = all.filter(s => !s.plannerActive).reduce((s, sh) => s + calcShiftHours(sh), 0) + extra;
+  const planH    = all.filter(s => s.plannerActive && s.date > todayStr).reduce((s, sh) => s + calcShiftHours(sh), 0);
+  const donePct  = Math.min(100, Math.round((doneH / targetH) * 100));
+  const planPct  = Math.min(100 - donePct, Math.round((planH / targetH) * 100));
 
   const types = ['früh','spät','full','samstag','schulung'];
   const typeCounts = Object.fromEntries(types.map(t => [t, all.filter(s=>s.type===t)]));
@@ -9297,18 +9303,16 @@ function renderHoursModalBody() {
   const toDate   = all.length ? [...all].sort((a,b)=>b.date.localeCompare(a.date))[0]?.date : null;
   const fmtD = d => d ? new Date(d+'T12:00:00').toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric'}) : '–';
 
-  const todayStr = new Date().toISOString().slice(0, 10);
   const pastShifts = all.filter(s => s.date <= todayStr);
   const { overallEst, overallSpeed, monthEst, monthSpeed } = calcCompletionEstimates(
     targetH, pastShifts, sh => calcShiftHours(sh), sh => sh.date
   );
 
-  // "Mit geplanten" indicator: include future planned shifts
-  const futureShifts = all.filter(s => s.date > todayStr);
-  const plannedH = futureShifts.reduce((sum, s) => sum + calcShiftHours(s), 0);
-  const withPlannedH = totalH + plannedH;
+  // "Mit geplanten" forecast: when done+planned together reach the target,
+  // show the projected reach date instead of a (still correct) percentage.
+  const withPlannedH = doneH + planH;
   let withPlannedHtml = '';
-  if (plannedH > 0) {
+  if (planH > 0) {
     if (withPlannedH >= targetH) {
       const allSorted = [...all].sort((a, b) => a.date.localeCompare(b.date));
       let cumH = 0;
@@ -9318,9 +9322,6 @@ function renderHoursModalBody() {
         if (cumH >= targetH) { reachDate = sh.date; break; }
       }
       withPlannedHtml = `<div class="hours-planned" style="font-size:12px;color:var(--text-dim);margin-top:4px">Prognose mit Geplanten: ${reachDate ? fmtD(reachDate) : '–'}</div>`;
-    } else {
-      const withPct = Math.round((withPlannedH / targetH) * 100);
-      withPlannedHtml = `<div class="hours-planned" style="font-size:12px;color:var(--text-dim);margin-top:4px">Mit Geplanten: ${withPlannedH.toFixed(1)}h (${withPct}%)</div>`;
     }
   }
 
@@ -9329,8 +9330,9 @@ function renderHoursModalBody() {
     <div class="hours-summary">
       <div class="hours-donut">${donutSegments.length ? buildDonut(donutSegments) : '<div class="donut-empty">–</div>'}</div>
       <div class="hours-summary-info">
-        <div class="hours-total">${totalH.toFixed(1).replace('.0','')}h <span style="font-size:14px;color:var(--text-dim)">/ ${targetH}h</span></div>
-        <div class="hours-label">${counter?.name || 'Gesamt'} · ${pct}% erledigt</div>
+        <div class="hours-total">${doneH.toFixed(1).replace('.0','')}h <span style="font-size:14px;color:var(--text-dim)">/ ${targetH}h</span></div>
+        <div class="hours-label">${counter?.name || 'Gesamt'} · <span class="hc-abs-done">${donePct}% erledigt</span>${planH > 0 ? ` · <span class="hc-abs-plan">+${planPct}% geplant</span>` : ''}</div>
+        <div class="hc-bar-wrap" style="margin-top:6px"><div class="hc-bar-done" style="width:${donePct}%"></div>${planPct > 0 ? `<div class="hc-bar-plan" style="width:${planPct}%"></div>` : ''}</div>
         ${withPlannedHtml}
         <div class="hours-range">${fmtD(fromDate)} – ${fmtD(toDate)}</div>
         <div class="hours-type-legend">
