@@ -1125,7 +1125,11 @@ async function renderHomeTab() {
           const hasColleagueMeetings = (shift.colleagues || []).some(c => c.meetings?.length);
           const dayCalEvents = (state.calEvents || []).filter(e => e.date === shift.date)
             .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
-          if (!homeTermine.length && !(shift.xmlMeetings && shift.xmlMeetings.length) && !hasColleagueMeetings && !dayCalEvents.length) return '';
+          // Recurring friend blocks that fall on this shift's weekday
+          const shiftDow = (new Date(shift.date + 'T12:00:00').getDay() + 6) % 7; // 0=Mon
+          const dayFriends = (state.friendBlocks || []).filter(b => b.weekday === shiftDow)
+            .sort((a, b) => (a.von || '').localeCompare(b.von || ''));
+          if (!homeTermine.length && !(shift.xmlMeetings && shift.xmlMeetings.length) && !hasColleagueMeetings && !dayCalEvents.length && !dayFriends.length) return '';
           const pv = privacyOn();
           const terminItems = homeTermine.map(t => {
             const def = TERMIN_DEFS[t.type] || {};
@@ -1143,6 +1147,12 @@ async function renderHomeTab() {
           const calEventItems = dayCalEvents.map(e =>
             `<div class="home-xml-meeting-row">${e.type === 'meeting' ? '📅' : '⏰'} <span class="home-xml-meeting-time">${e.time || ''}</span> <span class="home-xml-meeting-title">${escAttr(e.title)}</span>${e.alarmOff ? ' 🔕' : ''}</div>`
           ).join('');
+          const friendItems = dayFriends.map(b =>
+            `<div class="home-xml-meeting-row home-friend-row">🫂 <span class="home-xml-meeting-time">${b.von}–${b.bis}</span> <span class="home-xml-meeting-title">${escAttr(b.name)}</span></div>`
+          ).join('');
+          const friendHtml = friendItems
+            ? `<div class="home-xml-meetings-label" style="margin-top:8px;border-top:1px solid rgba(16,185,129,.18);padding-top:6px">Therapeutenteam</div>${friendItems}`
+            : '';
           const pvBtn = `<button class="home-privacy-toggle" title="${pv?'Namen einblenden':'Namen ausblenden'}">${pv?'🔒':'🔓'}</button>`;
           // Colleague meetings: who from the team is in which meeting
           const cmItems = (shift.colleagues || [])
@@ -1153,7 +1163,7 @@ async function renderHomeTab() {
           const teamMeetingsHtml = cmItems
             ? `<div class="home-xml-meetings-label" style="margin-top:8px;border-top:1px solid rgba(124,58,237,.15);padding-top:6px">Team-Meetings</div>${cmItems}`
             : '';
-          return `<div class="home-xml-meetings"><div class="home-xml-meetings-label">Termine ${pvBtn}</div>${terminItems}${meetingItems}${calEventItems}${teamMeetingsHtml}</div>`;
+          return `<div class="home-xml-meetings"><div class="home-xml-meetings-label">Termine ${pvBtn}</div>${terminItems}${meetingItems}${calEventItems}${teamMeetingsHtml}${friendHtml}</div>`;
         })()}
       </div>`;
 
