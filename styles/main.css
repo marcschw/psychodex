@@ -225,6 +225,8 @@ img{max-width:100%;display:block}
 .stat-icon{font-size:20px;margin-bottom:4px}
 .stat-value{font-size:18px;font-weight:700;color:var(--text)}
 .stat-label{font-size:10px;color:var(--text-dim);margin-top:2px}
+.stat-value-planned{font-size:10px;font-weight:600;color:#f59e0b;margin-top:3px}
+.stat-value-planned:empty{display:none}
 
 /* Recent Lists */
 .recent-list{display:flex;flex-direction:column;gap:8px}

@@ -264,11 +264,6 @@ function initSymptomCounters(container, interactive) {
 }
 
 // ─── Hours Helpers ────────────────────────────────────────────────────────────
-function calcCounterHours(counter) {
-  const from = counter.fromDate;
-  const shifts = from ? state.shifts.filter(s => s.date >= from) : state.shifts;
-  return shifts.reduce((s, sh) => s + calcShiftHours(sh), 0) + getExtraHoursTotal();
-}
 function calcShiftHours(shift) {
   if (shift.customStart != null && shift.customEnd != null)
     return Math.max(0, (shift.customEnd - shift.customStart) / 60);
@@ -309,12 +304,16 @@ function shiftNumber(shift) {
   ).length;
   return `${shiftGroupLabel(shift)} #${n}`;
 }
-function calcTotalHours() {
-  const entries = state.profile?.extraHourEntries;
-  const extra = Array.isArray(entries)
-    ? entries.reduce((s, e) => s + (e.hours || 0), 0)
-    : (state.profile?.extraHours || 0);
-  return state.shifts.reduce((s, sh) => s + calcShiftHours(sh), 0) + extra;
+// Split total hours into actually completed vs. still-planned (future) —
+// same !plannerActive / plannerActive-with-future-date definition used by
+// the named hour counters and the hours modal, so every "Stunden" figure
+// in the app agrees on what counts as "erledigt".
+function calcDoneHoursTotal() {
+  return state.shifts.filter(s => !s.plannerActive).reduce((s, sh) => s + calcShiftHours(sh), 0) + getExtraHoursTotal();
+}
+function calcPlannedHoursTotal() {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  return state.shifts.filter(s => s.plannerActive && s.date > todayStr).reduce((s, sh) => s + calcShiftHours(sh), 0);
 }
 function getExtraHoursTotal() {
   const entries = state.profile?.extraHourEntries;
@@ -781,9 +780,15 @@ function renderDashboard() {
 
   // Named hours counters
   renderHoursCounters();
-  // stat card still shows total
-  const totalHoursNum = calcTotalHours();
-  document.getElementById('total-hours').textContent = `${totalHoursNum.toFixed(1).replace(/\.0$/, '')}h`;
+  // Main "Dienststunden" stat card: completed hours as the headline figure,
+  // still-planned (future) hours called out separately underneath.
+  const doneHoursNum = calcDoneHoursTotal();
+  const planHoursNum = calcPlannedHoursTotal();
+  document.getElementById('total-hours').textContent = `${doneHoursNum.toFixed(1).replace(/\.0$/, '')}h`;
+  const totalHoursPlannedEl = document.getElementById('total-hours-planned');
+  if (totalHoursPlannedEl) {
+    totalHoursPlannedEl.textContent = planHoursNum > 0 ? `+${planHoursNum.toFixed(1).replace(/\.0$/, '')}h geplant` : '';
+  }
 
   // Stat card clicks
   const hoursCard  = document.getElementById('stat-hours-card');
