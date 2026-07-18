@@ -1129,7 +1129,8 @@ async function renderHomeTab() {
           const shiftDow = (new Date(shift.date + 'T12:00:00').getDay() + 6) % 7; // 0=Mon
           const dayFriends = (state.friendBlocks || []).filter(b => b.weekday === shiftDow)
             .sort((a, b) => (a.von || '').localeCompare(b.von || ''));
-          if (!homeTermine.length && !(shift.xmlMeetings && shift.xmlMeetings.length) && !hasColleagueMeetings && !dayCalEvents.length && !dayFriends.length) return '';
+          // Always render (at minimum the Therapeutenteam add button) so friend
+          // blocks can be managed straight from the home screen.
           const pv = privacyOn();
           const terminItems = homeTermine.map(t => {
             const def = TERMIN_DEFS[t.type] || {};
@@ -1148,11 +1149,9 @@ async function renderHomeTab() {
             `<div class="home-xml-meeting-row">${e.type === 'meeting' ? '📅' : '⏰'} <span class="home-xml-meeting-time">${e.time || ''}</span> <span class="home-xml-meeting-title">${escAttr(e.title)}</span>${e.alarmOff ? ' 🔕' : ''}</div>`
           ).join('');
           const friendItems = dayFriends.map(b =>
-            `<div class="home-xml-meeting-row home-friend-row">🫂 <span class="home-xml-meeting-time">${b.von}–${b.bis}</span> <span class="home-xml-meeting-title">${escAttr(b.name)}</span></div>`
+            `<div class="home-xml-meeting-row home-friend-row" data-fb-id="${b.id}" style="cursor:pointer">🫂 <span class="home-xml-meeting-time">${b.von}–${b.bis}</span> <span class="home-xml-meeting-title">${escAttr(b.name)}</span> <span class="home-friend-edit">✏️</span></div>`
           ).join('');
-          const friendHtml = friendItems
-            ? `<div class="home-xml-meetings-label" style="margin-top:8px;border-top:1px solid rgba(16,185,129,.18);padding-top:6px">Therapeutenteam</div>${friendItems}`
-            : '';
+          const friendHtml = `<div class="home-xml-meetings-label" style="margin-top:8px;border-top:1px solid rgba(16,185,129,.18);padding-top:6px">Therapeutenteam <button class="home-friend-add" title="Freundes-Termin hinzufügen">＋</button></div>${friendItems}`;
           const pvBtn = `<button class="home-privacy-toggle" title="${pv?'Namen einblenden':'Namen ausblenden'}">${pv?'🔒':'🔓'}</button>`;
           // Colleague meetings: who from the team is in which meeting
           const cmItems = (shift.colleagues || [])
@@ -1182,6 +1181,18 @@ async function renderHomeTab() {
       if (e.target.closest('.home-privacy-toggle')) {
         localStorage.setItem('psychodex-privacy', privacyOn() ? '0' : '1');
         renderHomeTab();
+        return;
+      }
+      if (e.target.closest('.home-friend-add')) {
+        e.stopPropagation();
+        const dow = (new Date(shift.date + 'T12:00:00').getDay() + 6) % 7;
+        openFriendBlockEditor(null, dow);
+        return;
+      }
+      const friendRow = e.target.closest('.home-friend-row');
+      if (friendRow) {
+        const b = (state.friendBlocks || []).find(x => x.id === parseInt(friendRow.dataset.fbId));
+        if (b) openFriendBlockEditor(b);
         return;
       }
       const terminRow = e.target.closest('.home-termin-row');
@@ -6852,6 +6863,69 @@ function renderSettingsTab() {
 
 // ─── Friend Blocks Settings (recurring weekly therapist blocks) ───────────────
 const WEEKDAY_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+const WEEKDAY_LONG   = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
+
+// Reusable editor modal for a recurring friend block. `existing` = block to edit
+// (null to add new). `defaultWeekday` preselects the weekday for new blocks.
+// `onDone` runs after any save/delete so callers can refresh their view.
+function openFriendBlockEditor(existing, defaultWeekday, onDone) {
+  document.getElementById('friend-editor')?.remove();
+  const wd = existing ? existing.weekday : (defaultWeekday ?? 0);
+  const el = document.createElement('div');
+  el.id = 'friend-editor';
+  el.innerHTML = `
+    <div class="fe-backdrop"></div>
+    <div class="fe-card">
+      <button class="fe-close" title="Schließen">✕</button>
+      <div class="fe-title">🫂 ${existing ? 'Freundes-Termin bearbeiten' : 'Freundes-Termin hinzufügen'}</div>
+      <input type="text" id="fe-name" class="setting-input" placeholder="Name" value="${existing ? escAttr(existing.name) : ''}">
+      <select id="fe-wd" class="setting-input">
+        ${WEEKDAY_LONG.map((w, i) => `<option value="${i}"${i === wd ? ' selected' : ''}>${w}</option>`).join('')}
+      </select>
+      <div class="fe-times">
+        <input type="time" id="fe-von" class="setting-input" value="${existing ? existing.von : '14:00'}">
+        <span class="fe-dash">–</span>
+        <input type="time" id="fe-bis" class="setting-input" value="${existing ? existing.bis : '18:00'}">
+      </div>
+      <div class="fe-actions">
+        ${existing ? '<button id="fe-del" class="btn-secondary fe-del-btn">🗑 Löschen</button>' : ''}
+        <button id="fe-save" class="btn-primary">✓ Speichern</button>
+      </div>
+    </div>`;
+  document.body.appendChild(el);
+
+  const close = () => el.remove();
+  el.querySelector('.fe-backdrop').addEventListener('click', close);
+  el.querySelector('.fe-close').addEventListener('click', close);
+
+  const refresh = async () => {
+    state.friendBlocks = await db.friendBlocks.toArray();
+    renderFriendBlocksSettings();
+    if (state.currentTab === 'home') renderHomeTab();
+    onDone?.();
+  };
+
+  el.querySelector('#fe-save').addEventListener('click', async () => {
+    const name = el.querySelector('#fe-name').value.trim();
+    const weekday = parseInt(el.querySelector('#fe-wd').value);
+    const von = el.querySelector('#fe-von').value;
+    const bis = el.querySelector('#fe-bis').value;
+    if (!name || !von || !bis) return;
+    if (existing) await db.friendBlocks.update(existing.id, { name, weekday, von, bis });
+    else          await db.friendBlocks.add({ name, weekday, von, bis });
+    close();
+    await refresh();
+  });
+
+  el.querySelector('#fe-del')?.addEventListener('click', async () => {
+    await db.friendBlocks.delete(existing.id);
+    close();
+    await refresh();
+  });
+
+  setTimeout(() => el.querySelector('#fe-name').focus(), 50);
+}
+
 function renderFriendBlocksSettings() {
   const el = document.getElementById('friend-blocks-section');
   if (!el) return;
@@ -6861,33 +6935,21 @@ function renderFriendBlocksSettings() {
       <div class="fb-item" data-id="${b.id}">
         <span class="fb-name">${escAttr(b.name)}</span>
         <span class="fb-when">${WEEKDAY_LABELS[b.weekday]} ${b.von}–${b.bis}</span>
+        <button class="btn-icon fb-edit" data-id="${b.id}" title="Bearbeiten">✏️</button>
         <button class="btn-icon fb-del" data-id="${b.id}" title="Löschen">🗑</button>
       </div>`).join('')}
-    <div class="fb-add-row">
-      <input type="text" id="fb-add-name" class="setting-input" placeholder="Name" style="flex:1;min-width:80px">
-      <select id="fb-add-wd" class="setting-input" style="width:64px">
-        ${WEEKDAY_LABELS.map((w, i) => `<option value="${i}">${w}</option>`).join('')}
-      </select>
-      <input type="time" id="fb-add-von" class="setting-input" value="14:00" style="width:92px">
-      <input type="time" id="fb-add-bis" class="setting-input" value="18:00" style="width:92px">
-      <button id="fb-add-btn" class="io-btn">＋</button>
-    </div>`;
+    <button id="fb-add-btn" class="io-btn" style="width:100%;margin-top:6px">＋ Freundes-Termin</button>`;
 
+  el.querySelectorAll('.fb-edit').forEach(btn => btn.addEventListener('click', () => {
+    const b = (state.friendBlocks || []).find(x => x.id === parseInt(btn.dataset.id));
+    if (b) openFriendBlockEditor(b);
+  }));
   el.querySelectorAll('.fb-del').forEach(btn => btn.addEventListener('click', async () => {
     await db.friendBlocks.delete(parseInt(btn.dataset.id));
     state.friendBlocks = await db.friendBlocks.toArray();
     renderFriendBlocksSettings();
   }));
-  el.querySelector('#fb-add-btn')?.addEventListener('click', async () => {
-    const name = el.querySelector('#fb-add-name').value.trim();
-    const weekday = parseInt(el.querySelector('#fb-add-wd').value);
-    const von = el.querySelector('#fb-add-von').value;
-    const bis = el.querySelector('#fb-add-bis').value;
-    if (!name || !von || !bis) return;
-    await db.friendBlocks.add({ name, weekday, von, bis });
-    state.friendBlocks = await db.friendBlocks.toArray();
-    renderFriendBlocksSettings();
-  });
+  el.querySelector('#fb-add-btn')?.addEventListener('click', () => openFriendBlockEditor(null));
 }
 
 // ─── Supervision Logging ──────────────────────────────────────────────────────

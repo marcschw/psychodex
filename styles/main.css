@@ -2393,6 +2393,22 @@ img{max-width:100%;display:block}
 .ds-row.ds-shift:active{background:rgba(124,58,237,.15)}
 .ds-row.ds-friend{font-size:12px;color:var(--text-dim);background:rgba(52,211,153,.06);border-color:rgba(52,211,153,.18)}
 .home-friend-row .home-xml-meeting-title{color:rgba(52,211,153,.9)}
+.home-friend-edit{margin-left:auto;font-size:11px;opacity:.5}
+.home-friend-add{margin-left:6px;font-size:13px;line-height:1;padding:1px 7px;border-radius:6px;cursor:pointer;
+  background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:rgba(52,211,153,.9);-webkit-tap-highlight-color:transparent}
+/* Friend block editor modal */
+#friend-editor{position:fixed;inset:0;z-index:1400;display:flex;align-items:center;justify-content:center}
+.fe-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+.fe-card{position:relative;background:var(--bg-card,#1a1a24);border:1px solid var(--border);border-radius:16px;
+  padding:20px;width:min(340px,90vw);display:flex;flex-direction:column;gap:10px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.fe-close{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer}
+.fe-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;padding-right:24px}
+.fe-times{display:flex;align-items:center;gap:8px}
+.fe-times .setting-input{flex:1}
+.fe-dash{color:var(--text-dim)}
+.fe-actions{display:flex;gap:10px;margin-top:6px}
+.fe-actions .btn-primary{flex:1}
+.fe-del-btn{color:#ef4444}
 .ds-ev-del{background:transparent;border:none;cursor:pointer;font-size:13px;color:var(--text-dim);padding:2px 6px}
 .ds-actions{display:flex;gap:6px;margin-top:10px}
 .ds-act{
