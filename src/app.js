@@ -305,15 +305,18 @@ function shiftNumber(shift) {
   return `${shiftGroupLabel(shift)} #${n}`;
 }
 // Split total hours into actually completed vs. still-planned (future) —
-// same !plannerActive / plannerActive-with-future-date definition used by
-// the named hour counters and the hours modal, so every "Stunden" figure
-// in the app agrees on what counts as "erledigt".
+// purely by date. plannerActive tracks the rolecall/XP-award workflow, not
+// whether a shift has happened yet: XML-imported shifts are always written
+// with plannerActive:false regardless of date (see importShiftsFromXML), so
+// using that flag here silently counted every imported future shift as
+// "erledigt". Today counts as done; only strictly-future dates are planned.
 function calcDoneHoursTotal() {
-  return state.shifts.filter(s => !s.plannerActive).reduce((s, sh) => s + calcShiftHours(sh), 0) + getExtraHoursTotal();
+  const todayStr = new Date().toISOString().slice(0, 10);
+  return state.shifts.filter(s => s.date <= todayStr).reduce((s, sh) => s + calcShiftHours(sh), 0) + getExtraHoursTotal();
 }
 function calcPlannedHoursTotal() {
   const todayStr = new Date().toISOString().slice(0, 10);
-  return state.shifts.filter(s => s.plannerActive && s.date > todayStr).reduce((s, sh) => s + calcShiftHours(sh), 0);
+  return state.shifts.filter(s => s.date > todayStr).reduce((s, sh) => s + calcShiftHours(sh), 0);
 }
 function getExtraHoursTotal() {
   const entries = state.profile?.extraHourEntries;
@@ -812,8 +815,8 @@ function renderHoursCounters() {
   const todayStr2 = new Date().toISOString().slice(0, 10);
   const counterCards = counters.map(c => {
     const baseShifts2 = c.fromDate ? state.shifts.filter(s => s.date >= c.fromDate) : state.shifts;
-    const doneH = baseShifts2.filter(s => !s.plannerActive).reduce((s, sh) => s + calcShiftHours(sh), 0) + getExtraHoursTotal();
-    const planH = baseShifts2.filter(s => s.plannerActive && s.date > todayStr2).reduce((s, sh) => s + calcShiftHours(sh), 0);
+    const doneH = baseShifts2.filter(s => s.date <= todayStr2).reduce((s, sh) => s + calcShiftHours(sh), 0) + getExtraHoursTotal();
+    const planH = baseShifts2.filter(s => s.date > todayStr2).reduce((s, sh) => s + calcShiftHours(sh), 0);
     const t = c.targetHours || 480;
     const donePct = Math.min(100, (doneH / t) * 100);
     const planPct = Math.min(100 - donePct, (planH / t) * 100);
@@ -9280,11 +9283,12 @@ function renderHoursModalBody() {
   const targetH  = counter?.targetHours || 480;
   const extra    = getExtraHoursTotal();
   const todayStr = new Date().toISOString().slice(0, 10);
-  // Split into actually completed vs. still-planned (future) hours — same
-  // definition as the small dashboard counters, so "erledigt" never silently
-  // includes hours that haven't happened yet.
-  const doneH    = all.filter(s => !s.plannerActive).reduce((s, sh) => s + calcShiftHours(sh), 0) + extra;
-  const planH    = all.filter(s => s.plannerActive && s.date > todayStr).reduce((s, sh) => s + calcShiftHours(sh), 0);
+  // Split into actually completed vs. still-planned (future) hours, purely
+  // by date — same definition as the small dashboard counters. plannerActive
+  // is a workflow flag (rolecall/XP state), not a "happened yet" signal:
+  // XML-imported shifts are always plannerActive:false regardless of date.
+  const doneH    = all.filter(s => s.date <= todayStr).reduce((s, sh) => s + calcShiftHours(sh), 0) + extra;
+  const planH    = all.filter(s => s.date > todayStr).reduce((s, sh) => s + calcShiftHours(sh), 0);
   const donePct  = Math.min(100, Math.round((doneH / targetH) * 100));
   const planPct  = Math.min(100 - donePct, Math.round((planH / targetH) * 100));
 
