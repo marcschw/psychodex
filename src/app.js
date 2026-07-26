@@ -975,18 +975,6 @@ function makeSortable(list, onSort) {
 const padT = (h, m) => `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
 const toMins = (h, m) => h * 60 + m;
 
-// Calendar day-sheet events: meeting/reminder are point-in-time; pause carries
-// a durationMin (default 60) and displays as a von–bis range.
-const CAL_EV_ICONS = { meeting: '📅', reminder: '⏰', pause: '☕' };
-function calEvIcon(type) { return CAL_EV_ICONS[type] || '⏰'; }
-function calEvTimeLabel(e) {
-  if (!e.time) return '';
-  if (!e.durationMin) return e.time;
-  const [h, m] = e.time.split(':').map(Number);
-  const endTotal = ((h * 60 + m + e.durationMin) % 1440 + 1440) % 1440;
-  return `${e.time}–${padT(Math.floor(endTotal / 60), endTotal % 60)}`;
-}
-
 function shiftHours(typeOrShift) {
   if (typeOrShift && typeof typeOrShift === 'object') {
     const sh = typeOrShift;
@@ -1166,7 +1154,7 @@ async function renderHomeTab() {
             `<div class="home-xml-meeting-row home-meeting-row" data-meeting-idx="${idx}" style="cursor:pointer"><span class="home-xml-meeting-time">${m.von}–${m.bis}</span> <span class="home-xml-meeting-title">${escAttr(m.titel||m.typ)}</span>${m.mit?`<div class="home-xml-meeting-mit">${escAttr(m.mit)}</div>`:''}</div>`
           ).join('');
           const calEventItems = dayCalEvents.map(e =>
-            `<div class="home-xml-meeting-row">${calEvIcon(e.type)} <span class="home-xml-meeting-time">${calEvTimeLabel(e)}</span> <span class="home-xml-meeting-title">${escAttr(e.title)}</span>${e.alarmOff ? ' 🔕' : ''}</div>`
+            `<div class="home-xml-meeting-row">${e.type === 'meeting' ? '📅' : '⏰'} <span class="home-xml-meeting-time">${e.time || ''}</span> <span class="home-xml-meeting-title">${escAttr(e.title)}</span>${e.alarmOff ? ' 🔕' : ''}</div>`
           ).join('');
           const friendItems = dayFriends.map(b =>
             `<div class="home-xml-meeting-row home-friend-row" data-fb-id="${b.id}" style="cursor:pointer">🫂 <span class="home-xml-meeting-time">${b.von}–${b.bis}</span> <span class="home-xml-meeting-title">${escAttr(b.name)}</span> <span class="home-friend-edit">✏️</span></div>`
@@ -1435,7 +1423,7 @@ function renderMonthCalendar() {
 
     const dayEvents   = evByDate[ds] || [];
     const evDots      = dayEvents.length
-      ? `<span class="cal-ev-dot" title="${dayEvents.length} Termin${dayEvents.length > 1 ? 'e' : ''}">${calEvIcon(dayEvents.some(e => e.type === 'meeting') ? 'meeting' : dayEvents.some(e => e.type === 'pause') ? 'pause' : 'reminder')}</span>` : '';
+      ? `<span class="cal-ev-dot" title="${dayEvents.length} Termin${dayEvents.length > 1 ? 'e' : ''}">${dayEvents.some(e => e.type === 'meeting') ? '📅' : '⏰'}</span>` : '';
     // Subtle side markers for recurring friend blocks on this weekday
     const dayFriends  = (state.friendBlocks || []).filter(b => b.weekday === dow);
     const friendMarks = dayFriends.length
@@ -1480,8 +1468,7 @@ function openDaySheet(ds) {
   sheet.id = 'cal-day-sheet';
 
   const render = () => {
-    const dayShifts     = state.shifts.filter(s => s.date === ds);
-    const hasFullShift  = dayShifts.some(s => s.type === 'full');
+    const dayShifts  = state.shifts.filter(s => s.date === ds);
     const dayEvents  = (state.calEvents || []).filter(e => e.date === ds)
       .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
     const dayFriends = (state.friendBlocks || []).filter(b => b.weekday === dow);
@@ -1499,7 +1486,7 @@ function openDaySheet(ds) {
         ${dayEvents.length ? `<div class="ds-sep">Termine</div>` : ''}
         ${dayEvents.map(e => `
           <div class="ds-row ds-event">
-            <span>${calEvIcon(e.type)} ${calEvTimeLabel(e)} ${escAttr(e.title)}${e.alarmOff ? ' 🔕' : ''}</span>
+            <span>${e.type === 'meeting' ? '📅' : '⏰'} ${e.time || ''} ${escAttr(e.title)}${e.alarmOff ? ' 🔕' : ''}</span>
             <button class="ds-ev-del" data-eid="${e.id}" title="Löschen">🗑</button>
           </div>`).join('')}
         ${dayFriends.length ? `<div class="ds-sep">Therapeutenteam</div>
@@ -1508,12 +1495,10 @@ function openDaySheet(ds) {
           <button class="ds-act" id="ds-add-shift">＋ Dienst</button>
           <button class="ds-act" id="ds-add-meeting">＋ Meeting</button>
           <button class="ds-act" id="ds-add-reminder">＋ Reminder</button>
-          ${hasFullShift ? `<button class="ds-act" id="ds-add-pause" title="Nur an Ganztagsdiensten planbar">＋ Pause</button>` : ''}
         </div>
         <div class="ds-ev-form hidden" id="ds-ev-form">
           <input type="text" id="ds-ev-title" class="setting-input" placeholder="Titel…" style="flex:1;min-width:100px">
           <input type="time" id="ds-ev-time" class="setting-input" value="12:00" style="width:92px">
-          <input type="number" id="ds-ev-duration" class="setting-input hidden" placeholder="h" value="1" min="0.5" max="4" step="0.5" style="width:56px" title="Dauer in Stunden">
           <button type="button" id="ds-ev-alarm" class="slot-alarm-toggle" title="Erinnerung 10 Min vorher">🔔</button>
           <button id="ds-ev-save" class="io-btn">✓</button>
         </div>
@@ -1544,25 +1529,14 @@ function openDaySheet(ds) {
 
     let pendingType = null;
     const evForm = sheet.querySelector('#ds-ev-form');
-    const durationInput = sheet.querySelector('#ds-ev-duration');
-    const titleInput = sheet.querySelector('#ds-ev-title');
     const showForm = type => {
       pendingType = type;
       evForm.classList.remove('hidden');
-      durationInput.classList.toggle('hidden', type !== 'pause');
-      if (type === 'pause') {
-        titleInput.placeholder = 'Pause';
-        titleInput.value = 'Pause';
-        durationInput.value = '1';
-      } else {
-        titleInput.placeholder = type === 'meeting' ? 'Meeting-Titel…' : 'Erinnerung…';
-        titleInput.value = '';
-      }
-      titleInput.focus();
+      sheet.querySelector('#ds-ev-title').placeholder = type === 'meeting' ? 'Meeting-Titel…' : 'Erinnerung…';
+      sheet.querySelector('#ds-ev-title').focus();
     };
     sheet.querySelector('#ds-add-meeting').addEventListener('click', () => showForm('meeting'));
     sheet.querySelector('#ds-add-reminder').addEventListener('click', () => showForm('reminder'));
-    sheet.querySelector('#ds-add-pause')?.addEventListener('click', () => showForm('pause'));
 
     const alarmBtn = sheet.querySelector('#ds-ev-alarm');
     alarmBtn.addEventListener('click', () => {
@@ -1571,15 +1545,11 @@ function openDaySheet(ds) {
     });
 
     sheet.querySelector('#ds-ev-save').addEventListener('click', async () => {
-      const title = titleInput.value.trim();
+      const title = sheet.querySelector('#ds-ev-title').value.trim();
       const time  = sheet.querySelector('#ds-ev-time').value;
       if (!title || !pendingType) return;
-      const durationMin = pendingType === 'pause'
-        ? Math.max(30, Math.round((parseFloat(durationInput.value) || 1) * 60))
-        : undefined;
       await db.calendarEvents.add({
         date: ds, type: pendingType, title, time,
-        ...(durationMin !== undefined && { durationMin }),
         alarmOff: alarmBtn.classList.contains('off'),
         createdAt: new Date().toISOString(),
       });
@@ -5771,7 +5741,7 @@ async function checkAlarms() {
       const [eh, em] = ev.time.split(':').map(Number);
       const diff = toMins(eh, em) - nowMins;
       if (diff >= 9 && diff <= 11) {
-        const icon = calEvIcon(ev.type);
+        const icon = ev.type === 'meeting' ? '📅' : '⏰';
         fireAlarm(`${icon} In ~10 min: ${ev.title} um ${ev.time}`,
           `${icon} In ~10 Minuten`, `${ev.title} um ${ev.time}`, key);
       }
