@@ -3884,6 +3884,11 @@ const TERMIN_DEFS = {
   anmeldung:    { label:'Anmeldung',    icon:'📝', dur:1 },
   interview:    { label:'Interview',    icon:'🎤', dur:2 },
   erstgesprach: { label:'Erstgespräch', icon:'💬', dur:1 },
+  // Pause: only offered on Ganztagsdiensten (gated where the add-button
+  // renders); role:'pause' keeps it out of the burden-weighted "termin"
+  // staffing pool the auto-assign algorithm uses for Anmeldung/Interview/
+  // Erstgespräch, and maps it to the existing ZUTEIL_ROLES.pause (☕, burden 0).
+  pause:        { label:'Pause',        icon:'☕', dur:1, role:'pause' },
 };
 
 // Freudian +3 surname code suggestions (letter = shifted by +3 from patient surname initial)
@@ -4151,6 +4156,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
 
   // Trainees participating in a termin (anmeldung+interview always; erstgesprach only if isDemo)
   const getTerminTrainees = t => {
+    if (t.type === 'pause') return []; // no shadowing a colleague's break
     if (t.type === 'erstgesprach' && !t.isDemo) return [];
     const tStartM = (t.startHour ?? t.hour) * 60;
     const b = blocks.find(bb => bb.start * 60 <= tStartM && bb.end * 60 > tStartM);
@@ -4188,7 +4194,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
         const role = zData.assignments[key];
         const ri   = role ? ZUTEIL_ROLES[role] : null;
         const unavail = !isAvail(p, b);
-        const terminInfo = ri && role === 'termin' ? getTerminInfoForCell(p.name, b) : null;
+        const terminInfo = ri && (role === 'termin' || role === 'pause') ? getTerminInfoForCell(p.name, b) : null;
         const cellInner = ri
           ? `<span class="zut-cell-icon">${terminInfo ? terminInfo.icon : ri.icon}</span><span class="zut-role-short">${terminInfo ? '#' + terminInfo.num : ri.short}</span>`
           : `<span class="zut-empty-dot">·</span>`;
@@ -4490,6 +4496,7 @@ function renderZuteilGrid(inner, shift, zData, people, { saveData, pushUndo, ren
         <button class="zut-termin-add-btn" data-type="anmeldung" title="Anmeldung">📝+</button>
         <button class="zut-termin-add-btn" data-type="erstgesprach" title="Erstgespräch">💬+</button>
         <button class="zut-termin-add-btn" data-type="interview" title="Interview">🎤+</button>
+        ${shift.type === 'full' ? `<button class="zut-termin-add-btn" data-type="pause" title="Pause">☕+</button>` : ''}
       </div>
       <div class="zut-tl-scroll">${tlCols}</div>
     </div>
@@ -5110,6 +5117,7 @@ function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo
   const cur  = termin.startHour ?? termin.hour;
   const presentPeople = people.filter(p => p.present && !(zData.personStates[p.name]||{}).notYetPresent && !p._isTrainee);
   const isEG = termin.type === 'erstgesprach';
+  const isPause = termin.type === 'pause';
   const popup = document.createElement('div');
   popup.className = 'zut-popup';
   popup.innerHTML = `
@@ -5118,6 +5126,7 @@ function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo
       <select id="zp-thour" class="form-input" style="flex:1">
         ${tlHours.map(h=>`<option value="${h}"${h===cur?' selected':''}>${String(h).padStart(2,'0')}:00</option>`).join('')}
       </select></div>
+    ${isPause ? '' : `
     <div class="zut-popup-row"><span>Patient</span>
       <input type="text" id="zp-patname" class="form-input" style="flex:1" placeholder="Name (optional)" value="${escAttr(termin.patientName)}"></div>
     <div class="zut-popup-row"><span>Code</span>
@@ -5137,7 +5146,7 @@ function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo
         <option value="weiblich"${termin.gender==='weiblich'?' selected':''}>Weiblich</option>
         <option value="männlich"${termin.gender==='männlich'?' selected':''}>Männlich</option>
         <option value="divers"  ${termin.gender==='divers'  ?' selected':''}>Divers</option>
-      </select></div>
+      </select></div>`}
     ${isEG ? `
     <label class="zut-popup-row"><span>Demo-Termin</span>
       <input type="checkbox" id="zp-demo" ${termin.isDemo?'checked':''}></label>
@@ -5156,8 +5165,8 @@ function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo
     <button class="btn-secondary" id="zp-tdel" style="width:100%;margin-top:6px;color:#f87171;border-color:rgba(248,113,113,.4)">🗑 Löschen</button>`;
   document.getElementById('zuteilung-modal').appendChild(popup);
 
-  // Freudian codename suggestions (+3 shift on surname initial)
-  popup.querySelector('#zp-freud-btn').onclick = () => {
+  // Freudian codename suggestions (+3 shift on surname initial) — no patient fields for Pause
+  popup.querySelector('#zp-freud-btn')?.addEventListener('click', () => {
     const pn = popup.querySelector('#zp-patname').value.trim();
     if (!pn) return;
     const parts = pn.replace(',', ' ').trim().split(/\s+/).filter(Boolean);
@@ -5172,7 +5181,7 @@ function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo
     sugEl.querySelectorAll('.zut-popup-sug-btn').forEach(b => {
       b.onclick = () => { popup.querySelector('#zp-codename').value = b.dataset.n; sugEl.style.display = 'none'; };
     });
-  };
+  });
 
   // Demo toggle shows/hides International + person row
   if (isEG) {
@@ -5198,14 +5207,16 @@ function openZuteilEditTermin(termin, tlHours, people, zData, saveData, pushUndo
     const idx = zData.termine.findIndex(t => t.id === termin.id);
     if (idx >= 0) {
       zData.termine[idx].startHour  = parseInt(popup.querySelector('#zp-thour').value);
-      const pn = popup.querySelector('#zp-patname').value.trim();
-      const cn = popup.querySelector('#zp-codename').value.trim();
-      if (pn) zData.termine[idx].patientName = pn; else delete zData.termine[idx].patientName;
-      if (cn) zData.termine[idx].codename    = cn; else delete zData.termine[idx].codename;
-      const ag = popup.querySelector('#zp-agegroup').value;
-      const gd = popup.querySelector('#zp-gender').value;
-      if (ag) zData.termine[idx].ageGroup = ag; else delete zData.termine[idx].ageGroup;
-      if (gd) zData.termine[idx].gender   = gd; else delete zData.termine[idx].gender;
+      if (!isPause) {
+        const pn = popup.querySelector('#zp-patname').value.trim();
+        const cn = popup.querySelector('#zp-codename').value.trim();
+        if (pn) zData.termine[idx].patientName = pn; else delete zData.termine[idx].patientName;
+        if (cn) zData.termine[idx].codename    = cn; else delete zData.termine[idx].codename;
+        const ag = popup.querySelector('#zp-agegroup').value;
+        const gd = popup.querySelector('#zp-gender').value;
+        if (ag) zData.termine[idx].ageGroup = ag; else delete zData.termine[idx].ageGroup;
+        if (gd) zData.termine[idx].gender   = gd; else delete zData.termine[idx].gender;
+      }
       if (isEG) {
         const isDemo  = popup.querySelector('#zp-demo').checked;
         const isIntl  = popup.querySelector('#zp-intl').checked;
@@ -5271,6 +5282,10 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
     ((a.startHour ?? a.hour) - (b.startHour ?? b.hour)) || (a.id - b.id));
   const resolvedTermine = [];
   for (const t of termineSorted1) {
+    // Pause is manually planned, not part of the intake-staffing fairness pool:
+    // pass through untouched (personName stays whatever it already was, incl. null)
+    if (t.type === 'pause') { resolvedTermine.push(t); continue; }
+
     const tHour = t.startHour ?? t.hour;
     const def = TERMIN_DEFS[t.type];
 
@@ -5315,7 +5330,7 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
     const tHour = t.startHour ?? t.hour;
     for (const b of blocks) {
       if (b.start >= tHour && b.start < tHour + def.dur)
-        result[`${t.personName}::${b.key}`] = 'termin';
+        result[`${t.personName}::${b.key}`] = def.role || 'termin';
     }
   }
 
@@ -5334,6 +5349,7 @@ function runAutoAssign(allowedPeopleIn, blocks, termine, personStates, blockSize
   const traineeBlocksUsed = new Set(); // track blocks already occupied by a trainee
   for (const t of resolvedTermine) {
     if (!trainees.length) break;
+    if (t.type === 'pause') continue; // no shadowing a colleague's break
     const tHour = t.startHour ?? t.hour;
     const def = TERMIN_DEFS[t.type];
     const tBlocks = blocks.filter(b => b.start >= tHour && b.start < tHour + def.dur);
