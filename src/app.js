@@ -2693,30 +2693,7 @@ function setupPlannerListeners() {
   document.getElementById('slot-tips-backdrop').addEventListener('click', () => document.getElementById('slot-tips-modal').classList.add('hidden'));
 
   // Slot type buttons inside add modal
-  const grid = document.getElementById('slot-type-grid');
-  grid.innerHTML = Object.entries(SLOT_TYPES).map(([key, def]) =>
-    `<button class="slot-type-btn" data-type="${key}">
-       <span>${def.icon}</span>
-       <span>${def.label}</span>
-       <span class="slot-type-xp">+${def.xp} XP</span>
-     </button>`
-  ).join('');
-  grid.querySelectorAll('.slot-type-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      grid.querySelectorAll('.slot-type-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const def = SLOT_TYPES[btn.dataset.type];
-      const flagsRow = document.getElementById('slot-flags-row');
-      flagsRow.classList.toggle('hidden', btn.dataset.type !== 'erstgespraech');
-      // Auto-set end time for fixed-duration types
-      if (def.fixed && state.slotAddContext) {
-        const endMins = toMins(state.slotAddContext.startH, state.slotAddContext.startM) + def.durationH * 60 + def.durationM;
-        document.getElementById('slot-end-time').value = padT(Math.floor(endMins/60), endMins%60);
-        setTimeToggleActive('end', endMins % 60);
-      }
-      if (state.slotAddContext) state.slotAddContext.selectedType = btn.dataset.type;
-    });
-  });
+  renderSlotTypeGrid(null);
 
   document.querySelectorAll('.flag-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -2899,8 +2876,48 @@ async function closePlannerShift() {
   renderDashboard();
 }
 
-function openSlotAddModal(shiftId, startH, startM, source = 'planner') {
+// Builds the "Eintrag hinzufügen" type grid, filtered for the given shift:
+// Pause (fullDayOnly + oncePerDay) only shows on a Ganztagsdienst and only
+// while that shift doesn't already have a pause slot logged. Always reads
+// slots fresh from the DB (not the cached plannerSlots) so the "once per
+// day" check is correct regardless of which screen opened the modal.
+async function renderSlotTypeGrid(shiftId) {
+  const grid = document.getElementById('slot-type-grid');
+  const shift = shiftId ? state.shifts.find(s => s.id === shiftId) : null;
+  const existingSlots = shiftId ? await db.scheduleSlots.where('shiftId').equals(shiftId).toArray() : [];
+  const visible = Object.entries(SLOT_TYPES).filter(([key, def]) => {
+    if (def.fullDayOnly && shift?.type !== 'full') return false;
+    if (def.oncePerDay && existingSlots.some(s => s.type === key)) return false;
+    return true;
+  });
+  grid.innerHTML = visible.map(([key, def]) =>
+    `<button class="slot-type-btn" data-type="${key}">
+       <span>${def.icon}</span>
+       <span>${def.label}</span>
+       <span class="slot-type-xp">+${def.xp} XP</span>
+     </button>`
+  ).join('');
+  grid.querySelectorAll('.slot-type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      grid.querySelectorAll('.slot-type-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const def = SLOT_TYPES[btn.dataset.type];
+      const flagsRow = document.getElementById('slot-flags-row');
+      flagsRow.classList.toggle('hidden', btn.dataset.type !== 'erstgespraech');
+      // Auto-set end time for fixed-duration types
+      if (def.fixed && state.slotAddContext) {
+        const endMins = toMins(state.slotAddContext.startH, state.slotAddContext.startM) + def.durationH * 60 + def.durationM;
+        document.getElementById('slot-end-time').value = padT(Math.floor(endMins/60), endMins%60);
+        setTimeToggleActive('end', endMins % 60);
+      }
+      if (state.slotAddContext) state.slotAddContext.selectedType = btn.dataset.type;
+    });
+  });
+}
+
+async function openSlotAddModal(shiftId, startH, startM, source = 'planner') {
   state.slotAddContext = { shiftId, startH, startM, selectedType: null, flags: [], source };
+  await renderSlotTypeGrid(shiftId);
 
   // Reset UI
   document.querySelectorAll('#slot-type-grid .slot-type-btn').forEach(b => b.classList.remove('active'));
@@ -2963,7 +2980,7 @@ async function saveSlot() {
   state.shifts  = await db.shiftLogs.orderBy('date').reverse().toArray();
 
   document.getElementById('slot-add-modal').classList.add('hidden');
-  showXPPopup(xp, [{ label: def.label, xp }]);
+  if (xp > 0) showXPPopup(xp, [{ label: def.label, xp }]);
   updateHeader();
   checkLevelUp(newXP, oldXP);
   applyAchievements();

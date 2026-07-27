@@ -55,6 +55,9 @@ export const SLOT_TYPES = {
   kassa:         { label:'Kassa',        icon:'💰',  colorVar:'--slot-kassa',    xp:15, durationH:1, durationM:0, fixed:false, patientContact:false, halfHour:true  },
   backoffice:    { label:'Backoffice',   icon:'🖥️',  colorVar:'--slot-back',     xp:8,  durationH:1, durationM:0, fixed:false, patientContact:false, halfHour:false },
   fuenfter:      { label:'5. Stock',     icon:'🏢',  colorVar:'--slot-fuenfter', xp:4,  durationH:1, durationM:0, fixed:false, patientContact:false, halfHour:false },
+  // Break: no XP (it's not work), only offerable on Ganztagsdiensten, and only
+  // once per shift — gated in openSlotAddModal/renderSlotTypeGrid, not here.
+  pause:         { label:'Pause',        icon:'☕', colorVar:'--slot-pause',    xp:0,  durationH:1, durationM:0, fixed:true,  patientContact:false, halfHour:false, fullDayOnly:true, oncePerDay:true },
 };
 
 export const SHIFT_HOURS = {
