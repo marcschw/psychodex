@@ -441,7 +441,7 @@
     "code": "F02.0",
     "name": "Demenz bei Pick-Krankheit",
     "kategorie": "F0",
-    "seltenheit_score": 9,
+    "seltenheit_score": 9,  
     "praevalenz_allgemein_prozent": 0.03,
     "praevalenz_modifikatoren": {
       "männlich": 1.1,

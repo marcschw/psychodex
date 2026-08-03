@@ -9780,11 +9780,27 @@ function setupExportImport() {
 }
 
 async function exportData() {
-  const shifts       = await db.shiftLogs.toArray();
+  const anonymize = str => {
+    if (!str) return str;
+    const parts = str.replace(',', ' ').trim().split(/\s+/).filter(Boolean);
+    return parts.length > 1 ? parts.map(p => p[0].toUpperCase() + '.').join('') : str;
+  };
+
+  const shifts = (await db.shiftLogs.toArray()).map(shift => {
+    if (shift.zuteilung?.termine) {
+      shift.zuteilung.termine.forEach(t => {
+        if (t.patientName) t.patientName = anonymize(t.patientName);
+      });
+    }
+    return shift;
+  });
   const catches      = await db.caughtDiagnoses.toArray();
   const missions     = await db.missions.toArray();
   const achievements = await db.unlockedAchievements.toArray();
-  const slots        = await db.scheduleSlots.toArray();
+  const slots        = (await db.scheduleSlots.toArray()).map(slot => {
+    if (slot.patientNotes) slot.patientNotes = anonymize(slot.patientNotes);
+    return slot;
+  });
   // Export full profile (all fields) so hourCounters / extraHourEntries survive round-trips
   const { id: _pid, ...profileFields } = state.profile ?? {};
   const payload = {
