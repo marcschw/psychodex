@@ -9782,25 +9782,45 @@ function setupExportImport() {
 async function exportData() {
   const anonymize = str => {
     if (!str) return str;
-    const parts = str.replace(',', ' ').trim().split(/\s+/).filter(Boolean);
-    return parts.length > 1 ? parts.map(p => p[0].toUpperCase() + '.').join('') : str;
+    // Wandelt ALLE Wörter um, auch wenn es nur eines ist ("Müller" -> "M.")
+    const parts = str.replace(/,/g, ' ').trim().split(/\s+/).filter(Boolean);
+    return parts.map(p => p[0].toUpperCase() + '.').join('');
   };
 
-  const shifts = (await db.shiftLogs.toArray()).map(shift => {
+  // Wir klonen die Daten (JSON.parse/stringify), damit die Originale
+  // im App-Speicher nicht überschrieben werden und weiterlesbar bleiben
+  const rawShifts = await db.shiftLogs.toArray();
+  const shifts = JSON.parse(JSON.stringify(rawShifts)).map(shift => {
     if (shift.zuteilung?.termine) {
       shift.zuteilung.termine.forEach(t => {
         if (t.patientName) t.patientName = anonymize(t.patientName);
+        if (t.codename) t.codename = anonymize(t.codename); // Sicher ist sicher
+      });
+    }
+    // Versteckten "Rückgängig"-Verlauf ebenfalls putzen!
+    if (shift.zuteilung?.undoStack) {
+      shift.zuteilung.undoStack.forEach(snap => {
+        if (snap.termine) {
+          snap.termine.forEach(t => {
+            if (t.patientName) t.patientName = anonymize(t.patientName);
+            if (t.codename) t.codename = anonymize(t.codename);
+          });
+        }
       });
     }
     return shift;
   });
+
   const catches      = await db.caughtDiagnoses.toArray();
   const missions     = await db.missions.toArray();
   const achievements = await db.unlockedAchievements.toArray();
-  const slots        = (await db.scheduleSlots.toArray()).map(slot => {
+  
+  const rawSlots = await db.scheduleSlots.toArray();
+  const slots = JSON.parse(JSON.stringify(rawSlots)).map(slot => {
     if (slot.patientNotes) slot.patientNotes = anonymize(slot.patientNotes);
     return slot;
   });
+
   // Export full profile (all fields) so hourCounters / extraHourEntries survive round-trips
   const { id: _pid, ...profileFields } = state.profile ?? {};
   const payload = {
