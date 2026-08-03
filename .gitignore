@@ -5,3 +5,5 @@ node_modules/
 *.log
 
 .vercel
+do_not_upload_art_raw/
+originalArt/
